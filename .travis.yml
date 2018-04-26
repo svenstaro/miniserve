@@ -19,6 +19,12 @@ matrix:
       - BIN_NAME=miniserve
       - PROPER_NAME=miniserve-linux
       os: linux
+      addons:
+        apt:
+          packages:
+            - musl
+            - musl-dev
+            - musl-tools
     - env:
       - TARGET=x86_64-pc-windows-gnu
       - BIN_NAME=miniserve.exe

@@ -5,7 +5,7 @@ extern crate simplelog;
 #[macro_use]
 extern crate clap;
 
-use actix_web::{server, App, fs, middleware, HttpRequest, HttpResponse, Result};
+use actix_web::{server, App, fs, middleware, HttpRequest, Result};
 use simplelog::{TermLogger, LevelFilter, Config};
 use std::path::PathBuf;
 use std::net::IpAddr;
