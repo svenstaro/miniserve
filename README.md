@@ -1,4 +1,6 @@
-# miniserve - For when you really just want to serve some files over HTTP right now!
+# miniserve - CLI tool to serve files and dirs over HTTP
+
+**For when you really just want to serve some files over HTTP right now!**
 
 [![Build Status](https://travis-ci.org/svenstaro/miniserve.svg?branch=master)](https://travis-ci.org/svenstaro/miniserve)
 [![AUR](https://img.shields.io/aur/version/miniserve.svg)](https://aur.archlinux.org/packages/miniserve/)
