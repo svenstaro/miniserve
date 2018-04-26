@@ -1,0 +1,62 @@
+language: rust
+cache: cargo
+
+rust:
+  - stable
+  - beta
+  - nightly
+
+addons:
+  apt:
+    packages:
+      - mingw-w64
+      - upx
+
+matrix:
+  include:
+    - env:
+      - TARGET=x86_64-unknown-linux-musl
+      - BIN_NAME=miniserve
+      - PROPER_NAME=miniserve-linux
+      os: linux
+    - env:
+      - TARGET=x86_64-pc-windows-gnu
+      - BIN_NAME=miniserve.exe
+      - PROPER_NAME=miniserve-win.exe
+      - RUSTFLAGS="-C linker=x86_64-w64-mingw32-gcc"
+      os: linux
+    - env:
+      - TARGET=x86_64-apple-darwin
+      - BIN_NAME=miniserve
+      - PROPER_NAME=miniserve-osx
+      os: osx
+
+before_install:
+  - rustup self update
+
+install:
+  # On Apple, the default target is already the right one.
+  - if [[ -n $TARGET && $TARGET != "x86_64-apple-darwin" ]]; then rustup target add $TARGET; fi
+
+script:
+  # If this is a normal, non-deployment build...
+  - if [[ -z $TARGET ]]; then cargo build --verbose; fi
+  - if [[ -n $TARGET ]]; then cargo build --verbose --release --target $TARGET; fi
+
+before_deploy:
+  # If this is a binary deployment...
+  - if [[ -n $TARGET ]]; then cp -a target/$TARGET/release/$BIN_NAME $PROPER_NAME && strip $PROPER_NAME; fi
+  - # Run upx on the binary if this is a deployment for Linux or Windows
+  - if [[ $TARGET = "x86_64-pc-windows-gnu" ]]; then upx $PROPER_NAME; fi
+  - if [[ $TARGET = "x86_64-unknown-linux-musl" ]]; then upx $PROPER_NAME; fi
+
+deploy:
+  - provider: releases
+    api_key:
+      secure: "n1OCiCjupkVieqsepGBOk6oxGcU89n9z0lQWWMAtBKREIEL1fnqt7A4z9FC1LV9UiAwvcvMHI8As5TA/7sV6jiWFuNOqu5HurX/n7cXlAuVWx00gCtWZ7Fh14ipVIDr2W52Mj/5qw1LSW19g8+9nLF1xO2YLrNpiaQX+V6Ypf04="
+    file: $PROPER_NAME
+    skip_cleanup: true
+    on:
+      branch: master
+      tags: true
+      condition: $TRAVIS_RUST_VERSION = stable && -n $TARGET
