@@ -5,10 +5,12 @@ extern crate simplelog;
 #[macro_use]
 extern crate clap;
 
-use actix_web::{server, App, fs, middleware, HttpRequest, Result};
+use actix_web::http::header;
+use actix_web::{server, App, fs, middleware, HttpRequest, HttpResponse, Result};
+use actix_web::middleware::{Middleware, Response};
 use simplelog::{TermLogger, LevelFilter, Config};
 use std::path::PathBuf;
-use std::net::IpAddr;
+use std::net::{IpAddr, Ipv4Addr};
 
 #[derive(Clone)]
 pub struct MiniserveConfig {
@@ -73,6 +75,16 @@ pub fn parse_args() -> MiniserveConfig {
                 .default_value("0.0.0.0")
                 .takes_value(true),
         )
+        .arg(
+            Arg::with_name("password")
+                .short("i")
+                .long("if")
+                .help("Interface to listen on")
+                .validator(is_valid_interface)
+                .required(false)
+                .default_value("0.0.0.0")
+                .takes_value(true),
+        )
         .get_matches();
 
     let verbose = matches.is_present("verbose");
@@ -110,6 +122,15 @@ fn configure_app(app: App<MiniserveConfig>) -> App<MiniserveConfig> {
     }
 }
 
+struct Auth;
+
+impl<S> Middleware<S> for Auth {
+    fn response(&self, req: &mut HttpRequest<S>, mut resp: HttpResponse) -> Result<Response> {
+        resp.headers_mut().insert(header::WWW_AUTHENTICATE, header::HeaderValue::from_static("Basic realm=\"lol\""));
+        Ok(Response::Done(resp))
+    }
+}
+
 fn main() {
     let miniserve_config = parse_args();
 
@@ -121,11 +142,25 @@ fn main() {
     let inside_config = miniserve_config.clone();
 	server::new(
 		move || App::with_state(inside_config.clone())
+            .middleware(Auth)
             .middleware(middleware::Logger::default())
             .configure(configure_app))
 		.bind(format!("{}:{}", &miniserve_config.interface, miniserve_config.port)).expect("Couldn't bind server")
-		.shutdown_timeout(1)
+		.shutdown_timeout(0)
 		.start();
+
+    // If the interface is 0.0.0.0, we'll change it to localhost so that clicking the link will
+    // also work on Windows. Why can't Windows interpret 0.0.0.0?
+    let interface =  if miniserve_config.interface == IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)) {
+        String::from("localhost")
+    } else {
+        format!("{}", miniserve_config.interface)
+    };
+
+    let canon_path = miniserve_config.path.canonicalize().unwrap();
+    println!("miniserve is serving your files at http://{interface}:{port}", interface=interface, port=miniserve_config.port);
+    println!("Currently serving path {path}", path=canon_path.to_string_lossy());
+    println!("Quit by pressing CTRL-C");
 
 	let _ = sys.run();
 }

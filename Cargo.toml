@@ -14,16 +14,7 @@ travis-ci = { repository = "svenstaro/miniserve", branch = "master" }
 maintenance = { status = "actively-developed" }
 
 [dependencies]
-pbr = "1.0"
-yansi = "0.4"
-rand = "0.4"
-chrono = "0.4"
-url = "1.6"
-lazy_static = "1.0"
-humantime = "1.1"
-regex = "0.2.5"
 clap = "2.29"
-ctrlc = "3.1"
 actix = "0.5"
-actix-web = { git = "https://github.com/actix/actix-web.git" }
+actix-web = { git = "https://github.com/svenstaro/actix-web.git" }
 simplelog = "0.5"
