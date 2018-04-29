@@ -18,3 +18,4 @@ clap = "2.29"
 actix = "0.5"
 actix-web = { git = "https://github.com/actix/actix-web.git" }
 simplelog = "0.5"
+base64 = "0.9"
