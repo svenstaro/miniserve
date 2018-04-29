@@ -1,6 +1,7 @@
 extern crate actix;
 extern crate actix_web;
 extern crate simplelog;
+extern crate base64;
 
 #[macro_use]
 extern crate clap;
@@ -11,6 +12,19 @@ use actix_web::middleware::{Middleware, Response};
 use simplelog::{TermLogger, LevelFilter, Config};
 use std::path::PathBuf;
 use std::net::{IpAddr, Ipv4Addr};
+use std::error::Error;
+
+/// Decode a HTTP basic auth string into a tuple of username and password.
+fn parse_basic_auth(auth: String) -> Result<(String, String), String> {
+    let decoded = base64::decode(&auth).map_err(|e| e.description().to_owned())?;
+    let decoded_str = String::from_utf8_lossy(&decoded);
+    let strings: Vec<&str> = decoded_str.splitn(2, ':').collect();
+    if strings.len() != 2 {
+        return Err("Invalid username/password format".to_owned());
+    }
+    let (user, password) = (strings[0], strings[1]);
+    Ok((user.to_owned(), password.to_owned()))
+}
 
 #[derive(Clone)]
 pub struct MiniserveConfig {
@@ -38,7 +52,7 @@ fn is_valid_interface(interface: String) -> Result<(), String> {
 }
 
 fn is_valid_auth(auth: String) -> Result<(), String> {
-    auth.find(':').ok_or("Auth is not in form user:password".to_owned()).map(|_| ())
+    auth.find(':').ok_or("Correct format is user:password".to_owned()).map(|_| ())
 }
 
 pub fn parse_args() -> MiniserveConfig {
@@ -131,9 +145,10 @@ struct Auth;
 
 impl Middleware<MiniserveConfig> for Auth {
     fn response(&self, req: &mut HttpRequest<MiniserveConfig>, mut resp: HttpResponse) -> Result<Response> {
-        let passphrase = &req.state().auth;
-        if passphrase.is_some() {
-            println!("{:?}", passphrase);
+        let required_auth = &req.state().auth;
+        if required_auth.is_some() {
+            // parse_basic_auth(pass)
+            println!("{:?}", required_auth);
             println!("{:?}", req.headers().get(header::AUTHORIZATION));
         }
         resp.headers_mut().insert(header::WWW_AUTHENTICATE, header::HeaderValue::from_static("Basic realm=\"lol\""));
