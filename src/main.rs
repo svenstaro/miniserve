@@ -5,7 +5,7 @@ extern crate simplelog;
 #[macro_use]
 extern crate clap;
 
-use actix_web::http::header;
+use actix_web::http::{StatusCode, header};
 use actix_web::{server, App, fs, middleware, HttpRequest, HttpResponse, Result};
 use actix_web::middleware::{Middleware, Response};
 use simplelog::{TermLogger, LevelFilter, Config};
@@ -18,6 +18,7 @@ pub struct MiniserveConfig {
     path: std::path::PathBuf,
     port: u16,
     interface: IpAddr,
+    auth: Option<String>,
 }
 
 fn is_valid_path(path: String) -> Result<(), String> {
@@ -76,13 +77,10 @@ pub fn parse_args() -> MiniserveConfig {
                 .takes_value(true),
         )
         .arg(
-            Arg::with_name("password")
-                .short("i")
-                .long("if")
-                .help("Interface to listen on")
-                .validator(is_valid_interface)
-                .required(false)
-                .default_value("0.0.0.0")
+            Arg::with_name("auth")
+                .short("a")
+                .long("auth")
+                .help("Set a password")
                 .takes_value(true),
         )
         .get_matches();
@@ -91,12 +89,14 @@ pub fn parse_args() -> MiniserveConfig {
     let path = matches.value_of("PATH").unwrap();
     let port = matches.value_of("port").unwrap().parse().unwrap();
     let interface = matches.value_of("interface").unwrap().parse().unwrap();
+    let auth = matches.value_of("auth").map(|a| a.to_owned());
 
     MiniserveConfig {
         verbose,
         path: PathBuf::from(path),
         port,
         interface,
+        auth,
     }
 }
 
@@ -126,7 +126,14 @@ struct Auth;
 
 impl<S> Middleware<S> for Auth {
     fn response(&self, req: &mut HttpRequest<S>, mut resp: HttpResponse) -> Result<Response> {
+        let passphrase: MiniserveConfig = *req.state();
+        // let passphrase = req.state().auth;
+        if passphrase.is_some() {
+            println!("{}", passphrase.unwrap());
+            println!("{}", req.headers_mut()[header::AUTHORIZATION].to_str().unwrap());
+        }
         resp.headers_mut().insert(header::WWW_AUTHENTICATE, header::HeaderValue::from_static("Basic realm=\"lol\""));
+        *resp.status_mut() = StatusCode::UNAUTHORIZED;
         Ok(Response::Done(resp))
     }
 }
