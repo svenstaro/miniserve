@@ -16,5 +16,5 @@ maintenance = { status = "actively-developed" }
 [dependencies]
 clap = "2.29"
 actix = "0.5"
-actix-web = { git = "https://github.com/svenstaro/actix-web.git" }
+actix-web = { git = "https://github.com/actix/actix-web.git" }
 simplelog = "0.5"
