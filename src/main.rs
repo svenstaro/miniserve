@@ -162,7 +162,7 @@ struct Auth;
 
 impl Middleware<MiniserveConfig> for Auth {
     fn response(&self, req: &mut HttpRequest<MiniserveConfig>, resp: HttpResponse) -> Result<Response> {
-        if let Some(required_auth) = &req.state().auth {
+        if let &Some(ref required_auth) = &req.state().auth {
             if let Some(auth_headers) = req.headers().get(header::AUTHORIZATION) {
                 let auth_req = match parse_basic_auth(auth_headers) {
                     Ok(auth_req) => auth_req,
