@@ -8,7 +8,7 @@
 [![dependency status](https://deps.rs/repo/github/svenstaro/miniserve/status.svg)](https://deps.rs/repo/github/svenstaro/miniserve)
 [![license](http://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/svenstaro/miniserve/blob/master/LICENSE)
 
-**miniserve** is a small, self-contained cross-platform CLI tool that allows you to just grab the binary and serve some file(s).
+**miniserve** is a small, self-contained cross-platform CLI tool that allows you to just grab the binary and serve some file(s) via HTTP.
 Sometimes this is just a more practical and quick way than doing things properly.
 
 ## How to use
