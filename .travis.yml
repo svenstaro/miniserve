@@ -58,7 +58,7 @@ before_deploy:
 deploy:
   - provider: releases
     api_key:
-      secure: "n1OCiCjupkVieqsepGBOk6oxGcU89n9z0lQWWMAtBKREIEL1fnqt7A4z9FC1LV9UiAwvcvMHI8As5TA/7sV6jiWFuNOqu5HurX/n7cXlAuVWx00gCtWZ7Fh14ipVIDr2W52Mj/5qw1LSW19g8+9nLF1xO2YLrNpiaQX+V6Ypf04="
+      secure: "3lixPJV+e4/iAPKh0nwi6sPxO9OAO3y6h0+lreoi18hj9p8b7uoOXlYFG910BkVi15oCevPvXFDZ/pObqmCfWGX6Ahc5Lh/HTvIZH95kSAYlw/AUhBSKLohT/QXwmzUwaAwffQ0iIagrrBDb8BwMBkzqDmWAM1zuF+fMMfZ+iWB3yUN+QvzU6jYR9msfJSL2tNtgV1eFh7N+Xj277dMkZgkNgea3WwYL/USqaUDIsK5irBszETeg+n6yz2ERsp6SRpJrpZEhDqLaAQfu3pSoyNVP77vQb+q2MixZbYS3Zdq4w3p0LR9qAjFd8Ts38/ki/gGIEdmcO7FT6P1VUFzr+iW9nK49/rbYgw+TMWW+/pQJF6C7I89szsp5m4MUPnxesu/9NVyxrsYPuevgGh5IoB29eYBMoFETEK0XabCD/BAXnHvBbJxAOsZttU0MtjJWa0EelUSkZjaODEZVfGr7Z9I/Ji765QeFLJ4FDovJB056IOIhbAgIcqi9ItanJxsrLTI29BNB/zaMn+WY0s8HvLPanHaEKXg6cuhm8ptvM9nUlcDEx7zpirNV/OHP5/QRasMCpMHE20U7aRakKK+fpCskC78kjeU2fq7iZZp8fv2yocOqeWpX//clYhtuWs878I3MGkjpSxgI2I6nLisx+r/bWJvg1DZf7txW/CYyWIY="
     file: $PROPER_NAME
     skip_cleanup: true
     on:
