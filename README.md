@@ -1,4 +1,4 @@
-# miniserve - CLI tool to serve files and dirs over HTTP
+# miniserve - a self-contained CLI tool to serve files and dirs over HTTP
 
 **For when you really just want to serve some files over HTTP right now!**
 
@@ -7,6 +7,9 @@
 [![Crates.io](https://img.shields.io/crates/v/miniserve.svg)](https://crates.io/crates/miniserve)
 [![dependency status](https://deps.rs/repo/github/svenstaro/miniserve/status.svg)](https://deps.rs/repo/github/svenstaro/miniserve)
 [![license](http://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/svenstaro/miniserve/blob/master/LICENSE)
+
+**miniserve** is a small, self-contained cross-platform CLI tool that allows you to just grab the binary and serve some file(s).
+Sometimes this is just a more practical and quick way than doing things properly.
 
 ## How to use
 
@@ -42,7 +45,9 @@
     chmod +x miniserve-osx
     ./miniserve-osx
 
-**On Windows**: Download `miniserve-win.exe` from [the releases page](https://github.com/svenstaro/miniserve/releases) and double click it.
+**On Windows**: Download `miniserve-win.exe` from [the releases page](https://github.com/svenstaro/miniserve/releases) and run
+
+    miniserve-win.exe
 
 **With Cargo**: If you have a somewhat recent version of Rust and Cargo installed, you can run
 
@@ -51,5 +56,5 @@
 
 ## Why to use this over alternatives?
 
-- darkhttpd: Not easily available on Windows and it's not as easy as download and go
-- Python built-in webserver: Need to have Python installed and it's low performance and also doesn't do correct MIME type handling in some cases
+- darkhttpd: Not easily available on Windows and it's not as easy as download and go.
+- Python built-in webserver: Need to have Python installed, it's low performance, and also doesn't do correct MIME type handling in some cases.
