@@ -16,6 +16,8 @@ addons:
       - musl-tools
 
 matrix:
+  allow_failures:
+    - rust: nightly
   include:
     - env:
       - TARGET=x86_64-unknown-linux-musl
