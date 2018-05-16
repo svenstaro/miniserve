@@ -54,7 +54,7 @@ Sometimes this is just a more practical and quick way than doing things properly
     cargo install miniserve
     miniserve
 
-## Why to use this over alternatives?
+## Why use this over alternatives?
 
 - darkhttpd: Not easily available on Windows and it's not as easy as download and go.
 - Python built-in webserver: Need to have Python installed, it's low performance, and also doesn't do correct MIME type handling in some cases.
