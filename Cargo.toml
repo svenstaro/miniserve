@@ -6,8 +6,8 @@ authors = ["Sven-Hendrik Haase <svenstaro@gmail.com>"]
 repository = "https://github.com/svenstaro/miniserve"
 license = "MIT"
 readme = "README.md"
-keywords = ["serve", "http-server", "static-files"]
-categories = ["command-line-utilities", "command-line-interface"]
+keywords = ["serve", "http-server", "static-files", "http", "server"]
+categories = ["command-line-utilities", "command-line-interface", "network-programming", "web-programming::http-server"]
 
 [badges]
 travis-ci = { repository = "svenstaro/miniserve", branch = "master" }
