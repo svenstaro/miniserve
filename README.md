@@ -1,4 +1,4 @@
-# miniserve - a self-contained CLI tool to serve files and dirs over HTTP
+# miniserve - a CLI tool to serve files and dirs over HTTP
 
 **For when you really just want to serve some files over HTTP right now!**
 
