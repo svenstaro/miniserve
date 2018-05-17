@@ -13,6 +13,9 @@ categories = ["command-line-utilities", "command-line-interface"]
 travis-ci = { repository = "svenstaro/miniserve", branch = "master" }
 maintenance = { status = "actively-developed" }
 
+[profile.release]
+lto = true
+
 [dependencies]
 clap = "2.29"
 actix = "0.5"
