@@ -1,8 +1,6 @@
 .PHONY: all
 local:
 	cargo build --release
-	strip target/release/miniserve
-	upx target/release/miniserve
 
 run:
 ifndef ARGS
