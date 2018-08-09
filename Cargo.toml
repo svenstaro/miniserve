@@ -18,7 +18,8 @@ lto = true
 
 [dependencies]
 clap = "2.29"
+yansi = "0.4"
 actix = "0.7"
-actix-web = "0.6"
+actix-web = "0.7"
 simplelog = "0.5"
 base64 = "0.9"
