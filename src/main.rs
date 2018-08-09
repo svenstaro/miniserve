@@ -257,8 +257,11 @@ fn main() {
     let canon_path = miniserve_config.path.canonicalize().unwrap();
     let path_string = canon_path.to_string_lossy();
 
+    println!("{name} v{version}",
+             name=Paint::new("miniserve").bold(),
+             version=crate_version!());
     if !miniserve_config.path_explicitly_chosen {
-        println!("{info} miniserve has been invoked without an explicit path so it will serve the current directory.", info=Paint::blue("Info:").bold());
+        println!("{info} miniserve has been invoked without an explicit path so it will serve the current directory.", info=Color::Blue.paint("Info:").bold());
         println!(
             "      Invoke with -h|--help to see options or invoke as `miniserve .` to hide this advice."
         );
@@ -271,7 +274,7 @@ fn main() {
         }
     }
     println!(
-        "miniserve is serving path {path} at {address}",
+        "Serving path {path} at {address}",
         path = Color::Yellow.paint(path_string).bold(),
         address = Color::Green
             .paint(format!(
