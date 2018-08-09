@@ -2,6 +2,7 @@ extern crate actix;
 extern crate actix_web;
 extern crate base64;
 extern crate simplelog;
+extern crate yansi;
 #[macro_use]
 extern crate clap;
 
@@ -9,8 +10,12 @@ use actix_web::http::header;
 use actix_web::middleware::{Middleware, Response};
 use actix_web::{fs, middleware, server, App, HttpMessage, HttpRequest, HttpResponse, Result};
 use simplelog::{Config, LevelFilter, TermLogger};
+use std::io::{self, Write};
 use std::net::{IpAddr, Ipv4Addr};
 use std::path::PathBuf;
+use std::thread;
+use std::time::Duration;
+use yansi::{Color, Paint};
 
 enum BasicAuthError {
     Base64DecodeError,
@@ -30,6 +35,7 @@ pub struct MiniserveConfig {
     port: u16,
     interface: IpAddr,
     auth: Option<BasicAuthParams>,
+    path_explicitly_chosen: bool,
 }
 
 /// Decode a HTTP basic auth string into a tuple of username and password.
@@ -90,14 +96,12 @@ pub fn parse_args() -> MiniserveConfig {
                 .short("v")
                 .long("verbose")
                 .help("Be verbose"),
-        )
-        .arg(
+        ).arg(
             Arg::with_name("PATH")
-                .required(true)
+                .required(false)
                 .validator(is_valid_path)
                 .help("Which path to serve"),
-        )
-        .arg(
+        ).arg(
             Arg::with_name("port")
                 .short("p")
                 .long("port")
@@ -106,8 +110,7 @@ pub fn parse_args() -> MiniserveConfig {
                 .required(false)
                 .default_value("8080")
                 .takes_value(true),
-        )
-        .arg(
+        ).arg(
             Arg::with_name("interface")
                 .short("i")
                 .long("if")
@@ -116,19 +119,17 @@ pub fn parse_args() -> MiniserveConfig {
                 .required(false)
                 .default_value("0.0.0.0")
                 .takes_value(true),
-        )
-        .arg(
+        ).arg(
             Arg::with_name("auth")
                 .short("a")
                 .long("auth")
                 .validator(is_valid_auth)
                 .help("Set authentication (username:password)")
                 .takes_value(true),
-        )
-        .get_matches();
+        ).get_matches();
 
     let verbose = matches.is_present("verbose");
-    let path = matches.value_of("PATH").unwrap();
+    let path = matches.value_of("PATH");
     let port = matches.value_of("port").unwrap().parse().unwrap();
     let interface = matches.value_of("interface").unwrap().parse().unwrap();
     let auth = if let Some(auth_split) = matches.value_of("auth").map(|x| x.splitn(2, ':')) {
@@ -147,14 +148,15 @@ pub fn parse_args() -> MiniserveConfig {
 
     MiniserveConfig {
         verbose,
-        path: PathBuf::from(path),
+        path: PathBuf::from(path.unwrap_or(".")),
         port,
         interface,
         auth,
+        path_explicitly_chosen: path.is_some(),
     }
 }
 
-fn file_handler(req: HttpRequest<MiniserveConfig>) -> Result<fs::NamedFile> {
+fn file_handler(req: &HttpRequest<MiniserveConfig>) -> Result<fs::NamedFile> {
     let path = &req.state().path;
     Ok(fs::NamedFile::open(path)?)
 }
@@ -165,7 +167,11 @@ fn configure_app(app: App<MiniserveConfig>) -> App<MiniserveConfig> {
         if path.is_file() {
             None
         } else {
-            Some(fs::StaticFiles::new(path).show_files_listing())
+            Some(
+                fs::StaticFiles::new(path)
+                    .expect("Couldn't create path")
+                    .show_files_listing(),
+            )
         }
     };
 
@@ -179,11 +185,7 @@ fn configure_app(app: App<MiniserveConfig>) -> App<MiniserveConfig> {
 struct Auth;
 
 impl Middleware<MiniserveConfig> for Auth {
-    fn response(
-        &self,
-        req: &mut HttpRequest<MiniserveConfig>,
-        resp: HttpResponse,
-    ) -> Result<Response> {
+    fn response(&self, req: &HttpRequest<MiniserveConfig>, resp: HttpResponse) -> Result<Response> {
         if let Some(ref required_auth) = req.state().auth {
             if let Some(auth_headers) = req.headers().get(header::AUTHORIZATION) {
                 let auth_req = match parse_basic_auth(auth_headers) {
@@ -211,8 +213,7 @@ impl Middleware<MiniserveConfig> for Auth {
                     .header(
                         header::WWW_AUTHENTICATE,
                         header::HeaderValue::from_static("Basic realm=\"miniserve\""),
-                    )
-                    .finish();
+                    ).finish();
                 return Ok(Response::Done(new_resp));
             }
         }
@@ -221,6 +222,10 @@ impl Middleware<MiniserveConfig> for Auth {
 }
 
 fn main() {
+    if cfg!(windows) && !Paint::enable_windows_ascii() {
+        Paint::disable();
+    }
+
     let miniserve_config = parse_args();
 
     if miniserve_config.verbose {
@@ -237,10 +242,9 @@ fn main() {
     }).bind(format!(
         "{}:{}",
         &miniserve_config.interface, miniserve_config.port
-    ))
-        .expect("Couldn't bind server")
-        .shutdown_timeout(0)
-        .start();
+    )).expect("Couldn't bind server")
+    .shutdown_timeout(0)
+    .start();
 
     // If the interface is 0.0.0.0, we'll change it to localhost so that clicking the link will
     // also work on Windows. Why can't Windows interpret 0.0.0.0?
@@ -251,14 +255,30 @@ fn main() {
     };
 
     let canon_path = miniserve_config.path.canonicalize().unwrap();
+    let path_string = canon_path.to_string_lossy();
+
+    if !miniserve_config.path_explicitly_chosen {
+        println!("{info} miniserve has been invoked without an explicit path so it will serve the current directory.", info=Paint::blue("Info:").bold());
+        println!(
+            "      Invoke with -h|--help to see options or invoke as `miniserve .` to hide this advice."
+        );
+        print!("Starting server in ");
+        io::stdout().flush().unwrap();
+        for c in "3… 2… 1… \n".chars() {
+            print!("{}", c);
+            io::stdout().flush().unwrap();
+            thread::sleep(Duration::from_millis(500));
+        }
+    }
     println!(
-        "miniserve is serving your files at http://{interface}:{port}",
-        interface = interface,
-        port = miniserve_config.port
-    );
-    println!(
-        "Currently serving path {path}",
-        path = canon_path.to_string_lossy()
+        "miniserve is serving path {path} at {address}",
+        path = Color::Yellow.paint(path_string).bold(),
+        address = Color::Green
+            .paint(format!(
+                "http://{interface}:{port}",
+                interface = interface,
+                port = miniserve_config.port
+            )).bold()
     );
     println!("Quit by pressing CTRL-C");
 
