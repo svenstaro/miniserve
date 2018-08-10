@@ -25,6 +25,10 @@ Sometimes this is just a more practical and quick way than doing things properly
 
     miniserve --auth joe:123 unreleased-linux-distros/
 
+### Bind to multiple interfaces:
+
+    miniserve -i 192.168.0.1 -i 10.13.37.10 -i ::1 -- /tmp/myshare
+
 ## Features
 
 - Easy to use
@@ -53,6 +57,14 @@ Sometimes this is just a more practical and quick way than doing things properly
 
     cargo install miniserve
     miniserve
+
+## Binding behavior
+
+For convenience reasons, miniserve will try to bind on all interfaces by default (if no `-i` is provided).
+It will also do that if explicitly provided with `-i 0.0.0.0` or `-i ::`.
+In all of the aforementioned cases, it will bind on both IPv4 and IPv6.
+If provided with an explicit non-default interface, it will ONLY bind to that interface.
+You can provide `-i` multiple times to bind to multiple interfaces at the same time.
 
 ## Why use this over alternatives?
 
