@@ -1,7 +1,8 @@
-.PHONY: all
+.PHONY: local
 local:
 	cargo build --release
 
+.PHONY: run
 run:
 ifndef ARGS
 	@echo Run "make run" with ARGS set to pass arguments…
