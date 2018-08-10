@@ -11,7 +11,7 @@ use actix_web::middleware::{Middleware, Response};
 use actix_web::{fs, middleware, server, App, HttpMessage, HttpRequest, HttpResponse, Result};
 use simplelog::{Config, LevelFilter, TermLogger};
 use std::io::{self, Write};
-use std::net::{IpAddr, Ipv4Addr};
+use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, ToSocketAddrs};
 use std::path::PathBuf;
 use std::thread;
 use std::time::Duration;
@@ -33,7 +33,7 @@ pub struct MiniserveConfig {
     verbose: bool,
     path: std::path::PathBuf,
     port: u16,
-    interface: IpAddr,
+    interfaces: Vec<IpAddr>,
     auth: Option<BasicAuthParams>,
     path_explicitly_chosen: bool,
 }
@@ -80,7 +80,7 @@ fn is_valid_interface(interface: String) -> Result<(), String> {
 
 fn is_valid_auth(auth: String) -> Result<(), String> {
     auth.find(':')
-        .ok_or("Correct format is username:password".to_owned())
+        .ok_or_else(|| "Correct format is username:password".to_owned())
         .map(|_| ())
 }
 
@@ -111,14 +111,14 @@ pub fn parse_args() -> MiniserveConfig {
                 .default_value("8080")
                 .takes_value(true),
         ).arg(
-            Arg::with_name("interface")
+            Arg::with_name("interfaces")
                 .short("i")
                 .long("if")
                 .help("Interface to listen on")
                 .validator(is_valid_interface)
                 .required(false)
-                .default_value("0.0.0.0")
-                .takes_value(true),
+                .takes_value(true)
+                .multiple(true),
         ).arg(
             Arg::with_name("auth")
                 .short("a")
@@ -131,7 +131,14 @@ pub fn parse_args() -> MiniserveConfig {
     let verbose = matches.is_present("verbose");
     let path = matches.value_of("PATH");
     let port = matches.value_of("port").unwrap().parse().unwrap();
-    let interface = matches.value_of("interface").unwrap().parse().unwrap();
+    let interfaces = if let Some(interfaces) = matches.values_of("interfaces") {
+        interfaces.map(|x| x.parse().unwrap()).collect()
+    } else {
+        vec![
+            IpAddr::V6(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0)),
+            IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)),
+        ]
+    };
     let auth = if let Some(auth_split) = matches.value_of("auth").map(|x| x.splitn(2, ':')) {
         let auth_vec = auth_split.collect::<Vec<&str>>();
         if auth_vec.len() == 2 {
@@ -150,7 +157,7 @@ pub fn parse_args() -> MiniserveConfig {
         verbose,
         path: PathBuf::from(path.unwrap_or(".")),
         port,
-        interface,
+        interfaces,
         auth,
         path_explicitly_chosen: path.is_some(),
     }
@@ -239,27 +246,46 @@ fn main() {
             .middleware(Auth)
             .middleware(middleware::Logger::default())
             .configure(configure_app)
-    }).bind(format!(
-        "{}:{}",
-        &miniserve_config.interface, miniserve_config.port
-    )).expect("Couldn't bind server")
+    }).bind(
+        miniserve_config
+            .interfaces
+            .iter()
+            .map(|interface| {
+                format!(
+                    "{interface}:{port}",
+                    interface = &interface,
+                    port = miniserve_config.port,
+                ).to_socket_addrs()
+                .unwrap()
+                .next()
+                .unwrap()
+            }).collect::<Vec<SocketAddr>>()
+            .as_slice(),
+    ).expect("Couldn't bind server")
     .shutdown_timeout(0)
     .start();
 
-    // If the interface is 0.0.0.0, we'll change it to localhost so that clicking the link will
-    // also work on Windows. Why can't Windows interpret 0.0.0.0?
-    let interface = if miniserve_config.interface == IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)) {
-        String::from("localhost")
-    } else {
-        format!("{}", miniserve_config.interface)
-    };
+    let interfaces = miniserve_config.interfaces.iter().map(|&interface| {
+        if interface == IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)) {
+            // If the interface is 0.0.0.0, we'll change it to localhost so that clicking the link will
+            // also work on Windows. Why can't Windows interpret 0.0.0.0?
+            String::from("localhost")
+        } else if interface.is_ipv6() {
+            // If the interface is IPv6 then we'll print it with brackets so that it is clickable.
+            format!("[{}]", interface)
+        } else {
+            format!("{}", interface)
+        }
+    });
 
     let canon_path = miniserve_config.path.canonicalize().unwrap();
     let path_string = canon_path.to_string_lossy();
 
-    println!("{name} v{version}",
-             name=Paint::new("miniserve").bold(),
-             version=crate_version!());
+    println!(
+        "{name} v{version}",
+        name = Paint::new("miniserve").bold(),
+        version = crate_version!()
+    );
     if !miniserve_config.path_explicitly_chosen {
         println!("{info} miniserve has been invoked without an explicit path so it will serve the current directory.", info=Color::Blue.paint("Info:").bold());
         println!(
@@ -273,15 +299,25 @@ fn main() {
             thread::sleep(Duration::from_millis(500));
         }
     }
+    let mut addresses = String::new();
+    for interface in interfaces {
+        if !addresses.is_empty() {
+            addresses.push_str(", ");
+        }
+        addresses.push_str(&format!(
+            "{}",
+            Color::Green
+                .paint(format!(
+                    "http://{interface}:{port}",
+                    interface = interface,
+                    port = miniserve_config.port
+                )).bold()
+        ));
+    }
     println!(
-        "Serving path {path} at {address}",
+        "Serving path {path} at {addresses}",
         path = Color::Yellow.paint(path_string).bold(),
-        address = Color::Green
-            .paint(format!(
-                "http://{interface}:{port}",
-                interface = interface,
-                port = miniserve_config.port
-            )).bold()
+        addresses = addresses,
     );
     println!("Quit by pressing CTRL-C");
 
