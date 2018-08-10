@@ -1,3 +1,14 @@
+.PHONY: local
+local:
+	cargo build --release
+
+.PHONY: run
+run:
+ifndef ARGS
+	@echo Run "make run" with ARGS set to pass arguments…
+endif
+	cargo run --release -- $(ARGS)
+
 .PHONY: build-linux
 build-linux:
 	cargo build --target x86_64-unknown-linux-musl --release
