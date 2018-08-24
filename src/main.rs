@@ -95,7 +95,7 @@ pub fn parse_args() -> MiniserveConfig {
             Arg::with_name("verbose")
                 .short("v")
                 .long("verbose")
-                .help("Be verbose"),
+                .help("Be verbose, includes emitting access logs"),
         ).arg(
             Arg::with_name("PATH")
                 .required(false)
