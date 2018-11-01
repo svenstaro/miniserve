@@ -85,12 +85,13 @@ fn is_valid_auth(auth: String) -> Result<(), String> {
 }
 
 pub fn parse_args() -> MiniserveConfig {
-    use clap::{App, Arg};
+    use clap::{App, Arg, AppSettings};
 
     let matches = App::new(crate_name!())
         .version(crate_version!())
         .author(crate_authors!())
         .about(crate_description!())
+        .global_setting(AppSettings::ColoredHelp)
         .arg(
             Arg::with_name("verbose")
                 .short("v")
