@@ -189,15 +189,13 @@ fn configure_app(app: App<MiniserveConfig>) -> App<MiniserveConfig> {
         if path.is_file() {
             None
         } else {
-            let res = fs::StaticFiles::new(path)
-                .expect("Couldn't create path")
-                .show_files_listing();
             Some(
-                if no_symlinks {
-                    res.files_listing_renderer(no_symlink_directory_listing)
-                } else {
-                    res
-                }
+                fs::StaticFiles::new(path)
+                    .expect("Couldn't create path")
+                    .show_files_listing()
+                    .files_listing_renderer(move |dir, req| {
+                        directory_listing(dir, req, no_symlinks)
+                    }),
             )
         }
     };
@@ -358,9 +356,10 @@ fn main() {
 }
 
 // ↓ Adapted from https://docs.rs/actix-web/0.7.13/src/actix_web/fs.rs.html#564
-fn no_symlink_directory_listing<S>(
+fn directory_listing<S>(
     dir: &fs::Directory,
     req: &HttpRequest<S>,
+    skip_symlinks: bool,
 ) -> Result<HttpResponse, io::Error> {
     let index_of = format!("Index of {}", req.path());
     let mut body = String::new();
@@ -381,7 +380,7 @@ fn no_symlink_directory_listing<S>(
 
             // if file is a directory, add '/' to the end of the name
             if let Ok(metadata) = entry.metadata() {
-                if metadata.file_type().is_symlink() {
+                if skip_symlinks && metadata.file_type().is_symlink() {
                     continue;
                 }
                 if metadata.is_dir() {
