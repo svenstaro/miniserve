@@ -1,6 +1,8 @@
 extern crate actix;
 extern crate actix_web;
 extern crate base64;
+extern crate htmlescape;
+extern crate percent_encoding;
 extern crate simplelog;
 extern crate yansi;
 #[macro_use]
@@ -9,10 +11,13 @@ extern crate clap;
 use actix_web::http::header;
 use actix_web::middleware::{Middleware, Response};
 use actix_web::{fs, middleware, server, App, HttpMessage, HttpRequest, HttpResponse, Result};
+use htmlescape::encode_minimal as escape_html_entity;
+use percent_encoding::{utf8_percent_encode, DEFAULT_ENCODE_SET};
 use simplelog::{Config, LevelFilter, TermLogger};
+use std::fmt::Write as FmtWrite;
 use std::io::{self, Write};
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, ToSocketAddrs};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::thread;
 use std::time::Duration;
 use yansi::{Color, Paint};
@@ -36,6 +41,7 @@ pub struct MiniserveConfig {
     interfaces: Vec<IpAddr>,
     auth: Option<BasicAuthParams>,
     path_explicitly_chosen: bool,
+    no_symlinks: bool,
 }
 
 /// Decode a HTTP basic auth string into a tuple of username and password.
@@ -85,7 +91,7 @@ fn is_valid_auth(auth: String) -> Result<(), String> {
 }
 
 pub fn parse_args() -> MiniserveConfig {
-    use clap::{App, Arg, AppSettings};
+    use clap::{App, AppSettings, Arg};
 
     let matches = App::new(crate_name!())
         .version(crate_version!())
@@ -127,9 +133,15 @@ pub fn parse_args() -> MiniserveConfig {
                 .validator(is_valid_auth)
                 .help("Set authentication (username:password)")
                 .takes_value(true),
+        ).arg(
+            Arg::with_name("no-symlinks")
+                .short("P")
+                .long("no-symlinks")
+                .help("Do not follow symbolic symbolic links"),
         ).get_matches();
 
     let verbose = matches.is_present("verbose");
+    let no_symlinks = matches.is_present("no-symlinks");
     let path = matches.value_of("PATH");
     let port = matches.value_of("port").unwrap().parse().unwrap();
     let interfaces = if let Some(interfaces) = matches.values_of("interfaces") {
@@ -161,6 +173,7 @@ pub fn parse_args() -> MiniserveConfig {
         interfaces,
         auth,
         path_explicitly_chosen: path.is_some(),
+        no_symlinks,
     }
 }
 
@@ -172,13 +185,19 @@ fn file_handler(req: &HttpRequest<MiniserveConfig>) -> Result<fs::NamedFile> {
 fn configure_app(app: App<MiniserveConfig>) -> App<MiniserveConfig> {
     let s = {
         let path = &app.state().path;
+        let no_symlinks = app.state().no_symlinks;
         if path.is_file() {
             None
         } else {
+            let res = fs::StaticFiles::new(path)
+                .expect("Couldn't create path")
+                .show_files_listing();
             Some(
-                fs::StaticFiles::new(path)
-                    .expect("Couldn't create path")
-                    .show_files_listing(),
+                if no_symlinks {
+                    res.files_listing_renderer(no_symlink_directory_listing)
+                } else {
+                    res
+                }
             )
         }
     };
@@ -235,6 +254,19 @@ fn main() {
     }
 
     let miniserve_config = parse_args();
+    if miniserve_config.no_symlinks && miniserve_config
+        .path
+        .symlink_metadata()
+        .expect("Can't get file metadata")
+        .file_type()
+        .is_symlink()
+    {
+        println!(
+            "{error} The no-symlinks option cannot be used with a symlink path",
+            error = Paint::red("error:").bold(),
+        );
+        return;
+    }
 
     if miniserve_config.verbose {
         let _ = TermLogger::init(LevelFilter::Info, Config::default());
@@ -323,4 +355,56 @@ fn main() {
     println!("Quit by pressing CTRL-C");
 
     let _ = sys.run();
+}
+
+// ↓ Adapted from https://docs.rs/actix-web/0.7.13/src/actix_web/fs.rs.html#564
+fn no_symlink_directory_listing<S>(
+    dir: &fs::Directory,
+    req: &HttpRequest<S>,
+) -> Result<HttpResponse, io::Error> {
+    let index_of = format!("Index of {}", req.path());
+    let mut body = String::new();
+    let base = Path::new(req.path());
+
+    for entry in dir.path.read_dir()? {
+        if dir.is_visible(&entry) {
+            let entry = entry.unwrap();
+            let p = match entry.path().strip_prefix(&dir.path) {
+                Ok(p) => base.join(p),
+                Err(_) => continue,
+            };
+            // show file url as relative to static path
+            let file_url =
+                utf8_percent_encode(&p.to_string_lossy(), DEFAULT_ENCODE_SET).to_string();
+            // " -- &quot;  & -- &amp;  ' -- &#x27;  < -- &lt;  > -- &gt;
+            let file_name = escape_html_entity(&entry.file_name().to_string_lossy());
+
+            // if file is a directory, add '/' to the end of the name
+            if let Ok(metadata) = entry.metadata() {
+                if metadata.file_type().is_symlink() {
+                    continue;
+                }
+                if metadata.is_dir() {
+                    let _ = write!(body, "<li><a href=\"{}\">{}/</a></li>", file_url, file_name);
+                } else {
+                    let _ = write!(body, "<li><a href=\"{}\">{}</a></li>", file_url, file_name);
+                }
+            } else {
+                continue;
+            }
+        }
+    }
+
+    let html = format!(
+        "<html>\
+         <head><title>{}</title></head>\
+         <body><h1>{}</h1>\
+         <ul>\
+         {}\
+         </ul></body>\n</html>",
+        index_of, index_of, body
+    );
+    Ok(HttpResponse::Ok()
+        .content_type("text/html; charset=utf-8")
+        .body(html))
 }
