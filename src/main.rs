@@ -137,7 +137,7 @@ pub fn parse_args() -> MiniserveConfig {
             Arg::with_name("no-symlinks")
                 .short("P")
                 .long("no-symlinks")
-                .help("Do not follow symbolic symbolic links"),
+                .help("Do not follow symbolic links"),
         ).get_matches();
 
     let verbose = matches.is_present("verbose");
