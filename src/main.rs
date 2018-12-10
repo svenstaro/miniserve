@@ -1,16 +1,7 @@
-extern crate actix;
-extern crate actix_web;
-extern crate base64;
-extern crate htmlescape;
-extern crate percent_encoding;
-extern crate simplelog;
-extern crate yansi;
-#[macro_use]
-extern crate clap;
-
 use actix_web::http::header;
 use actix_web::middleware::{Middleware, Response};
 use actix_web::{fs, middleware, server, App, HttpMessage, HttpRequest, HttpResponse, Result};
+use clap::{crate_authors, crate_description, crate_name, crate_version};
 use htmlescape::encode_minimal as escape_html_entity;
 use percent_encoding::{utf8_percent_encode, DEFAULT_ENCODE_SET};
 use simplelog::{Config, LevelFilter, TermLogger};
