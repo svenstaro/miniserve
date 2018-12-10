@@ -94,12 +94,14 @@ pub fn parse_args() -> MiniserveConfig {
                 .short("v")
                 .long("verbose")
                 .help("Be verbose, includes emitting access logs"),
-        ).arg(
+        )
+        .arg(
             Arg::with_name("PATH")
                 .required(false)
                 .validator(is_valid_path)
                 .help("Which path to serve"),
-        ).arg(
+        )
+        .arg(
             Arg::with_name("port")
                 .short("p")
                 .long("port")
@@ -108,7 +110,8 @@ pub fn parse_args() -> MiniserveConfig {
                 .required(false)
                 .default_value("8080")
                 .takes_value(true),
-        ).arg(
+        )
+        .arg(
             Arg::with_name("interfaces")
                 .short("i")
                 .long("if")
@@ -117,19 +120,22 @@ pub fn parse_args() -> MiniserveConfig {
                 .required(false)
                 .takes_value(true)
                 .multiple(true),
-        ).arg(
+        )
+        .arg(
             Arg::with_name("auth")
                 .short("a")
                 .long("auth")
                 .validator(is_valid_auth)
                 .help("Set authentication (username:password)")
                 .takes_value(true),
-        ).arg(
+        )
+        .arg(
             Arg::with_name("no-symlinks")
                 .short("P")
                 .long("no-symlinks")
                 .help("Do not follow symbolic links"),
-        ).get_matches();
+        )
+        .get_matches();
 
     let verbose = matches.is_present("verbose");
     let no_symlinks = matches.is_present("no-symlinks");
@@ -210,12 +216,12 @@ impl Middleware<MiniserveConfig> for Auth {
                         return Ok(Response::Done(HttpResponse::BadRequest().body(format!(
                             "Error decoding basic auth base64: '{}'",
                             auth_headers.to_str().unwrap()
-                        ))))
+                        ))));
                     }
                     Err(BasicAuthError::InvalidUsernameFormat) => {
                         return Ok(Response::Done(
                             HttpResponse::BadRequest().body("Invalid basic auth format"),
-                        ))
+                        ));
                     }
                 };
                 if auth_req.username != required_auth.username
@@ -229,7 +235,8 @@ impl Middleware<MiniserveConfig> for Auth {
                     .header(
                         header::WWW_AUTHENTICATE,
                         header::HeaderValue::from_static("Basic realm=\"miniserve\""),
-                    ).finish();
+                    )
+                    .finish();
                 return Ok(Response::Done(new_resp));
             }
         }
@@ -243,12 +250,13 @@ fn main() {
     }
 
     let miniserve_config = parse_args();
-    if miniserve_config.no_symlinks && miniserve_config
-        .path
-        .symlink_metadata()
-        .expect("Can't get file metadata")
-        .file_type()
-        .is_symlink()
+    if miniserve_config.no_symlinks
+        && miniserve_config
+            .path
+            .symlink_metadata()
+            .expect("Can't get file metadata")
+            .file_type()
+            .is_symlink()
     {
         println!(
             "{error} The no-symlinks option cannot be used with a symlink path",
@@ -268,7 +276,8 @@ fn main() {
             .middleware(Auth)
             .middleware(middleware::Logger::default())
             .configure(configure_app)
-    }).bind(
+    })
+    .bind(
         miniserve_config
             .interfaces
             .iter()
@@ -277,13 +286,16 @@ fn main() {
                     "{interface}:{port}",
                     interface = &interface,
                     port = miniserve_config.port,
-                ).to_socket_addrs()
+                )
+                .to_socket_addrs()
                 .unwrap()
                 .next()
                 .unwrap()
-            }).collect::<Vec<SocketAddr>>()
+            })
+            .collect::<Vec<SocketAddr>>()
             .as_slice(),
-    ).expect("Couldn't bind server")
+    )
+    .expect("Couldn't bind server")
     .shutdown_timeout(0)
     .start();
 
@@ -333,7 +345,8 @@ fn main() {
                     "http://{interface}:{port}",
                     interface = interface,
                     port = miniserve_config.port
-                )).bold()
+                ))
+                .bold()
         ));
     }
     println!(
