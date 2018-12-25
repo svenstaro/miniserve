@@ -23,13 +23,13 @@ dependencies = [
  "tokio-tcp 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "tokio-timer 0.2.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "trust-dns-proto 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "trust-dns-resolver 0.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "trust-dns-resolver 0.10.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "uuid 0.7.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "actix-net"
-version = "0.2.4"
+version = "0.2.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "actix 0.7.9 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -48,17 +48,16 @@ dependencies = [
  "tokio-tcp 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "tokio-timer 0.2.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "tower-service 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "trust-dns-proto 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "trust-dns-resolver 0.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "trust-dns-resolver 0.10.2 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "actix-web"
-version = "0.7.15"
+version = "0.7.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "actix 0.7.9 (registry+https://github.com/rust-lang/crates.io-index)",
- "actix-net 0.2.4 (registry+https://github.com/rust-lang/crates.io-index)",
+ "actix-net 0.2.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "askama_escape 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "base64 0.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "bitflags 1.0.4 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -678,7 +677,7 @@ name = "miniserve"
 version = "0.2.1"
 dependencies = [
  "actix 0.7.9 (registry+https://github.com/rust-lang/crates.io-index)",
- "actix-web 0.7.15 (registry+https://github.com/rust-lang/crates.io-index)",
+ "actix-web 0.7.17 (registry+https://github.com/rust-lang/crates.io-index)",
  "base64 0.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "clap 2.32.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "htmlescape 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1443,8 +1442,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "trust-dns-proto"
+version = "0.6.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "byteorder 1.2.7 (registry+https://github.com/rust-lang/crates.io-index)",
+ "failure 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
+ "futures 0.1.25 (registry+https://github.com/rust-lang/crates.io-index)",
+ "idna 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "lazy_static 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rand 0.5.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "smallvec 0.6.7 (registry+https://github.com/rust-lang/crates.io-index)",
+ "socket2 0.3.8 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tokio-executor 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tokio-io 0.1.10 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tokio-reactor 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tokio-tcp 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tokio-timer 0.2.8 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tokio-udp 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
+ "url 1.7.2 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "trust-dns-resolver"
-version = "0.10.0"
+version = "0.10.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "cfg-if 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1457,7 +1479,7 @@ dependencies = [
  "resolv-conf 0.6.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "smallvec 0.6.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "tokio 0.1.13 (registry+https://github.com/rust-lang/crates.io-index)",
- "trust-dns-proto 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "trust-dns-proto 0.6.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -1622,8 +1644,8 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [metadata]
 "checksum actix 0.7.9 (registry+https://github.com/rust-lang/crates.io-index)" = "6c616db5fa4b0c40702fb75201c2af7f8aa8f3a2e2c1dda3b0655772aa949666"
-"checksum actix-net 0.2.4 (registry+https://github.com/rust-lang/crates.io-index)" = "c1afd4a2973f2ece17100874183be416ec73ca529be846639930ec2cd9c8b8b9"
-"checksum actix-web 0.7.15 (registry+https://github.com/rust-lang/crates.io-index)" = "53e5237cb4d94bca8c9a7246c0e9acf74a0dcf5fb0c6aa75954d96cdce385531"
+"checksum actix-net 0.2.6 (registry+https://github.com/rust-lang/crates.io-index)" = "8bebfbe6629e0131730746718c9e032b58f02c6ce06ed7c982b9fef6c8545acd"
+"checksum actix-web 0.7.17 (registry+https://github.com/rust-lang/crates.io-index)" = "ed4d8a167b9e2f20e6d6d4bd92cd81839d5a551096e700f70a9fefe078583e56"
 "checksum actix_derive 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)" = "4300e9431455322ae393d43a2ba1ef96b8080573c0fc23b196219efedfb6ba69"
 "checksum adler32 1.0.3 (registry+https://github.com/rust-lang/crates.io-index)" = "7e522997b529f05601e05166c07ed17789691f562762c7f3b987263d2dedee5c"
 "checksum aho-corasick 0.6.9 (registry+https://github.com/rust-lang/crates.io-index)" = "1e9a933f4e58658d7b12defcf96dc5c720f20832deebe3e0a19efd3b6aaeeb9e"
@@ -1776,7 +1798,8 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum tokio-uds 0.2.4 (registry+https://github.com/rust-lang/crates.io-index)" = "99ce87382f6c1a24b513a72c048b2c8efe66cb5161c9061d00bee510f08dc168"
 "checksum tower-service 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "b32f72af77f1bfe3d3d4da8516a238ebe7039b51dd8637a09841ac7f16d2c987"
 "checksum trust-dns-proto 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)" = "0838272e89f1c693b4df38dc353412e389cf548ceed6f9fd1af5a8d6e0e7cf74"
-"checksum trust-dns-resolver 0.10.0 (registry+https://github.com/rust-lang/crates.io-index)" = "4e913a5df94658858e548cc95a3212797ee524e487ede091c32f27ca26e11620"
+"checksum trust-dns-proto 0.6.1 (registry+https://github.com/rust-lang/crates.io-index)" = "e33f29df428f112ffeda24b328b814b61d6916be29aa89f19bc3f684ba5437b8"
+"checksum trust-dns-resolver 0.10.2 (registry+https://github.com/rust-lang/crates.io-index)" = "de630f95a192f793436ffae5137e88253cc4142a97d9a8e73c8d804fa85ddf0a"
 "checksum ucd-util 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)" = "535c204ee4d8434478593480b8f86ab45ec9aae0e83c568ca81abf0fd0e88f86"
 "checksum unicase 1.4.2 (registry+https://github.com/rust-lang/crates.io-index)" = "7f4765f83163b74f957c797ad9253caf97f103fb064d3999aea9568d09fc8a33"
 "checksum unicase 2.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = "9d3218ea14b4edcaccfa0df0a64a3792a2c32cc706f1b336e48867f9d3147f90"
