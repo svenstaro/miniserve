@@ -76,7 +76,7 @@ You can provide `-i` multiple times to bind to multiple interfaces at the same t
 
 This is mostly a note for me on how to release this thing:
 
-- Update version in `Cargo.toml`.
+- Update version in `Cargo.toml` and run `cargo update`.
 - `git commit` and `git tag -s`, `git push`.
 - `cargo publish`
 - Releases will automatically be deployed by Travis.
