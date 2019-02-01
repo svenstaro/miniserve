@@ -25,6 +25,11 @@ Sometimes this is just a more practical and quick way than doing things properly
 
     miniserve --auth joe:123 unreleased-linux-distros/
 
+### Generate a random route so only people with the right URL can crawl the server:
+
+    miniserve -i 192.168.0.1 -r /tmp/myshare
+    # Serving path /tmp/myshare at http://192.168.0.1:8080/ibe1CYIYqIOuCQ_0lkpWM
+
 ### Bind to multiple interfaces:
 
     miniserve -i 192.168.0.1 -i 10.13.37.10 -i ::1 -- /tmp/myshare

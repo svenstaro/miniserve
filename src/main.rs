@@ -33,6 +33,7 @@ pub struct MiniserveConfig {
     auth: Option<BasicAuthParams>,
     path_explicitly_chosen: bool,
     no_symlinks: bool,
+    random_route: Option<String>,
 }
 
 /// Decode a HTTP basic auth string into a tuple of username and password.
@@ -135,12 +136,29 @@ pub fn parse_args() -> MiniserveConfig {
                 .long("no-symlinks")
                 .help("Do not follow symbolic links"),
         )
+        .arg(
+            Arg::with_name("random-route")
+                .short("r")
+                .long("random-route")
+                .help("Generate a random route"),
+        )
+        .arg(
+            Arg::with_name("length")
+                .short("l")
+                .long("length")
+                .takes_value(true)
+                .default_value("8")
+                .requires("random-route")
+                .help("Length of the random route to generate"),
+        )
         .get_matches();
 
     let verbose = matches.is_present("verbose");
     let no_symlinks = matches.is_present("no-symlinks");
     let path = matches.value_of("PATH");
     let port = matches.value_of("port").unwrap().parse().unwrap();
+    let generate_random = matches.is_present("random-route");
+
     let interfaces = if let Some(interfaces) = matches.values_of("interfaces") {
         interfaces.map(|x| x.parse().unwrap()).collect()
     } else {
@@ -163,6 +181,12 @@ pub fn parse_args() -> MiniserveConfig {
         None
     };
 
+    let mut random_route = None;
+
+    if generate_random {
+        random_route = Some(nanoid::simple());
+    }
+
     MiniserveConfig {
         verbose,
         path: PathBuf::from(path.unwrap_or(".")),
@@ -171,6 +195,7 @@ pub fn parse_args() -> MiniserveConfig {
         auth,
         path_explicitly_chosen: path.is_some(),
         no_symlinks,
+        random_route,
     }
 }
 
@@ -197,10 +222,14 @@ fn configure_app(app: App<MiniserveConfig>) -> App<MiniserveConfig> {
         }
     };
 
+    let route_url = "/".to_string();
+    let random_route = app.state().random_route.clone().unwrap_or(String::new());
+    let full_route = format!("{}{}", route_url, random_route);
+
     if let Some(s) = s {
-        app.handler("/", s)
+        app.handler(&full_route, s)
     } else {
-        app.resource("/", |r| r.f(file_handler))
+        app.resource(&full_route, |r| r.f(file_handler))
     }
 }
 
@@ -348,6 +377,18 @@ fn main() {
                 ))
                 .bold()
         ));
+        let random_route = miniserve_config.clone().random_route;
+        if random_route.is_some() {
+            addresses.push_str(&format!(
+                "{}",
+                Color::Green
+                    .paint(format!(
+                        "/{random_route}",
+                        random_route = random_route.unwrap(),
+                    ))
+                    .bold()
+            ));
+        }
     }
     println!(
         "Serving path {path} at {addresses}",
