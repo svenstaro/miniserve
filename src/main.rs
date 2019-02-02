@@ -1,6 +1,7 @@
 use actix_web::http::header;
 use actix_web::middleware::{Middleware, Response};
 use actix_web::{fs, middleware, server, App, HttpMessage, HttpRequest, HttpResponse, Result};
+use bytesize::ByteSize;
 use clap::{crate_authors, crate_description, crate_name, crate_version};
 use htmlescape::encode_minimal as escape_html_entity;
 use percent_encoding::{utf8_percent_encode, DEFAULT_ENCODE_SET};
@@ -387,10 +388,22 @@ fn directory_listing<S>(
                 if skip_symlinks && metadata.file_type().is_symlink() {
                     continue;
                 }
+
                 if metadata.is_dir() {
-                    let _ = write!(body, "<li><a href=\"{}\">{}/</a></li>", file_url, file_name);
+                    let _ = write!(
+                        body,
+                        "<tr><td><a class=\"{}\" href=\"{}\">{}/</a></td><td></td></tr>",
+                        "directory", file_url, file_name
+                    );
                 } else {
-                    let _ = write!(body, "<li><a href=\"{}\">{}</a></li>", file_url, file_name);
+                    let _ = write!(
+                        body,
+                        "<tr><td><a class=\"{}\" href=\"{}\">{}</a></td><td>{}</td></tr>",
+                        "file",
+                        file_url,
+                        file_name,
+                        ByteSize::b(metadata.len())
+                    );
                 }
             } else {
                 continue;
@@ -400,11 +413,72 @@ fn directory_listing<S>(
 
     let html = format!(
         "<html>\
-         <head><title>{}</title></head>\
+         <head>\
+         <title>{}</title>\
+         <style>\
+         body {{\
+           margin: 0;\
+           font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto,\"Helvetica Neue\", Helvetica, Arial, sans-serif;\
+           font-weight: 300;\
+           color: #444444;\
+           padding: 0.125rem;\
+         }}\
+         table {{\
+           width: 100%;\
+           background: white;\
+           border: 0;\
+           table-layout: auto;\
+         }}\
+         table thead {{\
+           background: #efefef;\
+         }}\
+         table tr th,\
+         table tr td {{\
+           padding: 0.5625rem 0.625rem;\
+           font-size: 0.875rem;\
+           color: #777c82;\
+           text-align: left;\
+           line-height: 1.125rem;\
+         }}\
+         table thead tr th {{\
+           padding: 0.5rem 0.625rem 0.625rem;\
+           font-weight: bold;\
+           color: #444444;\
+         }}\
+         table tr:nth-child(even) {{\
+           background: #f6f6f6;\
+         }}\
+         a {{\
+           text-decoration: none;\
+           color: #3498db;\
+         }}\
+         a.directory {{\
+           font-weight: bold;\
+         }}\
+         a:hover {{\
+           text-decoration: underline;\
+         }}\
+         a:visited {{\
+           color: #8e44ad;\
+         }}\
+         @media (max-width: 600px) {{\
+           h1 {{\
+              font-size: 1.375em;\
+           }}\
+         }}\
+         @media (max-width: 400px) {{\
+           h1 {{\
+              font-size: 1.375em;\
+           }}\
+         }}\
+         </style>\
+         </head>\
          <body><h1>{}</h1>\
-         <ul>\
+         <table>\
+         <thead><th>Name</th><th>Size</th></thead>\
+         <tbody>\
          {}\
-         </ul></body>\n</html>",
+         </tbody></table></body>\n</html>",
         index_of, index_of, body
     );
     Ok(HttpResponse::Ok()
