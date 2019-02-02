@@ -14,6 +14,10 @@ use std::thread;
 use std::time::Duration;
 use yansi::{Color, Paint};
 
+const ROUTE_ALPHABET: [char; 16] = [
+    '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', 'a', 'b', 'c', 'd', 'e', 'f',
+];
+
 enum BasicAuthError {
     Base64DecodeError,
     InvalidUsernameFormat,
@@ -34,6 +38,7 @@ pub struct MiniserveConfig {
     auth: Option<BasicAuthParams>,
     path_explicitly_chosen: bool,
     no_symlinks: bool,
+    random_route: Option<String>,
 }
 
 /// Decode a HTTP basic auth string into a tuple of username and password.
@@ -131,6 +136,11 @@ pub fn parse_args() -> MiniserveConfig {
                 .takes_value(true),
         )
         .arg(
+            Arg::with_name("random-route")
+                .long("random-route")
+                .help("Generate a random route"),
+        )
+        .arg(
             Arg::with_name("no-symlinks")
                 .short("P")
                 .long("no-symlinks")
@@ -164,6 +174,11 @@ pub fn parse_args() -> MiniserveConfig {
         None
     };
 
+    let random_route = match matches.is_present("random-route") {
+        true => Some(nanoid::custom(6, &ROUTE_ALPHABET)),
+        _ => None,
+    };
+
     MiniserveConfig {
         verbose,
         path: PathBuf::from(path.unwrap_or(".")),
@@ -172,6 +187,7 @@ pub fn parse_args() -> MiniserveConfig {
         auth,
         path_explicitly_chosen: path.is_some(),
         no_symlinks,
+        random_route,
     }
 }
 
@@ -183,7 +199,8 @@ fn file_handler(req: &HttpRequest<MiniserveConfig>) -> Result<fs::NamedFile> {
 fn configure_app(app: App<MiniserveConfig>) -> App<MiniserveConfig> {
     let s = {
         let path = &app.state().path;
-        let no_symlinks = app.state().no_symlinks;
+        let no_symlinks = app.state().no_symlinks.clone();
+        let random_route = app.state().random_route.clone();
         if path.is_file() {
             None
         } else {
@@ -192,16 +209,19 @@ fn configure_app(app: App<MiniserveConfig>) -> App<MiniserveConfig> {
                     .expect("Couldn't create path")
                     .show_files_listing()
                     .files_listing_renderer(move |dir, req| {
-                        directory_listing(dir, req, no_symlinks)
+                        directory_listing(dir, req, no_symlinks, random_route.clone())
                     }),
             )
         }
     };
 
+    let random_route = app.state().random_route.clone().unwrap_or(String::new());
+    let full_route = format!("/{}", random_route);
+
     if let Some(s) = s {
-        app.handler("/", s)
+        app.handler(&full_route, s)
     } else {
-        app.resource("/", |r| r.f(file_handler))
+        app.resource(&full_route, |r| r.f(file_handler))
     }
 }
 
@@ -349,6 +369,18 @@ fn main() {
                 ))
                 .bold()
         ));
+        let random_route = miniserve_config.clone().random_route;
+        if random_route.is_some() {
+            addresses.push_str(&format!(
+                "{}",
+                Color::Green
+                    .paint(format!(
+                        "/{random_route}",
+                        random_route = random_route.unwrap(),
+                    ))
+                    .bold()
+            ));
+        }
     }
     println!(
         "Serving path {path} at {addresses}",
@@ -365,17 +397,22 @@ fn directory_listing<S>(
     dir: &fs::Directory,
     req: &HttpRequest<S>,
     skip_symlinks: bool,
+    random_route: Option<String>,
 ) -> Result<HttpResponse, io::Error> {
     let index_of = format!("Index of {}", req.path());
     let mut body = String::new();
     let base = Path::new(req.path());
+    let random_route = format!("/{}", random_route.unwrap_or(String::new()));
+
     if let Some(parent) = base.parent() {
-        let _ = write!(
-            body,
-            "<tr><td><a class=\"{}\" href=\"{}\">..</a></td><td></td></tr>",
-            "root",
-            parent.display()
-        );
+        if req.path() != random_route {
+            let _ = write!(
+                body,
+                "<tr><td><a class=\"{}\" href=\"{}\">..</a></td><td></td></tr>",
+                "root",
+                parent.display()
+            );
+        }
     }
 
     for entry in dir.path.read_dir()? {
