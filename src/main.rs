@@ -369,6 +369,14 @@ fn directory_listing<S>(
     let index_of = format!("Index of {}", req.path());
     let mut body = String::new();
     let base = Path::new(req.path());
+    if let Some(parent) = base.parent() {
+        let _ = write!(
+            body,
+            "<tr><td><a class=\"{}\" href=\"{}\">..</a></td><td></td></tr>",
+            "root",
+            parent.display()
+        );
+    }
 
     for entry in dir.path.read_dir()? {
         if dir.is_visible(&entry) {
@@ -452,6 +460,10 @@ fn directory_listing<S>(
            text-decoration: none;\
            color: #3498db;\
          }}\
+         a.root, a.root:visited {{\
+            font-weight: bold;\
+            color: #777c82;\
+         }}
          a.directory {{\
            font-weight: bold;\
          }}\
