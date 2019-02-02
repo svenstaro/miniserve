@@ -13,6 +13,11 @@ use std::thread;
 use std::time::Duration;
 use yansi::{Color, Paint};
 
+// Alphabet to use for random route generation
+const ALPHABET: [char; 16] = [
+    '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', 'a', 'b', 'c', 'd', 'e', 'f'
+];
+
 enum BasicAuthError {
     Base64DecodeError,
     InvalidUsernameFormat,
@@ -138,7 +143,6 @@ pub fn parse_args() -> MiniserveConfig {
         )
         .arg(
             Arg::with_name("random-route")
-                .short("r")
                 .long("random-route")
                 .help("Generate a random route"),
         )
@@ -175,7 +179,7 @@ pub fn parse_args() -> MiniserveConfig {
     let mut random_route = None;
 
     if generate_random {
-        random_route = Some(nanoid::simple());
+        random_route = Some(nanoid::custom(5, &ALPHABET));
     }
 
     MiniserveConfig {
