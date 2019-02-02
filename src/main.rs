@@ -142,15 +142,6 @@ pub fn parse_args() -> MiniserveConfig {
                 .long("random-route")
                 .help("Generate a random route"),
         )
-        .arg(
-            Arg::with_name("length")
-                .short("l")
-                .long("length")
-                .takes_value(true)
-                .default_value("8")
-                .requires("random-route")
-                .help("Length of the random route to generate"),
-        )
         .get_matches();
 
     let verbose = matches.is_present("verbose");
