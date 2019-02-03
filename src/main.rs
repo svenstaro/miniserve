@@ -200,7 +200,7 @@ fn file_handler(req: &HttpRequest<MiniserveConfig>) -> Result<fs::NamedFile> {
 fn configure_app(app: App<MiniserveConfig>) -> App<MiniserveConfig> {
     let s = {
         let path = &app.state().path;
-        let no_symlinks = app.state().no_symlinks.clone();
+        let no_symlinks = app.state().no_symlinks;
         let random_route = app.state().random_route.clone();
         if path.is_file() {
             None
@@ -216,7 +216,7 @@ fn configure_app(app: App<MiniserveConfig>) -> App<MiniserveConfig> {
         }
     };
 
-    let random_route = app.state().random_route.clone().unwrap_or(String::new());
+    let random_route = app.state().random_route.clone().unwrap_or_default();
     let full_route = format!("/{}", random_route);
 
     if let Some(s) = s {
@@ -403,14 +403,13 @@ fn directory_listing<S>(
     let index_of = format!("Index of {}", req.path());
     let mut body = String::new();
     let base = Path::new(req.path());
-    let random_route = format!("/{}", random_route.unwrap_or(String::new()));
+    let random_route = format!("/{}", random_route.unwrap_or_default());
 
     if let Some(parent) = base.parent() {
         if req.path() != random_route {
             let _ = write!(
                 body,
-                "<tr><td><a class=\"{}\" href=\"{}\">..</a></td><td></td></tr>",
-                "root",
+                "<tr><td><a class=\"root\" href=\"{}\">..</a></td><td></td></tr>",
                 parent.display()
             );
         }
@@ -438,14 +437,13 @@ fn directory_listing<S>(
                 if metadata.is_dir() {
                     let _ = write!(
                         body,
-                        "<tr><td><a class=\"{}\" href=\"{}\">{}/</a></td><td></td></tr>",
-                        "directory", file_url, file_name
+                        "<tr><td><a class=\"directory\" href=\"{}\">{}/</a></td><td></td></tr>",
+                        file_url, file_name
                     );
                 } else {
                     let _ = write!(
                         body,
-                        "<tr><td><a class=\"{}\" href=\"{}\">{}</a></td><td>{}</td></tr>",
-                        "file",
+                        "<tr><td><a class=\"file\" href=\"{}\">{}</a></td><td>{}</td></tr>",
                         file_url,
                         file_name,
                         ByteSize::b(metadata.len())
