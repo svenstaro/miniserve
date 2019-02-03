@@ -138,7 +138,7 @@ pub fn parse_args() -> MiniserveConfig {
         .arg(
             Arg::with_name("random-route")
                 .long("random-route")
-                .help("Generate a random route"),
+                .help("Generate a random 6-hexdigit route"),
         )
         .arg(
             Arg::with_name("no-symlinks")
@@ -174,9 +174,10 @@ pub fn parse_args() -> MiniserveConfig {
         None
     };
 
-    let random_route = match matches.is_present("random-route") {
-        true => Some(nanoid::custom(6, &ROUTE_ALPHABET)),
-        _ => None,
+    let random_route = if matches.is_present("random-route") {
+        Some(nanoid::custom(6, &ROUTE_ALPHABET))
+    } else {
+        None
     };
 
     MiniserveConfig {
