@@ -6,10 +6,12 @@ use clap::{crate_authors, crate_description, crate_name, crate_version};
 use htmlescape::encode_minimal as escape_html_entity;
 use percent_encoding::{utf8_percent_encode, DEFAULT_ENCODE_SET};
 use simplelog::{Config, LevelFilter, TermLogger};
+use std::cmp::Ordering;
 use std::fmt::Write as FmtWrite;
 use std::io::{self, Write};
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, ToSocketAddrs};
 use std::path::{Path, PathBuf};
+use std::str::FromStr;
 use std::thread;
 use std::time::Duration;
 use yansi::{Color, Paint};
@@ -30,6 +32,13 @@ struct BasicAuthParams {
 }
 
 #[derive(Clone, Debug)]
+enum SortingMethods {
+    Natural,
+    Alpha,
+    DirsFirst,
+}
+
+#[derive(Clone, Debug)]
 pub struct MiniserveConfig {
     verbose: bool,
     path: std::path::PathBuf,
@@ -39,6 +48,59 @@ pub struct MiniserveConfig {
     path_explicitly_chosen: bool,
     no_symlinks: bool,
     random_route: Option<String>,
+    sort_method: SortingMethods,
+}
+
+#[derive(PartialEq)]
+enum EntryType {
+    Directory,
+    File,
+}
+
+impl PartialOrd for EntryType {
+    fn partial_cmp(&self, other: &EntryType) -> Option<Ordering> {
+        match (self, other) {
+            (EntryType::Directory, EntryType::File) => Some(Ordering::Less),
+            (EntryType::File, EntryType::Directory) => Some(Ordering::Greater),
+            _ => Some(Ordering::Equal),
+        }
+    }
+}
+
+struct Entry {
+    name: String,
+    entry_type: EntryType,
+    link: String,
+    size: Option<bytesize::ByteSize>,
+}
+
+impl Entry {
+    fn new(
+        name: String,
+        entry_type: EntryType,
+        link: String,
+        size: Option<bytesize::ByteSize>,
+    ) -> Self {
+        Entry {
+            name,
+            entry_type,
+            link,
+            size,
+        }
+    }
+}
+
+impl FromStr for SortingMethods {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<SortingMethods, ()> {
+        match s {
+            "natural" => Ok(SortingMethods::Natural),
+            "alpha" => Ok(SortingMethods::Alpha),
+            "dirsfirst" => Ok(SortingMethods::DirsFirst),
+            _ => Err(()),
+        }
+    }
 }
 
 /// Decode a HTTP basic auth string into a tuple of username and password.
@@ -141,6 +203,14 @@ pub fn parse_args() -> MiniserveConfig {
                 .help("Generate a random 6-hexdigit route"),
         )
         .arg(
+            Arg::with_name("sort")
+                .short("s")
+                .long("sort")
+                .possible_values(&["natural", "alpha", "dirsfirst"])
+                .default_value("natural")
+                .help("Sort results"),
+        )
+        .arg(
             Arg::with_name("no-symlinks")
                 .short("P")
                 .long("no-symlinks")
@@ -180,6 +250,12 @@ pub fn parse_args() -> MiniserveConfig {
         None
     };
 
+    let sort_method = matches
+        .value_of("sort")
+        .unwrap()
+        .parse::<SortingMethods>()
+        .unwrap();
+
     MiniserveConfig {
         verbose,
         path: PathBuf::from(path.unwrap_or(".")),
@@ -189,6 +265,7 @@ pub fn parse_args() -> MiniserveConfig {
         path_explicitly_chosen: path.is_some(),
         no_symlinks,
         random_route,
+        sort_method,
     }
 }
 
@@ -202,6 +279,7 @@ fn configure_app(app: App<MiniserveConfig>) -> App<MiniserveConfig> {
         let path = &app.state().path;
         let no_symlinks = app.state().no_symlinks;
         let random_route = app.state().random_route.clone();
+        let sort_method = app.state().sort_method.clone();
         if path.is_file() {
             None
         } else {
@@ -210,7 +288,13 @@ fn configure_app(app: App<MiniserveConfig>) -> App<MiniserveConfig> {
                     .expect("Couldn't create path")
                     .show_files_listing()
                     .files_listing_renderer(move |dir, req| {
-                        directory_listing(dir, req, no_symlinks, random_route.clone())
+                        directory_listing(
+                            dir,
+                            req,
+                            no_symlinks,
+                            random_route.clone(),
+                            sort_method.clone(),
+                        )
                     }),
             )
         }
@@ -399,6 +483,7 @@ fn directory_listing<S>(
     req: &HttpRequest<S>,
     skip_symlinks: bool,
     random_route: Option<String>,
+    sort_method: SortingMethods,
 ) -> Result<HttpResponse, io::Error> {
     let index_of = format!("Index of {}", req.path());
     let mut body = String::new();
@@ -414,6 +499,8 @@ fn directory_listing<S>(
             );
         }
     }
+
+    let mut entries: Vec<Entry> = Vec::new();
 
     for entry in dir.path.read_dir()? {
         if dir.is_visible(&entry) {
@@ -433,24 +520,52 @@ fn directory_listing<S>(
                 if skip_symlinks && metadata.file_type().is_symlink() {
                     continue;
                 }
-
                 if metadata.is_dir() {
-                    let _ = write!(
-                        body,
-                        "<tr><td><a class=\"directory\" href=\"{}\">{}/</a></td><td></td></tr>",
-                        file_url, file_name
-                    );
+                    entries.push(Entry::new(file_name, EntryType::Directory, file_url, None));
                 } else {
-                    let _ = write!(
-                        body,
-                        "<tr><td><a class=\"file\" href=\"{}\">{}</a></td><td>{}</td></tr>",
-                        file_url,
+                    entries.push(Entry::new(
                         file_name,
-                        ByteSize::b(metadata.len())
-                    );
+                        EntryType::File,
+                        file_url,
+                        Some(ByteSize::b(metadata.len())),
+                    ));
                 }
             } else {
                 continue;
+            }
+        }
+    }
+
+    match sort_method {
+        SortingMethods::Natural => entries
+            .sort_by(|e1, e2| alphanumeric_sort::compare_str(e1.name.clone(), e2.name.clone())),
+        SortingMethods::Alpha => {
+            entries.sort_by(|e1, e2| e1.entry_type.partial_cmp(&e2.entry_type).unwrap());
+            entries.sort_by_key(|e| e.name.clone())
+        }
+        SortingMethods::DirsFirst => {
+            entries.sort_by_key(|e| e.name.clone());
+            entries.sort_by(|e1, e2| e1.entry_type.partial_cmp(&e2.entry_type).unwrap());
+        }
+    };
+
+    for entry in entries {
+        match entry.entry_type {
+            EntryType::Directory => {
+                let _ = write!(
+                    body,
+                    "<tr><td><a class=\"directory\" href=\"{}\">{}/</a></td><td></td></tr>",
+                    entry.link, entry.name
+                );
+            }
+            EntryType::File => {
+                let _ = write!(
+                    body,
+                    "<tr><td><a class=\"file\" href=\"{}\">{}</a></td><td>{}</td></tr>",
+                    entry.link,
+                    entry.name,
+                    entry.size.unwrap()
+                );
             }
         }
     }
