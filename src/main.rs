@@ -49,6 +49,7 @@ pub struct MiniserveConfig {
     no_symlinks: bool,
     random_route: Option<String>,
     sort_method: SortingMethods,
+    reverse_sort: bool,
 }
 
 #[derive(PartialEq)]
@@ -208,7 +209,12 @@ pub fn parse_args() -> MiniserveConfig {
                 .long("sort")
                 .possible_values(&["natural", "alpha", "dirsfirst"])
                 .default_value("natural")
-                .help("Sort results"),
+                .help("Sort files"),
+        )
+        .arg(
+            Arg::with_name("reverse")
+                .long("reverse")
+                .help("Reverse sorting order"),
         )
         .arg(
             Arg::with_name("no-symlinks")
@@ -256,6 +262,8 @@ pub fn parse_args() -> MiniserveConfig {
         .parse::<SortingMethods>()
         .unwrap();
 
+    let reverse_sort = matches.is_present("reverse");
+
     MiniserveConfig {
         verbose,
         path: PathBuf::from(path.unwrap_or(".")),
@@ -266,6 +274,7 @@ pub fn parse_args() -> MiniserveConfig {
         no_symlinks,
         random_route,
         sort_method,
+        reverse_sort,
     }
 }
 
@@ -280,6 +289,7 @@ fn configure_app(app: App<MiniserveConfig>) -> App<MiniserveConfig> {
         let no_symlinks = app.state().no_symlinks;
         let random_route = app.state().random_route.clone();
         let sort_method = app.state().sort_method.clone();
+        let reverse_sort = app.state().reverse_sort;
         if path.is_file() {
             None
         } else {
@@ -294,6 +304,7 @@ fn configure_app(app: App<MiniserveConfig>) -> App<MiniserveConfig> {
                             no_symlinks,
                             random_route.clone(),
                             sort_method.clone(),
+                            reverse_sort,
                         )
                     }),
             )
@@ -484,6 +495,7 @@ fn directory_listing<S>(
     skip_symlinks: bool,
     random_route: Option<String>,
     sort_method: SortingMethods,
+    reverse_sort: bool,
 ) -> Result<HttpResponse, io::Error> {
     let index_of = format!("Index of {}", req.path());
     let mut body = String::new();
@@ -548,6 +560,10 @@ fn directory_listing<S>(
             entries.sort_by(|e1, e2| e1.entry_type.partial_cmp(&e2.entry_type).unwrap());
         }
     };
+
+    if reverse_sort {
+        entries.reverse();
+    }
 
     for entry in entries {
         match entry.entry_type {
