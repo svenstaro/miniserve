@@ -53,6 +53,12 @@ Sometimes this is just a more practical and quick way than doing things properly
     # 11
     # 3
 
+    miniserve --reverse /tmp/myshare
+    # 11
+    # 3
+    # 2/
+    # 1/
+
 ## Features
 
 - Easy to use
