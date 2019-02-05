@@ -630,7 +630,7 @@ fn directory_listing<S>(
          a.root, a.root:visited {{\
             font-weight: bold;\
             color: #777c82;\
-         }}
+         }}\
          a.directory {{\
            font-weight: bold;\
          }}\
