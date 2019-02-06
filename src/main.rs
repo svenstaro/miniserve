@@ -1,13 +1,19 @@
 use actix_web::http::header;
 use actix_web::middleware::{Middleware, Response};
-use actix_web::{fs, middleware, server, App, HttpMessage, HttpRequest, HttpResponse, Result};
+use actix_web::{
+    dev, error, fs, http, middleware, multipart, server, App, Error, FutureResponse, HttpMessage,
+    HttpRequest, HttpResponse, Result,
+};
 use bytesize::ByteSize;
 use clap::{crate_authors, crate_description, crate_name, crate_version};
+use futures::future;
+use futures::{Future, Stream};
 use htmlescape::encode_minimal as escape_html_entity;
 use percent_encoding::{utf8_percent_encode, DEFAULT_ENCODE_SET};
 use simplelog::{Config, LevelFilter, TermLogger};
 use std::cmp::Ordering;
 use std::fmt::Write as FmtWrite;
+use std::fs as stdfs;
 use std::io::{self, Write};
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, ToSocketAddrs};
 use std::path::{Path, PathBuf};
@@ -50,6 +56,7 @@ pub struct MiniserveConfig {
     random_route: Option<String>,
     sort_method: SortingMethods,
     reverse_sort: bool,
+    allow_upload: bool,
 }
 
 #[derive(PartialEq)]
@@ -222,6 +229,12 @@ pub fn parse_args() -> MiniserveConfig {
                 .long("no-symlinks")
                 .help("Do not follow symbolic links"),
         )
+        .arg(
+            Arg::with_name("allow-upload")
+                .short("u")
+                .long("allow-upload")
+                .help("Provide an upload form. Using the -a and/or --random-route too is highly recommended"),
+        )
         .get_matches();
 
     let verbose = matches.is_present("verbose");
@@ -263,6 +276,7 @@ pub fn parse_args() -> MiniserveConfig {
         .unwrap();
 
     let reverse_sort = matches.is_present("reverse");
+    let allow_upload = matches.is_present("allow-upload");
 
     MiniserveConfig {
         verbose,
@@ -275,6 +289,7 @@ pub fn parse_args() -> MiniserveConfig {
         random_route,
         sort_method,
         reverse_sort,
+        allow_upload,
     }
 }
 
@@ -290,6 +305,8 @@ fn configure_app(app: App<MiniserveConfig>) -> App<MiniserveConfig> {
         let random_route = app.state().random_route.clone();
         let sort_method = app.state().sort_method.clone();
         let reverse_sort = app.state().reverse_sort;
+        let allow_upload = app.state().allow_upload;
+
         if path.is_file() {
             None
         } else {
@@ -305,6 +322,7 @@ fn configure_app(app: App<MiniserveConfig>) -> App<MiniserveConfig> {
                             random_route.clone(),
                             sort_method.clone(),
                             reverse_sort,
+                            allow_upload,
                         )
                     }),
             )
@@ -488,6 +506,60 @@ fn main() {
     let _ = sys.run();
 }
 
+fn save_file(field: multipart::Field<dev::Payload>) -> Box<Future<Item = i64, Error = Error>> {
+    let file_path_string = "upload.png";
+    let mut file = match stdfs::File::create(file_path_string) {
+        Ok(file) => file,
+        Err(e) => return Box::new(future::err(error::ErrorInternalServerError(e))),
+    };
+    Box::new(
+        field
+            .fold(0i64, move |acc, bytes| {
+                let rt = file
+                    .write_all(bytes.as_ref())
+                    .map(|_| acc + bytes.len() as i64)
+                    .map_err(|e| {
+                        println!("file.write_all failed: {:?}", e);
+                        error::MultipartError::Payload(error::PayloadError::Io(e))
+                    });
+                future::result(rt)
+            })
+            .map_err(|e| {
+                println!("save_file failed, {:?}", e);
+                error::ErrorInternalServerError(e)
+            }),
+    )
+}
+
+fn handle_multipart_item(
+    item: multipart::MultipartItem<dev::Payload>,
+) -> Box<Stream<Item = i64, Error = Error>> {
+    match item {
+        multipart::MultipartItem::Field(field) => Box::new(save_file(field).into_stream()),
+        multipart::MultipartItem::Nested(mp) => Box::new(
+            mp.map_err(error::ErrorInternalServerError)
+                .map(handle_multipart_item)
+                .flatten(),
+        ),
+    }
+}
+
+fn upload(req: HttpRequest<MiniserveConfig>) -> FutureResponse<HttpResponse> {
+    println!("Uploading");
+    Box::new(
+        req.multipart()
+            .map_err(error::ErrorInternalServerError)
+            .map(handle_multipart_item)
+            .flatten()
+            .collect()
+            .map(|sizes| HttpResponse::Ok().json(sizes))
+            .map_err(|e| {
+                println!("failed: {}", e);
+                e
+            }),
+    )
+}
+
 // ↓ Adapted from https://docs.rs/actix-web/0.7.13/src/actix_web/fs.rs.html#564
 fn directory_listing<S>(
     dir: &fs::Directory,
@@ -496,6 +568,7 @@ fn directory_listing<S>(
     random_route: Option<String>,
     sort_method: SortingMethods,
     reverse_sort: bool,
+    allow_upload: bool,
 ) -> Result<HttpResponse, io::Error> {
     let index_of = format!("Index of {}", req.path());
     let mut body = String::new();
@@ -511,6 +584,18 @@ fn directory_listing<S>(
             );
         }
     }
+
+    let upload_form = if allow_upload {
+        format!(
+            "<div class=\"upload\">\
+            <form name=\"upload\" action=\"/upload\" method=\"post\" enctype=\"multipart/form-data\">
+            <input type=\"file\" multiple>
+            <button type=\"submit\">Upload</button>
+            </form></div>"
+        )
+    } else {
+        String::new()
+    };
 
     let mut entries: Vec<Entry> = Vec::new();
 
@@ -640,6 +725,32 @@ fn directory_listing<S>(
          a:visited {{\
            color: #8e44ad;\
          }}\
+         header {{\
+            display: flex;\
+            align-items: baseline;\
+            justify-content: space-between;\
+         }}\
+         .upload form {{\
+            border: 1px dashed #efefef;\
+            padding: 1rem;\
+         }}\
+         .upload button {{\
+            margin: 0;\
+            color: #fff;
+            background: #5b61b1;\
+            border: none;\
+            border-radius: 4px;\
+            transition: all .2s ease;\
+            outline: none;\
+            padding: 0.5em 2em;\
+         }}\
+         .upload button:hover {{\
+            background: #7d81b5;\
+	        color: #ffffff;\
+         }}\
+         .upload button:active {{\
+            border: 0;\
+         }}\
          @media (max-width: 600px) {{\
            h1 {{\
               font-size: 1.375em;\
@@ -652,13 +763,13 @@ fn directory_listing<S>(
          }}\
          </style>\
          </head>\
-         <body><h1>{}</h1>\
+         <body><header><h1>{}</h1>{}</header>\
          <table>\
          <thead><th>Name</th><th>Size</th></thead>\
          <tbody>\
          {}\
          </tbody></table></body>\n</html>",
-        index_of, index_of, body
+        index_of, index_of, upload_form, body
     );
     Ok(HttpResponse::Ok()
         .content_type("text/html; charset=utf-8")
