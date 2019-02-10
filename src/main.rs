@@ -335,7 +335,11 @@ fn configure_app(app: App<MiniserveConfig>) -> App<MiniserveConfig> {
     if let Some(s) = s {
         app.handler(&full_route, s)
     } else {
-        app.resource(&full_route, |r| r.f(file_handler))
+        app.resource("/upload", |r| {
+            r.get().f(file_handler);
+            r.post().with(upload)
+        })
+        .resource(&full_route, |r| r.f(file_handler))
     }
 }
 
@@ -587,9 +591,9 @@ fn directory_listing<S>(
     let upload_form = if allow_upload {
         format!(
             "<div class=\"upload\">\
-            <form name=\"upload\" action=\"/upload\" method=\"post\" enctype=\"multipart/form-data\">
-            <input type=\"file\" multiple>
-            <button type=\"submit\">Upload</button>
+            <form name=\"upload\" action=\"/upload\" method=\"post\" target=\"dummyframe\" enctype=\"multipart/form-data\">\
+            <input type=\"file\" multiple>\
+            <button type=\"submit\">Upload</button>\
             </form></div>"
         )
     } else {
@@ -750,6 +754,10 @@ fn directory_listing<S>(
          .upload button:active {{\
             border: 0;\
          }}\
+         iframe {{\
+            position: absolute;\
+            left: -9999px;\
+         }}\
          @media (max-width: 600px) {{\
            h1 {{\
               font-size: 1.375em;\
@@ -762,6 +770,7 @@ fn directory_listing<S>(
          }}\
          </style>\
          </head>\
+         <iframe width=\"0\" height=\"0\" border=\"0\" name=\"dummyframe\" id=\"dummyframe\"></iframe>\
          <body><header><h1>{}</h1>{}</header>\
          <table>\
          <thead><th>Name</th><th>Size</th></thead>\
