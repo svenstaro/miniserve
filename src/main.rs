@@ -545,7 +545,6 @@ fn handle_multipart_item(
 }
 
 fn upload(req: HttpRequest<MiniserveConfig>) -> FutureResponse<HttpResponse> {
-    println!("Uploading");
     Box::new(
         req.multipart()
             .map_err(error::ErrorInternalServerError)
