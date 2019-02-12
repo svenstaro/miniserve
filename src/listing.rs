@@ -10,7 +10,7 @@ use std::str::FromStr;
 
 use crate::config;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub enum SortingMethods {
     Natural,
     Alpha,

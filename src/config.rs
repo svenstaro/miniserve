@@ -23,7 +23,7 @@ pub fn configure_app(app: App<MiniserveConfig>) -> App<MiniserveConfig> {
         let path = &app.state().path;
         let no_symlinks = app.state().no_symlinks;
         let random_route = app.state().random_route.clone();
-        let sort_method = app.state().sort_method.clone();
+        let sort_method = app.state().sort_method;
         let reverse_sort = app.state().reverse_sort;
         if path.is_file() {
             None
@@ -38,7 +38,7 @@ pub fn configure_app(app: App<MiniserveConfig>) -> App<MiniserveConfig> {
                             req,
                             no_symlinks,
                             random_route.clone(),
-                            sort_method.clone(),
+                            sort_method,
                             reverse_sort,
                         )
                     }),
