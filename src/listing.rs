@@ -8,6 +8,8 @@ use std::io;
 use std::path::Path;
 use std::str::FromStr;
 
+use crate::config;
+
 #[derive(Clone, Debug)]
 pub enum SortingMethods {
     Natural,
@@ -65,6 +67,11 @@ impl FromStr for SortingMethods {
             _ => Err(()),
         }
     }
+}
+
+pub fn file_handler(req: &HttpRequest<config::MiniserveConfig>) -> Result<fs::NamedFile> {
+    let path = &req.state().path;
+    Ok(fs::NamedFile::open(path)?)
 }
 
 // ↓ Adapted from https://docs.rs/actix-web/0.7.13/src/actix_web/fs.rs.html#564

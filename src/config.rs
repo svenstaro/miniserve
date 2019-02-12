@@ -1,4 +1,4 @@
-use actix_web::{fs, App, HttpRequest, Result};
+use actix_web::{fs, App};
 use std::net::IpAddr;
 
 use crate::auth;
@@ -52,11 +52,6 @@ pub fn configure_app(app: App<MiniserveConfig>) -> App<MiniserveConfig> {
     if let Some(s) = s {
         app.handler(&full_route, s)
     } else {
-        app.resource(&full_route, |r| r.f(file_handler))
+        app.resource(&full_route, |r| r.f(listing::file_handler))
     }
-}
-
-fn file_handler(req: &HttpRequest<MiniserveConfig>) -> Result<fs::NamedFile> {
-    let path = &req.state().path;
-    Ok(fs::NamedFile::open(path)?)
 }
