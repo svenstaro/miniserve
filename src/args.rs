@@ -1,5 +1,4 @@
 use crate::auth;
-use crate::config;
 use crate::listing;
 use clap::{crate_authors, crate_description, crate_name, crate_version};
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
@@ -38,7 +37,7 @@ fn is_valid_auth(auth: String) -> Result<(), String> {
         .map(|_| ())
 }
 
-pub fn parse_args() -> config::MiniserveConfig {
+pub fn parse_args() -> crate::MiniserveConfig {
     use clap::{App, AppSettings, Arg};
 
     let matches = App::new(crate_name!())
@@ -152,7 +151,7 @@ pub fn parse_args() -> config::MiniserveConfig {
 
     let reverse_sort = matches.is_present("reverse");
 
-    config::MiniserveConfig {
+    crate::MiniserveConfig {
         verbose,
         path: PathBuf::from(path.unwrap_or(".")),
         port,

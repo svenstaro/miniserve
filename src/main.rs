@@ -1,4 +1,4 @@
-use actix_web::{middleware, server, App};
+use actix_web::{fs, middleware, server, App};
 use clap::crate_version;
 use simplelog::{Config, LevelFilter, TermLogger};
 use std::io::{self, Write};
@@ -9,8 +9,21 @@ use yansi::{Color, Paint};
 
 mod args;
 mod auth;
-mod config;
 mod listing;
+
+#[derive(Clone, Debug)]
+pub struct MiniserveConfig {
+    pub verbose: bool,
+    pub path: std::path::PathBuf,
+    pub port: u16,
+    pub interfaces: Vec<IpAddr>,
+    pub auth: Option<auth::BasicAuthParams>,
+    pub path_explicitly_chosen: bool,
+    pub no_symlinks: bool,
+    pub random_route: Option<String>,
+    pub sort_method: listing::SortingMethods,
+    pub reverse_sort: bool,
+}
 
 fn main() {
     if cfg!(windows) && !Paint::enable_windows_ascii() {
@@ -43,7 +56,7 @@ fn main() {
         App::with_state(inside_config.clone())
             .middleware(auth::Auth)
             .middleware(middleware::Logger::default())
-            .configure(config::configure_app)
+            .configure(configure_app)
     })
     .bind(
         miniserve_config
@@ -137,4 +150,42 @@ fn main() {
     println!("Quit by pressing CTRL-C");
 
     let _ = sys.run();
+}
+
+pub fn configure_app(app: App<MiniserveConfig>) -> App<MiniserveConfig> {
+    let s = {
+        let path = &app.state().path;
+        let no_symlinks = app.state().no_symlinks;
+        let random_route = app.state().random_route.clone();
+        let sort_method = app.state().sort_method;
+        let reverse_sort = app.state().reverse_sort;
+        if path.is_file() {
+            None
+        } else {
+            Some(
+                fs::StaticFiles::new(path)
+                    .expect("Couldn't create path")
+                    .show_files_listing()
+                    .files_listing_renderer(move |dir, req| {
+                        listing::directory_listing(
+                            dir,
+                            req,
+                            no_symlinks,
+                            random_route.clone(),
+                            sort_method,
+                            reverse_sort,
+                        )
+                    }),
+            )
+        }
+    };
+
+    let random_route = app.state().random_route.clone().unwrap_or_default();
+    let full_route = format!("/{}", random_route);
+
+    if let Some(s) = s {
+        app.handler(&full_route, s)
+    } else {
+        app.resource(&full_route, |r| r.f(listing::file_handler))
+    }
 }
