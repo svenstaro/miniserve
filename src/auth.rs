@@ -2,8 +2,6 @@ use actix_web::http::header;
 use actix_web::middleware::{Middleware, Response};
 use actix_web::{HttpRequest, HttpResponse, Result};
 
-use crate::config;
-
 pub struct Auth;
 
 pub enum BasicAuthError {
@@ -34,10 +32,10 @@ pub fn parse_basic_auth(
     })
 }
 
-impl Middleware<config::MiniserveConfig> for Auth {
+impl Middleware<crate::MiniserveConfig> for Auth {
     fn response(
         &self,
-        req: &HttpRequest<config::MiniserveConfig>,
+        req: &HttpRequest<crate::MiniserveConfig>,
         resp: HttpResponse,
     ) -> Result<Response> {
         if let Some(ref required_auth) = req.state().auth {

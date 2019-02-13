@@ -8,8 +8,6 @@ use std::io;
 use std::path::Path;
 use std::str::FromStr;
 
-use crate::config;
-
 #[derive(Clone, Copy, Debug)]
 pub enum SortingMethods {
     Natural,
@@ -69,7 +67,7 @@ impl FromStr for SortingMethods {
     }
 }
 
-pub fn file_handler(req: &HttpRequest<config::MiniserveConfig>) -> Result<fs::NamedFile> {
+pub fn file_handler(req: &HttpRequest<crate::MiniserveConfig>) -> Result<fs::NamedFile> {
     let path = &req.state().path;
     Ok(fs::NamedFile::open(path)?)
 }
