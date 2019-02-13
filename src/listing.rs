@@ -9,15 +9,28 @@ use std::path::Path;
 use std::str::FromStr;
 
 #[derive(Clone, Copy, Debug)]
+/// Available sorting methods
 pub enum SortingMethods {
+    /// Natural sorting method 
+    /// 1 -> 2 -> 3 -> 11
     Natural,
+
+    /// Pure alphabetical sorting method
+    /// 1 -> 11 -> 2 -> 3
     Alpha,
+
+    /// Directories are listed first, alphabetical sorting is also applied
+    /// 1/ -> 2/ -> 3/ -> 11 -> 12
     DirsFirst,
 }
 
 #[derive(PartialEq)]
+/// Possible entry types 
 enum EntryType {
+    /// Entry is a directory
     Directory,
+
+    /// Entry is a file
     File,
 }
 
@@ -31,10 +44,18 @@ impl PartialOrd for EntryType {
     }
 }
 
+/// Entry
 struct Entry {
+    /// Name of the entry
     name: String,
+
+    /// Type of the entry
     entry_type: EntryType,
+
+    /// URL of the entry
     link: String,
+
+    /// Size in byte of the entry. Only available for EntryType::File
     size: Option<bytesize::ByteSize>,
 }
 
@@ -72,7 +93,8 @@ pub fn file_handler(req: &HttpRequest<crate::MiniserveConfig>) -> Result<fs::Nam
     Ok(fs::NamedFile::open(path)?)
 }
 
-// ↓ Adapted from https://docs.rs/actix-web/0.7.13/src/actix_web/fs.rs.html#564
+/// List a directory and renders a HTML file accordingly
+/// Adapted from https://docs.rs/actix-web/0.7.13/src/actix_web/fs.rs.html#564
 pub fn directory_listing<S>(
     dir: &fs::Directory,
     req: &HttpRequest<S>,
