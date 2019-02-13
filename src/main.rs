@@ -12,16 +12,36 @@ mod auth;
 mod listing;
 
 #[derive(Clone, Debug)]
+/// Configuration of the Miniserve application
 pub struct MiniserveConfig {
+    /// Enable verbose mode
     pub verbose: bool,
+    
+    /// Path to be served by miniserve
     pub path: std::path::PathBuf,
+
+    /// Port on which miniserve will be listening 
     pub port: u16,
+
+    /// IP address(es) on which miniserve will be available
     pub interfaces: Vec<IpAddr>,
+
+    /// Enable HTTP basic authentication
     pub auth: Option<auth::BasicAuthParams>,
+
+    /// If false, miniserve will serve the current working directory
     pub path_explicitly_chosen: bool,
+
+    /// Enable symlink resolution
     pub no_symlinks: bool,
+
+    /// Enable random route generation
     pub random_route: Option<String>,
+
+    /// Sort files/directories  
     pub sort_method: listing::SortingMethods,
+
+    /// Enable inverse sorting
     pub reverse_sort: bool,
 }
 
@@ -152,7 +172,8 @@ fn main() {
     let _ = sys.run();
 }
 
-pub fn configure_app(app: App<MiniserveConfig>) -> App<MiniserveConfig> {
+/// Configures the Actix application
+fn configure_app(app: App<MiniserveConfig>) -> App<MiniserveConfig> {
     let s = {
         let path = &app.state().path;
         let no_symlinks = app.state().no_symlinks;

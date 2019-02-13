@@ -4,10 +4,12 @@ use clap::{crate_authors, crate_description, crate_name, crate_version};
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::path::PathBuf;
 
+/// Possible characters for random routes
 const ROUTE_ALPHABET: [char; 16] = [
     '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', 'a', 'b', 'c', 'd', 'e', 'f',
 ];
 
+/// Checks wether a path is valid, i.e. it exists on the system and points to a file/directory
 fn is_valid_path(path: String) -> Result<(), String> {
     let path_to_check = PathBuf::from(path);
     if path_to_check.is_file() || path_to_check.is_dir() {
@@ -18,12 +20,15 @@ fn is_valid_path(path: String) -> Result<(), String> {
     ))
 }
 
+/// Checks wether a port is valid
 fn is_valid_port(port: String) -> Result<(), String> {
     port.parse::<u16>()
         .and(Ok(()))
         .or_else(|e| Err(e.to_string()))
 }
 
+
+/// Checks wether an interface is valid, i.e. it can be parsed into an IP address
 fn is_valid_interface(interface: String) -> Result<(), String> {
     interface
         .parse::<IpAddr>()
@@ -31,12 +36,14 @@ fn is_valid_interface(interface: String) -> Result<(), String> {
         .or_else(|e| Err(e.to_string()))
 }
 
+/// Checks wether the auth string is valid, i.e. it follows the syntax username:password
 fn is_valid_auth(auth: String) -> Result<(), String> {
     auth.find(':')
         .ok_or_else(|| "Correct format is username:password".to_owned())
         .map(|_| ())
 }
 
+/// Parses the command line arguments
 pub fn parse_args() -> crate::MiniserveConfig {
     use clap::{App, AppSettings, Arg};
 

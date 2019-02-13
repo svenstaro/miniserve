@@ -4,12 +4,14 @@ use actix_web::{HttpRequest, HttpResponse, Result};
 
 pub struct Auth;
 
+/// HTTP Basic authentication errors
 pub enum BasicAuthError {
     Base64DecodeError,
     InvalidUsernameFormat,
 }
 
 #[derive(Clone, Debug)]
+/// HTTP Basic authentication parameters
 pub struct BasicAuthParams {
     pub username: String,
     pub password: String,
