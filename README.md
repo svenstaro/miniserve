@@ -27,7 +27,7 @@ Sometimes this is just a more practical and quick way than doing things properly
 
 ### Generate random 6-hexdigit URL:
 
-    miniserve --random-route -i 192.168.0.1 /tmp
+    miniserve --random-route -i 192.168.0.1 -- /tmp
     # Serving path /private/tmp at http://192.168.0.1/c789b6
 
 ### Bind to multiple interfaces:
