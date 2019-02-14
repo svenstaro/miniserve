@@ -6,26 +6,19 @@ use std::cmp::Ordering;
 use std::fmt::Write as FmtWrite;
 use std::io;
 use std::path::Path;
-use std::str::FromStr;
 
-#[derive(Clone, Copy, Debug)]
-/// Available sorting methods
-pub enum SortingMethods {
-    /// Natural sorting method 
-    /// 1 -> 2 -> 3 -> 11
-    Natural,
-
-    /// Pure alphabetical sorting method
-    /// 1 -> 11 -> 2 -> 3
-    Alpha,
-
-    /// Directories are listed first, alphabetical sorting is also applied
-    /// 1/ -> 2/ -> 3/ -> 11 -> 12
-    DirsFirst,
+arg_enum! {
+    #[derive(Clone, Copy, Debug)]
+    /// Available sorting methods
+    pub enum SortingMethods {
+        Natural,
+        Alpha,
+        DirsFirst,
+    }
 }
 
 #[derive(PartialEq)]
-/// Possible entry types 
+/// Possible entry types
 enum EntryType {
     /// Entry is a directory
     Directory,
@@ -71,19 +64,6 @@ impl Entry {
             entry_type,
             link,
             size,
-        }
-    }
-}
-
-impl FromStr for SortingMethods {
-    type Err = ();
-
-    fn from_str(s: &str) -> Result<SortingMethods, ()> {
-        match s {
-            "natural" => Ok(SortingMethods::Natural),
-            "alpha" => Ok(SortingMethods::Alpha),
-            "dirsfirst" => Ok(SortingMethods::DirsFirst),
-            _ => Err(()),
         }
     }
 }
