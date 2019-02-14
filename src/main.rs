@@ -1,3 +1,7 @@
+extern crate structopt;
+#[macro_use]
+extern crate clap;
+
 use actix_web::{fs, middleware, server, App};
 use clap::crate_version;
 use simplelog::{Config, LevelFilter, TermLogger};
@@ -16,11 +20,11 @@ mod listing;
 pub struct MiniserveConfig {
     /// Enable verbose mode
     pub verbose: bool,
-    
+
     /// Path to be served by miniserve
     pub path: std::path::PathBuf,
 
-    /// Port on which miniserve will be listening 
+    /// Port on which miniserve will be listening
     pub port: u16,
 
     /// IP address(es) on which miniserve will be available
