@@ -1,7 +1,3 @@
-extern crate structopt;
-#[macro_use]
-extern crate clap;
-
 use actix_web::{fs, middleware, server, App};
 use clap::crate_version;
 use simplelog::{Config, LevelFilter, TermLogger};
