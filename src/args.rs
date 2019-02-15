@@ -16,21 +16,27 @@ struct CLIArgs {
     /// Be verbose, includes emitting access logs
     #[structopt(short = "v", long = "verbose")]
     verbose: bool,
+
     /// Which path to serve
     #[structopt(name = "PATH", parse(from_os_str))]
     path: Option<PathBuf>,
+
     /// Port to use
     #[structopt(short = "p", long = "port", default_value = "8080")]
     port: u16,
+
     /// Interface to listen on
     #[structopt(short = "i", long = "if", parse(try_from_str = "parse_interface"))]
     interfaces: Vec<IpAddr>,
+
     /// Set authentication (username:password)
     #[structopt(short = "a", long = "auth", parse(try_from_str = "parse_auth"))]
     auth: Option<(String, String)>,
+
     /// Generate a random 6-hexdigit route
     #[structopt(long = "random-route")]
     random_route: bool,
+
     /// Sort files
     #[structopt(
         short = "s",
@@ -41,9 +47,11 @@ struct CLIArgs {
         )
     )]
     sort_method: Option<listing::SortingMethods>,
+
     /// Reverse sorting
     #[structopt(long = "reverse")]
     reverse_sort: bool,
+
     /// Do not follow symbolic links
     #[structopt(short = "P", long = "no-symlinks")]
     no_symlinks: bool,
