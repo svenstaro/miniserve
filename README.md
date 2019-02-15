@@ -88,6 +88,10 @@ Sometimes this is just a more practical and quick way than doing things properly
     cargo install miniserve
     miniserve
 
+**With Docker:** If you prefer using Docker for this, run
+
+    docker run -v /tmp:/tmp -p 8080:8080 --rm -it svenstaro/miniserve /tmp
+
 ## Binding behavior
 
 For convenience reasons, miniserve will try to bind on all interfaces by default (if no `-i` is provided).
