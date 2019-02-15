@@ -12,6 +12,7 @@ WORKDIR $APP_HOME
 RUN make build-linux
 
 FROM alpine
+RUN apk add rsync
 COPY --from=builder /usr/src/app/target/x86_64-unknown-linux-musl/release/miniserve /app/
 
 EXPOSE 8080
