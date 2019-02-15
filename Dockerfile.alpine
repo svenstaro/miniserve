@@ -1,5 +1,5 @@
-# This Dockerfile results in a super small container containing only the miniserve binary and nothing else.
-# Use this in case you don't need any additional tools in the container.
+# This Dockerfile results in an Alpine container containing the minishift executable.
+# Use this in case you need additional basic tools provided by Alpine in this container.
 FROM rust as builder
 
 ENV APP_HOME /usr/src/app/
@@ -11,7 +11,7 @@ COPY . $APP_HOME
 WORKDIR $APP_HOME
 RUN make build-linux
 
-FROM scratch
+FROM alpine
 COPY --from=builder /usr/src/app/target/x86_64-unknown-linux-musl/release/miniserve /app/
 
 EXPOSE 8080
