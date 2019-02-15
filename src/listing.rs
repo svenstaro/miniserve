@@ -10,6 +10,15 @@ use std::path::Path;
 arg_enum! {
     #[derive(Clone, Copy, Debug)]
     /// Available sorting methods
+    ///
+    /// Natural: natural sorting method
+    /// 1 -> 2 -> 3 -> 11
+    ///
+    /// Alpha: pure alphabetical sorting method
+    /// 1 -> 11 -> 2 -> 3
+    ///
+    /// DirsFirst: directories are listed first, alphabetical sorting is also applied
+    /// 1/ -> 2/ -> 3/ -> 11 -> 12
     pub enum SortingMethods {
         Natural,
         Alpha,
