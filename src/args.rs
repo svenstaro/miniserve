@@ -11,7 +11,10 @@ const ROUTE_ALPHABET: [char; 16] = [
 ];
 
 #[derive(StructOpt, Debug)]
-#[structopt(name = "miniserve")]
+#[structopt(
+    name = "miniserve",
+    raw(global_settings = "&[structopt::clap::AppSettings::ColoredHelp]")
+)]
 struct CLIArgs {
     /// Be verbose, includes emitting access logs
     #[structopt(short = "v", long = "verbose")]
