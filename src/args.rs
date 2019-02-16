@@ -29,7 +29,12 @@ struct CLIArgs {
     port: u16,
 
     /// Interface to listen on
-    #[structopt(short = "i", long = "if", parse(try_from_str = "parse_interface"))]
+    #[structopt(
+        short = "i",
+        long = "if",
+        parse(try_from_str = "parse_interface"),
+        raw(number_of_values = "1")
+    )]
     interfaces: Vec<IpAddr>,
 
     /// Set authentication (username:password)
