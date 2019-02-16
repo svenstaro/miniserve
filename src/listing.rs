@@ -1,31 +1,34 @@
 use actix_web::{fs, HttpRequest, HttpResponse, Result};
 use bytesize::ByteSize;
+use clap::{_clap_count_exprs, arg_enum};
 use htmlescape::encode_minimal as escape_html_entity;
 use percent_encoding::{utf8_percent_encode, DEFAULT_ENCODE_SET};
 use std::cmp::Ordering;
 use std::fmt::Write as FmtWrite;
 use std::io;
 use std::path::Path;
-use std::str::FromStr;
 
-#[derive(Clone, Copy, Debug)]
-/// Available sorting methods
-pub enum SortingMethods {
-    /// Natural sorting method 
+arg_enum! {
+    #[derive(Clone, Copy, Debug)]
+    /// Available sorting methods
+    ///
+    /// Natural: natural sorting method
     /// 1 -> 2 -> 3 -> 11
-    Natural,
-
-    /// Pure alphabetical sorting method
+    ///
+    /// Alpha: pure alphabetical sorting method
     /// 1 -> 11 -> 2 -> 3
-    Alpha,
-
-    /// Directories are listed first, alphabetical sorting is also applied
+    ///
+    /// DirsFirst: directories are listed first, alphabetical sorting is also applied
     /// 1/ -> 2/ -> 3/ -> 11 -> 12
-    DirsFirst,
+    pub enum SortingMethods {
+        Natural,
+        Alpha,
+        DirsFirst,
+    }
 }
 
 #[derive(PartialEq)]
-/// Possible entry types 
+/// Possible entry types
 enum EntryType {
     /// Entry is a directory
     Directory,
@@ -71,19 +74,6 @@ impl Entry {
             entry_type,
             link,
             size,
-        }
-    }
-}
-
-impl FromStr for SortingMethods {
-    type Err = ();
-
-    fn from_str(s: &str) -> Result<SortingMethods, ()> {
-        match s {
-            "natural" => Ok(SortingMethods::Natural),
-            "alpha" => Ok(SortingMethods::Alpha),
-            "dirsfirst" => Ok(SortingMethods::DirsFirst),
-            _ => Err(()),
         }
     }
 }
