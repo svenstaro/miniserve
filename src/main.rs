@@ -16,11 +16,11 @@ mod listing;
 pub struct MiniserveConfig {
     /// Enable verbose mode
     pub verbose: bool,
-    
+
     /// Path to be served by miniserve
     pub path: std::path::PathBuf,
 
-    /// Port on which miniserve will be listening 
+    /// Port on which miniserve will be listening
     pub port: u16,
 
     /// IP address(es) on which miniserve will be available
