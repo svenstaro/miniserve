@@ -1,5 +1,7 @@
 use actix_web::{fs, HttpRequest, HttpResponse, Result};
 use bytesize::ByteSize;
+use chrono::{DateTime, Duration, Utc};
+use chrono_humanize::{Accuracy, HumanTime, Tense};
 use clap::{_clap_count_exprs, arg_enum};
 use htmlescape::encode_minimal as escape_html_entity;
 use percent_encoding::{utf8_percent_encode, DEFAULT_ENCODE_SET};
@@ -7,6 +9,7 @@ use std::cmp::Ordering;
 use std::fmt::Write as FmtWrite;
 use std::io;
 use std::path::Path;
+use std::time::SystemTime;
 
 arg_enum! {
     #[derive(Clone, Copy, Debug)]
@@ -20,10 +23,13 @@ arg_enum! {
     ///
     /// DirsFirst: directories are listed first, alphabetical sorting is also applied
     /// 1/ -> 2/ -> 3/ -> 11 -> 12
+    ///
+    /// Date: sort by last modification date (most recent first)
     pub enum SortingMethods {
         Natural,
         Alpha,
         DirsFirst,
+        Date
     }
 }
 
@@ -60,6 +66,9 @@ struct Entry {
 
     /// Size in byte of the entry. Only available for EntryType::File
     size: Option<bytesize::ByteSize>,
+
+    /// Last modification date
+    last_modification_date: Option<SystemTime>,
 }
 
 impl Entry {
@@ -68,12 +77,14 @@ impl Entry {
         entry_type: EntryType,
         link: String,
         size: Option<bytesize::ByteSize>,
+        last_modification_date: Option<SystemTime>,
     ) -> Self {
         Entry {
             name,
             entry_type,
             link,
             size,
+            last_modification_date,
         }
     }
 }
@@ -128,14 +139,26 @@ pub fn directory_listing<S>(
                 if skip_symlinks && metadata.file_type().is_symlink() {
                     continue;
                 }
+                let last_modification_date = match metadata.modified() {
+                    Ok(date) => Some(date),
+                    Err(_) => None,
+                };
+
                 if metadata.is_dir() {
-                    entries.push(Entry::new(file_name, EntryType::Directory, file_url, None));
+                    entries.push(Entry::new(
+                        file_name,
+                        EntryType::Directory,
+                        file_url,
+                        None,
+                        last_modification_date,
+                    ));
                 } else {
                     entries.push(Entry::new(
                         file_name,
                         EntryType::File,
                         file_url,
                         Some(ByteSize::b(metadata.len())),
+                        last_modification_date,
                     ));
                 }
             } else {
@@ -155,6 +178,13 @@ pub fn directory_listing<S>(
             entries.sort_by_key(|e| e.name.clone());
             entries.sort_by(|e1, e2| e1.entry_type.partial_cmp(&e2.entry_type).unwrap());
         }
+        SortingMethods::Date => entries.sort_by(|e1, e2| {
+            // If, for some reason, we can't get the last modification date of an entry
+            // let's consider it was modified on UNIX_EPOCH (01/01/19270 00:00:00)
+            e2.last_modification_date
+                .unwrap_or(SystemTime::UNIX_EPOCH)
+                .cmp(&e1.last_modification_date.unwrap_or(SystemTime::UNIX_EPOCH))
+        }),
     };
 
     if reverse_sort {
@@ -166,17 +196,19 @@ pub fn directory_listing<S>(
             EntryType::Directory => {
                 let _ = write!(
                     body,
-                    "<tr><td><a class=\"directory\" href=\"{}\">{}/</a></td><td></td></tr>",
-                    entry.link, entry.name
+                    "<tr><td><a class=\"directory\" href=\"{}\">{}/</a></td><td></td><td>{} <span class=\"ago\">({})</span></td></tr>",
+                    entry.link, entry.name, convert_to_utc(entry.last_modification_date), humanize_duration(entry.last_modification_date)
                 );
             }
             EntryType::File => {
                 let _ = write!(
                     body,
-                    "<tr><td><a class=\"file\" href=\"{}\">{}</a></td><td>{}</td></tr>",
+                    "<tr><td><a class=\"file\" href=\"{}\">{}</a></td><td>{}</td><td>{} <span class=\"ago\">({})</span></td></tr>",
                     entry.link,
                     entry.name,
-                    entry.size.unwrap()
+                    entry.size.unwrap(),
+                    convert_to_utc(entry.last_modification_date),
+                    humanize_duration(entry.last_modification_date)
                 );
             }
         }
@@ -210,6 +242,7 @@ pub fn directory_listing<S>(
            color: #777c82;\
            text-align: left;\
            line-height: 1.125rem;\
+           width: 33%;\
          }}\
          table thead tr th {{\
            padding: 0.5rem 0.625rem 0.625rem;\
@@ -236,6 +269,9 @@ pub fn directory_listing<S>(
          a:visited {{\
            color: #8e44ad;\
          }}\
+         .ago {{\
+           color: #c5c5c5;\
+         }}\
          @media (max-width: 600px) {{\
            h1 {{\
               font-size: 1.375em;\
@@ -250,7 +286,7 @@ pub fn directory_listing<S>(
          </head>\
          <body><h1>{}</h1>\
          <table>\
-         <thead><th>Name</th><th>Size</th></thead>\
+         <thead><th>Name</th><th>Size</th><th>Last modification</th></thead>\
          <tbody>\
          {}\
          </tbody></table></body>\n</html>",
@@ -259,4 +295,27 @@ pub fn directory_listing<S>(
     Ok(HttpResponse::Ok()
         .content_type("text/html; charset=utf-8")
         .body(html))
+}
+
+fn convert_to_utc(src_time: Option<SystemTime>) -> String {
+    match src_time {
+        Some(time) => {
+            let date_time = DateTime::<Utc>::from(time);
+            date_time.format("%R %e").to_string()
+        }
+        None => "".to_string(),
+    }
+}
+
+fn humanize_duration(src_time: Option<SystemTime>) -> String {
+    match src_time {
+        Some(std_time) => match SystemTime::now().duration_since(std_time) {
+            Ok(from_now) => match Duration::from_std(from_now) {
+                Ok(duration) => HumanTime::from(duration).to_text_en(Accuracy::Rough, Tense::Past),
+                Err(_) => "".to_string(),
+            },
+            Err(_) => "".to_string(),
+        },
+        None => "".to_string(),
+    }
 }
