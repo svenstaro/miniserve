@@ -301,7 +301,7 @@ fn convert_to_utc(src_time: Option<SystemTime>) -> String {
     match src_time {
         Some(time) => {
             let date_time = DateTime::<Utc>::from(time);
-            date_time.format("%R %e").to_string()
+            date_time.format("%e %b&emsp;&emsp;%R").to_string()
         }
         None => "".to_string(),
     }
