@@ -32,7 +32,7 @@ Sometimes this is just a more practical and quick way than doing things properly
 
 ### Bind to multiple interfaces:
 
-    miniserve -i 192.168.0.1 -i 10.13.37.10 -i ::1 -- /tmp/myshare
+    miniserve -i 192.168.0.1 -i 10.13.37.10 -i ::1 /tmp/myshare
 
 ### Sort files for easier navigation
     miniserve --sort=natural /tmp/myshare # (default behaviour)
