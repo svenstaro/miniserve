@@ -242,7 +242,7 @@ pub fn directory_listing<S>(
            color: #777c82;\
            text-align: left;\
            line-height: 1.125rem;\
-           width: 33%;\
+           width: 33.333%;\
          }}\
          table thead tr th {{\
            padding: 0.5rem 0.625rem 0.625rem;\
