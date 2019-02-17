@@ -307,6 +307,11 @@ pub fn directory_listing<S>(
         .body(html))
 }
 
+/// Converts a SystemTime object to a strings tuple (date, time)
+/// Date is formatted as %e %b, e.g. Jul 12
+/// Time is formatted as %R, e.g. 22:34
+///
+/// If no SystemTime was given, returns a tuple containing empty strings
 fn convert_to_utc(src_time: Option<SystemTime>) -> (String, String) {
     match src_time {
         Some(time) => {
@@ -320,6 +325,11 @@ fn convert_to_utc(src_time: Option<SystemTime>) -> (String, String) {
     }
 }
 
+/// Converts a SystemTime to a string readable by a human,
+/// i.e. calculates the duration between now() and the given SystemTime,
+/// and gives a rough approximation of the elapsed time since
+///
+/// If no SystemTime was given, returns an empty string
 fn humanize_duration(src_time: Option<SystemTime>) -> String {
     match src_time {
         Some(std_time) => match SystemTime::now().duration_since(std_time) {
