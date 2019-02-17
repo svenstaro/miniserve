@@ -190,24 +190,26 @@ pub fn directory_listing<S>(
     if reverse_sort {
         entries.reverse();
     }
-
     for entry in entries {
+        let (modification_date, modification_time) = convert_to_utc(entry.last_modification_date);
+
         match entry.entry_type {
             EntryType::Directory => {
                 let _ = write!(
                     body,
-                    "<tr><td><a class=\"directory\" href=\"{}\">{}/</a></td><td></td><td>{} <span class=\"ago\">({})</span></td></tr>",
-                    entry.link, entry.name, convert_to_utc(entry.last_modification_date), humanize_duration(entry.last_modification_date)
+                    "<tr><td><a class=\"directory\" href=\"{}\">{}/</a></td><td></td><td class=\"date-cell\"><span>{}</span><span>{}</span><span>{}</span></td></tr>",
+                    entry.link, entry.name, modification_date, modification_time, humanize_duration(entry.last_modification_date)
                 );
             }
             EntryType::File => {
                 let _ = write!(
                     body,
-                    "<tr><td><a class=\"file\" href=\"{}\">{}</a></td><td>{}</td><td>{} <span class=\"ago\">({})</span></td></tr>",
+                    "<tr><td><a class=\"file\" href=\"{}\">{}</a></td><td>{}</td><td class=\"date-cell\"><span>{}</span><span>{}</span><span>{}</span></td></tr>",
                     entry.link,
                     entry.name,
                     entry.size.unwrap(),
-                    convert_to_utc(entry.last_modification_date),
+                    modification_date,
+                    modification_time,
                     humanize_duration(entry.last_modification_date)
                 );
             }
@@ -269,8 +271,16 @@ pub fn directory_listing<S>(
          a:visited {{\
            color: #8e44ad;\
          }}\
-         .ago {{\
-           color: #c5c5c5;\
+         td.date-cell {{\
+           display: flex;\
+           width: calc(100% - 1.25rem);\
+         }}\
+         td.date-cell span:first-of-type,\
+         td.date-cell span:nth-of-type(2) {{\
+           flex-basis:4.5rem;\
+         }}\
+         td.date-cell span:nth-of-type(3) {{\
+           color: #c5c5c5\
          }}\
          @media (max-width: 600px) {{\
            h1 {{\
@@ -297,13 +307,16 @@ pub fn directory_listing<S>(
         .body(html))
 }
 
-fn convert_to_utc(src_time: Option<SystemTime>) -> String {
+fn convert_to_utc(src_time: Option<SystemTime>) -> (String, String) {
     match src_time {
         Some(time) => {
             let date_time = DateTime::<Utc>::from(time);
-            date_time.format("%e %b&emsp;&emsp;%R").to_string()
+            (
+                date_time.format("%e %b").to_string(),
+                date_time.format("%R").to_string(),
+            )
         }
-        None => "".to_string(),
+        None => ("".to_string(), "".to_string()),
     }
 }
 
