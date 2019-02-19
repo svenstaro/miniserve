@@ -198,7 +198,7 @@ pub fn directory_listing<S>(
                 let _ = write!(
                     body,
                     "<tr><td><a class=\"directory\" href=\"{}\">{}/</a></td><td></td><td class=\"date-cell\"><span>{}</span><span>{}</span><span>{}</span></td></tr>",
-                    entry.link, entry.name, modification_date, modification_time, humanize_duration(entry.last_modification_date)
+                    entry.link, entry.name, modification_date, modification_time, humanize_systemtime(entry.last_modification_date)
                 );
             }
             EntryType::File => {
@@ -210,7 +210,7 @@ pub fn directory_listing<S>(
                     entry.size.unwrap(),
                     modification_date,
                     modification_time,
-                    humanize_duration(entry.last_modification_date)
+                    humanize_systemtime(entry.last_modification_date)
                 );
             }
         }
@@ -329,7 +329,7 @@ fn convert_to_utc(src_time: Option<SystemTime>) -> (String, String) {
 /// and gives a rough approximation of the elapsed time since
 ///
 /// If no SystemTime was given, returns an empty string
-fn humanize_duration(src_time: Option<SystemTime>) -> String {
+fn humanize_systemtime(src_time: Option<SystemTime>) -> String {
     src_time
         .and_then(|std_time| SystemTime::now().duration_since(std_time).ok())
         .and_then(|from_now| Duration::from_std(from_now).ok())
