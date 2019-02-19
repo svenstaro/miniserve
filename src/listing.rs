@@ -280,7 +280,7 @@ pub fn directory_listing<S>(
            flex-basis:4.5rem;\
          }}\
          td.date-cell span:nth-of-type(3) {{\
-           color: #c5c5c5\
+           color: #c5c5c5;\
          }}\
          @media (max-width: 600px) {{\
            h1 {{\
