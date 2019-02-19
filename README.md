@@ -1,7 +1,7 @@
 # miniserve - a CLI tool to serve files and dirs over HTTP
 
 [![Build Status](https://travis-ci.org/svenstaro/miniserve.svg?branch=master)](https://travis-ci.org/svenstaro/miniserve)
-[![Docker Hub](https://images.microbadger.com/badges/image/svenstaro/miniserve.svg)](https://microbadger.com/images/svenstaro/miniserve)
+[![Docker Hub](https://images.microbadger.com/badges/image/svenstaro/miniserve.svg)](https://cloud.docker.com/repository/docker/svenstaro/miniserve/)
 [![AUR](https://img.shields.io/aur/version/miniserve.svg)](https://aur.archlinux.org/packages/miniserve/)
 [![Crates.io](https://img.shields.io/crates/v/miniserve.svg)](https://crates.io/crates/miniserve)
 [![dependency status](https://deps.rs/repo/github/svenstaro/miniserve/status.svg)](https://deps.rs/repo/github/svenstaro/miniserve)
