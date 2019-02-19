@@ -313,16 +313,15 @@ pub fn directory_listing<S>(
 ///
 /// If no SystemTime was given, returns a tuple containing empty strings
 fn convert_to_utc(src_time: Option<SystemTime>) -> (String, String) {
-    match src_time {
-        Some(time) => {
-            let date_time = DateTime::<Utc>::from(time);
+    src_time
+        .map(|time| DateTime::<Utc>::from(time))
+        .map(|date_time| {
             (
                 date_time.format("%e %b").to_string(),
                 date_time.format("%R").to_string(),
             )
-        }
-        None => ("".to_string(), "".to_string()),
-    }
+        })
+        .unwrap_or_default()
 }
 
 /// Converts a SystemTime to a string readable by a human,
@@ -331,14 +330,9 @@ fn convert_to_utc(src_time: Option<SystemTime>) -> (String, String) {
 ///
 /// If no SystemTime was given, returns an empty string
 fn humanize_duration(src_time: Option<SystemTime>) -> String {
-    match src_time {
-        Some(std_time) => match SystemTime::now().duration_since(std_time) {
-            Ok(from_now) => match Duration::from_std(from_now) {
-                Ok(duration) => HumanTime::from(duration).to_text_en(Accuracy::Rough, Tense::Past),
-                Err(_) => "".to_string(),
-            },
-            Err(_) => "".to_string(),
-        },
-        None => "".to_string(),
-    }
+    src_time
+        .and_then(|std_time| SystemTime::now().duration_since(std_time).ok())
+        .and_then(|from_now| Duration::from_std(from_now).ok())
+        .map(|duration| HumanTime::from(duration).to_text_en(Accuracy::Rough, Tense::Past))
+        .unwrap_or_default()
 }
