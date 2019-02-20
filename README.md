@@ -56,6 +56,9 @@ Sometimes this is just a more practical and quick way than doing things properly
     # 11
     # 3
 
+    miniserve --sort=date /tmp/myshare
+    # list files in chronological order (most recent files on top of the list)
+
     miniserve --reverse /tmp/myshare
     # 11
     # 3
