@@ -197,16 +197,57 @@ pub fn directory_listing<S>(
             EntryType::Directory => {
                 let _ = write!(
                     body,
-                    "<tr><td><a class=\"directory\" href=\"{}\">{}/</a></td><td></td><td class=\"date-cell\"><span>{}</span><span>{}</span><span>{}</span></td></tr>",
-                    entry.link, entry.name, modification_date, modification_time, humanize_systemtime(entry.last_modification_date)
+                    "<tr>\
+                     <td>\
+                     <a class=\"directory\" href=\"{}\">{}/</a>\
+                     <span class=\"mobile-info\">\
+                     <strong>Last modification:</strong> {} {}\
+                     </span>\
+                     </td>\
+                     <td></td>\
+                     <td class=\"date-cell\">\
+                     <span>{}</span>\
+                     <span>{}</span>\
+                     <span>{}</span>\
+                     </td>\
+                     </tr>",
+                    entry.link,
+                    entry.name,
+                    modification_date,
+                    modification_time,
+                    modification_date,
+                    modification_time,
+                    humanize_systemtime(entry.last_modification_date)
                 );
             }
             EntryType::File => {
                 let _ = write!(
                     body,
-                    "<tr><td><a class=\"file\" href=\"{}\">{}</a></td><td>{}</td><td class=\"date-cell\"><span>{}</span><span>{}</span><span>{}</span></td></tr>",
+                    "<tr>\
+                     <td>\
+                     <a class=\"file\" href=\"{}\">{}</a>\
+                     <span class=\"mobile-info\">\
+                     <strong>Size:</strong> {}\
+                     </span>\
+                     <span class=\"mobile-info\">\
+                     <strong>Last modification:</strong> {} {} <span class=\"history\">({})</span>\
+                     </span>\
+                     </td>\
+                     <td>\
+                     {}\
+                     </td>\
+                     <td class=\"date-cell\">\
+                     <span>{}</span>\
+                     <span>{}</span>\
+                     <span>{}</span>\
+                     </td>\
+                     </tr>",
                     entry.link,
                     entry.name,
+                    entry.size.unwrap(),
+                    modification_date,
+                    modification_time,
+                    humanize_systemtime(entry.last_modification_date),
                     entry.size.unwrap(),
                     modification_date,
                     modification_time,
@@ -220,6 +261,7 @@ pub fn directory_listing<S>(
         "<html>\
          <head>\
          <title>{}</title>\
+         <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\
          <style>\
          body {{\
            margin: 0;\
@@ -279,12 +321,27 @@ pub fn directory_listing<S>(
          td.date-cell span:nth-of-type(2) {{\
            flex-basis:4.5rem;\
          }}\
-         td.date-cell span:nth-of-type(3) {{\
+         td.date-cell span:nth-of-type(3), .history {{\
            color: #c5c5c5;\
+         }}\
+         .file, .directory {{\
+           display: block;\
+         }}\
+         .mobile-info {{\
+           display: none;\
          }}\
          @media (max-width: 600px) {{\
            h1 {{\
               font-size: 1.375em;\
+           }}\
+           td:not(:nth-child(1)), th:not(:nth-child(1)){{\
+             display: none;\
+           }}\
+           .mobile-info {{\
+             display: block;\
+           }}\
+           .file, .directory{{\
+             padding-bottom: 0.5rem;\
            }}\
          }}\
          @media (max-width: 400px) {{\
