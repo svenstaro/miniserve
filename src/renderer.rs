@@ -59,6 +59,6 @@ impl Renderer {
     {
         self.handlebars
             .render(&template_name, &data)
-            .map_err(|e| io::Error::new(io::ErrorKind::Other, format!("{}", e.to_string())))
+            .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))
     }
 }

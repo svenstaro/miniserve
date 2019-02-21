@@ -1,6 +1,6 @@
 use actix_web::{fs, HttpRequest, HttpResponse, Result};
 use bytesize::ByteSize;
-use chrono::{DateTime, Duration, NaiveDate, NaiveDateTime, Utc};
+use chrono::{DateTime, Duration, Utc};
 use chrono_humanize::{Accuracy, HumanTime, Tense};
 use clap::{_clap_count_exprs, arg_enum};
 use htmlescape::encode_minimal as escape_html_entity;
@@ -204,7 +204,7 @@ pub fn directory_listing<S>(
 /// If no SystemTime was given, returns a tuple containing empty strings
 fn convert_to_utc(src_time: Option<SystemTime>) -> (String, String) {
     src_time
-        .map(|time| DateTime::<Utc>::from(time))
+        .map(DateTime::<Utc>::from)
         .map(|date_time| {
             (
                 date_time.format("%e %b").to_string(),
