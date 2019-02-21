@@ -29,7 +29,6 @@ pub struct ReprEntry {
     last_modification_timer: String,
 }
 
-
 /// Converts a listing::Entry into a ReprEntry
 impl From<listing::Entry> for ReprEntry {
     fn from(entry: listing::Entry) -> Self {

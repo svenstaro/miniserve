@@ -1,8 +1,8 @@
 use actix_web::{fs, HttpRequest, HttpResponse, Result};
-use clap::{_clap_count_exprs, arg_enum};
-use percent_encoding::{utf8_percent_encode, DEFAULT_ENCODE_SET};
-use htmlescape::encode_minimal as escape_html_entity;
 use bytesize::ByteSize;
+use clap::{_clap_count_exprs, arg_enum};
+use htmlescape::encode_minimal as escape_html_entity;
+use percent_encoding::{utf8_percent_encode, DEFAULT_ENCODE_SET};
 use std::io;
 use std::path::Path;
 use std::time::SystemTime;
@@ -173,7 +173,7 @@ pub fn directory_listing<S>(
 
     let repr_entries = entries
         .into_iter()
-        .map(|e| renderer::ReprEntry::from(e))
+        .map(renderer::ReprEntry::from)
         .collect::<Vec<_>>();
     let template = renderer::PageTemplate::new(title, repr_entries, is_root, page_parent);
 
