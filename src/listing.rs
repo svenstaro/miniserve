@@ -1,11 +1,8 @@
 use actix_web::{fs, HttpRequest, HttpResponse, Result};
-use bytesize::ByteSize;
-use chrono::{DateTime, Duration, Utc};
-use chrono_humanize::{Accuracy, HumanTime, Tense};
 use clap::{_clap_count_exprs, arg_enum};
-use htmlescape::encode_minimal as escape_html_entity;
 use percent_encoding::{utf8_percent_encode, DEFAULT_ENCODE_SET};
-use serde::Serialize;
+use htmlescape::encode_minimal as escape_html_entity;
+use bytesize::ByteSize;
 use std::io;
 use std::path::Path;
 use std::time::SystemTime;
@@ -35,28 +32,22 @@ arg_enum! {
 }
 
 /// Entry
-#[derive(Debug, Serialize)]
+#[derive(Debug)]
 pub struct Entry {
     /// Name of the entry
-    name: String,
+    pub name: String,
 
-    /// Entry a directory
-    is_dir: bool,
+    /// Entry is a directory
+    pub is_dir: bool,
 
     /// URL of the entry
-    link: String,
+    pub link: String,
 
     /// Size in byte of the entry. Only available for files
-    size: Option<String>,
+    pub size: Option<bytesize::ByteSize>,
 
     /// Last modification date
-    last_modification_date: Option<SystemTime>,
-
-    /// Last modification date-time (for display purposes)
-    last_modification_datetime_str: (String, String),
-
-    /// Last modification timer
-    last_modification_timer: String,
+    pub last_modification_date: Option<SystemTime>,
 }
 
 impl Entry {
@@ -64,10 +55,8 @@ impl Entry {
         name: String,
         is_dir: bool,
         link: String,
-        size: Option<String>,
+        size: Option<bytesize::ByteSize>,
         last_modification_date: Option<SystemTime>,
-        last_modification_datetime_str: (String, String),
-        last_modification_timer: String,
     ) -> Self {
         Entry {
             name,
@@ -75,8 +64,6 @@ impl Entry {
             link,
             size,
             last_modification_date,
-            last_modification_datetime_str,
-            last_modification_timer,
         }
     }
 }
@@ -144,18 +131,14 @@ pub fn directory_listing<S>(
                         file_url,
                         None,
                         last_modification_date,
-                        convert_to_utc(last_modification_date),
-                        humanize_systemtime(last_modification_date),
                     ));
                 } else {
                     entries.push(Entry::new(
                         file_name,
                         false,
                         file_url,
-                        Some(ByteSize::b(metadata.len()).to_string_as(false)),
+                        Some(ByteSize::b(metadata.len())),
                         last_modification_date,
-                        convert_to_utc(last_modification_date),
-                        humanize_systemtime(last_modification_date),
                     ));
                 }
             } else {
@@ -188,41 +171,15 @@ pub fn directory_listing<S>(
         entries.reverse();
     }
 
-    let template = renderer::PageTemplate::new(title, entries, is_root, page_parent);
+    let repr_entries = entries
+        .into_iter()
+        .map(|e| renderer::ReprEntry::from(e))
+        .collect::<Vec<_>>();
+    let template = renderer::PageTemplate::new(title, repr_entries, is_root, page_parent);
 
     let body = renderer.render("index", template)?;
 
     Ok(HttpResponse::Ok()
         .content_type("text/html; charset=utf-8")
         .body(body))
-}
-
-/// Converts a SystemTime object to a strings tuple (date, time)
-/// Date is formatted as %e %b, e.g. Jul 12
-/// Time is formatted as %R, e.g. 22:34
-///
-/// If no SystemTime was given, returns a tuple containing empty strings
-fn convert_to_utc(src_time: Option<SystemTime>) -> (String, String) {
-    src_time
-        .map(DateTime::<Utc>::from)
-        .map(|date_time| {
-            (
-                date_time.format("%e %b").to_string(),
-                date_time.format("%R").to_string(),
-            )
-        })
-        .unwrap_or_default()
-}
-
-/// Converts a SystemTime to a string readable by a human,
-/// i.e. calculates the duration between now() and the given SystemTime,
-/// and gives a rough approximation of the elapsed time since
-///
-/// If no SystemTime was given, returns an empty string
-fn humanize_systemtime(src_time: Option<SystemTime>) -> String {
-    src_time
-        .and_then(|std_time| SystemTime::now().duration_since(std_time).ok())
-        .and_then(|from_now| Duration::from_std(from_now).ok())
-        .map(|duration| HumanTime::from(duration).to_text_en(Accuracy::Rough, Tense::Past))
-        .unwrap_or_default()
 }
