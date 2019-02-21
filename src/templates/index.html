@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <title>{{title}}</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <style>
+            body {
+                margin: 0;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,"Helvetica Neue", Helvetica, Arial, sans-serif;
+                font-weight: 300;
+                color: #444444;
+                padding: 0.125rem;
+            }
+            table {
+                width: 100%;
+                background: white;
+                border: 0;
+                table-layout: auto;
+            }
+            table thead {
+                background: #efefef;
+            }
+            table tr th,
+            table tr td {
+                padding: 0.5625rem 0.625rem;
+                font-size: 0.875rem;
+                color: #777c82;
+                text-align: left;
+                line-height: 1.125rem;
+                width: 33.333%;
+            }
+            table thead tr th {
+                padding: 0.5rem 0.625rem 0.625rem;
+                font-weight: bold;
+                color: #444444;
+            }
+            table tr:nth-child(even) {
+                background: #f6f6f6;
+            }
+            a {
+                text-decoration: none;
+                color: #3498db;
+            }
+            a.root, a.root:visited {
+                font-weight: bold;
+                color: #777c82;
+            }
+            a.directory {
+                font-weight: bold;
+            }
+            a:hover {
+                text-decoration: underline;
+            }
+            a:visited {
+                color: #8e44ad;
+            }
+            td.date-cell {
+                display: flex;
+                width: calc(100% - 1.25rem);
+            }
+            td.date-cell span:first-of-type {
+                flex-basis:6rem;
+            }
+            td.date-cell span:nth-of-type(2) {
+                flex-basis:4.5rem;
+            }
+            td.date-cell span:nth-of-type(3), .history {
+                color: #c5c5c5;
+            }
+            .file, .directory {
+                display: block;
+            }
+            .mobile-info {
+                display: none;
+            }
+            @media (max-width: 600px) {
+                h1 {
+                    font-size: 1.375em;
+                }
+                td:not(:nth-child(1)), th:not(:nth-child(1)){
+                    display: none;
+                }
+                .mobile-info {
+                    display: block;
+                }
+                .file, .directory{
+                    padding-bottom: 0.5rem;
+                }
+            }
+            @media (max-width: 400px) {
+                h1 {
+                    font-size: 1.375em;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <h1>{{title}}</h1>
+        <table>
+            <thead>
+                <th>Name</th>
+                <th>Size</th>
+                <th>Last modification</th>
+            </thead>
+            <tbody>
+                {{#unless is_root}}
+                <tr>
+                    <td>
+                        <a class="root" href="{{parent}}">..</a>
+                    </td>
+                </tr>
+                {{/unless}}
+                {{#each entries}}
+                <tr>
+                    <td>
+                        {{#if this.is_dir}}
+                            <a class="directory" href="{{this.link}}">{{this.name}}/</a>
+                        {{else}}
+                            <a class="file" href="{{this.link}}">{{this.name}}</a>
+                        {{/if}}
+                        {{#unless this.is_dir}}
+                        <span class="mobile-info">
+                            <strong>Size:</strong>
+                            {{this.size}}
+                        </span>
+                        {{/unless}}
+                        <span class="mobile-info">
+                            <strong>Last modification:</strong> 
+                            {{this.last_modification_datetime_str.0}}
+                            {{this.last_modification_datetime_str.1}}
+                            <span class="history">
+                                ({{this.last_modification_timer}})
+                            </span>
+                        </span>
+                    </td>
+                    <td>
+                        {{this.size}}
+                    </td>
+                    <td class="date-cell">
+                        <span>{{this.last_modification_datetime_str.0}}</span>
+                        <span>{{this.last_modification_datetime_str.1}}</span>
+                        <span>({{this.last_modification_timer}})</span>
+                    </td>
+                </tr>
+                {{/each}}
+            </tbody>
+        </table>
+    </body>
+</html>

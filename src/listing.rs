@@ -1,15 +1,16 @@
 use actix_web::{fs, HttpRequest, HttpResponse, Result};
 use bytesize::ByteSize;
-use chrono::{DateTime, Duration, Utc};
+use chrono::{DateTime, Duration, NaiveDate, NaiveDateTime, Utc};
 use chrono_humanize::{Accuracy, HumanTime, Tense};
 use clap::{_clap_count_exprs, arg_enum};
 use htmlescape::encode_minimal as escape_html_entity;
 use percent_encoding::{utf8_percent_encode, DEFAULT_ENCODE_SET};
-use std::cmp::Ordering;
-use std::fmt::Write as FmtWrite;
+use serde::Serialize;
 use std::io;
 use std::path::Path;
 use std::time::SystemTime;
+
+use crate::renderer;
 
 arg_enum! {
     #[derive(Clone, Copy, Debug)]
@@ -33,58 +34,49 @@ arg_enum! {
     }
 }
 
-#[derive(PartialEq)]
-/// Possible entry types
-enum EntryType {
-    /// Entry is a directory
-    Directory,
-
-    /// Entry is a file
-    File,
-}
-
-impl PartialOrd for EntryType {
-    fn partial_cmp(&self, other: &EntryType) -> Option<Ordering> {
-        match (self, other) {
-            (EntryType::Directory, EntryType::File) => Some(Ordering::Less),
-            (EntryType::File, EntryType::Directory) => Some(Ordering::Greater),
-            _ => Some(Ordering::Equal),
-        }
-    }
-}
-
 /// Entry
-struct Entry {
+#[derive(Debug, Serialize)]
+pub struct Entry {
     /// Name of the entry
     name: String,
 
-    /// Type of the entry
-    entry_type: EntryType,
+    /// Entry a directory
+    is_dir: bool,
 
     /// URL of the entry
     link: String,
 
-    /// Size in byte of the entry. Only available for EntryType::File
-    size: Option<bytesize::ByteSize>,
+    /// Size in byte of the entry. Only available for files
+    size: Option<String>,
 
     /// Last modification date
     last_modification_date: Option<SystemTime>,
+
+    /// Last modification date-time (for display purposes)
+    last_modification_datetime_str: (String, String),
+
+    /// Last modification timer
+    last_modification_timer: String,
 }
 
 impl Entry {
     fn new(
         name: String,
-        entry_type: EntryType,
+        is_dir: bool,
         link: String,
-        size: Option<bytesize::ByteSize>,
+        size: Option<String>,
         last_modification_date: Option<SystemTime>,
+        last_modification_datetime_str: (String, String),
+        last_modification_timer: String,
     ) -> Self {
         Entry {
             name,
-            entry_type,
+            is_dir,
             link,
             size,
             last_modification_date,
+            last_modification_datetime_str,
+            last_modification_timer,
         }
     }
 }
@@ -104,18 +96,19 @@ pub fn directory_listing<S>(
     sort_method: SortingMethods,
     reverse_sort: bool,
 ) -> Result<HttpResponse, io::Error> {
-    let index_of = format!("Index of {}", req.path());
-    let mut body = String::new();
+    let renderer = renderer::Renderer::new()?;
+
+    let title = format!("Index of {}", req.path());
+    let mut is_root = true;
+    let mut page_parent = None;
+
     let base = Path::new(req.path());
     let random_route = format!("/{}", random_route.unwrap_or_default());
 
     if let Some(parent) = base.parent() {
         if req.path() != random_route {
-            let _ = write!(
-                body,
-                "<tr><td><a class=\"root\" href=\"{}\">..</a></td><td></td></tr>",
-                parent.display()
-            );
+            is_root = false;
+            page_parent = Some(parent.display().to_string());
         }
     }
 
@@ -147,18 +140,22 @@ pub fn directory_listing<S>(
                 if metadata.is_dir() {
                     entries.push(Entry::new(
                         file_name,
-                        EntryType::Directory,
+                        true,
                         file_url,
                         None,
                         last_modification_date,
+                        convert_to_utc(last_modification_date),
+                        humanize_systemtime(last_modification_date),
                     ));
                 } else {
                     entries.push(Entry::new(
                         file_name,
-                        EntryType::File,
+                        false,
                         file_url,
-                        Some(ByteSize::b(metadata.len())),
+                        Some(ByteSize::b(metadata.len()).to_string_as(false)),
                         last_modification_date,
+                        convert_to_utc(last_modification_date),
+                        humanize_systemtime(last_modification_date),
                     ));
                 }
             } else {
@@ -171,12 +168,12 @@ pub fn directory_listing<S>(
         SortingMethods::Natural => entries
             .sort_by(|e1, e2| alphanumeric_sort::compare_str(e1.name.clone(), e2.name.clone())),
         SortingMethods::Alpha => {
-            entries.sort_by(|e1, e2| e1.entry_type.partial_cmp(&e2.entry_type).unwrap());
+            entries.sort_by(|e1, e2| e2.is_dir.partial_cmp(&e1.is_dir).unwrap());
             entries.sort_by_key(|e| e.name.clone())
         }
         SortingMethods::DirsFirst => {
             entries.sort_by_key(|e| e.name.clone());
-            entries.sort_by(|e1, e2| e1.entry_type.partial_cmp(&e2.entry_type).unwrap());
+            entries.sort_by(|e1, e2| e2.is_dir.partial_cmp(&e1.is_dir).unwrap());
         }
         SortingMethods::Date => entries.sort_by(|e1, e2| {
             // If, for some reason, we can't get the last modification date of an entry
@@ -190,178 +187,14 @@ pub fn directory_listing<S>(
     if reverse_sort {
         entries.reverse();
     }
-    for entry in entries {
-        let (modification_date, modification_time) = convert_to_utc(entry.last_modification_date);
 
-        match entry.entry_type {
-            EntryType::Directory => {
-                let _ = write!(
-                    body,
-                    "<tr>\
-                     <td>\
-                     <a class=\"directory\" href=\"{}\">{}/</a>\
-                     <span class=\"mobile-info\">\
-                     <strong>Last modification:</strong> {} {}\
-                     </span>\
-                     </td>\
-                     <td></td>\
-                     <td class=\"date-cell\">\
-                     <span>{}</span>\
-                     <span>{}</span>\
-                     <span>{}</span>\
-                     </td>\
-                     </tr>",
-                    entry.link,
-                    entry.name,
-                    modification_date,
-                    modification_time,
-                    modification_date,
-                    modification_time,
-                    humanize_systemtime(entry.last_modification_date)
-                );
-            }
-            EntryType::File => {
-                let _ = write!(
-                    body,
-                    "<tr>\
-                     <td>\
-                     <a class=\"file\" href=\"{}\">{}</a>\
-                     <span class=\"mobile-info\">\
-                     <strong>Size:</strong> {}\
-                     </span>\
-                     <span class=\"mobile-info\">\
-                     <strong>Last modification:</strong> {} {} <span class=\"history\">({})</span>\
-                     </span>\
-                     </td>\
-                     <td>\
-                     {}\
-                     </td>\
-                     <td class=\"date-cell\">\
-                     <span>{}</span>\
-                     <span>{}</span>\
-                     <span>{}</span>\
-                     </td>\
-                     </tr>",
-                    entry.link,
-                    entry.name,
-                    entry.size.unwrap(),
-                    modification_date,
-                    modification_time,
-                    humanize_systemtime(entry.last_modification_date),
-                    entry.size.unwrap(),
-                    modification_date,
-                    modification_time,
-                    humanize_systemtime(entry.last_modification_date)
-                );
-            }
-        }
-    }
+    let template = renderer::PageTemplate::new(title, entries, is_root, page_parent);
 
-    let html = format!(
-        "<html>\
-         <head>\
-         <title>{}</title>\
-         <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\
-         <style>\
-         body {{\
-           margin: 0;\
-           font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto,\"Helvetica Neue\", Helvetica, Arial, sans-serif;\
-           font-weight: 300;\
-           color: #444444;\
-           padding: 0.125rem;\
-         }}\
-         table {{\
-           width: 100%;\
-           background: white;\
-           border: 0;\
-           table-layout: auto;\
-         }}\
-         table thead {{\
-           background: #efefef;\
-         }}\
-         table tr th,\
-         table tr td {{\
-           padding: 0.5625rem 0.625rem;\
-           font-size: 0.875rem;\
-           color: #777c82;\
-           text-align: left;\
-           line-height: 1.125rem;\
-           width: 33.333%;\
-         }}\
-         table thead tr th {{\
-           padding: 0.5rem 0.625rem 0.625rem;\
-           font-weight: bold;\
-           color: #444444;\
-         }}\
-         table tr:nth-child(even) {{\
-           background: #f6f6f6;\
-         }}\
-         a {{\
-           text-decoration: none;\
-           color: #3498db;\
-         }}\
-         a.root, a.root:visited {{\
-            font-weight: bold;\
-            color: #777c82;\
-         }}\
-         a.directory {{\
-           font-weight: bold;\
-         }}\
-         a:hover {{\
-           text-decoration: underline;\
-         }}\
-         a:visited {{\
-           color: #8e44ad;\
-         }}\
-         td.date-cell {{\
-           display: flex;\
-           width: calc(100% - 1.25rem);\
-         }}\
-         td.date-cell span:first-of-type,\
-         td.date-cell span:nth-of-type(2) {{\
-           flex-basis:4.5rem;\
-         }}\
-         td.date-cell span:nth-of-type(3), .history {{\
-           color: #c5c5c5;\
-         }}\
-         .file, .directory {{\
-           display: block;\
-         }}\
-         .mobile-info {{\
-           display: none;\
-         }}\
-         @media (max-width: 600px) {{\
-           h1 {{\
-              font-size: 1.375em;\
-           }}\
-           td:not(:nth-child(1)), th:not(:nth-child(1)){{\
-             display: none;\
-           }}\
-           .mobile-info {{\
-             display: block;\
-           }}\
-           .file, .directory{{\
-             padding-bottom: 0.5rem;\
-           }}\
-         }}\
-         @media (max-width: 400px) {{\
-           h1 {{\
-              font-size: 1.375em;\
-           }}\
-         }}\
-         </style>\
-         </head>\
-         <body><h1>{}</h1>\
-         <table>\
-         <thead><th>Name</th><th>Size</th><th>Last modification</th></thead>\
-         <tbody>\
-         {}\
-         </tbody></table></body>\n</html>",
-        index_of, index_of, body
-    );
+    let body = renderer.render("index", template)?;
+
     Ok(HttpResponse::Ok()
         .content_type("text/html; charset=utf-8")
-        .body(html))
+        .body(body))
 }
 
 /// Converts a SystemTime object to a strings tuple (date, time)

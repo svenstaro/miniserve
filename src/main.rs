@@ -10,6 +10,7 @@ use yansi::{Color, Paint};
 mod args;
 mod auth;
 mod listing;
+mod renderer;
 
 #[derive(Clone, Debug)]
 /// Configuration of the Miniserve application
