@@ -177,7 +177,7 @@ pub fn directory_listing<S>(
         .collect::<Vec<_>>();
     let template = renderer::PageTemplate::new(title, repr_entries, is_root, page_parent);
 
-    let body = renderer.render("index", template)?;
+    let body = renderer.render(template)?;
 
     Ok(HttpResponse::Ok()
         .content_type("text/html; charset=utf-8")

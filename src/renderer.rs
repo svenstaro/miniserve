@@ -32,10 +32,7 @@ pub struct ReprEntry {
 /// Converts a listing::Entry into a ReprEntry
 impl From<listing::Entry> for ReprEntry {
     fn from(entry: listing::Entry) -> Self {
-        let size = match entry.size {
-            Some(s) => Some(s.to_string_as(false)),
-            None => None,
-        };
+        let size = entry.size.map(|s| s.to_string_as(false));
 
         ReprEntry {
             name: entry.name,
@@ -100,13 +97,13 @@ impl Renderer {
         Ok(handlebars)
     }
 
-    /// Renders data in a given template
-    pub fn render<T>(&self, template_name: &str, data: T) -> Result<String, io::Error>
+    /// Renders data in the index template
+    pub fn render<T>(&self, data: T) -> Result<String, io::Error>
     where
         T: Serialize + std::fmt::Debug,
     {
         self.handlebars
-            .render(&template_name, &data)
+            .render("index", &data)
             .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))
     }
 }
