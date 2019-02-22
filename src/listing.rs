@@ -86,18 +86,11 @@ pub fn directory_listing<S>(
     let renderer = renderer::Renderer::new()?;
 
     let title = format!("Index of {}", req.path());
-    let mut is_root = true;
-    let mut page_parent = None;
 
     let base = Path::new(req.path());
     let random_route = format!("/{}", random_route.unwrap_or_default());
-
-    if let Some(parent) = base.parent() {
-        if req.path() != random_route {
-            is_root = false;
-            page_parent = Some(parent.display().to_string());
-        }
-    }
+    let is_root = base.parent().is_none() || req.path() == random_route;
+    let page_parent = base.parent().map(|p| p.display().to_string());
 
     let mut entries: Vec<Entry> = Vec::new();
 
