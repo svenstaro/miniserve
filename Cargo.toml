@@ -32,3 +32,4 @@ alphanumeric-sort = "1.0.6"
 structopt = "0.2.14"
 chrono = "0.4.6"
 chrono-humanize = "0.0.11"
+maud = { version = "0.20.0", features = ["actix-web"] }
