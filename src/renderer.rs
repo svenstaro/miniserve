@@ -60,8 +60,6 @@ fn page_header(page_title: &str) -> Markup {
 /// Partial: row for an entry
 fn entry_row(entry: listing::Entry) -> Markup {
     html! {
-        @let (modification_date, modification_time) = convert_to_utc(entry.last_modification_date);
-        @let last_modification_timer = humanize_systemtime(entry.last_modification_date);
         tr {
             td {
                 @if entry.is_dir() {
@@ -82,10 +80,15 @@ fn entry_row(entry: listing::Entry) -> Markup {
                     }
                 }
                 span .mobile-info {
-                    strong { "Last modification: " }
-                    (modification_date) " "
-                    (modification_time) " "
-                    span .history { "(" (last_modification_timer) ")" }
+                    @if let Some(modification_date) = convert_to_utc(entry.last_modification_date) {
+                        strong { "Last modification: " }
+                        (modification_date.0) " "
+                        (modification_date.1) " "
+                    }
+                    @if let Some(modification_timer) = humanize_systemtime(entry.last_modification_date) {
+                        span .history { "(" (modification_timer) ")" }
+                    }
+
                 }
             }
             td {
@@ -94,14 +97,18 @@ fn entry_row(entry: listing::Entry) -> Markup {
                 }
             }
             td.date-cell {
-                span {
-                    (modification_date)
+                @if let Some(modification_date) = convert_to_utc(entry.last_modification_date) {
+                    span {
+                        (modification_date.0)
+                    }
+                    span {
+                        (modification_date.1)
+                    }
                 }
-                span {
-                    (modification_time)
-                }
-                span {
-                    "(" (last_modification_timer) ")"
+                @if let Some(modification_timer) = humanize_systemtime(entry.last_modification_date) {
+                    span {
+                        "(" (modification_timer) ")"
+                    }
                 }
             }
         }
@@ -202,29 +209,21 @@ fn css() -> Markup {
 /// Converts a SystemTime object to a strings tuple (date, time)
 /// Date is formatted as %e %b, e.g. Jul 12
 /// Time is formatted as %R, e.g. 22:34
-///
-/// If no SystemTime was given, returns a tuple containing empty strings
-fn convert_to_utc(src_time: Option<SystemTime>) -> (String, String) {
-    src_time
-        .map(DateTime::<Utc>::from)
-        .map(|date_time| {
-            (
-                date_time.format("%e %b").to_string(),
-                date_time.format("%R").to_string(),
-            )
-        })
-        .unwrap_or_default()
+fn convert_to_utc(src_time: Option<SystemTime>) -> Option<(String, String)> {
+    src_time.map(DateTime::<Utc>::from).map(|date_time| {
+        (
+            date_time.format("%e %b").to_string(),
+            date_time.format("%R").to_string(),
+        )
+    })
 }
 
 /// Converts a SystemTime to a string readable by a human,
 /// i.e. calculates the duration between now() and the given SystemTime,
 /// and gives a rough approximation of the elapsed time since
-///
-/// If no SystemTime was given, returns an empty string
-fn humanize_systemtime(src_time: Option<SystemTime>) -> String {
+fn humanize_systemtime(src_time: Option<SystemTime>) -> Option<String> {
     src_time
         .and_then(|std_time| SystemTime::now().duration_since(std_time).ok())
         .and_then(|from_now| Duration::from_std(from_now).ok())
         .map(|duration| HumanTime::from(duration).to_text_en(Accuracy::Rough, Tense::Past))
-        .unwrap_or_default()
 }
