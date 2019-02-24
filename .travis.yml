@@ -20,18 +20,20 @@ matrix:
     - rust: beta
   include:
     - rust: nightly
-    - env:
+      env:
       - TARGET=x86_64-unknown-linux-musl
       - BIN_NAME=miniserve
       - PROPER_NAME=miniserve-linux
       os: linux
-    - env:
+    - rust: nightly
+      env:
       - TARGET=x86_64-pc-windows-gnu
       - BIN_NAME=miniserve.exe
       - PROPER_NAME=miniserve-win.exe
       - RUSTFLAGS="-C linker=x86_64-w64-mingw32-gcc"
       os: linux
-    - env:
+    - rust: nightly
+      env:
       - TARGET=x86_64-apple-darwin
       - BIN_NAME=miniserve
       - PROPER_NAME=miniserve-osx
