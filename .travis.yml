@@ -19,6 +19,7 @@ matrix:
     - rust: stable
     - rust: beta
   include:
+    - rust: nightly
     - env:
       - TARGET=x86_64-unknown-linux-musl
       - BIN_NAME=miniserve
