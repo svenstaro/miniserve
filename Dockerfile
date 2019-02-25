@@ -1,6 +1,6 @@
 # This Dockerfile results in a super small container containing only the miniserve binary and nothing else.
 # Use this in case you don't need any additional tools in the container.
-FROM rust as builder
+FROM rustlang/rust:nightly as builder
 
 ENV APP_HOME /usr/src/app/
 
