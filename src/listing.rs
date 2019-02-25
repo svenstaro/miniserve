@@ -1,34 +1,70 @@
 use actix_web::{fs, HttpRequest, HttpResponse, Result};
 use bytesize::ByteSize;
-use clap::{_clap_count_exprs, arg_enum};
 use htmlescape::encode_minimal as escape_html_entity;
 use percent_encoding::{utf8_percent_encode, DEFAULT_ENCODE_SET};
-use std::cmp::Ordering;
 use std::io;
 use std::path::Path;
 use std::time::SystemTime;
 
 use crate::renderer;
 
-arg_enum! {
-    #[derive(Clone, Copy, Debug)]
-    /// Available sorting methods
-    ///
-    /// Natural: natural sorting method
-    /// 1 -> 2 -> 3 -> 11
-    ///
-    /// Alpha: pure alphabetical sorting method
-    /// 1 -> 11 -> 2 -> 3
-    ///
-    /// DirsFirst: directories are listed first, alphabetical sorting is also applied
-    /// 1/ -> 2/ -> 3/ -> 11 -> 12
-    ///
-    /// Date: sort by last modification date (most recent first)
-    pub enum SortingMethods {
-        Natural,
-        Alpha,
-        DirsFirst,
-        Date
+/// Available sorting methods
+#[derive(Debug)]
+pub enum SortingMethod {
+    /// Sort by name
+    Name,
+
+    /// Sort by size
+    Size,
+
+    /// Sort by last modification date (natural sort: follows alphanumerical order)
+    Date,
+}
+
+impl SortingMethod {
+    fn from_str(src: &str) -> Self {
+        match src {
+            "name" => SortingMethod::Name,
+            "size" => SortingMethod::Size,
+            "date" => SortingMethod::Date,
+            _ => SortingMethod::Name,
+        }
+    }
+
+    pub fn to_string(&self) -> String {
+        match &self {
+            SortingMethod::Name => "name",
+            SortingMethod::Size => "size",
+            SortingMethod::Date => "date",
+        }
+        .to_string()
+    }
+}
+
+/// Available sorting orders
+#[derive(Debug)]
+pub enum SortingOrder {
+    /// Ascending order
+    Ascending,
+
+    /// Descending order
+    Descending,
+}
+
+impl SortingOrder {
+    fn from_str(src: &str) -> Self {
+        match src {
+            "desc" => SortingOrder::Descending,
+            _ => SortingOrder::Ascending,
+        }
+    }
+
+    pub fn to_string(&self) -> String {
+        match &self {
+            SortingOrder::Ascending => "asc",
+            SortingOrder::Descending => "desc",
+        }
+        .to_string()
     }
 }
 
@@ -40,16 +76,6 @@ pub enum EntryType {
 
     /// Entry is a file
     File,
-}
-
-impl PartialOrd for EntryType {
-    fn partial_cmp(&self, other: &EntryType) -> Option<Ordering> {
-        match (self, other) {
-            (EntryType::Directory, EntryType::File) => Some(Ordering::Less),
-            (EntryType::File, EntryType::Directory) => Some(Ordering::Greater),
-            _ => Some(Ordering::Equal),
-        }
-    }
 }
 
 /// Entry
@@ -104,14 +130,16 @@ pub fn directory_listing<S>(
     req: &HttpRequest<S>,
     skip_symlinks: bool,
     random_route: Option<String>,
-    sort_method: SortingMethods,
-    reverse_sort: bool,
 ) -> Result<HttpResponse, io::Error> {
     let title = format!("Index of {}", req.path());
     let base = Path::new(req.path());
     let random_route = format!("/{}", random_route.unwrap_or_default());
     let is_root = base.parent().is_none() || req.path() == random_route;
     let page_parent = base.parent().map(|p| p.display().to_string());
+
+    let query = req.query();
+    let sort_method = query.get("sort").map(|e| SortingMethod::from_str(e));
+    let sort_order = query.get("order").map(|e| SortingOrder::from_str(e));
 
     let mut entries: Vec<Entry> = Vec::new();
 
@@ -161,31 +189,44 @@ pub fn directory_listing<S>(
         }
     }
 
-    match sort_method {
-        SortingMethods::Natural => entries
-            .sort_by(|e1, e2| alphanumeric_sort::compare_str(e1.name.clone(), e2.name.clone())),
-        SortingMethods::Alpha => {
-            entries.sort_by(|e1, e2| e1.entry_type.partial_cmp(&e2.entry_type).unwrap());
-            entries.sort_by_key(|e| e.name.clone())
-        }
-        SortingMethods::DirsFirst => {
-            entries.sort_by_key(|e| e.name.clone());
-            entries.sort_by(|e1, e2| e1.entry_type.partial_cmp(&e2.entry_type).unwrap());
-        }
-        SortingMethods::Date => entries.sort_by(|e1, e2| {
-            // If, for some reason, we can't get the last modification date of an entry
-            // let's consider it was modified on UNIX_EPOCH (01/01/19270 00:00:00)
-            e2.last_modification_date
-                .unwrap_or(SystemTime::UNIX_EPOCH)
-                .cmp(&e1.last_modification_date.unwrap_or(SystemTime::UNIX_EPOCH))
-        }),
-    };
+    if let Some(sorting_method) = &sort_method {
+        match sorting_method {
+            SortingMethod::Name => entries
+                .sort_by(|e1, e2| alphanumeric_sort::compare_str(e1.name.clone(), e2.name.clone())),
+            SortingMethod::Size => entries.sort_by(|e1, e2| {
+                // If we can't get the size of the entry (directory for instance)
+                // let's consider it's 0b
+                e2.size
+                    .unwrap_or_else(|| ByteSize::b(0))
+                    .cmp(&e1.size.unwrap_or_else(|| ByteSize::b(0)))
+            }),
+            SortingMethod::Date => entries.sort_by(|e1, e2| {
+                // If, for some reason, we can't get the last modification date of an entry
+                // let's consider it was modified on UNIX_EPOCH (01/01/19270 00:00:00)
+                e2.last_modification_date
+                    .unwrap_or(SystemTime::UNIX_EPOCH)
+                    .cmp(&e1.last_modification_date.unwrap_or(SystemTime::UNIX_EPOCH))
+            }),
+        };
+    }
 
-    if reverse_sort {
-        entries.reverse();
+    if let Some(sorting_order) = &sort_order {
+        if let SortingOrder::Descending = sorting_order {
+            entries.reverse()
+        }
     }
 
     Ok(HttpResponse::Ok()
         .content_type("text/html; charset=utf-8")
-        .body(renderer::page(&title, entries, is_root, page_parent).into_string()))
+        .body(
+            renderer::page(
+                &title,
+                entries,
+                is_root,
+                page_parent,
+                sort_method,
+                sort_order,
+            )
+            .into_string(),
+        ))
 }

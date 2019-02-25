@@ -3,7 +3,6 @@ use std::path::PathBuf;
 use structopt::StructOpt;
 
 use crate::auth;
-use crate::listing;
 
 /// Possible characters for random routes
 const ROUTE_ALPHABET: [char; 16] = [
@@ -44,21 +43,6 @@ struct CLIArgs {
     /// Generate a random 6-hexdigit route
     #[structopt(long = "random-route")]
     random_route: bool,
-
-    /// Sort files
-    #[structopt(
-        short = "s",
-        long = "sort",
-        raw(
-            possible_values = "&listing::SortingMethods::variants()",
-            case_insensitive = "true"
-        )
-    )]
-    sort_method: Option<listing::SortingMethods>,
-
-    /// Reverse sorting
-    #[structopt(long = "reverse")]
-    reverse_sort: bool,
 
     /// Do not follow symbolic links
     #[structopt(short = "P", long = "no-symlinks")]
@@ -116,7 +100,5 @@ pub fn parse_args() -> crate::MiniserveConfig {
         path_explicitly_chosen,
         no_symlinks: args.no_symlinks,
         random_route,
-        sort_method: args.sort_method.unwrap_or(listing::SortingMethods::Natural),
-        reverse_sort: args.reverse_sort,
     }
 }
