@@ -16,23 +16,27 @@ addons:
 
 matrix:
   allow_failures:
-    - rust: nightly
+    - rust: stable
+    - rust: beta
   include:
-    - env:
-      - TARGET=x86_64-unknown-linux-musl
-      - BIN_NAME=miniserve
-      - PROPER_NAME=miniserve-linux
+    - rust: nightly
+      env:
+        - TARGET=x86_64-unknown-linux-musl
+        - BIN_NAME=miniserve
+        - PROPER_NAME=miniserve-linux
       os: linux
-    - env:
-      - TARGET=x86_64-pc-windows-gnu
-      - BIN_NAME=miniserve.exe
-      - PROPER_NAME=miniserve-win.exe
-      - RUSTFLAGS="-C linker=x86_64-w64-mingw32-gcc"
+    - rust: nightly
+      env:
+        - TARGET=x86_64-pc-windows-gnu
+        - BIN_NAME=miniserve.exe
+        - PROPER_NAME=miniserve-win.exe
+        - RUSTFLAGS="-C linker=x86_64-w64-mingw32-gcc"
       os: linux
-    - env:
-      - TARGET=x86_64-apple-darwin
-      - BIN_NAME=miniserve
-      - PROPER_NAME=miniserve-osx
+    - rust: nightly
+      env:
+        - TARGET=x86_64-apple-darwin
+        - BIN_NAME=miniserve
+        - PROPER_NAME=miniserve-osx
       os: osx
 
 before_install:
@@ -63,4 +67,4 @@ deploy:
     on:
       branch: master
       tags: true
-      condition: $TRAVIS_RUST_VERSION = stable && -n $TARGET
+      condition: $TRAVIS_RUST_VERSION = nightly && -n $TARGET

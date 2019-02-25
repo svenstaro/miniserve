@@ -1,3 +1,5 @@
+#![feature(proc_macro_hygiene)]
+
 use actix_web::{fs, middleware, server, App};
 use clap::crate_version;
 use simplelog::{Config, LevelFilter, TermLogger};
@@ -10,6 +12,7 @@ use yansi::{Color, Paint};
 mod args;
 mod auth;
 mod listing;
+mod renderer;
 
 #[derive(Clone, Debug)]
 /// Configuration of the Miniserve application

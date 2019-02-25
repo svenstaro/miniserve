@@ -89,7 +89,7 @@ Sometimes this is just a more practical and quick way than doing things properly
 
     miniserve-win.exe
 
-**With Cargo**: If you have a somewhat recent version of Rust and Cargo installed, you can run
+**With Cargo**: You will need the _nightly_ version of Rust to compile the project. Then you can run
 
     cargo install miniserve
     miniserve
