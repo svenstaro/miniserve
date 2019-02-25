@@ -11,6 +11,8 @@ pub fn page(
     entries: Vec<listing::Entry>,
     is_root: bool,
     page_parent: Option<String>,
+    sort_method: Option<listing::SortingMethod>,
+    sort_order: Option<listing::SortingOrder>,
 ) -> Markup {
     html! {
         (page_header(page_title))
@@ -18,9 +20,9 @@ pub fn page(
             h1 { (page_title) }
             table {
                 thead {
-                    th { "Name" }
-                    th { "Size" }
-                    th { "Last modification" }
+                    th { (build_link("name", "Name", &sort_method, &sort_order)) }
+                    th { (build_link("size", "Size", &sort_method, &sort_order)) }
+                    th { (build_link("date", "Last modification", &sort_method, &sort_order)) }
                 }
                 tbody {
                     @if !is_root {
@@ -40,6 +42,32 @@ pub fn page(
                 }
             }
         }
+    }
+}
+
+/// Partial: table header link
+fn build_link(
+    name: &str,
+    title: &str,
+    sort_method: &Option<listing::SortingMethod>,
+    sort_order: &Option<listing::SortingOrder>,
+) -> Markup {
+    let mut link = format!("?sort={}&order=asc", name);
+    let mut help = format!("Sort by {} in ascending order", name);
+
+    if let Some(method) = sort_method {
+        if method.to_string() == name {
+            if let Some(order) = sort_order {
+                if order.to_string() == "asc" {
+                    link = format!("?sort={}&order=desc", name);
+                    help = format!("Sort by {} in descending order", name);
+                }
+            }
+        }
+    };
+
+    html! {
+        a href=(link) title=(help) { (title) }
     }
 }
 
