@@ -1,6 +1,6 @@
 # This Dockerfile results in an Alpine container containing the minishift executable.
 # Use this in case you need additional basic tools provided by Alpine in this container.
-FROM rust as builder
+FROM rustlang/rust:nightly as builder
 
 ENV APP_HOME /usr/src/app/
 
