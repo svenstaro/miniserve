@@ -54,6 +54,7 @@ fn build_link(
 ) -> Markup {
     let mut link = format!("?sort={}&order=asc", name);
     let mut help = format!("Sort by {} in ascending order", name);
+    let mut chevron = chevron_up();
 
     if let Some(method) = sort_method {
         if method.to_string() == name {
@@ -61,14 +62,50 @@ fn build_link(
                 if order.to_string() == "asc" {
                     link = format!("?sort={}&order=desc", name);
                     help = format!("Sort by {} in descending order", name);
+                    chevron = chevron_down();
                 }
             }
         }
     };
 
     html! {
+        (chevron)
+
         a href=(link) title=(help) { (title) }
     }
+}
+
+/// Partial: chevron up
+fn chevron_up() -> Markup {
+    let svg = r#"
+    <svg width="10" height="10" xmlns="http://www.w3.org/2000/svg">
+        <path transform="scale(0.0055,-0.0055)
+              translate(0,-1536)"
+              d="M1683 1331l-166 165q-19 19-45
+                 19t-45-19l-531-531-531 531q-19 19-45
+                 19t-45-19l-166-165q-19-19-19-45.5t19-45.5l742-741q19-19
+                 45-19t45 19l742 741q19 19 19 45.5t-19 45.5z"
+        />
+    </svg>"#
+        .to_string();
+
+    (PreEscaped(svg))
+}
+
+/// Partial: chevron up
+fn chevron_down() -> Markup {
+    let svg = r#"
+    <svg width="10" height="10" xmlns="http://www.w3.org/2000/svg">
+        <path transform="scale(0.0055,-0.0055)
+              translate(0,-1536)"
+              d="M1683 808l-742 741q-19 19-45
+                 19t-45-19l-742-741q-19-19-19-45.5t19-45.5l166-165q19-19 45-19t45
+                 19l531 531 531-531q19-19 45-19t45 19l166 165q19 19 19 45.5t-19 45.5z"
+        />
+    </svg>"#
+        .to_string();
+
+    (PreEscaped(svg))
 }
 
 /// Partial: page header
@@ -212,6 +249,14 @@ fn css() -> Markup {
     }
     .mobile-info {
         display: none;
+    }
+    th svg {
+        margin-right: .5rem;
+        vertical-align: middle;
+        fill: #777c82;
+    }
+    th a, th a:visited {
+        color: #777c82;
     }
     @media (max-width: 600px) {
         h1 {
