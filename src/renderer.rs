@@ -55,9 +55,11 @@ fn build_link(
     let mut link = format!("?sort={}&order=asc", name);
     let mut help = format!("Sort by {} in ascending order", name);
     let mut chevron = chevron_up();
+    let mut class = "";
 
     if let Some(method) = sort_method {
         if method.to_string() == name {
+            class = "active";
             if let Some(order) = sort_order {
                 if order.to_string() == "asc" {
                     link = format!("?sort={}&order=desc", name);
@@ -69,9 +71,10 @@ fn build_link(
     };
 
     html! {
-        (chevron)
-
-        a href=(link) title=(help) { (title) }
+        span class=(class) {
+            (chevron)
+            a href=(link) title=(help) { (title) }
+        }
     }
 }
 
@@ -257,6 +260,12 @@ fn css() -> Markup {
     }
     th a, th a:visited {
         color: #777c82;
+    }
+    th span.active a {
+        color: #d24ca9;
+    }
+    th span.active svg {
+        fill: #d24ca9;
     }
     @media (max-width: 600px) {
         h1 {
