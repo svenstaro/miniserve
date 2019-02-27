@@ -72,7 +72,7 @@ fn build_link(
 
     html! {
         span class=(class) {
-            (chevron)
+            span.chevron { (chevron) }
             a href=(link) title=(help) { (title) }
         }
     }
@@ -80,35 +80,12 @@ fn build_link(
 
 /// Partial: chevron up
 fn chevron_up() -> Markup {
-    let svg = r#"
-    <svg width="10" height="10" xmlns="http://www.w3.org/2000/svg">
-        <path transform="scale(0.0055,-0.0055)
-              translate(0,-1536)"
-              d="M1683 1331l-166 165q-19 19-45
-                 19t-45-19l-531-531-531 531q-19 19-45
-                 19t-45-19l-166-165q-19-19-19-45.5t19-45.5l742-741q19-19
-                 45-19t45 19l742 741q19 19 19 45.5t-19 45.5z"
-        />
-    </svg>"#
-        .to_string();
-
-    (PreEscaped(svg))
+    (PreEscaped("&#9652;".to_string()))
 }
 
 /// Partial: chevron up
 fn chevron_down() -> Markup {
-    let svg = r#"
-    <svg width="10" height="10" xmlns="http://www.w3.org/2000/svg">
-        <path transform="scale(0.0055,-0.0055)
-              translate(0,-1536)"
-              d="M1683 808l-742 741q-19 19-45
-                 19t-45-19l-742-741q-19-19-19-45.5t19-45.5l166-165q19-19 45-19t45
-                 19l531 531 531-531q19-19 45-19t45 19l166 165q19 19 19 45.5t-19 45.5z"
-        />
-    </svg>"#
-        .to_string();
-
-    (PreEscaped(svg))
+    (PreEscaped("&#9662;".to_string()))
 }
 
 /// Partial: page header
@@ -194,6 +171,7 @@ fn css() -> Markup {
         padding: 0.125rem;
     }
     table {
+        margin-top: 2rem;
         width: 100%;
         background: white;
         border: 0;
@@ -253,19 +231,15 @@ fn css() -> Markup {
     .mobile-info {
         display: none;
     }
-    th svg {
-        margin-right: .5rem;
-        vertical-align: middle;
-        fill: #777c82;
-    }
-    th a, th a:visited {
+    th a, th a:visited, .chevron {
         color: #777c82;
     }
-    th span.active a {
-        color: #d24ca9;
+    .chevron {
+        margin-right: .5rem;
+        font-size: 1.2em;
     }
-    th span.active svg {
-        fill: #d24ca9;
+    th span.active a, th span.active span {
+        color: #444444;
     }
     @media (max-width: 600px) {
         h1 {
