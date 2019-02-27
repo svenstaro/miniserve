@@ -16,6 +16,9 @@ maintenance = { status = "actively-developed" }
 
 [profile.release]
 lto = true
+opt-level = 'z'
+codegen-units = 1
+panic = 'abort'
 
 [dependencies]
 clap = "2.29"
