@@ -29,8 +29,9 @@ pub fn page(
                         @if let Some(parent) = page_parent {
                             tr {
                                 td {
+                                    span.chevron { (chevron_left()) }
                                     a.root href=(parent) {
-                                        ".."
+                                        "Parent directory"
                                     }
                                 }
                             }
@@ -76,6 +77,11 @@ fn build_link(
             a href=(link) title=(help) { (title) }
         }
     }
+}
+
+/// Partial: chevron left
+fn chevron_left() -> Markup {
+    (PreEscaped("◂".to_string()))
 }
 
 /// Partial: chevron up
@@ -237,6 +243,7 @@ fn css() -> Markup {
     .chevron {
         margin-right: .5rem;
         font-size: 1.2em;
+        font-weight: bold;
     }
     th span.active a, th span.active span {
         color: #444444;
