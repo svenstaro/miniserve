@@ -80,12 +80,12 @@ fn build_link(
 
 /// Partial: chevron up
 fn chevron_up() -> Markup {
-    (PreEscaped("&#9652;".to_string()))
+    (PreEscaped("▴".to_string()))
 }
 
 /// Partial: chevron up
 fn chevron_down() -> Markup {
-    (PreEscaped("&#9662;".to_string()))
+    (PreEscaped("▾".to_string()))
 }
 
 /// Partial: page header
