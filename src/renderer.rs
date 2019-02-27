@@ -79,6 +79,11 @@ fn build_link(
     }
 }
 
+/// Partial: new line
+fn br() -> Markup {
+    (PreEscaped("<br>".to_string()))
+}
+
 /// Partial: chevron left
 fn chevron_left() -> Markup {
     (PreEscaped("◂".to_string()))
@@ -113,13 +118,15 @@ fn entry_row(entry: listing::Entry) -> Markup {
     html! {
         tr {
             td {
-                @if entry.is_dir() {
-                    a.directory href=(entry.link) {
-                        (entry.name) "/"
-                    }
-                } @else {
-                    a.file href=(entry.link) {
-                        (entry.name)
+                p {
+                    @if entry.is_dir() {
+                        a.directory href=(entry.link) {
+                            (entry.name) "/"
+                        }
+                    } @else {
+                        a.file href=(entry.link) {
+                            (entry.name)
+                        }
                     }
                 }
                 @if !entry.is_dir() {
@@ -127,6 +134,7 @@ fn entry_row(entry: listing::Entry) -> Markup {
                         span .mobile-info {
                             strong { "Size: " }
                             (size)
+                            (br())
                         }
                     }
                 }
@@ -138,6 +146,7 @@ fn entry_row(entry: listing::Entry) -> Markup {
                     }
                     @if let Some(modification_timer) = humanize_systemtime(entry.last_modification_date) {
                         span .history { "(" (modification_timer) ")" }
+                        (br())
                     }
 
                 }
@@ -150,10 +159,10 @@ fn entry_row(entry: listing::Entry) -> Markup {
             td.date-cell {
                 @if let Some(modification_date) = convert_to_utc(entry.last_modification_date) {
                     span {
-                        (modification_date.0)
+                        (modification_date.0) " "
                     }
                     span {
-                        (modification_date.1)
+                        (modification_date.1) " "
                     }
                 }
                 @if let Some(modification_timer) = humanize_systemtime(entry.last_modification_date) {
@@ -175,6 +184,10 @@ fn css() -> Markup {
         font-weight: 300;
         color: #444444;
         padding: 0.125rem;
+    }
+    p {
+        margin: 0;
+        padding: 0;
     }
     table {
         margin-top: 2rem;
@@ -259,7 +272,7 @@ fn css() -> Markup {
             display: block;
         }
         .file, .directory{
-            padding-bottom: 0.5rem;
+            padding-bottom: 1rem;
         }
     }
     @media (max-width: 400px) {
