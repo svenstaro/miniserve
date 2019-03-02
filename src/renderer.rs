@@ -17,6 +17,7 @@ pub fn page(
     html! {
         (page_header(page_title))
         body {
+            span #top { }
             h1 { (page_title) }
             table {
                 thead {
@@ -41,6 +42,9 @@ pub fn page(
                         (entry_row(entry))
                     }
                 }
+            }
+            a.back href="#top" {
+                (arrow_up())
             }
         }
     }
@@ -75,40 +79,6 @@ fn build_link(
         span class=(class) {
             span.chevron { (chevron) }
             a href=(link) title=(help) { (title) }
-        }
-    }
-}
-
-/// Partial: new line
-fn br() -> Markup {
-    (PreEscaped("<br>".to_string()))
-}
-
-/// Partial: chevron left
-fn chevron_left() -> Markup {
-    (PreEscaped("◂".to_string()))
-}
-
-/// Partial: chevron up
-fn chevron_up() -> Markup {
-    (PreEscaped("▴".to_string()))
-}
-
-/// Partial: chevron up
-fn chevron_down() -> Markup {
-    (PreEscaped("▾".to_string()))
-}
-
-/// Partial: page header
-fn page_header(page_title: &str) -> Markup {
-    html! {
-        (DOCTYPE)
-        html {
-            meta charset="utf-8";
-            meta http-equiv="X-UA-Compatible" content="IE=edge";
-            meta name="viewport" content="width=device-width, initial-scale=1";
-            title { (page_title) }
-            style { (css()) }
         }
     }
 }
@@ -178,12 +148,19 @@ fn entry_row(entry: listing::Entry) -> Markup {
 /// Partial: CSS
 fn css() -> Markup {
     (PreEscaped(r#"
+    html {
+        font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
+    }
     body {
         margin: 0;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,"Helvetica Neue", Helvetica, Arial, sans-serif;
         font-weight: 300;
         color: #444444;
         padding: 0.125rem;
+    }
+    strong {
+        font-weight: bold;
     }
     p {
         margin: 0;
@@ -261,6 +238,22 @@ fn css() -> Markup {
     th span.active a, th span.active span {
         color: #444444;
     }
+    .back {
+        position: fixed;
+        bottom: 1.1rem;
+        right: 0.625rem;
+        background: #e0e0e0;
+        border-radius: 100%;
+        box-shadow: 0 0 8px -4px #888888;
+        opacity: 0.8;
+        padding: 1rem 1.1rem;
+        color: #444444;
+    }
+ 
+    .back:hover {
+        color: #3498db;
+        text-decoration: none;
+    }
     @media (max-width: 600px) {
         h1 {
             font-size: 1.375em;
@@ -280,6 +273,45 @@ fn css() -> Markup {
             font-size: 1.375em;
         }
     }"#.to_string()))
+}
+
+/// Partial: up arrow
+fn arrow_up() -> Markup {
+    (PreEscaped("⇪".to_string()))
+}
+
+/// Partial: new line
+fn br() -> Markup {
+    (PreEscaped("<br>".to_string()))
+}
+
+/// Partial: chevron left
+fn chevron_left() -> Markup {
+    (PreEscaped("◂".to_string()))
+}
+
+/// Partial: chevron up
+fn chevron_up() -> Markup {
+    (PreEscaped("▴".to_string()))
+}
+
+/// Partial: chevron up
+fn chevron_down() -> Markup {
+    (PreEscaped("▾".to_string()))
+}
+
+/// Partial: page header
+fn page_header(page_title: &str) -> Markup {
+    html! {
+        (DOCTYPE)
+        html {
+            meta charset="utf-8";
+            meta http-equiv="X-UA-Compatible" content="IE=edge";
+            meta name="viewport" content="width=device-width, initial-scale=1";
+            title { (page_title) }
+            style { (css()) }
+        }
+    }
 }
 
 /// Converts a SystemTime object to a strings tuple (date, time)
