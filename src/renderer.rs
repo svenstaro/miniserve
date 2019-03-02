@@ -249,7 +249,9 @@ fn css() -> Markup {
         padding: 1rem 1.1rem;
         color: #444444;
     }
- 
+    .back:visited {
+        color: #444444;
+    }
     .back:hover {
         color: #3498db;
         text-decoration: none;
