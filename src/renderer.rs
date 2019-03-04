@@ -29,7 +29,7 @@ pub fn page(
                     @if !is_root {
                         @if let Some(parent) = page_parent {
                             tr {
-                                td {
+                                td colspan="3" {
                                     span.chevron { (chevron_left()) }
                                     a.root href=(parent) {
                                         "Parent directory"
@@ -185,13 +185,16 @@ fn css() -> Markup {
         line-height: 1.125rem;
         width: 33.333%;
     }
-    table thead tr th {
+    table tr th {
         padding: 0.5rem 0.625rem 0.625rem;
         font-weight: bold;
         color: #444444;
     }
     table tr:nth-child(even) {
         background: #f6f6f6;
+    }
+    table tr:hover {
+        background: #deeef7a6;
     }
     a {
         text-decoration: none;
