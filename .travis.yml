@@ -23,20 +23,20 @@ matrix:
       env:
         - TARGET=x86_64-unknown-linux-musl
         - BIN_NAME=miniserve
-        - PROPER_NAME=miniserve-linux
+        - PROPER_NAME=miniserve-linux-x86_64
       os: linux
     - rust: nightly
       env:
         - TARGET=x86_64-pc-windows-gnu
         - BIN_NAME=miniserve.exe
-        - PROPER_NAME=miniserve-win.exe
+        - PROPER_NAME=miniserve-win-x86_64.exe
         - RUSTFLAGS="-C linker=x86_64-w64-mingw32-gcc"
       os: linux
     - rust: nightly
       env:
         - TARGET=x86_64-apple-darwin
         - BIN_NAME=miniserve
-        - PROPER_NAME=miniserve-osx
+        - PROPER_NAME=miniserve-osx-x86_64
       os: osx
 
 before_install:
