@@ -11,7 +11,7 @@ use crate::renderer;
 
 /// Query parameters
 #[derive(Debug, Deserialize)]
-struct SortingQueryParameters {
+struct QueryParameters {
     sort: Option<SortingMethod>,
     order: Option<SortingOrder>,
 }
@@ -137,7 +137,7 @@ pub fn directory_listing<S>(
     let mut sort_method: Option<SortingMethod> = None;
     let mut sort_order: Option<SortingOrder> = None;
 
-    if let Ok(query) = Query::<SortingQueryParameters>::extract(req) {
+    if let Ok(query) = Query::<QueryParameters>::extract(req) {
         sort_method = query.sort.clone();
         sort_order = query.order.clone();
     }
