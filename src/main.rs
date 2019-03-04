@@ -193,8 +193,10 @@ fn configure_app(app: App<MiniserveConfig>) -> App<MiniserveConfig> {
     let full_route = format!("/{}", random_route);
 
     if let Some(s) = s {
+        // Handle directories
         app.handler(&full_route, s)
     } else {
+        // Handle single files
         app.resource(&full_route, |r| r.f(listing::file_handler))
     }
 }
