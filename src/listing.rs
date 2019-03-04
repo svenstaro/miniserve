@@ -1,36 +1,38 @@
-use actix_web::{fs, HttpRequest, HttpResponse, Result};
+use actix_web::{fs, FromRequest, HttpRequest, HttpResponse, Query, Result};
 use bytesize::ByteSize;
 use htmlescape::encode_minimal as escape_html_entity;
 use percent_encoding::{utf8_percent_encode, DEFAULT_ENCODE_SET};
+use serde::Deserialize;
 use std::io;
 use std::path::Path;
 use std::time::SystemTime;
 
 use crate::renderer;
 
+/// Query parameters
+#[derive(Debug, Deserialize)]
+struct SortingQueryParameters {
+    sort: Option<SortingMethod>,
+    order: Option<SortingOrder>,
+}
+
 /// Available sorting methods
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Clone)]
 pub enum SortingMethod {
     /// Sort by name
+    #[serde(alias = "name")]
     Name,
 
     /// Sort by size
+    #[serde(alias = "size")]
     Size,
 
     /// Sort by last modification date (natural sort: follows alphanumerical order)
+    #[serde(alias = "date")]
     Date,
 }
 
 impl SortingMethod {
-    fn from_str(src: &str) -> Self {
-        match src {
-            "name" => SortingMethod::Name,
-            "size" => SortingMethod::Size,
-            "date" => SortingMethod::Date,
-            _ => SortingMethod::Name,
-        }
-    }
-
     pub fn to_string(&self) -> String {
         match &self {
             SortingMethod::Name => "name",
@@ -42,23 +44,18 @@ impl SortingMethod {
 }
 
 /// Available sorting orders
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Clone)]
 pub enum SortingOrder {
     /// Ascending order
+    #[serde(alias = "asc")]
     Ascending,
 
     /// Descending order
+    #[serde(alias = "desc")]
     Descending,
 }
 
 impl SortingOrder {
-    fn from_str(src: &str) -> Self {
-        match src {
-            "desc" => SortingOrder::Descending,
-            _ => SortingOrder::Ascending,
-        }
-    }
-
     pub fn to_string(&self) -> String {
         match &self {
             SortingOrder::Ascending => "asc",
@@ -137,9 +134,13 @@ pub fn directory_listing<S>(
     let is_root = base.parent().is_none() || req.path() == random_route;
     let page_parent = base.parent().map(|p| p.display().to_string());
 
-    let query = req.query();
-    let sort_method = query.get("sort").map(|e| SortingMethod::from_str(e));
-    let sort_order = query.get("order").map(|e| SortingOrder::from_str(e));
+    let mut sort_method: Option<SortingMethod> = None;
+    let mut sort_order: Option<SortingOrder> = None;
+
+    if let Ok(query) = Query::<SortingQueryParameters>::extract(req) {
+        sort_method = query.sort.clone();
+        sort_order = query.order.clone();
+    }
 
     let mut entries: Vec<Entry> = Vec::new();
 
@@ -210,8 +211,7 @@ pub fn directory_listing<S>(
         };
     } else {
         // Sort in alphanumeric order by default
-        entries
-            .sort_by(|e1, e2| alphanumeric_sort::compare_str(e1.name.clone(), e2.name.clone()))
+        entries.sort_by(|e1, e2| alphanumeric_sort::compare_str(e1.name.clone(), e2.name.clone()))
     }
 
     if let Some(sorting_order) = &sort_order {
