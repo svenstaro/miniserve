@@ -208,6 +208,10 @@ pub fn directory_listing<S>(
                     .cmp(&e1.last_modification_date.unwrap_or(SystemTime::UNIX_EPOCH))
             }),
         };
+    } else {
+        // Sort in alphanumeric order by default
+        entries
+            .sort_by(|e1, e2| alphanumeric_sort::compare_str(e1.name.clone(), e2.name.clone()))
     }
 
     if let Some(sorting_order) = &sort_order {
