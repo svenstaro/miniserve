@@ -134,13 +134,11 @@ pub fn directory_listing<S>(
     let is_root = base.parent().is_none() || req.path() == random_route;
     let page_parent = base.parent().map(|p| p.display().to_string());
 
-    let mut sort_method: Option<SortingMethod> = None;
-    let mut sort_order: Option<SortingOrder> = None;
-
-    if let Ok(query) = Query::<QueryParameters>::extract(req) {
-        sort_method = query.sort.clone();
-        sort_order = query.order.clone();
-    }
+    let (sort_method, sort_order) = if let Ok(query) = Query::<QueryParameters>::extract(req) {
+        (query.sort.clone(), query.order.clone())
+    } else {
+        (None, None)
+    };
 
     let mut entries: Vec<Entry> = Vec::new();
 
