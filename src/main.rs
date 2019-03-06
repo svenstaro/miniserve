@@ -40,12 +40,6 @@ pub struct MiniserveConfig {
 
     /// Enable random route generation
     pub random_route: Option<String>,
-
-    /// Sort files/directories
-    pub sort_method: listing::SortingMethods,
-
-    /// Enable inverse sorting
-    pub reverse_sort: bool,
 }
 
 fn main() {
@@ -181,8 +175,6 @@ fn configure_app(app: App<MiniserveConfig>) -> App<MiniserveConfig> {
         let path = &app.state().path;
         let no_symlinks = app.state().no_symlinks;
         let random_route = app.state().random_route.clone();
-        let sort_method = app.state().sort_method;
-        let reverse_sort = app.state().reverse_sort;
         if path.is_file() {
             None
         } else {
@@ -191,14 +183,7 @@ fn configure_app(app: App<MiniserveConfig>) -> App<MiniserveConfig> {
                     .expect("Couldn't create path")
                     .show_files_listing()
                     .files_listing_renderer(move |dir, req| {
-                        listing::directory_listing(
-                            dir,
-                            req,
-                            no_symlinks,
-                            random_route.clone(),
-                            sort_method,
-                            reverse_sort,
-                        )
+                        listing::directory_listing(dir, req, no_symlinks, random_route.clone())
                     }),
             )
         }
