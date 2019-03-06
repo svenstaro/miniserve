@@ -11,24 +11,28 @@ pub fn page(
     entries: Vec<listing::Entry>,
     is_root: bool,
     page_parent: Option<String>,
+    sort_method: Option<listing::SortingMethod>,
+    sort_order: Option<listing::SortingOrder>,
 ) -> Markup {
     html! {
         (page_header(page_title))
         body {
+            span #top { }
             h1 { (page_title) }
             table {
                 thead {
-                    th { "Name" }
-                    th { "Size" }
-                    th { "Last modification" }
+                    th { (build_link("name", "Name", &sort_method, &sort_order)) }
+                    th { (build_link("size", "Size", &sort_method, &sort_order)) }
+                    th { (build_link("date", "Last modification", &sort_method, &sort_order)) }
                 }
                 tbody {
                     @if !is_root {
                         @if let Some(parent) = page_parent {
                             tr {
-                                td {
+                                td colspan="3" {
+                                    span.chevron { (chevron_left()) }
                                     a.root href=(parent) {
-                                        ".."
+                                        "Parent directory"
                                     }
                                 }
                             }
@@ -39,20 +43,42 @@ pub fn page(
                     }
                 }
             }
+            a.back href="#top" {
+                (arrow_up())
+            }
         }
     }
 }
 
-/// Partial: page header
-fn page_header(page_title: &str) -> Markup {
+/// Partial: table header link
+fn build_link(
+    name: &str,
+    title: &str,
+    sort_method: &Option<listing::SortingMethod>,
+    sort_order: &Option<listing::SortingOrder>,
+) -> Markup {
+    let mut link = format!("?sort={}&order=asc", name);
+    let mut help = format!("Sort by {} in ascending order", name);
+    let mut chevron = chevron_up();
+    let mut class = "";
+
+    if let Some(method) = sort_method {
+        if method.to_string() == name {
+            class = "active";
+            if let Some(order) = sort_order {
+                if order.to_string() == "asc" {
+                    link = format!("?sort={}&order=desc", name);
+                    help = format!("Sort by {} in descending order", name);
+                    chevron = chevron_down();
+                }
+            }
+        }
+    };
+
     html! {
-        (DOCTYPE)
-        html {
-            meta charset="utf-8";
-            meta http-equiv="X-UA-Compatible" content="IE=edge";
-            meta name="viewport" content="width=device-width, initial-scale=1";
-            title { (page_title) }
-            style { (css()) }
+        span class=(class) {
+            span.chevron { (chevron) }
+            a href=(link) title=(help) { (title) }
         }
     }
 }
@@ -62,13 +88,15 @@ fn entry_row(entry: listing::Entry) -> Markup {
     html! {
         tr {
             td {
-                @if entry.is_dir() {
-                    a.directory href=(entry.link) {
-                        (entry.name) "/"
-                    }
-                } @else {
-                    a.file href=(entry.link) {
-                        (entry.name)
+                p {
+                    @if entry.is_dir() {
+                        a.directory href=(entry.link) {
+                            (entry.name) "/"
+                        }
+                    } @else {
+                        a.file href=(entry.link) {
+                            (entry.name)
+                        }
                     }
                 }
                 @if !entry.is_dir() {
@@ -76,6 +104,7 @@ fn entry_row(entry: listing::Entry) -> Markup {
                         span .mobile-info {
                             strong { "Size: " }
                             (size)
+                            (br())
                         }
                     }
                 }
@@ -87,6 +116,7 @@ fn entry_row(entry: listing::Entry) -> Markup {
                     }
                     @if let Some(modification_timer) = humanize_systemtime(entry.last_modification_date) {
                         span .history { "(" (modification_timer) ")" }
+                        (br())
                     }
 
                 }
@@ -99,10 +129,10 @@ fn entry_row(entry: listing::Entry) -> Markup {
             td.date-cell {
                 @if let Some(modification_date) = convert_to_utc(entry.last_modification_date) {
                     span {
-                        (modification_date.0)
+                        (modification_date.0) " "
                     }
                     span {
-                        (modification_date.1)
+                        (modification_date.1) " "
                     }
                 }
                 @if let Some(modification_timer) = humanize_systemtime(entry.last_modification_date) {
@@ -118,6 +148,10 @@ fn entry_row(entry: listing::Entry) -> Markup {
 /// Partial: CSS
 fn css() -> Markup {
     (PreEscaped(r#"
+    html {
+        font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
+    }
     body {
         margin: 0;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,"Helvetica Neue", Helvetica, Arial, sans-serif;
@@ -125,7 +159,15 @@ fn css() -> Markup {
         color: #444444;
         padding: 0.125rem;
     }
+    strong {
+        font-weight: bold;
+    }
+    p {
+        margin: 0;
+        padding: 0;
+    }
     table {
+        margin-top: 2rem;
         width: 100%;
         background: white;
         border: 0;
@@ -143,13 +185,16 @@ fn css() -> Markup {
         line-height: 1.125rem;
         width: 33.333%;
     }
-    table thead tr th {
+    table tr th {
         padding: 0.5rem 0.625rem 0.625rem;
         font-weight: bold;
         color: #444444;
     }
     table tr:nth-child(even) {
         background: #f6f6f6;
+    }
+    table tr:hover {
+        background: #deeef7a6;
     }
     a {
         text-decoration: none;
@@ -185,6 +230,35 @@ fn css() -> Markup {
     .mobile-info {
         display: none;
     }
+    th a, th a:visited, .chevron {
+        color: #777c82;
+    }
+    .chevron {
+        margin-right: .5rem;
+        font-size: 1.2em;
+        font-weight: bold;
+    }
+    th span.active a, th span.active span {
+        color: #444444;
+    }
+    .back {
+        position: fixed;
+        bottom: 1.1rem;
+        right: 0.625rem;
+        background: #e0e0e0;
+        border-radius: 100%;
+        box-shadow: 0 0 8px -4px #888888;
+        opacity: 0.8;
+        padding: 1rem 1.1rem;
+        color: #444444;
+    }
+    .back:visited {
+        color: #444444;
+    }
+    .back:hover {
+        color: #3498db;
+        text-decoration: none;
+    }
     @media (max-width: 600px) {
         h1 {
             font-size: 1.375em;
@@ -196,7 +270,7 @@ fn css() -> Markup {
             display: block;
         }
         .file, .directory{
-            padding-bottom: 0.5rem;
+            padding-bottom: 1rem;
         }
     }
     @media (max-width: 400px) {
@@ -204,6 +278,45 @@ fn css() -> Markup {
             font-size: 1.375em;
         }
     }"#.to_string()))
+}
+
+/// Partial: up arrow
+fn arrow_up() -> Markup {
+    (PreEscaped("⇪".to_string()))
+}
+
+/// Partial: new line
+fn br() -> Markup {
+    (PreEscaped("<br>".to_string()))
+}
+
+/// Partial: chevron left
+fn chevron_left() -> Markup {
+    (PreEscaped("◂".to_string()))
+}
+
+/// Partial: chevron up
+fn chevron_up() -> Markup {
+    (PreEscaped("▴".to_string()))
+}
+
+/// Partial: chevron up
+fn chevron_down() -> Markup {
+    (PreEscaped("▾".to_string()))
+}
+
+/// Partial: page header
+fn page_header(page_title: &str) -> Markup {
+    html! {
+        (DOCTYPE)
+        html {
+            meta charset="utf-8";
+            meta http-equiv="X-UA-Compatible" content="IE=edge";
+            meta name="viewport" content="width=device-width, initial-scale=1";
+            title { (page_title) }
+            style { (css()) }
+        }
+    }
 }
 
 /// Converts a SystemTime object to a strings tuple (date, time)

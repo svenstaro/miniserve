@@ -36,3 +36,4 @@ structopt = "0.2.14"
 chrono = "0.4.6"
 chrono-humanize = "0.0.11"
 maud = { version = "0.20.0", features = ["actix-web"] }
+serde = { version = "1.0.89", features = ["derive"] }
