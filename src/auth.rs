@@ -59,7 +59,7 @@ impl Middleware<crate::MiniserveConfig> for Auth {
                 if auth_req.username != required_auth.username
                     || auth_req.password != required_auth.password
                 {
-                    let new_resp = HttpResponse::Forbidden().finish();
+                    let new_resp = HttpResponse::Unauthorized().finish();
                     return Ok(Response::Done(new_resp));
                 }
             } else {
