@@ -230,8 +230,9 @@ pub fn directory_listing<S>(
     if let Some(compression_method) = &download {
         match archive::create_archive_file(&compression_method, &dir.path) {
             Ok((filename, content)) => Ok(HttpResponse::Ok()
-                .content_type("application/tar")
+                .content_type(compression_method.content_type())
                 .content_length(content.len() as u64)
+                .content_encoding(compression_method.content_encoding())
                 .header("Content-Transfer-Encoding", "binary")
                 .header(
                     "Content-Disposition",
