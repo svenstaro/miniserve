@@ -3,6 +3,7 @@ use chrono_humanize::{Accuracy, HumanTime, Tense};
 use maud::{html, Markup, PreEscaped, DOCTYPE};
 use std::time::SystemTime;
 
+use crate::archive;
 use crate::listing;
 
 /// Renders the file listing
@@ -19,6 +20,9 @@ pub fn page(
         body {
             span #top { }
             h1 { (page_title) }
+            div.download {
+                (archive_button(archive::CompressionMethod::TarGz))
+            }
             table {
                 thead {
                     th { (build_link("name", "Name", &sort_method, &sort_order)) }
@@ -46,6 +50,18 @@ pub fn page(
             a.back href="#top" {
                 (arrow_up())
             }
+        }
+    }
+}
+
+/// Partial: archive button
+fn archive_button(compress_method: archive::CompressionMethod) -> Markup {
+    let link = format!("?download={}", compress_method.to_string());
+    let text = format!("Download .{}", compress_method.extension());
+
+    html! {
+        a href=(link) {
+            (text)
         }
     }
 }
@@ -258,6 +274,25 @@ fn css() -> Markup {
     .back:hover {
         color: #3498db;
         text-decoration: none;
+    }
+    .download {
+        display: flex;
+        justify-content: flex-end;
+        padding: 0.125rem;
+    }
+    .download a, .download a:visited {
+        color: #3498db;
+    }
+    .download a {
+        background: #efefef;
+        padding: 0.5rem;
+        border-radius: 0.2rem;
+    }
+    .download a:hover {
+        background: #deeef7a6;
+    }
+    .download a:not(:last-of-type) {
+        margin-right: 1rem;
     }
     @media (max-width: 600px) {
         h1 {
