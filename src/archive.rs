@@ -10,7 +10,7 @@ use tempfile::tempdir;
 /// Available compression methods
 #[derive(Debug, Deserialize, Clone)]
 pub enum CompressionMethod {
-    /// ZIP
+    /// TAR GZ
     #[serde(alias = "targz")]
     TarGz,
 }
