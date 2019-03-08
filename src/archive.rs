@@ -1,3 +1,4 @@
+use actix_web::http::ContentEncoding;
 use bytes::Bytes;
 use libflate::gzip::Encoder;
 use serde::Deserialize;
@@ -28,6 +29,19 @@ impl CompressionMethod {
             CompressionMethod::TarGz => "tar.gz",
         }
         .to_string()
+    }
+
+    pub fn content_type(&self) -> String {
+        match &self {
+            CompressionMethod::TarGz => "application/gzip",
+        }
+        .to_string()
+    }
+
+    pub fn content_encoding(&self) -> ContentEncoding {
+        match &self {
+            CompressionMethod::TarGz => ContentEncoding::Gzip,
+        }
     }
 }
 
