@@ -1,4 +1,5 @@
 #![feature(proc_macro_hygiene)]
+#![feature(try_trait)]
 
 use actix_web::{fs, middleware, server, App};
 use clap::crate_version;
@@ -9,6 +10,7 @@ use std::thread;
 use std::time::Duration;
 use yansi::{Color, Paint};
 
+mod archive;
 mod args;
 mod auth;
 mod listing;
