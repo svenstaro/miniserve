@@ -240,12 +240,11 @@ pub fn directory_listing<S>(
                 )
                 .chunked()
                 .body(Body::Streaming(Box::new(once(Ok(content)))))),
-            Err(err) => {
+            Err(_) => {
                 println!(
-                    "{error} an error occured while compressing {folder}: {err:?}",
+                    "{error} an error occured while compressing {folder}",
                     error = Paint::red("error:").bold(),
                     folder = dir.path.display(),
-                    err = err
                 );
                 Ok(HttpResponse::Ok()
                     .status(http::StatusCode::INTERNAL_SERVER_ERROR)
