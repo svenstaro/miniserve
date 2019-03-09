@@ -101,6 +101,11 @@ fn tar(
 
     // Create a TAR file of src_dir
     let mut tar_builder = Builder::new(&tar_file);
+
+    // Temporary workaround for known issue:
+    // https://github.com/alexcrichton/tar-rs/issues/147
+    // https://github.com/alexcrichton/tar-rs/issues/174
+    tar_builder.follow_symlinks(false);
     tar_builder.append_dir_all(inner_folder, src_dir)?;
     tar_builder.into_inner()?;
 
