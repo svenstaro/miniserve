@@ -15,6 +15,7 @@ mod args;
 mod auth;
 mod listing;
 mod renderer;
+mod errors;
 
 #[derive(Clone, Debug)]
 /// Configuration of the Miniserve application
