@@ -7,9 +7,10 @@ use serde::Deserialize;
 use std::io;
 use std::path::Path;
 use std::time::SystemTime;
-use yansi::Paint;
+use yansi::{Color, Paint};
 
 use crate::archive;
+use crate::errors;
 use crate::renderer;
 
 /// Query parameters
@@ -228,24 +229,37 @@ pub fn directory_listing<S>(
     }
 
     if let Some(compression_method) = &download {
+        println!(
+            "{info} Creating an archive ({extension}) of {path}...",
+            info = Color::Blue.paint("info:").bold(),
+            extension = Color::White.paint(compression_method.extension()).bold(),
+            path = Color::White.paint(&dir.path.display().to_string()).bold()
+        );
         match archive::create_archive_file(&compression_method, &dir.path) {
-            Ok((filename, content)) => Ok(HttpResponse::Ok()
-                .content_type(compression_method.content_type())
-                .content_length(content.len() as u64)
-                .content_encoding(compression_method.content_encoding())
-                .header("Content-Transfer-Encoding", "binary")
-                .header(
-                    "Content-Disposition",
-                    format!("attachment; filename={:?}", filename),
-                )
-                .chunked()
-                .body(Body::Streaming(Box::new(once(Ok(content)))))),
-            Err(_) => {
+            Ok((filename, content)) => {
                 println!(
-                    "{error} an error occured while compressing {folder}",
-                    error = Paint::red("error:").bold(),
-                    folder = dir.path.display(),
+                    "{success} Archive successfully created !",
+                    success = Color::Green.paint("success:").bold()
                 );
+                Ok(HttpResponse::Ok()
+                    .content_type(compression_method.content_type())
+                    .content_length(content.len() as u64)
+                    .content_encoding(compression_method.content_encoding())
+                    .header("Content-Transfer-Encoding", "binary")
+                    .header(
+                        "Content-Disposition",
+                        format!("attachment; filename={:?}", filename),
+                    )
+                    .chunked()
+                    .body(Body::Streaming(Box::new(once(Ok(content))))))
+            }
+            Err(err) => {
+                println!(
+                    "{error} {err}",
+                    error = Paint::red("error:").bold(),
+                    err = Paint::white(&err).bold()
+                );
+                errors::print_chain(err);
                 Ok(HttpResponse::Ok()
                     .status(http::StatusCode::INTERNAL_SERVER_ERROR)
                     .body(""))
