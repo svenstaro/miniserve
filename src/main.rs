@@ -121,7 +121,7 @@ fn main() {
         version = crate_version!()
     );
     if !miniserve_config.path_explicitly_chosen {
-        println!("{info} miniserve has been invoked without an explicit path so it will serve the current directory.", info=Color::Blue.paint("Info:").bold());
+        println!("{info} miniserve has been invoked without an explicit path so it will serve the current directory.", info=Color::Blue.paint("info:").bold());
         println!(
             "      Invoke with -h|--help to see options or invoke as `miniserve .` to hide this advice."
         );
