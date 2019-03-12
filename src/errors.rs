@@ -2,7 +2,7 @@ use failure::{Backtrace, Context, Fail};
 use std::fmt::{self, Debug, Display};
 use yansi::{Color, Paint};
 
-/// Kinds of error which might happen during folder archive generation
+/// Kinds of errors which might happen during the generation of an archive
 #[derive(Debug, Fail)]
 pub enum CompressionErrorKind {
     #[fail(display = "Could not open file {}", path)]
@@ -25,6 +25,8 @@ pub enum CompressionErrorKind {
     GZipContentError,
 }
 
+/// Prints the full chain of error, up to the root cause.
+/// If RUST_BACKTRACE is set to 1, also prints the backtrace for each error
 pub fn print_error_chain(err: CompressionError) {
     println!(
         "{error} {err}",
@@ -42,6 +44,8 @@ pub fn print_error_chain(err: CompressionError) {
     }
 }
 
+/// Prints the backtrace of an error
+/// RUST_BACKTRACE needs to be set to 1 to display the backtrace
 fn print_backtrace(err: &dyn Fail) {
     if let Some(backtrace) = err.backtrace() {
         let backtrace = backtrace.to_string();
@@ -51,6 +55,7 @@ fn print_backtrace(err: &dyn Fail) {
     }
 }
 
+/// Based on https://boats.gitlab.io/failure/error-errorkind.html
 pub struct CompressionError {
     inner: Context<CompressionErrorKind>,
 }
