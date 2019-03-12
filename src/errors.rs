@@ -11,9 +11,9 @@ pub enum CompressionErrorKind {
     CreateTemporaryFileError,
     #[fail(display = "Could not create file {}", path)]
     CreateFileError { path: String },
-    #[fail(display = "Invalid path: directory name cannot end with \"..\"")]
+    #[fail(display = "Invalid path: directory name terminates in \"..\"")]
     InvalidDirectoryName,
-    #[fail(display = "Directory name contains invalid UTF-8 characters")]
+    #[fail(display = "Invalid path: directory name contains invalid UTF-8 characters")]
     InvalidUTF8DirectoryName,
     #[fail(display = "Failed to create the TAR archive: {}", message)]
     TarBuildingError { message: String },
