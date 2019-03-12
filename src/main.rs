@@ -1,5 +1,4 @@
 #![feature(proc_macro_hygiene)]
-#![feature(try_trait)]
 
 use actix_web::{fs, middleware, server, App};
 use clap::crate_version;
@@ -13,9 +12,9 @@ use yansi::{Color, Paint};
 mod archive;
 mod args;
 mod auth;
+mod errors;
 mod listing;
 mod renderer;
-mod errors;
 
 #[derive(Clone, Debug)]
 /// Configuration of the Miniserve application

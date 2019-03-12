@@ -11,10 +11,10 @@ pub enum CompressionErrorKind {
     CreateTemporaryFileError,
     #[fail(display = "Could not create file {}", path)]
     CreateFileError { path: String },
-    #[fail(display = "Could not retrieve entity name from the given path. 
-        This can either mean that the entity has non UTF-8 characters in its name, 
-        or that its name ends with \"..\"")]
+    #[fail(display = "Invalid path: directory name cannot end with \"..\"")]
     InvalidDirectoryName,
+    #[fail(display = "Directory name contains invalid UTF-8 characters")]
+    InvalidUTF8DirectoryName,
     #[fail(display = "Failed to create the TAR archive: {}", message)]
     TarBuildingError { message: String },
     #[fail(display = "Failed to create the GZIP archive: {}", message)]
@@ -56,7 +56,7 @@ pub struct CompressionError {
 }
 
 impl CompressionError {
-    fn new(kind: CompressionErrorKind) -> CompressionError {
+    pub fn new(kind: CompressionErrorKind) -> CompressionError {
         CompressionError {
             inner: Context::new(kind),
         }
@@ -96,11 +96,5 @@ impl From<CompressionErrorKind> for CompressionError {
         CompressionError {
             inner: Context::new(kind),
         }
-    }
-}
-
-impl From<std::option::NoneError> for CompressionError {
-    fn from(_: std::option::NoneError) -> CompressionError {
-        CompressionError::new(CompressionErrorKind::InvalidDirectoryName)
     }
 }
