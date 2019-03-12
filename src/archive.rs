@@ -61,7 +61,21 @@ pub fn create_archive_file(
 /// Compresses a given folder in .tar.gz format
 fn tgz_compress(dir: &PathBuf) -> Result<(String, Bytes), errors::CompressionError> {
     let src_dir = dir.display().to_string();
-    let inner_folder = dir.file_name()?.to_str()?;
+    let inner_folder = match dir.file_name() {
+        Some(directory_name) => match directory_name.to_str() {
+            Some(directory) => directory,
+            None => {
+                return Err(errors::CompressionError::new(
+                    errors::CompressionErrorKind::InvalidUTF8DirectoryName,
+                ))
+            }
+        },
+        None => {
+            return Err(errors::CompressionError::new(
+                errors::CompressionErrorKind::InvalidDirectoryName,
+            ))
+        }
+    };
     let dst_filename = format!("{}.tar", inner_folder);
     let dst_tgz_filename = format!("{}.gz", dst_filename);
 
