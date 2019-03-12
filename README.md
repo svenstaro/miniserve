@@ -37,34 +37,6 @@ Sometimes this is just a more practical and quick way than doing things properly
 
     miniserve -i 192.168.0.1 -i 10.13.37.10 -i ::1 /tmp/myshare
 
-### Sort files for easier navigation
-    miniserve --sort=natural /tmp/myshare # (default behaviour)
-    # 1/
-    # 2/
-    # 3
-    # 11
-
-    miniserve --sort=alpha /tmp/myshare
-    # 1/
-    # 11
-    # 2/
-    # 3
-
-    miniserve --sort=dirsfirst /tmp/myshare
-    # 1/
-    # 2/
-    # 11
-    # 3
-
-    miniserve --sort=date /tmp/myshare
-    # list files in chronological order (most recent files on top of the list)
-
-    miniserve --reverse /tmp/myshare
-    # 11
-    # 3
-    # 2/
-    # 1/
-
 ## Features
 
 - Easy to use
