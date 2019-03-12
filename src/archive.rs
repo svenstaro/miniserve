@@ -126,12 +126,17 @@ fn tar(
 /// Compresses a stream of bytes using the GZIP algorithm
 fn gzip(mut data: &[u8]) -> Result<Vec<u8>, errors::CompressionError> {
     let mut encoder =
-        Encoder::new(Vec::new()).context(errors::CompressionErrorKind::GZipBuildingError)?;
-    io::copy(&mut data, &mut encoder).context(errors::CompressionErrorKind::GZipBuildingError)?;
-    let data = encoder
-        .finish()
-        .into_result()
-        .context(errors::CompressionErrorKind::GZipBuildingError)?;
+        Encoder::new(Vec::new()).context(errors::CompressionErrorKind::GZipBuildingError {
+            message: "failed to create GZIP encoder".to_string(),
+        })?;
+    io::copy(&mut data, &mut encoder).context(errors::CompressionErrorKind::GZipBuildingError {
+        message: "failed to write GZIP data".to_string(),
+    })?;
+    let data = encoder.finish().into_result().context(
+        errors::CompressionErrorKind::GZipBuildingError {
+            message: "failed to write GZIP trailer".to_string(),
+        },
+    )?;
 
     Ok(data)
 }

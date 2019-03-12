@@ -7,7 +7,7 @@ use serde::Deserialize;
 use std::io;
 use std::path::Path;
 use std::time::SystemTime;
-use yansi::{Color, Paint};
+use yansi::Color;
 
 use crate::archive;
 use crate::errors;
@@ -238,8 +238,9 @@ pub fn directory_listing<S>(
         match archive::create_archive_file(&compression_method, &dir.path) {
             Ok((filename, content)) => {
                 println!(
-                    "{success} Archive successfully created !",
-                    success = Color::Green.paint("success:").bold()
+                    "{success} {file} successfully created !",
+                    success = Color::Green.paint("success:").bold(),
+                    file = Color::White.paint(&filename).bold(),
                 );
                 Ok(HttpResponse::Ok()
                     .content_type(compression_method.content_type())
@@ -254,12 +255,7 @@ pub fn directory_listing<S>(
                     .body(Body::Streaming(Box::new(once(Ok(content))))))
             }
             Err(err) => {
-                println!(
-                    "{error} {err}",
-                    error = Paint::red("error:").bold(),
-                    err = Paint::white(&err).bold()
-                );
-                errors::print_chain(err);
+                errors::print_error_chain(err);
                 Ok(HttpResponse::Ok()
                     .status(http::StatusCode::INTERNAL_SERVER_ERROR)
                     .body(""))
