@@ -1,9 +1,9 @@
 use failure::{Backtrace, Context, Fail};
 use std::fmt::{self, Debug, Display};
-use yansi::Color;
+use yansi::{Color, Paint};
 
 /// Kinds of error which might happen during folder archive generation
-#[derive(Clone, Debug, PartialEq, Eq, Fail)]
+#[derive(Debug, Fail)]
 pub enum CompressionErrorKind {
     #[fail(display = "Could not open file {}", path)]
     OpenFileError { path: String },
@@ -17,21 +17,37 @@ pub enum CompressionErrorKind {
     InvalidDirectoryName,
     #[fail(display = "Failed to create the TAR archive: {}", message)]
     TarBuildingError { message: String },
-    #[fail(display = "Failed to create the GZIP archive")]
-    GZipBuildingError,
+    #[fail(display = "Failed to create the GZIP archive: {}", message)]
+    GZipBuildingError { message: String },
     #[fail(display = "Failed to retrieve TAR content")]
     TarContentError,
     #[fail(display = "Failed to retrieve GZIP content")]
     GZipContentError,
 }
 
-pub fn print_chain(err: CompressionError) {
+pub fn print_error_chain(err: CompressionError) {
+    println!(
+        "{error} {err}",
+        error = Paint::red("error:").bold(),
+        err = Paint::white(&err).bold()
+    );
+    print_backtrace(&err);
     for cause in Fail::iter_causes(&err) {
         println!(
             "{} {}",
-            Color::Magenta.paint("Caused by:").to_string(),
+            Color::RGB(255, 192, 0).paint("caused by:").to_string(),
             cause
         );
+        print_backtrace(cause);
+    }
+}
+
+fn print_backtrace(err: &dyn Fail) {
+    if let Some(backtrace) = err.backtrace() {
+        let backtrace = backtrace.to_string();
+        if backtrace != "" {
+            println!("{}", backtrace);
+        }
     }
 }
 
