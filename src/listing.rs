@@ -7,7 +7,6 @@ use serde::Deserialize;
 use std::io;
 use std::path::Path;
 use std::time::SystemTime;
-use yansi::Color;
 
 use crate::archive;
 use crate::errors;
@@ -229,19 +228,14 @@ pub fn directory_listing<S>(
     }
 
     if let Some(compression_method) = &download {
-        println!(
-            "{info} Creating an archive ({extension}) of {path}...",
-            info = Color::Blue.paint("info:").bold(),
-            extension = Color::White.paint(compression_method.extension()).bold(),
-            path = Color::White.paint(&dir.path.display().to_string()).bold()
+        log::info!(
+            "Creating an archive ({extension}) of {path}...",
+            extension = compression_method.extension(),
+            path = &dir.path.display().to_string()
         );
         match archive::create_archive_file(&compression_method, &dir.path) {
             Ok((filename, content)) => {
-                println!(
-                    "{success} {file} successfully created !",
-                    success = Color::Green.paint("success:").bold(),
-                    file = Color::White.paint(&filename).bold(),
-                );
+                log::info!("{file} successfully created !", file = &filename);
                 Ok(HttpResponse::Ok()
                     .content_type(compression_method.content_type())
                     .content_length(content.len() as u64)

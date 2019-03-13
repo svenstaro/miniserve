@@ -6,7 +6,6 @@ use serde::Deserialize;
 use std::io;
 use std::path::PathBuf;
 use tar::Builder;
-use yansi::Color;
 
 use crate::errors;
 
@@ -100,7 +99,7 @@ fn tar(src_dir: String, inner_folder: String) -> Result<Vec<u8>, errors::Compres
         errors::CompressionErrorKind::TarBuildingError {
             message: format!(
                 "failed to append the content of {} in the TAR archive",
-                color_path(&src_dir)
+                &src_dir
             ),
         },
     )?;
@@ -131,8 +130,4 @@ fn gzip(mut data: &[u8]) -> Result<Vec<u8>, errors::CompressionError> {
     )?;
 
     Ok(data)
-}
-
-fn color_path(path: &str) -> String {
-    Color::White.paint(path).bold().to_string()
 }

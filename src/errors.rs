@@ -1,6 +1,5 @@
 use failure::{Backtrace, Context, Fail};
 use std::fmt::{self, Debug, Display};
-use yansi::{Color, Paint};
 
 /// Kinds of errors which might happen during the generation of an archive
 #[derive(Debug, Fail)]
@@ -22,18 +21,10 @@ pub enum CompressionErrorKind {
 /// Prints the full chain of error, up to the root cause.
 /// If RUST_BACKTRACE is set to 1, also prints the backtrace for each error
 pub fn print_error_chain(err: CompressionError) {
-    println!(
-        "{error} {err}",
-        error = Paint::red("error:").bold(),
-        err = Paint::white(&err).bold()
-    );
+    log::error!("{}", &err);
     print_backtrace(&err);
     for cause in Fail::iter_causes(&err) {
-        println!(
-            "{} {}",
-            Color::RGB(255, 192, 0).paint("caused by:").to_string(),
-            cause
-        );
+        log::error!("caused by: {}", cause);
         print_backtrace(cause);
     }
 }
@@ -44,7 +35,7 @@ fn print_backtrace(err: &dyn Fail) {
     if let Some(backtrace) = err.backtrace() {
         let backtrace = backtrace.to_string();
         if backtrace != "" {
-            println!("{}", backtrace);
+            log::error!("{}", backtrace);
         }
     }
 }
