@@ -98,7 +98,7 @@ fn tar(src_dir: String, inner_folder: String) -> Result<Vec<u8>, errors::Compres
     tar_builder.append_dir_all(inner_folder, &src_dir).context(
         errors::CompressionErrorKind::TarBuildingError {
             message: format!(
-                "failed to append the content of {} in the TAR archive",
+                "failed to append the content of {} to the TAR archive",
                 &src_dir
             ),
         },
