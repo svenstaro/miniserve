@@ -3,11 +3,9 @@ use bytes::Bytes;
 use failure::ResultExt;
 use libflate::gzip::Encoder;
 use serde::Deserialize;
-use std::fs::{File, OpenOptions};
-use std::io::{self, Read};
+use std::io;
 use std::path::PathBuf;
 use tar::Builder;
-use tempfile::tempdir;
 use yansi::Color;
 
 use crate::errors;
@@ -79,7 +77,7 @@ fn tgz_compress(dir: &PathBuf) -> Result<(String, Bytes), errors::CompressionErr
     let dst_filename = format!("{}.tar", inner_folder);
     let dst_tgz_filename = format!("{}.gz", dst_filename);
 
-    let tar_content = tar(src_dir, dst_filename, inner_folder.to_string())
+    let tar_content = tar(src_dir, inner_folder.to_string())
         .context(errors::CompressionErrorKind::TarContentError)?;
     let gz_data = gzip(&tar_content).context(errors::CompressionErrorKind::GZipContentError)?;
 
@@ -90,20 +88,9 @@ fn tgz_compress(dir: &PathBuf) -> Result<(String, Bytes), errors::CompressionErr
 }
 
 /// Creates a temporary tar file of a given directory, reads it and returns its content as bytes
-fn tar(
-    src_dir: String,
-    dst_filename: String,
-    inner_folder: String,
-) -> Result<Vec<u8>, errors::CompressionError> {
-    let tmp_dir = tempdir().context(errors::CompressionErrorKind::CreateTemporaryFileError)?;
-    let dst_filepath = tmp_dir.path().join(dst_filename.clone());
-    let tar_file =
-        File::create(&dst_filepath).context(errors::CompressionErrorKind::CreateFileError {
-            path: color_path(&dst_filepath.display().to_string()),
-        })?;
-
+fn tar(src_dir: String, inner_folder: String) -> Result<Vec<u8>, errors::CompressionError> {
     // Create a TAR file of src_dir
-    let mut tar_builder = Builder::new(&tar_file);
+    let mut tar_builder = Builder::new(Vec::new());
 
     // Temporary workaround for known issue:
     // https://github.com/alexcrichton/tar-rs/issues/147
@@ -117,22 +104,13 @@ fn tar(
             ),
         },
     )?;
-    tar_builder
-        .into_inner()
-        .context(errors::CompressionErrorKind::TarBuildingError {
-            message: "failed to finish writing the TAR archive".to_string(),
-        })?;
 
-    // Read the content of the TAR file and store it as bytes
-    let mut tar_file = OpenOptions::new().read(true).open(&dst_filepath).context(
-        errors::CompressionErrorKind::OpenFileError {
-            path: color_path(&dst_filepath.display().to_string()),
-        },
-    )?;
-    let mut tar_content = Vec::new();
-    tar_file
-        .read_to_end(&mut tar_content)
-        .context(errors::CompressionErrorKind::TarContentError)?;
+    let tar_content =
+        tar_builder
+            .into_inner()
+            .context(errors::CompressionErrorKind::TarBuildingError {
+                message: "failed to finish writing the TAR archive".to_string(),
+            })?;
 
     Ok(tar_content)
 }

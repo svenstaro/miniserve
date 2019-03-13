@@ -5,12 +5,6 @@ use yansi::{Color, Paint};
 /// Kinds of errors which might happen during the generation of an archive
 #[derive(Debug, Fail)]
 pub enum CompressionErrorKind {
-    #[fail(display = "Could not open file {}", path)]
-    OpenFileError { path: String },
-    #[fail(display = "Could not create temporary file")]
-    CreateTemporaryFileError,
-    #[fail(display = "Could not create file {}", path)]
-    CreateFileError { path: String },
     #[fail(display = "Invalid path: directory name terminates in \"..\"")]
     InvalidDirectoryName,
     #[fail(display = "Invalid path: directory name contains invalid UTF-8 characters")]
