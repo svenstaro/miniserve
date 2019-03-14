@@ -49,7 +49,7 @@ impl CompressionMethod {
 pub fn create_archive_file(
     method: &CompressionMethod,
     dir: &PathBuf,
-    skip_symlinks: bool
+    skip_symlinks: bool,
 ) -> Result<(String, Bytes), errors::CompressionError> {
     match method {
         CompressionMethod::TarGz => tgz_compress(&dir, skip_symlinks),
@@ -57,7 +57,10 @@ pub fn create_archive_file(
 }
 
 /// Compresses a given folder in .tar.gz format
-fn tgz_compress(dir: &PathBuf, skip_symlinks: bool) -> Result<(String, Bytes), errors::CompressionError> {
+fn tgz_compress(
+    dir: &PathBuf,
+    skip_symlinks: bool,
+) -> Result<(String, Bytes), errors::CompressionError> {
     let src_dir = dir.display().to_string();
     let inner_folder = match dir.file_name() {
         Some(directory_name) => match directory_name.to_str() {
@@ -88,7 +91,11 @@ fn tgz_compress(dir: &PathBuf, skip_symlinks: bool) -> Result<(String, Bytes), e
 }
 
 /// Creates a temporary tar file of a given directory, reads it and returns its content as bytes
-fn tar(src_dir: String, inner_folder: String, skip_symlinks: bool) -> Result<Vec<u8>, errors::CompressionError> {
+fn tar(
+    src_dir: String,
+    inner_folder: String,
+    skip_symlinks: bool,
+) -> Result<Vec<u8>, errors::CompressionError> {
     // Create a TAR file of src_dir
     let mut tar_builder = Builder::new(Vec::new());
 
