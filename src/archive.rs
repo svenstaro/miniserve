@@ -49,14 +49,15 @@ impl CompressionMethod {
 pub fn create_archive_file(
     method: &CompressionMethod,
     dir: &PathBuf,
+    skip_symlinks: bool
 ) -> Result<(String, Bytes), errors::CompressionError> {
     match method {
-        CompressionMethod::TarGz => tgz_compress(&dir),
+        CompressionMethod::TarGz => tgz_compress(&dir, skip_symlinks),
     }
 }
 
 /// Compresses a given folder in .tar.gz format
-fn tgz_compress(dir: &PathBuf) -> Result<(String, Bytes), errors::CompressionError> {
+fn tgz_compress(dir: &PathBuf, skip_symlinks: bool) -> Result<(String, Bytes), errors::CompressionError> {
     let src_dir = dir.display().to_string();
     let inner_folder = match dir.file_name() {
         Some(directory_name) => match directory_name.to_str() {
@@ -76,7 +77,7 @@ fn tgz_compress(dir: &PathBuf) -> Result<(String, Bytes), errors::CompressionErr
     let dst_filename = format!("{}.tar", inner_folder);
     let dst_tgz_filename = format!("{}.gz", dst_filename);
 
-    let tar_content = tar(src_dir, inner_folder.to_string())
+    let tar_content = tar(src_dir, inner_folder.to_string(), skip_symlinks)
         .context(errors::CompressionErrorKind::TarContentError)?;
     let gz_data = gzip(&tar_content).context(errors::CompressionErrorKind::GZipContentError)?;
 
@@ -87,14 +88,11 @@ fn tgz_compress(dir: &PathBuf) -> Result<(String, Bytes), errors::CompressionErr
 }
 
 /// Creates a temporary tar file of a given directory, reads it and returns its content as bytes
-fn tar(src_dir: String, inner_folder: String) -> Result<Vec<u8>, errors::CompressionError> {
+fn tar(src_dir: String, inner_folder: String, skip_symlinks: bool) -> Result<Vec<u8>, errors::CompressionError> {
     // Create a TAR file of src_dir
     let mut tar_builder = Builder::new(Vec::new());
 
-    // Temporary workaround for known issue:
-    // https://github.com/alexcrichton/tar-rs/issues/147
-    // https://github.com/alexcrichton/tar-rs/issues/174
-    tar_builder.follow_symlinks(false);
+    tar_builder.follow_symlinks(!skip_symlinks);
     tar_builder.append_dir_all(inner_folder, &src_dir).context(
         errors::CompressionErrorKind::TarBuildingError {
             message: format!(
