@@ -233,7 +233,7 @@ pub fn directory_listing<S>(
             extension = compression_method.extension(),
             path = &dir.path.display().to_string()
         );
-        match archive::create_archive_file(&compression_method, &dir.path) {
+        match archive::create_archive_file(&compression_method, &dir.path, skip_symlinks) {
             Ok((filename, content)) => {
                 log::info!("{file} successfully created !", file = &filename);
                 Ok(HttpResponse::Ok()
