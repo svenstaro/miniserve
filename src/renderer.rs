@@ -19,7 +19,7 @@ pub fn page(
         (page_header(page_title))
         body {
             span #top { }
-            h1 { (page_title) }
+            h1.title { (page_title) }
             div.download {
                 (archive_button(archive::CompressionMethod::TarGz))
             }
@@ -182,6 +182,9 @@ fn css() -> Markup {
         margin: 0;
         padding: 0;
     }
+    h1 {
+        font-size: 1.5rem;
+    }
     table {
         margin-top: 2rem;
         width: 100%;
@@ -277,8 +280,8 @@ fn css() -> Markup {
     }
     .download {
         display: flex;
-        justify-content: flex-end;
-        padding: 0.125rem;
+        flex-wrap: wrap;
+        margin-top: .5rem;
     }
     .download a, .download a:visited {
         color: #3498db;
@@ -287,6 +290,7 @@ fn css() -> Markup {
         background: #efefef;
         padding: 0.5rem;
         border-radius: 0.2rem;
+        margin-top: 1rem;
     }
     .download a:hover {
         background: #deeef7a6;
