@@ -46,7 +46,9 @@ impl CompressionMethod {
     }
 }
 
-pub fn create_archive_file(
+/// Creates an archive of a folder, using the algorithm the user chose from the web interface
+/// This method returns the archive as a stream of bytes
+pub fn create_archive(
     method: &CompressionMethod,
     dir: &PathBuf,
     skip_symlinks: bool,
@@ -56,7 +58,7 @@ pub fn create_archive_file(
     }
 }
 
-/// Compresses a given folder in .tar.gz format
+/// Compresses a given folder in .tar.gz format, and returns the result as a stream of bytes
 fn tgz_compress(
     dir: &PathBuf,
     skip_symlinks: bool,
@@ -90,7 +92,7 @@ fn tgz_compress(
     Ok((dst_tgz_filename, data))
 }
 
-/// Creates a temporary tar file of a given directory, reads it and returns its content as bytes
+/// Creates a TAR archive of a folder, and returns it as a stream of bytes
 fn tar(
     src_dir: String,
     inner_folder: String,
@@ -119,7 +121,7 @@ fn tar(
     Ok(tar_content)
 }
 
-/// Compresses a stream of bytes using the GZIP algorithm
+/// Compresses a stream of bytes using the GZIP algorithm, and returns the resulting stream
 fn gzip(mut data: &[u8]) -> Result<Vec<u8>, errors::CompressionError> {
     let mut encoder =
         Encoder::new(Vec::new()).context(errors::CompressionErrorKind::GZipBuildingError {
