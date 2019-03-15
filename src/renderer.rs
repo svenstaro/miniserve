@@ -282,6 +282,7 @@ fn css() -> Markup {
         display: flex;
         flex-wrap: wrap;
         margin-top: .5rem;
+        padding: 0.125rem;
     }
     .download a, .download a:visited {
         color: #3498db;
