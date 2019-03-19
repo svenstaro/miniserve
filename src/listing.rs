@@ -238,7 +238,6 @@ pub fn directory_listing<S>(
                 log::info!("{file} successfully created !", file = &filename);
                 Ok(HttpResponse::Ok()
                     .content_type(compression_method.content_type())
-                    .content_length(content.len() as u64)
                     .content_encoding(compression_method.content_encoding())
                     .header("Content-Transfer-Encoding", "binary")
                     .header(
