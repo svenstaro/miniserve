@@ -103,10 +103,10 @@ fn tar(
     inner_folder: String,
     skip_symlinks: bool,
 ) -> Result<Vec<u8>, errors::CompressionError> {
-    // Create a TAR file of src_dir
     let mut tar_builder = Builder::new(Vec::new());
 
     tar_builder.follow_symlinks(!skip_symlinks);
+    // Recursively adds the content of src_dir into the archive stream
     tar_builder.append_dir_all(inner_folder, &src_dir).context(
         errors::CompressionErrorKind::TarBuildingError {
             message: format!(
