@@ -4,18 +4,24 @@ use std::fmt::{self, Debug, Display};
 /// Kinds of errors which might happen during the generation of an archive
 #[derive(Debug, Fail)]
 pub enum CompressionErrorKind {
+    /// This error will occur if the directory name could not be retrieved from the path
+    /// See https://doc.rust-lang.org/std/path/struct.Path.html#method.file_name
     #[fail(display = "Invalid path: directory name terminates in \"..\"")]
     InvalidDirectoryName,
+    /// This error will occur when trying to convert an OSString into a String, if the path
+    /// contains invalid UTF-8 characters
+    /// See https://doc.rust-lang.org/std/ffi/struct.OsStr.html#method.to_str
     #[fail(display = "Invalid path: directory name contains invalid UTF-8 characters")]
     InvalidUTF8DirectoryName,
+    /// This error might occur while building a TAR archive, or while writing the termination sections
+    /// See https://docs.rs/tar/0.4.22/tar/struct.Builder.html#method.append_dir_all
+    /// and https://docs.rs/tar/0.4.22/tar/struct.Builder.html#method.into_inner
     #[fail(display = "Failed to create the TAR archive: {}", message)]
     TarBuildingError { message: String },
+    /// This error might occur while building a GZIP archive, or while writing the GZIP trailer
+    /// See https://docs.rs/libflate/0.1.21/libflate/gzip/struct.Encoder.html#method.finish
     #[fail(display = "Failed to create the GZIP archive: {}", message)]
     GZipBuildingError { message: String },
-    #[fail(display = "Failed to retrieve TAR content")]
-    TarContentError,
-    #[fail(display = "Failed to retrieve GZIP content")]
-    GZipContentError,
 }
 
 /// Prints the full chain of error, up to the root cause.

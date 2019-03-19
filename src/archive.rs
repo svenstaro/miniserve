@@ -82,9 +82,14 @@ fn tgz_compress(
     let dst_filename = format!("{}.tar", inner_folder);
     let dst_tgz_filename = format!("{}.gz", dst_filename);
 
-    let tar_content = tar(src_dir, inner_folder.to_string(), skip_symlinks)
-        .context(errors::CompressionErrorKind::TarContentError)?;
-    let gz_data = gzip(&tar_content).context(errors::CompressionErrorKind::GZipContentError)?;
+    let tar_content = tar(src_dir, inner_folder.to_string(), skip_symlinks).context(
+        errors::CompressionErrorKind::TarBuildingError {
+            message: "an error occured while writing the TAR archive".to_string(),
+        },
+    )?;
+    let gz_data = gzip(&tar_content).context(errors::CompressionErrorKind::GZipBuildingError {
+        message: "an error occured while writing the GZIP archive".to_string(),
+    })?;
 
     let mut data = Bytes::new();
     data.extend_from_slice(&gz_data);
