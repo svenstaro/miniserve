@@ -9,8 +9,10 @@ use std::thread;
 use std::time::Duration;
 use yansi::{Color, Paint};
 
+mod archive;
 mod args;
 mod auth;
+mod errors;
 mod listing;
 mod renderer;
 
@@ -48,6 +50,13 @@ fn main() {
     }
 
     let miniserve_config = args::parse_args();
+
+    let _ = if miniserve_config.verbose {
+        TermLogger::init(LevelFilter::Info, Config::default())
+    } else {
+        TermLogger::init(LevelFilter::Error, Config::default())
+    };
+
     if miniserve_config.no_symlinks
         && miniserve_config
             .path
@@ -56,16 +65,10 @@ fn main() {
             .file_type()
             .is_symlink()
     {
-        println!(
-            "{error} The no-symlinks option cannot be used with a symlink path",
-            error = Paint::red("error:").bold(),
-        );
+        log::error!("The no-symlinks option cannot be used with a symlink path");
         return;
     }
 
-    if miniserve_config.verbose {
-        let _ = TermLogger::init(LevelFilter::Info, Config::default());
-    }
     let sys = actix::System::new("miniserve");
 
     let inside_config = miniserve_config.clone();
@@ -119,7 +122,7 @@ fn main() {
         version = crate_version!()
     );
     if !miniserve_config.path_explicitly_chosen {
-        println!("{info} miniserve has been invoked without an explicit path so it will serve the current directory.", info=Color::Blue.paint("Info:").bold());
+        println!("{warning} miniserve has been invoked without an explicit path so it will serve the current directory.", warning=Color::RGB(255, 192, 0).paint("Notice:").bold());
         println!(
             "      Invoke with -h|--help to see options or invoke as `miniserve .` to hide this advice."
         );
@@ -164,7 +167,7 @@ fn main() {
         path = Color::Yellow.paint(path_string).bold(),
         addresses = addresses,
     );
-    println!("Quit by pressing CTRL-C");
+    println!("\nQuit by pressing CTRL-C");
 
     let _ = sys.run();
 }
