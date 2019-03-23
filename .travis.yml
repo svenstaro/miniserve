@@ -41,6 +41,7 @@ matrix:
 
 before_install:
   - rustup self update
+  - rustup update
 
 install:
   # On Apple, the default target is already the right one.
