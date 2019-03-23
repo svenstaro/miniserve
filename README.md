@@ -44,6 +44,11 @@ Sometimes this is just a more practical and quick way than doing things properly
 - Single binary drop-in with no extra dependencies required
 - Authentication support with username and password
 - Mega fast and highly parallel (thanks to [Rust](https://www.rust-lang.org/) and [Actix](https://actix.rs/))
+- Folder download (compressed in .tar.gz)
+
+## Known limitations
+
+- **For now**, the tar.gz compression is not async-ready, which means that the whole archive needs to be created (in memory) before the download starts. While it should not be a problem for small folders, the download feature can really get resource-heavy for large folders.
 
 ## How to install
 

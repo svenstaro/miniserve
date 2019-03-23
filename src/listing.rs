@@ -1,5 +1,6 @@
-use actix_web::{fs, FromRequest, HttpRequest, HttpResponse, Query, Result};
+use actix_web::{fs, http, Body, FromRequest, HttpRequest, HttpResponse, Query, Result};
 use bytesize::ByteSize;
+use futures::stream::once;
 use htmlescape::encode_minimal as escape_html_entity;
 use percent_encoding::{utf8_percent_encode, DEFAULT_ENCODE_SET};
 use serde::Deserialize;
@@ -7,6 +8,8 @@ use std::io;
 use std::path::Path;
 use std::time::SystemTime;
 
+use crate::archive;
+use crate::errors;
 use crate::renderer;
 
 /// Query parameters
@@ -14,6 +17,7 @@ use crate::renderer;
 struct QueryParameters {
     sort: Option<SortingMethod>,
     order: Option<SortingOrder>,
+    download: Option<archive::CompressionMethod>,
 }
 
 /// Available sorting methods
@@ -134,11 +138,16 @@ pub fn directory_listing<S>(
     let is_root = base.parent().is_none() || req.path() == random_route;
     let page_parent = base.parent().map(|p| p.display().to_string());
 
-    let (sort_method, sort_order) = if let Ok(query) = Query::<QueryParameters>::extract(req) {
-        (query.sort.clone(), query.order.clone())
-    } else {
-        (None, None)
-    };
+    let (sort_method, sort_order, download) =
+        if let Ok(query) = Query::<QueryParameters>::extract(req) {
+            (
+                query.sort.clone(),
+                query.order.clone(),
+                query.download.clone(),
+            )
+        } else {
+            (None, None, None)
+        };
 
     let mut entries: Vec<Entry> = Vec::new();
 
@@ -218,17 +227,46 @@ pub fn directory_listing<S>(
         }
     }
 
-    Ok(HttpResponse::Ok()
-        .content_type("text/html; charset=utf-8")
-        .body(
-            renderer::page(
-                &title,
-                entries,
-                is_root,
-                page_parent,
-                sort_method,
-                sort_order,
-            )
-            .into_string(),
-        ))
+    if let Some(compression_method) = &download {
+        log::info!(
+            "Creating an archive ({extension}) of {path}...",
+            extension = compression_method.extension(),
+            path = &dir.path.display().to_string()
+        );
+        match archive::create_archive(&compression_method, &dir.path, skip_symlinks) {
+            Ok((filename, content)) => {
+                log::info!("{file} successfully created !", file = &filename);
+                Ok(HttpResponse::Ok()
+                    .content_type(compression_method.content_type())
+                    .content_encoding(compression_method.content_encoding())
+                    .header("Content-Transfer-Encoding", "binary")
+                    .header(
+                        "Content-Disposition",
+                        format!("attachment; filename={:?}", filename),
+                    )
+                    .chunked()
+                    .body(Body::Streaming(Box::new(once(Ok(content))))))
+            }
+            Err(err) => {
+                errors::print_error_chain(err);
+                Ok(HttpResponse::Ok()
+                    .status(http::StatusCode::INTERNAL_SERVER_ERROR)
+                    .body(""))
+            }
+        }
+    } else {
+        Ok(HttpResponse::Ok()
+            .content_type("text/html; charset=utf-8")
+            .body(
+                renderer::page(
+                    &title,
+                    entries,
+                    is_root,
+                    page_parent,
+                    sort_method,
+                    sort_order,
+                )
+                .into_string(),
+            ))
+    }
 }
