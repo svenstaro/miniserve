@@ -1,5 +1,6 @@
 #![feature(proc_macro_hygiene)]
 
+use actix_web::http::Method;
 use actix_web::{fs, middleware, server, App};
 use clap::crate_version;
 use simplelog::{Config, LevelFilter, TermLogger};
@@ -13,6 +14,7 @@ mod archive;
 mod args;
 mod auth;
 mod errors;
+mod file_upload;
 mod listing;
 mod renderer;
 
@@ -194,6 +196,11 @@ fn configure_app(app: App<MiniserveConfig>) -> App<MiniserveConfig> {
 
     let random_route = app.state().random_route.clone().unwrap_or_default();
     let full_route = format!("/{}", random_route);
+
+    //allow file upload
+    let app = app.resource("/upload", |r| {
+        r.method(Method::POST).f(file_upload::upload_file)
+    });
 
     if let Some(s) = s {
         // Handle directories
