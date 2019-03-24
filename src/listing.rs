@@ -228,6 +228,7 @@ pub fn directory_listing<S>(
                 page_parent,
                 sort_method,
                 sort_order,
+                &base.to_string_lossy(),
             )
             .into_string(),
         ))
