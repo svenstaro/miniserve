@@ -69,15 +69,28 @@ pub fn upload_file(req: &HttpRequest<crate::MiniserveConfig>) -> FutureResponse<
     if req.query().contains_key("path") {
         let path_str = req.query()["path"].clone();
         let mut path = PathBuf::from(path_str.clone());
-        while path.has_root() {
+        // serever root path should be valid
+        let app_root_dir = req.state().path.clone().canonicalize().unwrap();
+        // allow file upload only under current dir
+        if path.has_root() {
             path = match path.strip_prefix(Component::RootDir) {
-                Ok(path) => path.to_path_buf(),
-                //TODO better error response
-                Err(_) => return Box::new(future::ok(HttpResponse::BadRequest().body(""))),
+                Ok(dir) => dir.to_path_buf(),
+                Err(_) => {
+                    return Box::new(future::ok(HttpResponse::BadRequest().body("Invalid path")))
+                }
             }
         }
-        // TODO verify that path is under current dir
-        if let Ok(target_path) = path.join(req.state().path.clone()).canonicalize() {
+        let target_dir = match app_root_dir.clone().join(path).canonicalize() {
+            Ok(path) => {
+                if path.starts_with(&app_root_dir) {
+                    path
+                } else {
+                    return Box::new(future::ok(HttpResponse::BadRequest().body("Invalid path")));
+                }
+            }
+            Err(_) => return Box::new(future::ok(HttpResponse::BadRequest().body("Invalid path"))),
+        };
+        if let Ok(target_path) = target_dir.canonicalize() {
             Box::new(
                 req.multipart()
                     .map_err(error::ErrorInternalServerError)
@@ -92,7 +105,7 @@ pub fn upload_file(req: &HttpRequest<crate::MiniserveConfig>) -> FutureResponse<
                     .map_err(|e| e),
             )
         } else {
-            Box::new(future::ok(HttpResponse::BadRequest().body("")))
+            Box::new(future::ok(HttpResponse::BadRequest().body("invalid path")))
         }
     } else {
         Box::new(future::ok(HttpResponse::BadRequest().body("")))
