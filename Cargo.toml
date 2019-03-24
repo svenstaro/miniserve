@@ -38,3 +38,8 @@ chrono-humanize = "0.0.11"
 maud = { version = "0.20.0", features = ["actix-web"] }
 serde = { version = "1.0.89", features = ["derive"] }
 futures = "0.1.25"
+tar = "0.4.22"
+bytes = "0.4.12"
+libflate = "0.1.21"
+failure = "0.1.5"
+log = "0.4.6"

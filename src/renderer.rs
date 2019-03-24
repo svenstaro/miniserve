@@ -3,6 +3,7 @@ use chrono_humanize::{Accuracy, HumanTime, Tense};
 use maud::{html, Markup, PreEscaped, DOCTYPE};
 use std::time::SystemTime;
 
+use crate::archive;
 use crate::listing;
 
 /// Renders the file listing
@@ -24,6 +25,9 @@ pub fn page(
                 p { "Select file to upload" }
                 input type="file" name="file_to_upload" {}
                 input type="submit" value="Upload file" {}
+            }
+            div.download {
+                (archive_button(archive::CompressionMethod::TarGz))
             }
             table {
                 thead {
@@ -52,6 +56,18 @@ pub fn page(
             a.back href="#top" {
                 (arrow_up())
             }
+        }
+    }
+}
+
+/// Partial: archive button
+fn archive_button(compress_method: archive::CompressionMethod) -> Markup {
+    let link = format!("?download={}", compress_method.to_string());
+    let text = format!("Download .{}", compress_method.extension());
+
+    html! {
+        a href=(link) {
+            (text)
         }
     }
 }
@@ -172,6 +188,9 @@ fn css() -> Markup {
         margin: 0;
         padding: 0;
     }
+    h1 {
+        font-size: 1.5rem;
+    }
     table {
         margin-top: 2rem;
         width: 100%;
@@ -264,6 +283,27 @@ fn css() -> Markup {
     .back:hover {
         color: #3498db;
         text-decoration: none;
+    }
+    .download {
+        display: flex;
+        flex-wrap: wrap;
+        margin-top: .5rem;
+        padding: 0.125rem;
+    }
+    .download a, .download a:visited {
+        color: #3498db;
+    }
+    .download a {
+        background: #efefef;
+        padding: 0.5rem;
+        border-radius: 0.2rem;
+        margin-top: 1rem;
+    }
+    .download a:hover {
+        background: #deeef7a6;
+    }
+    .download a:not(:last-of-type) {
+        margin-right: 1rem;
     }
     @media (max-width: 600px) {
         h1 {
