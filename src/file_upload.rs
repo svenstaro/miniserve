@@ -3,11 +3,11 @@ use actix_web::{
     http::header::{ContentDisposition, LOCATION},
     multipart, Error, FutureResponse, HttpMessage, HttpRequest, HttpResponse,
 };
-use std::io::Write;
-use std::path::{Component, PathBuf};
-
-use futures::future;
-use futures::{Future, Stream};
+use futures::{future, Future, Stream};
+use std::{
+    io::Write,
+    path::{Component, PathBuf},
+};
 
 pub fn save_file(
     field: multipart::Field<dev::Payload>,
@@ -66,48 +66,36 @@ pub fn handle_multipart(
 }
 
 pub fn upload_file(req: &HttpRequest<crate::MiniserveConfig>) -> FutureResponse<HttpResponse> {
-    if req.query().contains_key("path") {
-        let path_str = req.query()["path"].clone();
-        let mut path = PathBuf::from(path_str.clone());
-        // serever root path should be valid
-        let app_root_dir = req.state().path.clone().canonicalize().unwrap();
-        // allow file upload only under current dir
-        if path.has_root() {
-            path = match path.strip_prefix(Component::RootDir) {
-                Ok(dir) => dir.to_path_buf(),
-                Err(_) => {
-                    return Box::new(future::ok(HttpResponse::BadRequest().body("Invalid path")))
-                }
-            }
-        }
-        let target_dir = match app_root_dir.clone().join(path).canonicalize() {
-            Ok(path) => {
-                if path.starts_with(&app_root_dir) {
-                    path
-                } else {
-                    return Box::new(future::ok(HttpResponse::BadRequest().body("Invalid path")));
-                }
-            }
-            Err(_) => return Box::new(future::ok(HttpResponse::BadRequest().body("Invalid path"))),
-        };
-        if let Ok(target_path) = target_dir.canonicalize() {
-            Box::new(
-                req.multipart()
-                    .map_err(error::ErrorInternalServerError)
-                    .map(move |item| handle_multipart(item, target_path.clone()))
-                    .flatten()
-                    .collect()
-                    .map(|_| {
-                        HttpResponse::TemporaryRedirect()
-                            .header(LOCATION, path_str)
-                            .finish()
-                    })
-                    .map_err(|e| e),
-            )
-        } else {
-            Box::new(future::ok(HttpResponse::BadRequest().body("invalid path")))
-        }
-    } else {
-        Box::new(future::ok(HttpResponse::BadRequest().body("")))
+    if !req.query().contains_key("path") {
+        return Box::new(future::ok(
+            HttpResponse::BadRequest().body("Unspecified parameter path"),
+        ));
     }
+    // server root path should be valid so we can unwrap it
+    let app_root_dir = req.state().path.clone().canonicalize().unwrap();
+
+    let path_str = req.query()["path"].clone();
+    let mut path = PathBuf::from(path_str.clone());
+    if let Ok(stripped_path) = path.strip_prefix(Component::RootDir) {
+        path = stripped_path.to_owned();
+    }
+
+    // if target path is under app root directory save file
+    let target_dir = match &app_root_dir.clone().join(path).canonicalize() {
+        Ok(path) if path.starts_with(&app_root_dir) => path.clone(),
+        _ => return Box::new(future::ok(HttpResponse::BadRequest().body("Invalid path"))),
+    };
+    Box::new(
+        req.multipart()
+            .map_err(error::ErrorInternalServerError)
+            .map(move |item| handle_multipart(item, target_dir.clone()))
+            .flatten()
+            .collect()
+            .map(|_| {
+                HttpResponse::TemporaryRedirect()
+                    .header(LOCATION, path_str)
+                    .finish()
+            })
+            .map_err(|e| e),
+    )
 }
