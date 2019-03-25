@@ -197,7 +197,7 @@ fn configure_app(app: App<MiniserveConfig>) -> App<MiniserveConfig> {
     let random_route = app.state().random_route.clone().unwrap_or_default();
     let full_route = format!("/{}", random_route);
 
-    //allow file upload
+    // Allow file upload
     let app = app.resource("/upload", |r| {
         r.method(Method::POST).f(file_upload::upload_file)
     });
