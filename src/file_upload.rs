@@ -65,6 +65,11 @@ pub fn handle_multipart(
     }
 }
 
+/// Handle incoming request to upload file.
+/// Target file path is expected as path parameter in URI and is interpreted as relative from
+/// server root directory. Any path whitch will go outside of this directory is considered
+/// invalid.
+/// This method returns future.
 pub fn upload_file(req: &HttpRequest<crate::MiniserveConfig>) -> FutureResponse<HttpResponse> {
     if !req.query().contains_key("path") {
         return Box::new(future::ok(
