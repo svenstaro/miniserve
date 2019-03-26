@@ -1,13 +1,20 @@
 use actix_web::{
     dev, error,
     http::header::{ContentDisposition, LOCATION},
-    multipart, Error, FutureResponse, HttpMessage, HttpRequest, HttpResponse,
+    multipart, Error, FromRequest, FutureResponse, HttpMessage, HttpRequest, HttpResponse, Query,
 };
 use futures::{future, Future, Stream};
+use serde::Deserialize;
 use std::{
     io::Write,
     path::{Component, PathBuf},
 };
+
+/// Query parameters
+#[derive(Debug, Deserialize)]
+struct QueryParameters {
+    path: PathBuf,
+}
 
 /// Create future to save file.
 fn save_file(
@@ -73,22 +80,24 @@ fn handle_multipart(
 /// invalid.
 /// This method returns future.
 pub fn upload_file(req: &HttpRequest<crate::MiniserveConfig>) -> FutureResponse<HttpResponse> {
-    if !req.query().contains_key("path") {
-        return Box::new(future::ok(
-            HttpResponse::BadRequest().body("Unspecified parameter path"),
-        ));
-    }
-    // server root path should be valid so we can unwrap it
     let app_root_dir = req.state().path.clone().canonicalize().unwrap();
-
-    let path_str = req.query()["path"].clone();
-    let mut path = PathBuf::from(path_str.clone());
-    if let Ok(stripped_path) = path.strip_prefix(Component::RootDir) {
-        path = stripped_path.to_owned();
-    }
+    let path = match Query::<QueryParameters>::extract(req) {
+        Ok(query) => {
+            if let Ok(stripped_path) = query.path.strip_prefix(Component::RootDir) {
+                stripped_path.to_owned()
+            } else {
+                query.path.clone()
+            }
+        }
+        Err(_) => {
+            return Box::new(future::ok(
+                HttpResponse::BadRequest().body("Unspecified parameter path"),
+            ))
+        }
+    };
 
     // if target path is under app root directory save file
-    let target_dir = match &app_root_dir.clone().join(path).canonicalize() {
+    let target_dir = match &app_root_dir.clone().join(path.clone()).canonicalize() {
         Ok(path) if path.starts_with(&app_root_dir) => path.clone(),
         _ => return Box::new(future::ok(HttpResponse::BadRequest().body("Invalid path"))),
     };
@@ -98,9 +107,9 @@ pub fn upload_file(req: &HttpRequest<crate::MiniserveConfig>) -> FutureResponse<
             .map(move |item| handle_multipart(item, target_dir.clone()))
             .flatten()
             .collect()
-            .map(|_| {
+            .map(move |_| {
                 HttpResponse::TemporaryRedirect()
-                    .header(LOCATION, path_str)
+                    .header(LOCATION, format!("{}", path.display()))
                     .finish()
             })
             .map_err(|e| e),
