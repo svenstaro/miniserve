@@ -9,7 +9,8 @@ use std::{
     path::{Component, PathBuf},
 };
 
-pub fn save_file(
+/// Create future to save file.
+fn save_file(
     field: multipart::Field<dev::Payload>,
     file_path: PathBuf,
 ) -> Box<Future<Item = i64, Error = Error>> {
@@ -30,7 +31,8 @@ pub fn save_file(
     )
 }
 
-pub fn handle_multipart(
+/// Create new future to handle file as multipart data.
+fn handle_multipart(
     item: multipart::MultipartItem<dev::Payload>,
     mut file_path: PathBuf,
 ) -> Box<Stream<Item = i64, Error = Error>> {
@@ -67,7 +69,7 @@ pub fn handle_multipart(
 
 /// Handle incoming request to upload file.
 /// Target file path is expected as path parameter in URI and is interpreted as relative from
-/// server root directory. Any path whitch will go outside of this directory is considered
+/// server root directory. Any path which will go outside of this directory is considered
 /// invalid.
 /// This method returns future.
 pub fn upload_file(req: &HttpRequest<crate::MiniserveConfig>) -> FutureResponse<HttpResponse> {
