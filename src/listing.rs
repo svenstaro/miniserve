@@ -130,6 +130,7 @@ pub fn directory_listing<S>(
     dir: &fs::Directory,
     req: &HttpRequest<S>,
     skip_symlinks: bool,
+    file_upload: bool,
     random_route: Option<String>,
 ) -> Result<HttpResponse, io::Error> {
     let title = format!("Index of {}", req.path());
@@ -265,6 +266,7 @@ pub fn directory_listing<S>(
                     page_parent,
                     sort_method,
                     sort_order,
+                    file_upload,
                     &base.to_string_lossy(),
                 )
                 .into_string(),
