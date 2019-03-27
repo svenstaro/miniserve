@@ -14,6 +14,7 @@ pub fn page(
     page_parent: Option<String>,
     sort_method: Option<listing::SortingMethod>,
     sort_order: Option<listing::SortingOrder>,
+    file_upload: bool,
     base: &str,
 ) -> Markup {
     html! {
@@ -21,10 +22,12 @@ pub fn page(
         body {
             span #top { }
             h1 { (page_title) }
+            @if file_upload {
             form action={"/upload?path=" (base)} method="POST" enctype="multipart/form-data" {
                 p { "Select file to upload" }
                 input type="file" name="file_to_upload" {}
                 input type="submit" value="Upload file" {}
+            }
             }
             div.download {
                 (archive_button(archive::CompressionMethod::TarGz))

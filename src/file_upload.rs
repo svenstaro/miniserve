@@ -20,7 +20,11 @@ struct QueryParameters {
 fn save_file(
     field: multipart::Field<dev::Payload>,
     file_path: PathBuf,
+    override_files: bool,
 ) -> Box<Future<Item = i64, Error = Error>> {
+    if !override_files && file_path.exists() {
+        return Box::new(future::err(error::ErrorInternalServerError("file exists")));
+    }
     let mut file = match std::fs::File::create(file_path) {
         Ok(file) => file,
         Err(e) => return Box::new(future::err(error::ErrorInternalServerError(e))),
@@ -42,6 +46,7 @@ fn save_file(
 fn handle_multipart(
     item: multipart::MultipartItem<dev::Payload>,
     mut file_path: PathBuf,
+    override_files: bool,
 ) -> Box<Stream<Item = i64, Error = Error>> {
     match item {
         multipart::MultipartItem::Field(field) => {
@@ -60,15 +65,14 @@ fn handle_multipart(
             match filename {
                 Ok(f) => {
                     file_path = file_path.join(f);
-                    // TODO should I allow overriding existing files?
-                    Box::new(save_file(field, file_path).into_stream())
+                    Box::new(save_file(field, file_path, override_files).into_stream())
                 }
                 Err(e) => Box::new(e.into_stream()),
             }
         }
         multipart::MultipartItem::Nested(mp) => Box::new(
             mp.map_err(error::ErrorInternalServerError)
-                .map(move |item| handle_multipart(item, file_path.clone()))
+                .map(move |item| handle_multipart(item, file_path.clone(), override_files))
                 .flatten(),
         ),
     }
@@ -101,10 +105,11 @@ pub fn upload_file(req: &HttpRequest<crate::MiniserveConfig>) -> FutureResponse<
         Ok(path) if path.starts_with(&app_root_dir) => path.clone(),
         _ => return Box::new(future::ok(HttpResponse::BadRequest().body("Invalid path"))),
     };
+    let override_files = req.state().override_files;
     Box::new(
         req.multipart()
             .map_err(error::ErrorInternalServerError)
-            .map(move |item| handle_multipart(item, target_dir.clone()))
+            .map(move |item| handle_multipart(item, target_dir.clone(), override_files))
             .flatten()
             .collect()
             .map(move |_| {

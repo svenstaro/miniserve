@@ -44,6 +44,12 @@ pub struct MiniserveConfig {
 
     /// Enable random route generation
     pub random_route: Option<String>,
+
+    /// Enable file upload
+    pub file_upload: bool,
+
+    /// Enable upload to override existing files
+    pub override_files: bool,
 }
 
 fn main() {
@@ -175,11 +181,12 @@ fn main() {
 }
 
 /// Configures the Actix application
-fn configure_app(app: App<MiniserveConfig>) -> App<MiniserveConfig> {
+fn configure_app(mut app: App<MiniserveConfig>) -> App<MiniserveConfig> {
     let s = {
         let path = &app.state().path;
         let no_symlinks = app.state().no_symlinks;
         let random_route = app.state().random_route.clone();
+        let file_upload = app.state().file_upload.clone();
         if path.is_file() {
             None
         } else {
@@ -188,7 +195,13 @@ fn configure_app(app: App<MiniserveConfig>) -> App<MiniserveConfig> {
                     .expect("Couldn't create path")
                     .show_files_listing()
                     .files_listing_renderer(move |dir, req| {
-                        listing::directory_listing(dir, req, no_symlinks, random_route.clone())
+                        listing::directory_listing(
+                            dir,
+                            req,
+                            no_symlinks,
+                            file_upload,
+                            random_route.clone(),
+                        )
                     }),
             )
         }
@@ -198,9 +211,11 @@ fn configure_app(app: App<MiniserveConfig>) -> App<MiniserveConfig> {
     let full_route = format!("/{}", random_route);
 
     // Allow file upload
-    let app = app.resource("/upload", |r| {
-        r.method(Method::POST).f(file_upload::upload_file)
-    });
+    if app.state().file_upload {
+        app = app.resource("/upload", |r| {
+            r.method(Method::POST).f(file_upload::upload_file)
+        });
+    }
 
     if let Some(s) = s {
         // Handle directories
