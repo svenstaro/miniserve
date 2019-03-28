@@ -1,6 +1,6 @@
 use actix_web::{
     dev, error,
-    http::header::{ContentDisposition, LOCATION},
+    http::header::{ContentDisposition, LOCATION, REFERER},
     multipart, Error, FromRequest, FutureResponse, HttpMessage, HttpRequest, HttpResponse, Query,
 };
 use futures::{future, Future, Stream};
@@ -99,6 +99,7 @@ pub fn upload_file(req: &HttpRequest<crate::MiniserveConfig>) -> FutureResponse<
             ))
         }
     };
+    let return_path = req.headers()[REFERER].clone();
 
     // if target path is under app root directory save file
     let target_dir = match &app_root_dir.clone().join(path.clone()).canonicalize() {
@@ -112,9 +113,10 @@ pub fn upload_file(req: &HttpRequest<crate::MiniserveConfig>) -> FutureResponse<
             .map(move |item| handle_multipart(item, target_dir.clone(), override_files))
             .flatten()
             .collect()
+            //.map(|s| HttpResponse::Ok().json(s))
             .map(move |_| {
                 HttpResponse::TemporaryRedirect()
-                    .header(LOCATION, format!("{}", path.display()))
+                    .header(LOCATION, format!("{}", return_path.to_str().unwrap_or("/")))
                     .finish()
             })
             .map_err(|e| e),
