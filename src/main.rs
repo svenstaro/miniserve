@@ -181,7 +181,7 @@ fn main() {
 }
 
 /// Configures the Actix application
-fn configure_app(mut app: App<MiniserveConfig>) -> App<MiniserveConfig> {
+fn configure_app(app: App<MiniserveConfig>) -> App<MiniserveConfig> {
     let upload_route;
     let s = {
         let path = &app.state().path;
@@ -217,16 +217,18 @@ fn configure_app(mut app: App<MiniserveConfig>) -> App<MiniserveConfig> {
     let random_route = app.state().random_route.clone().unwrap_or_default();
     let full_route = format!("/{}", random_route);
 
-    // Allow file upload
-    if app.state().file_upload {
-        app = app.resource(&upload_route, |r| {
-            r.method(Method::POST).f(file_upload::upload_file)
-        });
-    }
-
     if let Some(s) = s {
-        // Handle directories
-        app.handler(&full_route, s)
+        if app.state().file_upload {
+            // Allow file upload
+            app.resource(&upload_route, |r| {
+                r.method(Method::POST).f(file_upload::upload_file)
+            })
+            // Handle directories
+            .handler(&full_route, s)
+        } else {
+            // Handle directories
+            app.handler(&full_route, s)
+        }
     } else {
         // Handle single files
         app.resource(&full_route, |r| r.f(listing::file_handler))
