@@ -7,6 +7,7 @@ use actix_web::{
 use futures::{future, Future, Stream};
 use serde::Deserialize;
 use std::{
+    fs,
     io::Write,
     path::{Component, PathBuf},
 };
@@ -67,12 +68,23 @@ fn handle_multipart(
                         .ok_or(FileUploadErrorKind::ParseError)
                         .map(|cd| String::from(cd))
                 });
+            let err = |e: FileUploadErrorKind| Box::new(future::err(e).into_stream());
             match filename {
                 Ok(f) => {
+                    match fs::metadata(&file_path) {
+                        Ok(metadata) => {
+                            if !metadata.is_dir() || metadata.permissions().readonly() {
+                                return err(FileUploadErrorKind::InsufficientPermissions);
+                            }
+                        }
+                        Err(_) => {
+                            return err(FileUploadErrorKind::InsufficientPermissions);
+                        }
+                    }
                     file_path = file_path.join(f);
                     Box::new(save_file(field, file_path, override_files).into_stream())
                 }
-                Err(e) => Box::new(future::err(e).into_stream()),
+                Err(e) => err(e),
             }
         }
         multipart::MultipartItem::Nested(mp) => Box::new(
