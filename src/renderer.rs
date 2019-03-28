@@ -15,7 +15,8 @@ pub fn page(
     sort_method: Option<listing::SortingMethod>,
     sort_order: Option<listing::SortingOrder>,
     file_upload: bool,
-    base: &str,
+    upload_route: &str,
+    current_dir: &str,
 ) -> Markup {
     html! {
         (page_header(page_title))
@@ -23,7 +24,7 @@ pub fn page(
             span #top { }
             h1 { (page_title) }
             @if file_upload {
-            form action={"/upload?path=" (base)} method="POST" enctype="multipart/form-data" {
+            form action={(upload_route) "?path=" (current_dir)} method="POST" enctype="multipart/form-data" {
                 p { "Select file to upload" }
                 input type="file" name="file_to_upload" {}
                 input type="submit" value="Upload file" {}

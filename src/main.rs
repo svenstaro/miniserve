@@ -182,14 +182,20 @@ fn main() {
 
 /// Configures the Actix application
 fn configure_app(mut app: App<MiniserveConfig>) -> App<MiniserveConfig> {
+    let upload_route;
     let s = {
         let path = &app.state().path;
         let no_symlinks = app.state().no_symlinks;
         let random_route = app.state().random_route.clone();
         let file_upload = app.state().file_upload.clone();
+        upload_route = match app.state().random_route.clone() {
+            Some(random_route) => format!("/{}/upload", random_route),
+            None => format!("/upload"),
+        };
         if path.is_file() {
             None
         } else {
+            let u_r = upload_route.clone();
             Some(
                 fs::StaticFiles::new(path)
                     .expect("Couldn't create path")
@@ -201,6 +207,7 @@ fn configure_app(mut app: App<MiniserveConfig>) -> App<MiniserveConfig> {
                             no_symlinks,
                             file_upload,
                             random_route.clone(),
+                            u_r.clone(),
                         )
                     }),
             )
@@ -212,7 +219,7 @@ fn configure_app(mut app: App<MiniserveConfig>) -> App<MiniserveConfig> {
 
     // Allow file upload
     if app.state().file_upload {
-        app = app.resource("/upload", |r| {
+        app = app.resource(&upload_route, |r| {
             r.method(Method::POST).f(file_upload::upload_file)
         });
     }
