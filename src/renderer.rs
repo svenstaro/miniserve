@@ -390,3 +390,14 @@ fn humanize_systemtime(src_time: Option<SystemTime>) -> Option<String> {
         .and_then(|from_now| Duration::from_std(from_now).ok())
         .map(|duration| HumanTime::from(duration).to_text_en(Accuracy::Rough, Tense::Past))
 }
+
+/// Renders error page when file uploading fails
+pub fn file_upload_error(error_description: &str, return_address: &str) -> Markup {
+    html! {
+        h1 { "File uploading failed" }
+        p { (error_description) }
+        a href=(return_address) {
+            "back"
+        }
+    }
+}
