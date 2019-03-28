@@ -1,7 +1,8 @@
+use crate::errors::FileUploadErrorKind;
+use crate::renderer::file_upload_error;
 use actix_web::{
-    dev, error,
-    http::header::{ContentDisposition, LOCATION, REFERER},
-    multipart, Error, FromRequest, FutureResponse, HttpMessage, HttpRequest, HttpResponse, Query,
+    dev, http::header, multipart, FromRequest, FutureResponse, HttpMessage, HttpRequest,
+    HttpResponse, Query,
 };
 use futures::{future, Future, Stream};
 use serde::Deserialize;
@@ -21,24 +22,26 @@ fn save_file(
     field: multipart::Field<dev::Payload>,
     file_path: PathBuf,
     override_files: bool,
-) -> Box<Future<Item = i64, Error = Error>> {
+) -> Box<Future<Item = i64, Error = FileUploadErrorKind>> {
     if !override_files && file_path.exists() {
-        return Box::new(future::err(error::ErrorInternalServerError("file exists")));
+        return Box::new(future::err(FileUploadErrorKind::FileExist));
     }
     let mut file = match std::fs::File::create(file_path) {
         Ok(file) => file,
-        Err(e) => return Box::new(future::err(error::ErrorInternalServerError(e))),
+        Err(e) => {
+            return Box::new(future::err(FileUploadErrorKind::IOError(e)));
+        }
     };
     Box::new(
         field
+            .map_err(|e| FileUploadErrorKind::MultipartError(e))
             .fold(0i64, move |acc, bytes| {
                 let rt = file
                     .write_all(bytes.as_ref())
                     .map(|_| acc + bytes.len() as i64)
-                    .map_err(|e| error::MultipartError::Payload(error::PayloadError::Io(e)));
+                    .map_err(|e| FileUploadErrorKind::IOError(e));
                 future::result(rt)
-            })
-            .map_err(|e| error::ErrorInternalServerError(e)),
+            }),
     )
 }
 
@@ -47,19 +50,21 @@ fn handle_multipart(
     item: multipart::MultipartItem<dev::Payload>,
     mut file_path: PathBuf,
     override_files: bool,
-) -> Box<Stream<Item = i64, Error = Error>> {
+) -> Box<Stream<Item = i64, Error = FileUploadErrorKind>> {
     match item {
         multipart::MultipartItem::Field(field) => {
-            let err = || Box::new(future::err(error::ContentTypeError::ParseError.into()));
             let filename = field
                 .headers()
-                .get("content-disposition")
-                .ok_or(err())
-                .and_then(|cd| ContentDisposition::from_raw(cd).map_err(|_| err()))
+                .get(header::CONTENT_DISPOSITION)
+                .ok_or(FileUploadErrorKind::ParseError)
+                .and_then(|cd| {
+                    header::ContentDisposition::from_raw(cd)
+                        .map_err(|_| FileUploadErrorKind::ParseError)
+                })
                 .and_then(|content_disposition| {
                     content_disposition
                         .get_filename()
-                        .ok_or(err())
+                        .ok_or(FileUploadErrorKind::ParseError)
                         .map(|cd| String::from(cd))
                 });
             match filename {
@@ -67,11 +72,11 @@ fn handle_multipart(
                     file_path = file_path.join(f);
                     Box::new(save_file(field, file_path, override_files).into_stream())
                 }
-                Err(e) => Box::new(e.into_stream()),
+                Err(e) => Box::new(future::err(e).into_stream()),
             }
         }
         multipart::MultipartItem::Nested(mp) => Box::new(
-            mp.map_err(error::ErrorInternalServerError)
+            mp.map_err(|e| FileUploadErrorKind::MultipartError(e))
                 .map(move |item| handle_multipart(item, file_path.clone(), override_files))
                 .flatten(),
         ),
@@ -99,7 +104,9 @@ pub fn upload_file(req: &HttpRequest<crate::MiniserveConfig>) -> FutureResponse<
             ))
         }
     };
-    let return_path = req.headers()[REFERER].clone();
+    // this is really ugly I will try to think about something smarter
+    let return_path: String = req.headers()[header::REFERER].clone().to_str().unwrap_or("/").to_owned();
+    let r_p2 = return_path.clone();
 
     // if target path is under app root directory save file
     let target_dir = match &app_root_dir.clone().join(path.clone()).canonicalize() {
@@ -109,16 +116,20 @@ pub fn upload_file(req: &HttpRequest<crate::MiniserveConfig>) -> FutureResponse<
     let override_files = req.state().override_files;
     Box::new(
         req.multipart()
-            .map_err(error::ErrorInternalServerError)
+            .map_err(|e| FileUploadErrorKind::MultipartError(e))
             .map(move |item| handle_multipart(item, target_dir.clone(), override_files))
             .flatten()
             .collect()
-            //.map(|s| HttpResponse::Ok().json(s))
             .map(move |_| {
                 HttpResponse::TemporaryRedirect()
-                    .header(LOCATION, format!("{}", return_path.to_str().unwrap_or("/")))
+                    .header(
+                        header::LOCATION,
+                        format!("{}", return_path.clone()),
+                    )
                     .finish()
             })
-            .map_err(|e| e),
+            .or_else(move |e| {
+                let error_description = format!("{}",e);
+                future::ok(HttpResponse::BadRequest().body(file_upload_error(&error_description, &r_p2.clone()).into_string()))
     )
 }
