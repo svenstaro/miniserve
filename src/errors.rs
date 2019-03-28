@@ -16,6 +16,9 @@ pub enum FileUploadErrorKind {
     /// This error may occur when trying to write incoming file to disk
     #[fail(display = "Failed to create or write to file")]
     IOError(std::io::Error),
+    /// This error will occur when we he have insuffictent permissions to create new file
+    #[fail(display = "Insuffitient permissions to create file")]
+    InsufficientPermissions,
 }
 
 /// Kinds of errors which might happen during the generation of an archive
