@@ -24,11 +24,11 @@ pub fn page(
             span #top { }
             h1 { (page_title) }
             @if file_upload {
-            form action={(upload_route) "?path=" (current_dir)} method="POST" enctype="multipart/form-data" {
-                p { "Select file to upload" }
-                input type="file" name="file_to_upload" {}
-                input type="submit" value="Upload file" {}
-            }
+                form action={(upload_route) "?path=" (current_dir)} method="POST" enctype="multipart/form-data" {
+                    p { "Select file to upload" }
+                    input type="file" name="file_to_upload" {}
+                    input type="submit" value="Upload file" {}
+                }
             }
             div.download {
                 (archive_button(archive::CompressionMethod::TarGz))

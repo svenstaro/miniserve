@@ -49,7 +49,7 @@ pub struct MiniserveConfig {
     pub file_upload: bool,
 
     /// Enable upload to override existing files
-    pub override_files: bool,
+    pub overwrite_files: bool,
 }
 
 fn main() {
