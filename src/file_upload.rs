@@ -22,9 +22,9 @@ struct QueryParameters {
 fn save_file(
     field: multipart::Field<dev::Payload>,
     file_path: PathBuf,
-    override_files: bool,
+    overwrite_files: bool,
 ) -> Box<Future<Item = i64, Error = FileUploadErrorKind>> {
-    if !override_files && file_path.exists() {
+    if !overwrite_files && file_path.exists() {
         return Box::new(future::err(FileUploadErrorKind::FileExist));
     }
     let mut file = match std::fs::File::create(file_path) {
@@ -50,7 +50,7 @@ fn save_file(
 fn handle_multipart(
     item: multipart::MultipartItem<dev::Payload>,
     mut file_path: PathBuf,
-    override_files: bool,
+    overwrite_files: bool,
 ) -> Box<Stream<Item = i64, Error = FileUploadErrorKind>> {
     match item {
         multipart::MultipartItem::Field(field) => {
@@ -82,14 +82,14 @@ fn handle_multipart(
                         }
                     }
                     file_path = file_path.join(f);
-                    Box::new(save_file(field, file_path, override_files).into_stream())
+                    Box::new(save_file(field, file_path, overwrite_files).into_stream())
                 }
                 Err(e) => err(e),
             }
         }
         multipart::MultipartItem::Nested(mp) => Box::new(
             mp.map_err(FileUploadErrorKind::MultipartError)
-                .map(move |item| handle_multipart(item, file_path.clone(), override_files))
+                .map(move |item| handle_multipart(item, file_path.clone(), overwrite_files))
                 .flatten(),
         ),
     }
@@ -124,16 +124,16 @@ pub fn upload_file(req: &HttpRequest<crate::MiniserveConfig>) -> FutureResponse<
         .to_owned();
     let r_p2 = return_path.clone();
 
-    // if target path is under app root directory save file
+    // If the target path is under the app root directory, save the file.
     let target_dir = match &app_root_dir.clone().join(path.clone()).canonicalize() {
         Ok(path) if path.starts_with(&app_root_dir) => path.clone(),
         _ => return Box::new(future::ok(HttpResponse::BadRequest().body("Invalid path"))),
     };
-    let override_files = req.state().override_files;
+    let overwrite_files = req.state().overwrite_files;
     Box::new(
         req.multipart()
             .map_err(FileUploadErrorKind::MultipartError)
-            .map(move |item| handle_multipart(item, target_dir.clone(), override_files))
+            .map(move |item| handle_multipart(item, target_dir.clone(), overwrite_files))
             .flatten()
             .collect()
             .map(move |_| {
