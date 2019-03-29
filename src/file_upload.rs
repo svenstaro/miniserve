@@ -35,12 +35,12 @@ fn save_file(
     };
     Box::new(
         field
-            .map_err(|e| FileUploadErrorKind::MultipartError(e))
+            .map_err(FileUploadErrorKind::MultipartError)
             .fold(0i64, move |acc, bytes| {
                 let rt = file
                     .write_all(bytes.as_ref())
                     .map(|_| acc + bytes.len() as i64)
-                    .map_err(|e| FileUploadErrorKind::IOError(e));
+                    .map_err(FileUploadErrorKind::IOError);
                 future::result(rt)
             }),
     )
@@ -66,7 +66,7 @@ fn handle_multipart(
                     content_disposition
                         .get_filename()
                         .ok_or(FileUploadErrorKind::ParseError)
-                        .map(|cd| String::from(cd))
+                        .map(String::from)
                 });
             let err = |e: FileUploadErrorKind| Box::new(future::err(e).into_stream());
             match filename {
@@ -88,7 +88,7 @@ fn handle_multipart(
             }
         }
         multipart::MultipartItem::Nested(mp) => Box::new(
-            mp.map_err(|e| FileUploadErrorKind::MultipartError(e))
+            mp.map_err(FileUploadErrorKind::MultipartError)
                 .map(move |item| handle_multipart(item, file_path.clone(), override_files))
                 .flatten(),
         ),
@@ -117,7 +117,11 @@ pub fn upload_file(req: &HttpRequest<crate::MiniserveConfig>) -> FutureResponse<
         }
     };
     // this is really ugly I will try to think about something smarter
-    let return_path: String = req.headers()[header::REFERER].clone().to_str().unwrap_or("/").to_owned();
+    let return_path: String = req.headers()[header::REFERER]
+        .clone()
+        .to_str()
+        .unwrap_or("/")
+        .to_owned();
     let r_p2 = return_path.clone();
 
     // if target path is under app root directory save file
@@ -128,20 +132,21 @@ pub fn upload_file(req: &HttpRequest<crate::MiniserveConfig>) -> FutureResponse<
     let override_files = req.state().override_files;
     Box::new(
         req.multipart()
-            .map_err(|e| FileUploadErrorKind::MultipartError(e))
+            .map_err(FileUploadErrorKind::MultipartError)
             .map(move |item| handle_multipart(item, target_dir.clone(), override_files))
             .flatten()
             .collect()
             .map(move |_| {
                 HttpResponse::TemporaryRedirect()
-                    .header(
-                        header::LOCATION,
-                        format!("{}", return_path.clone()),
-                    )
+                    .header(header::LOCATION, return_path.to_string())
                     .finish()
             })
             .or_else(move |e| {
-                let error_description = format!("{}",e);
-                future::ok(HttpResponse::BadRequest().body(file_upload_error(&error_description, &r_p2.clone()).into_string()))
+                let error_description = format!("{}", e);
+                future::ok(
+                    HttpResponse::BadRequest()
+                        .body(file_upload_error(&error_description, &r_p2.clone()).into_string()),
+                )
+            }),
     )
 }
