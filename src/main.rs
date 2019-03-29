@@ -187,10 +187,10 @@ fn configure_app(app: App<MiniserveConfig>) -> App<MiniserveConfig> {
         let path = &app.state().path;
         let no_symlinks = app.state().no_symlinks;
         let random_route = app.state().random_route.clone();
-        let file_upload = app.state().file_upload.clone();
+        let file_upload = app.state().file_upload;
         upload_route = match app.state().random_route.clone() {
             Some(random_route) => format!("/{}/upload", random_route),
-            None => format!("/upload"),
+            None => "/upload".to_string(),
         };
         if path.is_file() {
             None
