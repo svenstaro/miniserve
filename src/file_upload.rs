@@ -117,7 +117,11 @@ pub fn upload_file(req: &HttpRequest<crate::MiniserveConfig>) -> FutureResponse<
         }
     };
     // this is really ugly I will try to think about something smarter
-    let return_path: String = req.headers()[header::REFERER].clone().to_str().unwrap_or("/").to_owned();
+    let return_path: String = req.headers()[header::REFERER]
+        .clone()
+        .to_str()
+        .unwrap_or("/")
+        .to_owned();
     let r_p2 = return_path.clone();
 
     // if target path is under app root directory save file
@@ -134,14 +138,15 @@ pub fn upload_file(req: &HttpRequest<crate::MiniserveConfig>) -> FutureResponse<
             .collect()
             .map(move |_| {
                 HttpResponse::TemporaryRedirect()
-                    .header(
-                        header::LOCATION,
-                        format!("{}", return_path.clone()),
-                    )
+                    .header(header::LOCATION, format!("{}", return_path.clone()))
                     .finish()
             })
             .or_else(move |e| {
-                let error_description = format!("{}",e);
-                future::ok(HttpResponse::BadRequest().body(file_upload_error(&error_description, &r_p2.clone()).into_string()))
+                let error_description = format!("{}", e);
+                future::ok(
+                    HttpResponse::BadRequest()
+                        .body(file_upload_error(&error_description, &r_p2.clone()).into_string()),
+                )
+            }),
     )
 }
