@@ -1,5 +1,4 @@
 #![feature(proc_macro_hygiene)]
-#![feature(custom_attribute)]
 
 use actix_web::{fs, middleware, server, App};
 use clap::crate_version;
