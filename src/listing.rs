@@ -11,6 +11,10 @@ use std::time::SystemTime;
 use crate::archive;
 use crate::errors;
 use crate::renderer;
+use crate::themes;
+
+/// Default color scheme, when none is set through query parameters
+const DEFAULT_COLORSCHEME: themes::ColorScheme = themes::ColorScheme::ArchLinux;
 
 /// Query parameters
 #[derive(Debug, Deserialize)]
@@ -18,6 +22,7 @@ struct QueryParameters {
     sort: Option<SortingMethod>,
     order: Option<SortingOrder>,
     download: Option<archive::CompressionMethod>,
+    theme: Option<themes::ColorScheme>,
 }
 
 /// Available sorting methods
@@ -77,6 +82,9 @@ pub enum EntryType {
 
     /// Entry is a file
     File,
+
+    /// Entry is a symlink
+    Symlink,
 }
 
 /// Entry
@@ -114,8 +122,19 @@ impl Entry {
         }
     }
 
+    /// Returns wether the entry is a directory
     pub fn is_dir(&self) -> bool {
         self.entry_type == EntryType::Directory
+    }
+
+    /// Returns wether the entry is a file
+    pub fn is_file(&self) -> bool {
+        self.entry_type == EntryType::File
+    }
+
+    /// Returns wether the entry is a symlink
+    pub fn is_symlink(&self) -> bool {
+        self.entry_type == EntryType::Symlink
     }
 }
 
@@ -138,15 +157,16 @@ pub fn directory_listing<S>(
     let is_root = base.parent().is_none() || req.path() == random_route;
     let page_parent = base.parent().map(|p| p.display().to_string());
 
-    let (sort_method, sort_order, download) =
+    let (sort_method, sort_order, download, color_scheme) =
         if let Ok(query) = Query::<QueryParameters>::extract(req) {
             (
                 query.sort.clone(),
                 query.order.clone(),
                 query.download.clone(),
+                query.theme.clone(),
             )
         } else {
-            (None, None, None)
+            (None, None, None, None)
         };
 
     let mut entries: Vec<Entry> = Vec::new();
@@ -174,7 +194,15 @@ pub fn directory_listing<S>(
                     Err(_) => None,
                 };
 
-                if metadata.is_dir() {
+                if metadata.file_type().is_symlink() {
+                    entries.push(Entry::new(
+                        file_name,
+                        EntryType::Symlink,
+                        file_url,
+                        None,
+                        last_modification_date,
+                    ));
+                } else if metadata.is_dir() {
                     entries.push(Entry::new(
                         file_name,
                         EntryType::Directory,
@@ -227,6 +255,8 @@ pub fn directory_listing<S>(
         }
     }
 
+    let color_scheme = color_scheme.unwrap_or(DEFAULT_COLORSCHEME);
+
     if let Some(compression_method) = &download {
         log::info!(
             "Creating an archive ({extension}) of {path}...",
@@ -265,6 +295,7 @@ pub fn directory_listing<S>(
                     page_parent,
                     sort_method,
                     sort_order,
+                    color_scheme,
                 )
                 .into_string(),
             ))

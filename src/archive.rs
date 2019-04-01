@@ -25,6 +25,11 @@ impl CompressionMethod {
         .to_string()
     }
 
+    /// Lists compression methods
+    pub fn get_compression_methods() -> Vec<Self> {
+        vec![CompressionMethod::TarGz]
+    }
+
     pub fn extension(&self) -> String {
         match &self {
             CompressionMethod::TarGz => "tar.gz",
