@@ -199,7 +199,7 @@ fn entry_row(
                             (entry.name) "/"
                         }
                     } @else if entry.is_file() {
-                        a.file href=(parametrized_link(&entry.link, &sort_method, &sort_order, &color_scheme)) {
+                        a.file href=(&entry.link) {
                             (entry.name)
                         }
                     } @ else if entry.is_symlink() {
