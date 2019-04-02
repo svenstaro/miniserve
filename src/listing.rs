@@ -14,7 +14,7 @@ use crate::renderer;
 use crate::themes;
 
 /// Default color scheme, when none is set through query parameters
-const DEFAULT_COLORSCHEME: themes::ColorScheme = themes::ColorScheme::ArchLinux;
+const DEFAULT_COLORSCHEME: themes::ColorScheme = themes::ColorScheme::Archlinux;
 
 /// Query parameters
 #[derive(Debug, Deserialize)]

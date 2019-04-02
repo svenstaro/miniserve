@@ -3,7 +3,7 @@ use serde::Deserialize;
 #[derive(Debug, Deserialize, Clone)]
 pub enum ColorScheme {
     #[serde(alias = "archlinux")]
-    ArchLinux,
+    Archlinux,
 
     #[serde(alias = "zenburn")]
     Zenburn,
@@ -16,7 +16,7 @@ impl ColorScheme {
     /// Returns the URL-compatible name of a color scheme
     pub fn to_string(&self) -> String {
         match &self {
-            ColorScheme::ArchLinux => "archlinux",
+            ColorScheme::Archlinux => "archlinux",
             ColorScheme::Zenburn => "zenburn",
             ColorScheme::Monokai => "monokai",
         }
@@ -26,7 +26,7 @@ impl ColorScheme {
     /// Returns wether a color scheme is dark
     pub fn is_dark(&self) -> bool {
         match &self {
-            ColorScheme::ArchLinux => true,
+            ColorScheme::Archlinux => true,
             ColorScheme::Zenburn => true,
             ColorScheme::Monokai => true,
         }
@@ -35,7 +35,7 @@ impl ColorScheme {
     /// Returns the name of a color scheme
     pub fn get_name(&self) -> String {
         match &self {
-            ColorScheme::ArchLinux => "Archlinux",
+            ColorScheme::Archlinux => "Archlinux",
             ColorScheme::Zenburn => "Zenburn",
             ColorScheme::Monokai => "Monokai",
         }
@@ -45,7 +45,7 @@ impl ColorScheme {
     /// Lists available color schemes
     pub fn get_color_schemes() -> Vec<Self> {
         vec![
-            ColorScheme::ArchLinux,
+            ColorScheme::Archlinux,
             ColorScheme::Zenburn,
             ColorScheme::Monokai,
         ]
@@ -54,7 +54,7 @@ impl ColorScheme {
     /// Retrieves the color palette associated to a color scheme
     pub fn get_theme(self) -> Theme {
         match self {
-            ColorScheme::ArchLinux => Theme {
+            ColorScheme::Archlinux => Theme {
                 background: "#383c4a".to_string(),
                 text_color: "#fefefe".to_string(),
                 directory_link_color: "#03a9f4".to_string(),
