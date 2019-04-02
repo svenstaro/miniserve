@@ -10,6 +10,9 @@ pub enum ColorScheme {
 
     #[serde(alias = "monokai")]
     Monokai,
+
+    #[serde(alias = "squirrel")]
+    Squirrel,
 }
 
 impl ColorScheme {
@@ -19,6 +22,7 @@ impl ColorScheme {
             ColorScheme::Archlinux => "archlinux",
             ColorScheme::Zenburn => "zenburn",
             ColorScheme::Monokai => "monokai",
+            ColorScheme::Squirrel => "squirrel",
         }
         .to_string()
     }
@@ -29,6 +33,7 @@ impl ColorScheme {
             ColorScheme::Archlinux => true,
             ColorScheme::Zenburn => true,
             ColorScheme::Monokai => true,
+            ColorScheme::Squirrel => false,
         }
     }
 
@@ -38,6 +43,7 @@ impl ColorScheme {
             ColorScheme::Archlinux => "Archlinux",
             ColorScheme::Zenburn => "Zenburn",
             ColorScheme::Monokai => "Monokai",
+            ColorScheme::Squirrel => "Squirrel",
         }
         .to_string()
     }
@@ -48,6 +54,7 @@ impl ColorScheme {
             ColorScheme::Archlinux,
             ColorScheme::Zenburn,
             ColorScheme::Monokai,
+            ColorScheme::Squirrel,
         ]
     }
 
@@ -152,6 +159,39 @@ impl ColorScheme {
                 change_theme_link_color: "#F8F8F2".to_string(),
                 change_theme_link_color_hover: "#F8F8F2".to_string(),
                 field_color: "#ccc7a7".to_string(),
+            },
+            ColorScheme::Squirrel => Theme {
+                background: "#FFFFFF".to_string(),
+                text_color: "#323232".to_string(),
+                directory_link_color: "#d02474".to_string(),
+                file_link_color: "#0086B3".to_string(),
+                symlink_link_color: "#ED6A43".to_string(),
+                table_background: "#F5F5F5".to_string(),
+                table_text_color: "#323232".to_string(),
+                table_header_background: "#323232".to_string(),
+                table_header_text_color: "#F5F5F5".to_string(),
+                table_header_active_color: "#FFFFFF".to_string(),
+                active_row_color: "#f6f8fa".to_string(),
+                odd_row_background: "#fbfbfb".to_string(),
+                even_row_background: "#f2f2f2".to_string(),
+                root_link_color: "#323232".to_string(),
+                download_button_background: "#d02474".to_string(),
+                download_button_background_hover: "#f52d8a".to_string(),
+                download_button_link_color: "#F8F8F0".to_string(),
+                download_button_link_color_hover: "#F8F8F0".to_string(),
+                back_button_background: "#d02474".to_string(),
+                back_button_background_hover: "#d02474".to_string(),
+                back_button_link_color: "#F8F8F0".to_string(),
+                back_button_link_color_hover: "#F8F8F0".to_string(),
+                date_text_color: "#797979".to_string(),
+                at_color: "#797979".to_string(),
+                switch_theme_background: "#323232".to_string(),
+                switch_theme_link_color: "#F5F5F5".to_string(),
+                switch_theme_active: "#d02474".to_string(),
+                switch_theme_border: "#49483E".to_string(),
+                change_theme_link_color: "#F5F5F5".to_string(),
+                change_theme_link_color_hover: "#F5F5F5".to_string(),
+                field_color: "#797979".to_string(),
             },
         }
     }
