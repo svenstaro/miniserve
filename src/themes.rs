@@ -1,18 +1,15 @@
 use serde::Deserialize;
+use structopt::clap::{_clap_count_exprs, arg_enum};
 
-#[derive(Debug, Deserialize, Clone)]
-pub enum ColorScheme {
-    #[serde(alias = "archlinux")]
-    Archlinux,
-
-    #[serde(alias = "zenburn")]
-    Zenburn,
-
-    #[serde(alias = "monokai")]
-    Monokai,
-
-    #[serde(alias = "squirrel")]
-    Squirrel,
+arg_enum! {
+    #[derive(Debug, Deserialize, Clone)]
+    #[serde(rename_all = "lowercase")]
+    pub enum ColorScheme {
+        Archlinux,
+        Zenburn,
+        Monokai,
+        Squirrel,
+    }
 }
 
 impl ColorScheme {

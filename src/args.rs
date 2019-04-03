@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use structopt::StructOpt;
 
 use crate::auth;
+use crate::themes;
 
 /// Possible characters for random routes
 const ROUTE_ALPHABET: [char; 16] = [
@@ -47,6 +48,18 @@ struct CLIArgs {
     /// Do not follow symbolic links
     #[structopt(short = "P", long = "no-symlinks")]
     no_symlinks: bool,
+
+    /// Default color scheme
+    #[structopt(
+        short = "c",
+        long = "color-scheme",
+        default_value = "Squirrel",
+        raw(
+            possible_values = "&themes::ColorScheme::variants()",
+            case_insensitive = "true",
+        )
+    )]
+    color_scheme: themes::ColorScheme,
 }
 
 /// Checks wether an interface is valid, i.e. it can be parsed into an IP address
@@ -89,6 +102,8 @@ pub fn parse_args() -> crate::MiniserveConfig {
         None
     };
 
+    let default_color_scheme = args.color_scheme;
+
     let path_explicitly_chosen = args.path.is_some();
 
     crate::MiniserveConfig {
@@ -100,5 +115,6 @@ pub fn parse_args() -> crate::MiniserveConfig {
         path_explicitly_chosen,
         no_symlinks: args.no_symlinks,
         random_route,
+        default_color_scheme,
     }
 }

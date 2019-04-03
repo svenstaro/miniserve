@@ -43,6 +43,9 @@ pub struct MiniserveConfig {
 
     /// Enable random route generation
     pub random_route: Option<String>,
+
+    /// Default color scheme
+    pub default_color_scheme: themes::ColorScheme,
 }
 
 fn main() {
@@ -179,6 +182,7 @@ fn configure_app(app: App<MiniserveConfig>) -> App<MiniserveConfig> {
         let path = &app.state().path;
         let no_symlinks = app.state().no_symlinks;
         let random_route = app.state().random_route.clone();
+        let default_color_scheme = app.state().default_color_scheme.clone();
         if path.is_file() {
             None
         } else {
@@ -187,7 +191,13 @@ fn configure_app(app: App<MiniserveConfig>) -> App<MiniserveConfig> {
                     .expect("Couldn't create path")
                     .show_files_listing()
                     .files_listing_renderer(move |dir, req| {
-                        listing::directory_listing(dir, req, no_symlinks, random_route.clone())
+                        listing::directory_listing(
+                            dir,
+                            req,
+                            no_symlinks,
+                            random_route.clone(),
+                            default_color_scheme.clone(),
+                        )
                     }),
             )
         }

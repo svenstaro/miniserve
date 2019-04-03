@@ -13,9 +13,6 @@ use crate::errors;
 use crate::renderer;
 use crate::themes;
 
-/// Default color scheme, when none is set through query parameters
-const DEFAULT_COLORSCHEME: themes::ColorScheme = themes::ColorScheme::Archlinux;
-
 /// Query parameters
 #[derive(Debug, Deserialize)]
 struct QueryParameters {
@@ -150,6 +147,7 @@ pub fn directory_listing<S>(
     req: &HttpRequest<S>,
     skip_symlinks: bool,
     random_route: Option<String>,
+    default_color_scheme: themes::ColorScheme,
 ) -> Result<HttpResponse, io::Error> {
     let title = format!("Index of {}", req.path());
     let base = Path::new(req.path());
@@ -255,7 +253,7 @@ pub fn directory_listing<S>(
         }
     }
 
-    let color_scheme = color_scheme.unwrap_or(DEFAULT_COLORSCHEME);
+    let color_scheme = color_scheme.unwrap_or(default_color_scheme);
 
     if let Some(compression_method) = &download {
         log::info!(
