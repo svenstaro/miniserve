@@ -20,7 +20,7 @@ pub fn page(
 ) -> Markup {
     html! {
         (page_header(page_title))
-        body {
+        body id="dropContainer" {
             span #top { }
             h1 { (page_title) }
             @if file_upload {
@@ -33,7 +33,7 @@ pub fn page(
             div.download {
                 (archive_button(archive::CompressionMethod::TarGz))
             }
-            table id="dropContainer" {
+            table {
                 thead {
                     th { (build_link("name", "Name", &sort_method, &sort_order)) }
                     th { (build_link("size", "Size", &sort_method, &sort_order)) }
@@ -309,6 +309,9 @@ fn css() -> Markup {
     .download a:not(:last-of-type) {
         margin-right: 1rem;
     }
+    .drag_hover {
+        box-shadow: inset 0 25px 40px #888;
+    }
     @media (max-width: 600px) {
         h1 {
             font-size: 1.375em;
@@ -369,6 +372,7 @@ fn page_header(page_title: &str) -> Markup {
             <script>
                 window.onload = function() {
                     dropContainer.ondragover = dropContainer.ondragenter = function(evt) {
+                        dropContainer.className = "drag_hover";
                         evt.preventDefault();
                     };
 
@@ -377,6 +381,10 @@ fn page_header(page_title: &str) -> Markup {
                       evt.preventDefault();
                       file_submit.submit();
                     };
+
+                    dropContainer.ondragleave = function() {
+                        dropContainer.className = "";
+                    }
                 }
             </script>
             "#))
