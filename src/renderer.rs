@@ -20,13 +20,13 @@ pub fn page(
 ) -> Markup {
     html! {
         (page_header(page_title))
-        body {
+        body id="dropContainer" {
             span #top { }
             h1 { (page_title) }
             @if file_upload {
-                form action={(upload_route) "?path=" (current_dir)} method="POST" enctype="multipart/form-data" {
+                form id="file_submit" action={(upload_route) "?path=" (current_dir)} method="POST" enctype="multipart/form-data" {
                     p { "Select file to upload" }
-                    input type="file" name="file_to_upload" {}
+                    input type="file" name="file_to_upload" id="fileInput" {}
                     input type="submit" value="Upload file" {}
                 }
             }
@@ -309,6 +309,9 @@ fn css() -> Markup {
     .download a:not(:last-of-type) {
         margin-right: 1rem;
     }
+    .drag_hover {
+        box-shadow: inset 0 25px 40px #aae;
+    }
     @media (max-width: 600px) {
         h1 {
             font-size: 1.375em;
@@ -365,6 +368,26 @@ fn page_header(page_title: &str) -> Markup {
             meta name="viewport" content="width=device-width, initial-scale=1";
             title { (page_title) }
             style { (css()) }
+            (PreEscaped(r#"
+            <script>
+                window.onload = function() {
+                    dropContainer.ondragover = dropContainer.ondragenter = function(evt) {
+                        dropContainer.className = "drag_hover";
+                        evt.preventDefault();
+                    };
+
+                    dropContainer.ondrop = function(evt) {
+                      fileInput.files = evt.dataTransfer.files;
+                      evt.preventDefault();
+                      file_submit.submit();
+                    };
+
+                    dropContainer.ondragleave = function() {
+                        dropContainer.className = "";
+                    }
+                }
+            </script>
+            "#))
         }
     }
 }
