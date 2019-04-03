@@ -24,16 +24,16 @@ pub fn page(
             span #top { }
             h1 { (page_title) }
             @if file_upload {
-                form action={(upload_route) "?path=" (current_dir)} method="POST" enctype="multipart/form-data" {
+                form id="file_submit" action={(upload_route) "?path=" (current_dir)} method="POST" enctype="multipart/form-data" {
                     p { "Select file to upload" }
-                    input type="file" name="file_to_upload" {}
+                    input type="file" name="file_to_upload" id="fileInput" {}
                     input type="submit" value="Upload file" {}
                 }
             }
             div.download {
                 (archive_button(archive::CompressionMethod::TarGz))
             }
-            table {
+            table id="dropContainer" {
                 thead {
                     th { (build_link("name", "Name", &sort_method, &sort_order)) }
                     th { (build_link("size", "Size", &sort_method, &sort_order)) }
@@ -365,6 +365,21 @@ fn page_header(page_title: &str) -> Markup {
             meta name="viewport" content="width=device-width, initial-scale=1";
             title { (page_title) }
             style { (css()) }
+            (PreEscaped(r#"
+            <script>
+                window.onload = function() {
+                    dropContainer.ondragover = dropContainer.ondragenter = function(evt) {
+                        evt.preventDefault();
+                    };
+
+                    dropContainer.ondrop = function(evt) {
+                      fileInput.files = evt.dataTransfer.files;
+                      evt.preventDefault();
+                      file_submit.submit();
+                    };
+                }
+            </script>
+            "#))
         }
     }
 }
