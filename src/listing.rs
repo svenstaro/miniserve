@@ -24,17 +24,15 @@ struct QueryParameters {
 
 /// Available sorting methods
 #[derive(Debug, Deserialize, Clone)]
+#[serde(rename_all = "lowercase")]
 pub enum SortingMethod {
     /// Sort by name
-    #[serde(alias = "name")]
     Name,
 
     /// Sort by size
-    #[serde(alias = "size")]
     Size,
 
     /// Sort by last modification date (natural sort: follows alphanumerical order)
-    #[serde(alias = "date")]
     Date,
 }
 
