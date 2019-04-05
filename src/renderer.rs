@@ -25,7 +25,7 @@ pub fn page(
             h1 { (page_title) }
             @if file_upload {
                 form id="file_submit" action={(upload_route) "?path=" (current_dir)} method="POST" enctype="multipart/form-data" {
-                    p { "Select file to upload" }
+                    p { "Select file to upload or drag it into the window" }
                     input type="file" name="file_to_upload" id="fileInput" {}
                     input type="submit" value="Upload file" {}
                 }
