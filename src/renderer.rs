@@ -14,12 +14,22 @@ pub fn page(
     page_parent: Option<String>,
     sort_method: Option<listing::SortingMethod>,
     sort_order: Option<listing::SortingOrder>,
+    file_upload: bool,
+    upload_route: &str,
+    current_dir: &str,
 ) -> Markup {
     html! {
         (page_header(page_title))
-        body {
+        body id="dropContainer" {
             span #top { }
-            h1.title { (page_title) }
+            h1 { (page_title) }
+            @if file_upload {
+                form id="file_submit" action={(upload_route) "?path=" (current_dir)} method="POST" enctype="multipart/form-data" {
+                    p { "Select file to upload or drag it into the window" }
+                    input type="file" name="file_to_upload" id="fileInput" {}
+                    input type="submit" value="Upload file" {}
+                }
+            }
             div.download {
                 (archive_button(archive::CompressionMethod::TarGz))
             }
@@ -299,6 +309,9 @@ fn css() -> Markup {
     .download a:not(:last-of-type) {
         margin-right: 1rem;
     }
+    .drag_hover {
+        box-shadow: inset 0 25px 40px #aae;
+    }
     @media (max-width: 600px) {
         h1 {
             font-size: 1.375em;
@@ -355,6 +368,26 @@ fn page_header(page_title: &str) -> Markup {
             meta name="viewport" content="width=device-width, initial-scale=1";
             title { (page_title) }
             style { (css()) }
+            (PreEscaped(r#"
+            <script>
+                window.onload = function() {
+                    dropContainer.ondragover = dropContainer.ondragenter = function(evt) {
+                        dropContainer.className = "drag_hover";
+                        evt.preventDefault();
+                    };
+
+                    dropContainer.ondrop = function(evt) {
+                      fileInput.files = evt.dataTransfer.files;
+                      evt.preventDefault();
+                      file_submit.submit();
+                    };
+
+                    dropContainer.ondragleave = function() {
+                        dropContainer.className = "";
+                    }
+                }
+            </script>
+            "#))
         }
     }
 }
@@ -379,4 +412,15 @@ fn humanize_systemtime(src_time: Option<SystemTime>) -> Option<String> {
         .and_then(|std_time| SystemTime::now().duration_since(std_time).ok())
         .and_then(|from_now| Duration::from_std(from_now).ok())
         .map(|duration| HumanTime::from(duration).to_text_en(Accuracy::Rough, Tense::Past))
+}
+
+/// Renders error page when file uploading fails
+pub fn file_upload_error(error_description: &str, return_address: &str) -> Markup {
+    html! {
+        h1 { "File uploading failed" }
+        p { (error_description) }
+        a href=(return_address) {
+            "back"
+        }
+    }
 }

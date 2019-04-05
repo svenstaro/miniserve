@@ -130,13 +130,19 @@ pub fn directory_listing<S>(
     dir: &fs::Directory,
     req: &HttpRequest<S>,
     skip_symlinks: bool,
+    file_upload: bool,
     random_route: Option<String>,
+    upload_route: String,
 ) -> Result<HttpResponse, io::Error> {
     let title = format!("Index of {}", req.path());
     let base = Path::new(req.path());
     let random_route = format!("/{}", random_route.unwrap_or_default());
     let is_root = base.parent().is_none() || req.path() == random_route;
     let page_parent = base.parent().map(|p| p.display().to_string());
+    let current_dir = match base.strip_prefix(random_route) {
+        Ok(c_d) => Path::new("/").join(c_d),
+        Err(_) => base.to_path_buf(),
+    };
 
     let (sort_method, sort_order, download) =
         if let Ok(query) = Query::<QueryParameters>::extract(req) {
@@ -265,6 +271,9 @@ pub fn directory_listing<S>(
                     page_parent,
                     sort_method,
                     sort_order,
+                    file_upload,
+                    &upload_route,
+                    &current_dir.display().to_string(),
                 )
                 .into_string(),
             ))

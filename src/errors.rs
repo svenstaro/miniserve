@@ -1,6 +1,26 @@
 use failure::{Backtrace, Context, Fail};
 use std::fmt::{self, Debug, Display};
 
+/// Kinds of errors which might happen during file upload
+#[derive(Debug, Fail)]
+pub enum FileUploadErrorKind {
+    /// This error will occur when file overriding is off and a file with same name already exists
+    #[fail(display = "File with this name already exists")]
+    FileExist,
+    /// This error will occur when the server fails to process the HTTP header during file upload
+    #[fail(display = "Failed to parse incoming request")]
+    ParseError,
+    /// This error will occur when we fail to process the multipart request
+    #[fail(display = "Failed to process multipart request")]
+    MultipartError(actix_web::error::MultipartError),
+    /// This error may occur when trying to write the incoming file to disk
+    #[fail(display = "Failed to create or write to file")]
+    IOError(std::io::Error),
+    /// This error will occur when we he have insuffictent permissions to create new file
+    #[fail(display = "Insufficient permissions to create file")]
+    InsufficientPermissions,
+}
+
 /// Kinds of errors which might happen during the generation of an archive
 #[derive(Debug, Fail)]
 pub enum CompressionErrorKind {
