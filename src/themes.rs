@@ -272,5 +272,4 @@ pub struct Theme {
     pub drag_text_color: String,
     pub size_background_color: String,
     pub size_text_color: String,
-
 }
