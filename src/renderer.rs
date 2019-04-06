@@ -748,7 +748,7 @@ pub fn file_upload_error(error_description: &str, return_address: &str) -> Marku
         h1 { "File uploading failed" }
         p { (error_description) }
         a href=(return_address) {
-            "back"
+            "Go back to file listing"
         }
     }
 }
