@@ -32,18 +32,20 @@ pub fn page(
             div.container {
                 span#top { }
                 h1.title { (page_title) }
-                div.download {
-                   @for compression_method in archive::CompressionMethod::get_compression_methods() {
-                        (archive_button(compression_method))
+                div.toolbar {
+                    div.download {
+                        @for compression_method in archive::CompressionMethod::get_compression_methods() {
+                            (archive_button(compression_method))
+                        }
                     }
-                }
-                @if file_upload {
-                    div.upload {
-                        form id="file_submit" action={(upload_route) "?path=" (current_dir)} method="POST" enctype="multipart/form-data" {
-                            p { "Select a file to upload or drag it anywhere into the window" }
-                            div {
-                                input#file-input type="file" name="file_to_upload" {}
-                                button type="submit" { "Upload file" }
+                    @if file_upload {
+                        div.upload {
+                            form id="file_submit" action={(upload_route) "?path=" (current_dir)} method="POST" enctype="multipart/form-data" {
+                                p { "Select a file to upload or drag it anywhere into the window" }
+                                div {
+                                    input#file-input type="file" name="file_to_upload" {}
+                                    button type="submit" { "Upload file" }
+                                }
                             }
                         }
                     }
@@ -486,11 +488,17 @@ fn css(color_scheme: &themes::ColorScheme) -> Markup {
         text-decoration: none;
         background: {back_button_background_hover};
     }}
-    .download {{
+    .toolbar {{
+        margin-top: 2rem;
         display: flex;
-        flex-wrap: wrap;
-        margin-top: .5rem;
+        justify-content: space-between;
+    }}
+    .download {{
         padding: 0.125rem;
+        display: flex;
+        flex-direction: row;
+        align-items: flex-start;
+        flex-wrap: wrap;
     }}
     .download a, .download a:visited {{
         color: {download_button_link_color};
@@ -499,7 +507,6 @@ fn css(color_scheme: &themes::ColorScheme) -> Markup {
         background: {download_button_background};
         padding: 0.5rem;
         border-radius: 0.2rem;
-        margin-top: 1rem;
     }}
     .download a:hover {{
         background: {download_button_background_hover};
@@ -511,7 +518,6 @@ fn css(color_scheme: &themes::ColorScheme) -> Markup {
     .upload {{
         display: flex;
         justify-content: flex-end;
-        margin-top: 1rem;
     }}
     .upload p {{
         font-size: 0.8rem;
@@ -573,9 +579,6 @@ fn css(color_scheme: &themes::ColorScheme) -> Markup {
         }}
         .back {{
             display: initial;
-        }}
-        .upload {{
-            margin-top: 2rem;
         }}
         .upload form {{
             width: 100%;
