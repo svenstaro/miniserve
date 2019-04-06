@@ -489,11 +489,12 @@ fn css(color_scheme: &themes::ColorScheme) -> Markup {
         background: {back_button_background_hover};
     }}
     .toolbar {{
-        margin-top: 2rem;
         display: flex;
         justify-content: space-between;
+        flex-wrap: wrap;
     }}
     .download {{
+        margin-top: 1rem;
         padding: 0.125rem;
         display: flex;
         flex-direction: row;
@@ -516,6 +517,7 @@ fn css(color_scheme: &themes::ColorScheme) -> Markup {
         margin-right: 1rem;
     }}
     .upload {{
+        margin-top: 1rem;
         display: flex;
         justify-content: flex-end;
     }}
