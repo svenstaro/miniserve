@@ -1,5 +1,6 @@
 #![feature(proc_macro_hygiene)]
 
+use actix_web::http::Method;
 use actix_web::{fs, middleware, server, App};
 use clap::crate_version;
 use simplelog::{Config, LevelFilter, TermLogger};
@@ -13,6 +14,7 @@ mod archive;
 mod args;
 mod auth;
 mod errors;
+mod file_upload;
 mod listing;
 mod renderer;
 mod themes;
@@ -46,6 +48,12 @@ pub struct MiniserveConfig {
 
     /// Default color scheme
     pub default_color_scheme: themes::ColorScheme,
+
+    /// Enable file upload
+    pub file_upload: bool,
+
+    /// Enable upload to override existing files
+    pub overwrite_files: bool,
 }
 
 fn main() {
@@ -178,14 +186,21 @@ fn main() {
 
 /// Configures the Actix application
 fn configure_app(app: App<MiniserveConfig>) -> App<MiniserveConfig> {
+    let upload_route;
     let s = {
         let path = &app.state().path;
         let no_symlinks = app.state().no_symlinks;
         let random_route = app.state().random_route.clone();
         let default_color_scheme = app.state().default_color_scheme.clone();
+        let file_upload = app.state().file_upload;
+        upload_route = match app.state().random_route.clone() {
+            Some(random_route) => format!("/{}/upload", random_route),
+            None => "/upload".to_string(),
+        };
         if path.is_file() {
             None
         } else {
+            let u_r = upload_route.clone();
             Some(
                 fs::StaticFiles::new(path)
                     .expect("Couldn't create path")
@@ -195,8 +210,10 @@ fn configure_app(app: App<MiniserveConfig>) -> App<MiniserveConfig> {
                             dir,
                             req,
                             no_symlinks,
+                            file_upload,
                             random_route.clone(),
                             default_color_scheme.clone(),
+                            u_r.clone(),
                         )
                     }),
             )
@@ -207,8 +224,17 @@ fn configure_app(app: App<MiniserveConfig>) -> App<MiniserveConfig> {
     let full_route = format!("/{}", random_route);
 
     if let Some(s) = s {
-        // Handle directories
-        app.handler(&full_route, s)
+        if app.state().file_upload {
+            // Allow file upload
+            app.resource(&upload_route, |r| {
+                r.method(Method::POST).f(file_upload::upload_file)
+            })
+            // Handle directories
+            .handler(&full_route, s)
+        } else {
+            // Handle directories
+            app.handler(&full_route, s)
+        }
     } else {
         // Handle single files
         app.resource(&full_route, |r| r.f(listing::file_handler))

@@ -16,17 +16,36 @@ pub fn page(
     sort_method: Option<listing::SortingMethod>,
     sort_order: Option<listing::SortingOrder>,
     color_scheme: themes::ColorScheme,
+    file_upload: bool,
+    upload_route: &str,
+    current_dir: &str,
 ) -> Markup {
     html! {
         (page_header(page_title, &color_scheme))
-        body {
+        body#drop-container {
+            div.drag-form {
+                div.drag-title {
+                    h1 { "Drop your file here to upload it" }
+                }
+            }
             (color_scheme_selector(&sort_method, &sort_order, &color_scheme))
             div.container {
-                span #top { }
+                span#top { }
                 h1.title { (page_title) }
                 div.download {
-                    @for compression_method in archive::CompressionMethod::get_compression_methods() {
+                   @for compression_method in archive::CompressionMethod::get_compression_methods() {
                         (archive_button(compression_method))
+                    }
+                }
+                @if file_upload {
+                    div.upload {
+                        form id="file_submit" action={(upload_route) "?path=" (current_dir)} method="POST" enctype="multipart/form-data" {
+                            p { "Select a file to upload or drag it anywhere into the window" }
+                            div {
+                                input#file-input type="file" name="file_to_upload" {}
+                                button type="submit" { "Upload file" }
+                            }
+                        }
                     }
                 }
                 table {
@@ -269,6 +288,7 @@ fn css(color_scheme: &themes::ColorScheme) -> Markup {
         font-weight: 300;
         color: {text_color};
         background: {background};
+        position: relative;
     }}
     .container {{
         padding: 1.5rem 5rem;
@@ -488,6 +508,50 @@ fn css(color_scheme: &themes::ColorScheme) -> Markup {
     .download a:not(:last-of-type) {{
         margin-right: 1rem;
     }}
+    .upload {{
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 1rem;
+    }}
+    .upload p {{
+        font-size: 0.8rem;
+        margin-bottom: 1rem;
+        color: {upload_text_color};
+    }}
+    .upload form {{
+        padding: 1rem;
+        border: 1px solid {upload_form_border_color};
+        background: {upload_form_background};
+    }}
+    .upload button {{
+        background: {upload_button_background};
+        padding: 0.5rem;
+        border-radius: 0.2rem;
+        color: {upload_button_text_color};
+        border: none;
+    }}
+    .upload div {{
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+    }}
+    .drag-form {{
+        display: none;
+        background: {drag_background};
+        position: absolute;
+        border: 0.5rem dashed {drag_border_color};
+        width: calc(100% - 1rem);
+        height: calc(100% - 1rem);
+        text-align: center;
+        z-index: 2;
+    }}
+    .drag-title {{
+        position: fixed;
+        color: {drag_text_color};
+        top: 50%;
+        width: 100%;
+        text-align: center;
+    }}
     @media (max-width: 760px) {{
         nav {{
             padding: 0 2.5rem;
@@ -496,7 +560,7 @@ fn css(color_scheme: &themes::ColorScheme) -> Markup {
             padding: 1.5rem 2.5rem;
         }}
         h1 {{
-            font-size: 1.375em;
+            font-size: 1.4em;
         }}
         td:not(:nth-child(1)), th:not(:nth-child(1)){{
             display: none;
@@ -508,10 +572,21 @@ fn css(color_scheme: &themes::ColorScheme) -> Markup {
             padding-bottom: 1rem;
         }}
         .back {{
-            right: 1.5rem;
+            display: initial;
+        }}
+        .upload {{
+            margin-top: 2rem;
+        }}
+        .upload form {{
+            width: 100%;
         }}
         .back {{
-            display: initial;
+            right: 1.5rem;
+        }}
+    }}
+    @media (max-width: 600px) {{
+        h1 {{
+            font-size: 1.375em;
         }}
     }}
     @media (max-width: 400px) {{
@@ -557,7 +632,15 @@ fn css(color_scheme: &themes::ColorScheme) -> Markup {
         switch_theme_border = theme.switch_theme_border,
         change_theme_link_color = theme.change_theme_link_color,
         change_theme_link_color_hover = theme.change_theme_link_color_hover,
-        field_color = theme.field_color);
+        field_color = theme.field_color,
+        upload_text_color = theme.upload_text_color,
+        upload_form_border_color = theme.upload_form_border_color,
+        upload_form_background = theme.upload_form_background,
+        upload_button_background = theme.upload_button_background,
+        upload_button_text_color = theme.upload_button_text_color,
+        drag_background = theme.drag_background,
+        drag_border_color = theme.drag_border_color,
+        drag_text_color = theme.drag_text_color);
     (PreEscaped(css))
 }
 
@@ -596,6 +679,43 @@ fn page_header(page_title: &str, color_scheme: &themes::ColorScheme) -> Markup {
             meta name="viewport" content="width=device-width, initial-scale=1";
             title { (page_title) }
             style { (css(&color_scheme)) }
+            (PreEscaped(r#"
+            <script>
+                window.onload = function() {
+                    const dropContainer = document.querySelector('#drop-container');
+                    const dragForm = document.querySelector('.drag-form');
+                    const fileInput = document.querySelector('#file-input');
+                    const collection = [];
+
+                    dropContainer.ondragover = function(e) {
+                        e.preventDefault();
+                    }
+
+                    dropContainer.ondragenter = function(e) {
+                        e.preventDefault();
+                        if (collection.length === 0) {
+                            dragForm.style.display = 'initial'; 
+                        }
+                        collection.push(e.target);
+                    };
+
+                    dropContainer.ondragleave = function(e) {
+                        e.preventDefault();
+                        collection.splice(collection.indexOf(e.target), 1);
+                        if (collection.length === 0) {
+                            dragForm.style.display = 'none';
+                        }
+                    };
+
+                    dropContainer.ondrop = function(e) {
+                        e.preventDefault();
+                        fileInput.files = e.dataTransfer.files;
+                        file_submit.submit();
+                        dragForm.style.display = 'none';
+                    };
+                }
+            </script>
+            "#))
         }
     }
 }
@@ -620,4 +740,15 @@ fn humanize_systemtime(src_time: Option<SystemTime>) -> Option<String> {
         .and_then(|std_time| SystemTime::now().duration_since(std_time).ok())
         .and_then(|from_now| Duration::from_std(from_now).ok())
         .map(|duration| HumanTime::from(duration).to_text_en(Accuracy::Rough, Tense::Past))
+}
+
+/// Renders error page when file uploading fails
+pub fn file_upload_error(error_description: &str, return_address: &str) -> Markup {
+    html! {
+        h1 { "File uploading failed" }
+        p { (error_description) }
+        a href=(return_address) {
+            "back"
+        }
+    }
 }

@@ -60,6 +60,14 @@ struct CLIArgs {
         )
     )]
     color_scheme: themes::ColorScheme,
+
+    /// Enable file uploading
+    #[structopt(short = "u", long = "upload-files")]
+    file_upload: bool,
+
+    /// Enable overriding existing files during file upload
+    #[structopt(short = "o", long = "overwrite-files")]
+    overwrite_files: bool,
 }
 
 /// Checks wether an interface is valid, i.e. it can be parsed into an IP address
@@ -116,5 +124,7 @@ pub fn parse_args() -> crate::MiniserveConfig {
         no_symlinks: args.no_symlinks,
         random_route,
         default_color_scheme,
+        overwrite_files: args.overwrite_files,
+        file_upload: args.file_upload,
     }
 }
