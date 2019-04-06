@@ -89,7 +89,6 @@ impl ColorScheme {
                 switch_theme_border: "#6a728a".to_string(),
                 change_theme_link_color: "#fefefe".to_string(),
                 change_theme_link_color_hover: "#fefefe".to_string(),
-                field_color: "#859cb9".to_string(),
                 upload_text_color: "#fefefe".to_string(),
                 upload_form_border_color: "#353946".to_string(),
                 upload_form_background: "#4b5162".to_string(),
@@ -98,6 +97,8 @@ impl ColorScheme {
                 drag_background: "#3333338f".to_string(),
                 drag_border_color: "#fefefe".to_string(),
                 drag_text_color: "#fefefe".to_string(),
+                size_background_color: "#5294e2".to_string(),
+                size_text_color: "#fefefe".to_string(),
             },
             ColorScheme::Zenburn => Theme {
                 background: "#3f3f3f".to_string(),
@@ -130,7 +131,6 @@ impl ColorScheme {
                 switch_theme_border: "#5a5a5a".to_string(),
                 change_theme_link_color: "#efefef".to_string(),
                 change_theme_link_color_hover: "#efefef".to_string(),
-                field_color: "#9fc3a1".to_string(),
                 upload_text_color: "#efefef".to_string(),
                 upload_form_border_color: "#4a4949".to_string(),
                 upload_form_background: "#777777".to_string(),
@@ -139,6 +139,8 @@ impl ColorScheme {
                 drag_background: "#3333338f".to_string(),
                 drag_border_color: "#efefef".to_string(),
                 drag_text_color: "#efefef".to_string(),
+                size_background_color: "#7f9f7f".to_string(),
+                size_text_color: "#efefef".to_string(),
             },
             ColorScheme::Monokai => Theme {
                 background: "#272822".to_string(),
@@ -171,7 +173,6 @@ impl ColorScheme {
                 switch_theme_border: "#49483E".to_string(),
                 change_theme_link_color: "#F8F8F2".to_string(),
                 change_theme_link_color_hover: "#F8F8F2".to_string(),
-                field_color: "#ccc7a7".to_string(),
                 upload_text_color: "#F8F8F2".to_string(),
                 upload_form_border_color: "#3B3A32".to_string(),
                 upload_form_background: "#49483E".to_string(),
@@ -180,6 +181,8 @@ impl ColorScheme {
                 drag_background: "#3333338f".to_string(),
                 drag_border_color: "#F8F8F2".to_string(),
                 drag_text_color: "#F8F8F2".to_string(),
+                size_background_color: "#75715E".to_string(),
+                size_text_color: "#F8F8F2".to_string(),
             },
             ColorScheme::Squirrel => Theme {
                 background: "#FFFFFF".to_string(),
@@ -212,7 +215,6 @@ impl ColorScheme {
                 switch_theme_border: "#49483E".to_string(),
                 change_theme_link_color: "#F5F5F5".to_string(),
                 change_theme_link_color_hover: "#F5F5F5".to_string(),
-                field_color: "#797979".to_string(),
                 upload_text_color: "#323232".to_string(),
                 upload_form_border_color: "#d2d2d2".to_string(),
                 upload_form_background: "#f2f2f2".to_string(),
@@ -221,6 +223,8 @@ impl ColorScheme {
                 drag_background: "#3333338f".to_string(),
                 drag_border_color: "#ffffff".to_string(),
                 drag_text_color: "#ffffff".to_string(),
+                size_background_color: "#323232".to_string(),
+                size_text_color: "#FFFFFF".to_string(),
             },
         }
     }
@@ -258,7 +262,6 @@ pub struct Theme {
     pub switch_theme_border: String,
     pub change_theme_link_color: String,
     pub change_theme_link_color_hover: String,
-    pub field_color: String,
     pub upload_text_color: String,
     pub upload_form_border_color: String,
     pub upload_form_background: String,
@@ -267,4 +270,7 @@ pub struct Theme {
     pub drag_background: String,
     pub drag_border_color: String,
     pub drag_text_color: String,
+    pub size_background_color: String,
+    pub size_text_color: String,
+
 }

@@ -220,36 +220,21 @@ fn entry_row(
                             (entry.name) "/"
                         }
                     } @else if entry.is_file() {
-                        a.file href=(&entry.link) {
-                            (entry.name)
+                        div.file-entry {
+                            a.file href=(&entry.link) {
+                                (entry.name)
+                            }
+                            @if let Some(size) = entry.size {
+                                span.mobile-info.size {
+                                    (size)
+                                }
+                            }
                         }
                     } @ else if entry.is_symlink() {
                         a.symlink href=(parametrized_link(&entry.link, &sort_method, &sort_order, &color_scheme)) {
                            (entry.name)  span.symlink-symbol { "⇢" }
                         }
                     }
-                }
-                @if !entry.is_dir() {
-                    @if let Some(size) = entry.size {
-                        span .mobile-info {
-                            strong.field { "Size: " }
-                            (size)
-                            (br())
-                        }
-                    }
-                }
-                span .mobile-info {
-                    @if let Some(modification_date) = convert_to_utc(entry.last_modification_date) {
-                        strong.field { "Last modification: " }
-                        (modification_date.0) " "
-                        span.at { " at " }
-                        (modification_date.1) " "
-                    }
-                    @if let Some(modification_timer) = humanize_systemtime(entry.last_modification_date) {
-                        span .history { "(" (modification_timer) ")" }
-                        (br())
-                    }
-
                 }
             }
             td {
@@ -394,12 +379,6 @@ fn css(color_scheme: &themes::ColorScheme) -> Markup {
         font-weight: bold;
         color: {switch_theme_active};
     }}
-    strong {{
-        font-weight: bold;
-    }}
-    .field {{
-        color: {field_color}
-    }}
     p {{
         margin: 0;
         padding: 0;
@@ -451,8 +430,16 @@ fn css(color_scheme: &themes::ColorScheme) -> Markup {
     .history {{
         color: {date_text_color};
     }}
-    .file, .directory, .symlink {{
-        display: block;
+    .file-entry {{
+        display: flex;
+        justify-content: space-between;
+    }}
+    span.size {{
+        border-radius: 1rem;
+        background: {size_background_color};
+        padding: 0 0.25rem;
+        font-size: 0.7rem;
+        color: {size_text_color}
     }}
     .mobile-info {{
         display: none;
@@ -576,14 +563,8 @@ fn css(color_scheme: &themes::ColorScheme) -> Markup {
         .mobile-info {{
             display: block;
         }}
-        .file, .directory, .symlink{{
-            padding-bottom: 1rem;
-        }}
         .back {{
             display: initial;
-        }}
-        .upload form {{
-            width: 100%;
         }}
         .back {{
             right: 1.5rem;
@@ -637,7 +618,6 @@ fn css(color_scheme: &themes::ColorScheme) -> Markup {
         switch_theme_border = theme.switch_theme_border,
         change_theme_link_color = theme.change_theme_link_color,
         change_theme_link_color_hover = theme.change_theme_link_color_hover,
-        field_color = theme.field_color,
         upload_text_color = theme.upload_text_color,
         upload_form_border_color = theme.upload_form_border_color,
         upload_form_background = theme.upload_form_background,
@@ -645,18 +625,15 @@ fn css(color_scheme: &themes::ColorScheme) -> Markup {
         upload_button_text_color = theme.upload_button_text_color,
         drag_background = theme.drag_background,
         drag_border_color = theme.drag_border_color,
-        drag_text_color = theme.drag_text_color);
+        drag_text_color = theme.drag_text_color,
+        size_background_color = theme.size_background_color,
+        size_text_color = theme.size_text_color);
     (PreEscaped(css))
 }
 
 /// Partial: up arrow
 fn arrow_up() -> Markup {
     (PreEscaped("⇪".to_string()))
-}
-
-/// Partial: new line
-fn br() -> Markup {
-    (PreEscaped("<br>".to_string()))
 }
 
 /// Partial: chevron left
