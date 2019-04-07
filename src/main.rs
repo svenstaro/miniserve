@@ -19,7 +19,7 @@ mod listing;
 mod renderer;
 mod themes;
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 /// Configuration of the Miniserve application
 pub struct MiniserveConfig {
     /// Enable verbose mode

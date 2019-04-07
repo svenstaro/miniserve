@@ -100,7 +100,7 @@ fn color_scheme_selector(
                     }
                     ul {
                         @for color_scheme in themes::ColorScheme::iter() {
-                            @if active_color_scheme.get_name() == color_scheme.get_name() {
+                            @if active_color_scheme == &color_scheme {
                                 li.active {
                                     (color_scheme_link(&sort_method, &sort_order, &color_scheme))
                                 }
@@ -124,11 +124,11 @@ fn color_scheme_link(
     color_scheme: &themes::ColorScheme,
 ) -> Markup {
     let link = parametrized_link("", &sort_method, &sort_order, &color_scheme);
-    let title = format!("Switch to {} theme", color_scheme.get_name());
+    let title = format!("Switch to {} theme", color_scheme);
 
     html! {
         a href=(link) title=(title) {
-            (color_scheme.get_name())
+            (color_scheme)
             " "
             @if color_scheme.is_dark() {
                 "(dark)"
@@ -165,12 +165,12 @@ fn parametrized_link(
                 link,
                 method,
                 order,
-                color_scheme.to_string()
+                color_scheme.to_slug()
             );
         }
     }
 
-    format!("{}?theme={}", link.to_string(), color_scheme.to_string())
+    format!("{}?theme={}", link.to_string(), color_scheme.to_slug())
 }
 
 /// Partial: table header link
@@ -202,7 +202,7 @@ fn build_link(
     html! {
         span class=(class) {
             span.chevron { (chevron) }
-            a href=(format!("{}&theme={}", &link, color_scheme.to_string())) title=(help) { (title) }
+            a href=(format!("{}&theme={}", &link, color_scheme.to_slug())) title=(help) { (title) }
         }
     }
 }
