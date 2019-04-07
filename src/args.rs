@@ -3,13 +3,14 @@ use std::path::PathBuf;
 use structopt::StructOpt;
 
 use crate::auth;
+use crate::themes;
 
 /// Possible characters for random routes
 const ROUTE_ALPHABET: [char; 16] = [
     '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', 'a', 'b', 'c', 'd', 'e', 'f',
 ];
 
-#[derive(StructOpt, Debug)]
+#[derive(StructOpt)]
 #[structopt(
     name = "miniserve",
     raw(global_settings = "&[structopt::clap::AppSettings::ColoredHelp]")
@@ -47,6 +48,18 @@ struct CLIArgs {
     /// Do not follow symbolic links
     #[structopt(short = "P", long = "no-symlinks")]
     no_symlinks: bool,
+
+    /// Default color scheme
+    #[structopt(
+        short = "c",
+        long = "color-scheme",
+        default_value = "Squirrel",
+        raw(
+            possible_values = "&themes::ColorScheme::variants()",
+            case_insensitive = "true",
+        )
+    )]
+    color_scheme: themes::ColorScheme,
 
     /// Enable file uploading
     #[structopt(short = "u", long = "upload-files")]
@@ -97,6 +110,8 @@ pub fn parse_args() -> crate::MiniserveConfig {
         None
     };
 
+    let default_color_scheme = args.color_scheme;
+
     let path_explicitly_chosen = args.path.is_some();
 
     crate::MiniserveConfig {
@@ -108,6 +123,7 @@ pub fn parse_args() -> crate::MiniserveConfig {
         path_explicitly_chosen,
         no_symlinks: args.no_symlinks,
         random_route,
+        default_color_scheme,
         overwrite_files: args.overwrite_files,
         file_upload: args.file_upload,
     }

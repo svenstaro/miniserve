@@ -17,8 +17,9 @@ mod errors;
 mod file_upload;
 mod listing;
 mod renderer;
+mod themes;
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 /// Configuration of the Miniserve application
 pub struct MiniserveConfig {
     /// Enable verbose mode
@@ -44,6 +45,9 @@ pub struct MiniserveConfig {
 
     /// Enable random route generation
     pub random_route: Option<String>,
+
+    /// Default color scheme
+    pub default_color_scheme: themes::ColorScheme,
 
     /// Enable file upload
     pub file_upload: bool,
@@ -187,6 +191,7 @@ fn configure_app(app: App<MiniserveConfig>) -> App<MiniserveConfig> {
         let path = &app.state().path;
         let no_symlinks = app.state().no_symlinks;
         let random_route = app.state().random_route.clone();
+        let default_color_scheme = app.state().default_color_scheme.clone();
         let file_upload = app.state().file_upload;
         upload_route = match app.state().random_route.clone() {
             Some(random_route) => format!("/{}/upload", random_route),
@@ -207,6 +212,7 @@ fn configure_app(app: App<MiniserveConfig>) -> App<MiniserveConfig> {
                             no_symlinks,
                             file_upload,
                             random_route.clone(),
+                            default_color_scheme.clone(),
                             u_r.clone(),
                         )
                     }),

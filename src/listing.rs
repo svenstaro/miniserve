@@ -7,66 +7,49 @@ use serde::Deserialize;
 use std::io;
 use std::path::Path;
 use std::time::SystemTime;
+use strum_macros::{Display, EnumString};
 
 use crate::archive;
 use crate::errors;
 use crate::renderer;
+use crate::themes;
 
 /// Query parameters
-#[derive(Debug, Deserialize)]
+#[derive(Deserialize)]
 struct QueryParameters {
     sort: Option<SortingMethod>,
     order: Option<SortingOrder>,
     download: Option<archive::CompressionMethod>,
+    theme: Option<themes::ColorScheme>,
 }
 
 /// Available sorting methods
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Deserialize, Clone, EnumString, Display)]
+#[serde(rename_all = "snake_case")]
+#[strum(serialize_all = "snake_case")]
 pub enum SortingMethod {
     /// Sort by name
-    #[serde(alias = "name")]
     Name,
 
     /// Sort by size
-    #[serde(alias = "size")]
     Size,
 
     /// Sort by last modification date (natural sort: follows alphanumerical order)
-    #[serde(alias = "date")]
     Date,
 }
 
-impl SortingMethod {
-    pub fn to_string(&self) -> String {
-        match &self {
-            SortingMethod::Name => "name",
-            SortingMethod::Size => "size",
-            SortingMethod::Date => "date",
-        }
-        .to_string()
-    }
-}
-
 /// Available sorting orders
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Deserialize, Clone, EnumString, Display)]
 pub enum SortingOrder {
     /// Ascending order
     #[serde(alias = "asc")]
+    #[strum(serialize = "asc")]
     Ascending,
 
     /// Descending order
     #[serde(alias = "desc")]
+    #[strum(serialize = "desc")]
     Descending,
-}
-
-impl SortingOrder {
-    pub fn to_string(&self) -> String {
-        match &self {
-            SortingOrder::Ascending => "asc",
-            SortingOrder::Descending => "desc",
-        }
-        .to_string()
-    }
 }
 
 #[derive(PartialEq)]
@@ -77,6 +60,9 @@ pub enum EntryType {
 
     /// Entry is a file
     File,
+
+    /// Entry is a symlink
+    Symlink,
 }
 
 /// Entry
@@ -114,8 +100,19 @@ impl Entry {
         }
     }
 
+    /// Returns wether the entry is a directory
     pub fn is_dir(&self) -> bool {
         self.entry_type == EntryType::Directory
+    }
+
+    /// Returns wether the entry is a file
+    pub fn is_file(&self) -> bool {
+        self.entry_type == EntryType::File
+    }
+
+    /// Returns wether the entry is a symlink
+    pub fn is_symlink(&self) -> bool {
+        self.entry_type == EntryType::Symlink
     }
 }
 
@@ -132,6 +129,7 @@ pub fn directory_listing<S>(
     skip_symlinks: bool,
     file_upload: bool,
     random_route: Option<String>,
+    default_color_scheme: themes::ColorScheme,
     upload_route: String,
 ) -> Result<HttpResponse, io::Error> {
     let title = format!("Index of {}", req.path());
@@ -144,15 +142,16 @@ pub fn directory_listing<S>(
         Err(_) => base.to_path_buf(),
     };
 
-    let (sort_method, sort_order, download) =
+    let (sort_method, sort_order, download, color_scheme) =
         if let Ok(query) = Query::<QueryParameters>::extract(req) {
             (
                 query.sort.clone(),
                 query.order.clone(),
                 query.download.clone(),
+                query.theme.clone(),
             )
         } else {
-            (None, None, None)
+            (None, None, None, None)
         };
 
     let mut entries: Vec<Entry> = Vec::new();
@@ -180,7 +179,15 @@ pub fn directory_listing<S>(
                     Err(_) => None,
                 };
 
-                if metadata.is_dir() {
+                if metadata.file_type().is_symlink() {
+                    entries.push(Entry::new(
+                        file_name,
+                        EntryType::Symlink,
+                        file_url,
+                        None,
+                        last_modification_date,
+                    ));
+                } else if metadata.is_dir() {
                     entries.push(Entry::new(
                         file_name,
                         EntryType::Directory,
@@ -233,6 +240,8 @@ pub fn directory_listing<S>(
         }
     }
 
+    let color_scheme = color_scheme.unwrap_or(default_color_scheme);
+
     if let Some(compression_method) = &download {
         log::info!(
             "Creating an archive ({extension}) of {path}...",
@@ -271,6 +280,7 @@ pub fn directory_listing<S>(
                     page_parent,
                     sort_method,
                     sort_order,
+                    color_scheme,
                     file_upload,
                     &upload_route,
                     &current_dir.display().to_string(),
