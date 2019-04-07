@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use structopt::clap::{_clap_count_exprs, arg_enum};
+use structopt::clap::arg_enum;
 use strum_macros::EnumIter;
 
 arg_enum! {
