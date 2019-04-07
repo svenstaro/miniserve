@@ -281,8 +281,6 @@ fn css(color_scheme: &themes::ColorScheme) -> Markup {
         color: {text_color};
         background: {background};
         position: relative;
-        width: 100%;
-        height: 100%;
     }}
     .container {{
         padding: 1.5rem 5rem;
