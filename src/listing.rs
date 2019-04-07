@@ -25,7 +25,7 @@ struct QueryParameters {
 
 /// Available sorting methods
 #[derive(Deserialize, Clone, EnumString, Display)]
-#[serde(rename_all = "lowercase")]
+#[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum SortingMethod {
     /// Sort by name
