@@ -7,6 +7,7 @@ use serde::Deserialize;
 use std::io;
 use std::path::Path;
 use std::time::SystemTime;
+use strum_macros::{Display, EnumString};
 
 use crate::archive;
 use crate::errors;
@@ -14,7 +15,7 @@ use crate::renderer;
 use crate::themes;
 
 /// Query parameters
-#[derive(Debug, Deserialize)]
+#[derive(Deserialize)]
 struct QueryParameters {
     sort: Option<SortingMethod>,
     order: Option<SortingOrder>,
@@ -23,50 +24,34 @@ struct QueryParameters {
 }
 
 /// Available sorting methods
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Deserialize, Clone, EnumString, Display)]
 #[serde(rename_all = "lowercase")]
 pub enum SortingMethod {
     /// Sort by name
+    #[strum(serialize = "name")]
     Name,
 
     /// Sort by size
+    #[strum(serialize = "size")]
     Size,
 
     /// Sort by last modification date (natural sort: follows alphanumerical order)
+    #[strum(serialize = "date")]
     Date,
 }
 
-impl SortingMethod {
-    pub fn to_string(&self) -> String {
-        match &self {
-            SortingMethod::Name => "name",
-            SortingMethod::Size => "size",
-            SortingMethod::Date => "date",
-        }
-        .to_string()
-    }
-}
-
 /// Available sorting orders
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Deserialize, Clone, EnumString, Display)]
 pub enum SortingOrder {
     /// Ascending order
     #[serde(alias = "asc")]
+    #[strum(serialize = "asc")]
     Ascending,
 
     /// Descending order
     #[serde(alias = "desc")]
+    #[strum(serialize = "desc")]
     Descending,
-}
-
-impl SortingOrder {
-    pub fn to_string(&self) -> String {
-        match &self {
-            SortingOrder::Ascending => "asc",
-            SortingOrder::Descending => "desc",
-        }
-        .to_string()
-    }
 }
 
 #[derive(PartialEq)]

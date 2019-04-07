@@ -141,7 +141,7 @@ fn color_scheme_link(
 
 /// Partial: archive button
 fn archive_button(compress_method: archive::CompressionMethod) -> Markup {
-    let link = format!("?download={}", compress_method.to_string());
+    let link = format!("?download={}", compress_method);
     let text = format!("Download .{}", compress_method.extension());
 
     html! {
@@ -163,8 +163,8 @@ fn parametrized_link(
             return format!(
                 "{}?sort={}&order={}&theme={}",
                 link,
-                method.to_string(),
-                order.to_string(),
+                method,
+                order,
                 color_scheme.to_string()
             );
         }

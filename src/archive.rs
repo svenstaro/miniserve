@@ -5,27 +5,21 @@ use libflate::gzip::Encoder;
 use serde::Deserialize;
 use std::io;
 use std::path::PathBuf;
+use strum_macros::{Display, EnumIter, EnumString};
 use tar::Builder;
-use strum_macros::EnumIter;
 
 use crate::errors;
 
 /// Available compression methods
-#[derive(Debug, Deserialize, Clone, EnumIter)]
+#[derive(Deserialize, Clone, EnumIter, EnumString, Display)]
 pub enum CompressionMethod {
     /// TAR GZ
     #[serde(alias = "targz")]
+    #[strum(serialize = "targz")]
     TarGz,
 }
 
 impl CompressionMethod {
-    pub fn to_string(&self) -> String {
-        match &self {
-            CompressionMethod::TarGz => "targz",
-        }
-        .to_string()
-    }
-
     pub fn extension(&self) -> String {
         match &self {
             CompressionMethod::TarGz => "tar.gz",
