@@ -12,10 +12,11 @@ use crate::errors;
 
 /// Available compression methods
 #[derive(Deserialize, Clone, EnumIter, EnumString, Display)]
+#[serde(rename_all = "snake_case")]
+#[strum(serialize_all = "snake_case")]
 pub enum CompressionMethod {
+
     /// TAR GZ
-    #[serde(alias = "targz")]
-    #[strum(serialize = "targz")]
     TarGz,
 }
 
