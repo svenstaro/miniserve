@@ -1,8 +1,9 @@
 use crate::errors::FileUploadErrorKind;
 use crate::renderer::file_upload_error;
 use actix_web::{
-    dev, http::header, multipart, FromRequest, FutureResponse, HttpMessage, HttpRequest,
-    HttpResponse, Query,
+    dev,
+    http::{header, StatusCode},
+    multipart, FromRequest, FutureResponse, HttpMessage, HttpRequest, HttpResponse, Query,
 };
 use futures::{future, Future, Stream};
 use serde::Deserialize;
@@ -138,6 +139,7 @@ pub fn upload_file(req: &HttpRequest<crate::MiniserveConfig>) -> FutureResponse<
             .collect()
             .map(move |_| {
                 HttpResponse::TemporaryRedirect()
+                    .status(StatusCode::SEE_OTHER)
                     .header(header::LOCATION, return_path.to_string())
                     .finish()
             })
