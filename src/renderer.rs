@@ -21,11 +21,13 @@ pub fn page(
     current_dir: &str,
 ) -> Markup {
     html! {
-        (page_header(page_title, &color_scheme))
+        (page_header(page_title, &color_scheme, file_upload))
         body#drop-container {
-            div.drag-form {
-                div.drag-title {
-                    h1 { "Drop your file here to upload it" }
+            @if file_upload {
+                div.drag-form {
+                    div.drag-title {
+                        h1 { "Drop your file here to upload it" }
+                    }
                 }
             }
             (color_scheme_selector(&sort_method, &sort_order, &color_scheme))
@@ -129,7 +131,7 @@ fn color_scheme_link(
             " "
             @if color_scheme.is_dark() {
                 "(dark)"
-            } @ else {
+            } @else {
                 "(light)"
             }
         }
@@ -230,7 +232,7 @@ fn entry_row(
                                 }
                             }
                         }
-                    } @ else if entry.is_symlink() {
+                    } @else if entry.is_symlink() {
                         a.symlink href=(parametrized_link(&entry.link, &sort_method, &sort_order, &color_scheme)) {
                            (entry.name)  span.symlink-symbol { "⇢" }
                         }
@@ -652,7 +654,7 @@ fn chevron_down() -> Markup {
 }
 
 /// Partial: page header
-fn page_header(page_title: &str, color_scheme: &themes::ColorScheme) -> Markup {
+fn page_header(page_title: &str, color_scheme: &themes::ColorScheme, file_upload: bool) -> Markup {
     html! {
         (DOCTYPE)
         html {
@@ -661,43 +663,45 @@ fn page_header(page_title: &str, color_scheme: &themes::ColorScheme) -> Markup {
             meta name="viewport" content="width=device-width, initial-scale=1";
             title { (page_title) }
             style { (css(&color_scheme)) }
-            (PreEscaped(r#"
-            <script>
-                window.onload = function() {
-                    const dropContainer = document.querySelector('#drop-container');
-                    const dragForm = document.querySelector('.drag-form');
-                    const fileInput = document.querySelector('#file-input');
-                    const collection = [];
+            @if file_upload {
+                (PreEscaped(r#"
+                <script>
+                    window.onload = function() {
+                        const dropContainer = document.querySelector('#drop-container');
+                        const dragForm = document.querySelector('.drag-form');
+                        const fileInput = document.querySelector('#file-input');
+                        const collection = [];
 
-                    dropContainer.ondragover = function(e) {
-                        e.preventDefault();
-                    }
-
-                    dropContainer.ondragenter = function(e) {
-                        e.preventDefault();
-                        if (collection.length === 0) {
-                            dragForm.style.display = 'initial'; 
+                        dropContainer.ondragover = function(e) {
+                            e.preventDefault();
                         }
-                        collection.push(e.target);
-                    };
 
-                    dropContainer.ondragleave = function(e) {
-                        e.preventDefault();
-                        collection.splice(collection.indexOf(e.target), 1);
-                        if (collection.length === 0) {
+                        dropContainer.ondragenter = function(e) {
+                            e.preventDefault();
+                            if (collection.length === 0) {
+                                dragForm.style.display = 'initial';
+                            }
+                            collection.push(e.target);
+                        };
+
+                        dropContainer.ondragleave = function(e) {
+                            e.preventDefault();
+                            collection.splice(collection.indexOf(e.target), 1);
+                            if (collection.length === 0) {
+                                dragForm.style.display = 'none';
+                            }
+                        };
+
+                        dropContainer.ondrop = function(e) {
+                            e.preventDefault();
+                            fileInput.files = e.dataTransfer.files;
+                            file_submit.submit();
                             dragForm.style.display = 'none';
-                        }
-                    };
-
-                    dropContainer.ondrop = function(e) {
-                        e.preventDefault();
-                        fileInput.files = e.dataTransfer.files;
-                        file_submit.submit();
-                        dragForm.style.display = 'none';
-                    };
-                }
-            </script>
-            "#))
+                        };
+                    }
+                </script>
+                "#))
+            }
         }
     }
 }
