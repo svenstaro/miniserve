@@ -2,6 +2,7 @@ use chrono::{DateTime, Duration, Utc};
 use chrono_humanize::{Accuracy, HumanTime, Tense};
 use maud::{html, Markup, PreEscaped, DOCTYPE};
 use std::time::SystemTime;
+use strum::IntoEnumIterator;
 
 use crate::archive;
 use crate::listing;
@@ -36,7 +37,7 @@ pub fn page(
                 h1.title { (page_title) }
                 div.toolbar {
                     div.download {
-                        @for compression_method in archive::CompressionMethod::get_compression_methods() {
+                        @for compression_method in archive::CompressionMethod::iter() {
                             (archive_button(compression_method))
                         }
                     }
@@ -98,7 +99,7 @@ fn color_scheme_selector(
                         "Change theme..."
                     }
                     ul {
-                        @for color_scheme in themes::ColorScheme::get_color_schemes() {
+                        @for color_scheme in themes::ColorScheme::iter() {
                             @if active_color_scheme.get_name() == color_scheme.get_name() {
                                 li.active {
                                     (color_scheme_link(&sort_method, &sort_order, &color_scheme))

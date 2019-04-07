@@ -6,11 +6,12 @@ use serde::Deserialize;
 use std::io;
 use std::path::PathBuf;
 use tar::Builder;
+use strum_macros::EnumIter;
 
 use crate::errors;
 
 /// Available compression methods
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, EnumIter)]
 pub enum CompressionMethod {
     /// TAR GZ
     #[serde(alias = "targz")]
@@ -23,11 +24,6 @@ impl CompressionMethod {
             CompressionMethod::TarGz => "targz",
         }
         .to_string()
-    }
-
-    /// Lists compression methods
-    pub fn get_compression_methods() -> Vec<Self> {
-        vec![CompressionMethod::TarGz]
     }
 
     pub fn extension(&self) -> String {

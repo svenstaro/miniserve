@@ -1,8 +1,9 @@
 use serde::Deserialize;
 use structopt::clap::{_clap_count_exprs, arg_enum};
+use strum_macros::EnumIter;
 
 arg_enum! {
-    #[derive(Debug, Deserialize, Clone)]
+    #[derive(Debug, Deserialize, Clone, EnumIter)]
     #[serde(rename_all = "lowercase")]
     pub enum ColorScheme {
         Archlinux,
@@ -43,16 +44,6 @@ impl ColorScheme {
             ColorScheme::Squirrel => "Squirrel",
         }
         .to_string()
-    }
-
-    /// Lists available color schemes
-    pub fn get_color_schemes() -> Vec<Self> {
-        vec![
-            ColorScheme::Archlinux,
-            ColorScheme::Zenburn,
-            ColorScheme::Monokai,
-            ColorScheme::Squirrel,
-        ]
     }
 
     /// Retrieves the color palette associated to a color scheme
