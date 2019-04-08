@@ -1,11 +1,10 @@
 use crate::errors::FileUploadErrorKind;
 use crate::renderer::file_upload_error;
 use actix_web::{
-    dev,
-    http::{header, StatusCode},
-    multipart, FromRequest, FutureResponse, HttpMessage, HttpRequest, HttpResponse, Query,
+    dev, http::header, multipart, FromRequest, FutureResponse, HttpMessage, HttpRequest,
+    HttpResponse, Query,
 };
-use futures::{future, Future, Stream};
+use futures::{future, future::FutureResult, Future, Stream};
 use serde::Deserialize;
 use std::{
     fs,
@@ -102,7 +101,14 @@ fn handle_multipart(
 /// invalid.
 /// This method returns future.
 pub fn upload_file(req: &HttpRequest<crate::MiniserveConfig>) -> FutureResponse<HttpResponse> {
-    let app_root_dir = req.state().path.clone().canonicalize().unwrap();
+    let return_path: String = req.headers()[header::REFERER]
+        .to_str()
+        .unwrap_or("/")
+        .to_owned();
+    let app_root_dir = match req.state().path.canonicalize() {
+        Ok(path) => path,
+        Err(_) => return Box::new(create_error_response("Internal server error", &return_path)),
+    };
     let path = match Query::<QueryParameters>::extract(req) {
         Ok(query) => {
             if let Ok(stripped_path) = query.path.strip_prefix(Component::RootDir) {
@@ -112,23 +118,17 @@ pub fn upload_file(req: &HttpRequest<crate::MiniserveConfig>) -> FutureResponse<
             }
         }
         Err(_) => {
-            return Box::new(future::ok(
-                HttpResponse::BadRequest().body("Unspecified parameter path"),
+            return Box::new(create_error_response(
+                "Unspecified parameter path",
+                &return_path,
             ))
         }
     };
-    // this is really ugly I will try to think about something smarter
-    let return_path: String = req.headers()[header::REFERER]
-        .clone()
-        .to_str()
-        .unwrap_or("/")
-        .to_owned();
-    let r_p2 = return_path.clone();
 
     // If the target path is under the app root directory, save the file.
-    let target_dir = match &app_root_dir.clone().join(path.clone()).canonicalize() {
+    let target_dir = match &app_root_dir.clone().join(path).canonicalize() {
         Ok(path) if path.starts_with(&app_root_dir) => path.clone(),
-        _ => return Box::new(future::ok(HttpResponse::BadRequest().body("Invalid path"))),
+        _ => return Box::new(create_error_response("Invalid path", &return_path)),
     };
     let overwrite_files = req.state().overwrite_files;
     Box::new(
@@ -137,18 +137,28 @@ pub fn upload_file(req: &HttpRequest<crate::MiniserveConfig>) -> FutureResponse<
             .map(move |item| handle_multipart(item, target_dir.clone(), overwrite_files))
             .flatten()
             .collect()
-            .map(move |_| {
-                HttpResponse::TemporaryRedirect()
-                    .status(StatusCode::SEE_OTHER)
-                    .header(header::LOCATION, return_path.to_string())
-                    .finish()
-            })
-            .or_else(move |e| {
-                let error_description = format!("{}", e);
-                future::ok(
-                    HttpResponse::BadRequest()
-                        .body(file_upload_error(&error_description, &r_p2.clone()).into_string()),
-                )
+            .then(move |e| match e {
+                Ok(_) => future::ok(
+                    HttpResponse::SeeOther()
+                        .header(header::LOCATION, return_path.to_string())
+                        .finish(),
+                ),
+                Err(e) => {
+                    let error_description = format!("{}", e);
+                    create_error_response(&error_description, &return_path)
+                }
             }),
+    )
+}
+
+// Convenience method for creating response errors, when file upload fails.
+fn create_error_response(
+    description: &str,
+    return_path: &str,
+) -> FutureResult<HttpResponse, actix_web::error::Error> {
+    future::ok(
+        HttpResponse::NotAcceptable()
+            .content_type("text/html; charset=utf-8")
+            .body(file_upload_error(description, return_path).into_string()),
     )
 }
