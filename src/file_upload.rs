@@ -105,9 +105,10 @@ pub fn upload_file(req: &HttpRequest<crate::MiniserveConfig>) -> FutureResponse<
         .to_str()
         .unwrap_or("/")
         .to_owned();
-    let app_root_dir = match req.state().path.canonicalize() {
-        Ok(path) => path,
-        Err(_) => return Box::new(create_error_response("Internal server error", &return_path)),
+    let app_root_dir = if let Ok(dir) = req.state().path.canonicalize() {
+        dir
+    } else {
+        return Box::new(create_error_response("Internal server error", &return_path));
     };
     let path = match Query::<QueryParameters>::extract(req) {
         Ok(query) => {
@@ -151,13 +152,13 @@ pub fn upload_file(req: &HttpRequest<crate::MiniserveConfig>) -> FutureResponse<
     )
 }
 
-// Convenience method for creating response errors, when file upload fails.
+/// Convenience method for creating response errors, if file upload fails.
 fn create_error_response(
     description: &str,
     return_path: &str,
 ) -> FutureResult<HttpResponse, actix_web::error::Error> {
     future::ok(
-        HttpResponse::NotAcceptable()
+        HttpResponse::BadRequest()
             .content_type("text/html; charset=utf-8")
             .body(file_upload_error(description, return_path).into_string()),
     )
