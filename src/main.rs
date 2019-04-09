@@ -84,33 +84,6 @@ fn main() {
     let sys = actix::System::new("miniserve");
 
     let inside_config = miniserve_config.clone();
-    server::new(move || {
-        App::with_state(inside_config.clone())
-            .middleware(auth::Auth)
-            .middleware(middleware::Logger::default())
-            .configure(configure_app)
-    })
-    .bind(
-        miniserve_config
-            .interfaces
-            .iter()
-            .map(|interface| {
-                format!(
-                    "{interface}:{port}",
-                    interface = &interface,
-                    port = miniserve_config.port,
-                )
-                .to_socket_addrs()
-                .unwrap()
-                .next()
-                .unwrap()
-            })
-            .collect::<Vec<SocketAddr>>()
-            .as_slice(),
-    )
-    .expect("Couldn't bind server")
-    .shutdown_timeout(0)
-    .start();
 
     let interfaces = miniserve_config.interfaces.iter().map(|&interface| {
         if interface == IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)) {
@@ -181,6 +154,33 @@ fn main() {
     );
     println!("\nQuit by pressing CTRL-C");
 
+    server::new(move || {
+        App::with_state(inside_config.clone())
+            .middleware(auth::Auth)
+            .middleware(middleware::Logger::default())
+            .configure(configure_app)
+    })
+    .bind(
+        miniserve_config
+            .interfaces
+            .iter()
+            .map(|interface| {
+                format!(
+                    "{interface}:{port}",
+                    interface = &interface,
+                    port = miniserve_config.port,
+                )
+                .to_socket_addrs()
+                .unwrap()
+                .next()
+                .unwrap()
+            })
+            .collect::<Vec<SocketAddr>>()
+            .as_slice(),
+    )
+    .expect("Couldn't bind server")
+    .shutdown_timeout(0)
+    .start();
     let _ = sys.run();
 }
 
