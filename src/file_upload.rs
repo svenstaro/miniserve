@@ -144,10 +144,7 @@ pub fn upload_file(req: &HttpRequest<crate::MiniserveConfig>) -> FutureResponse<
                         .header(header::LOCATION, return_path.to_string())
                         .finish(),
                 ),
-                Err(e) => {
-                    let error_description = format!("{}", e);
-                    create_error_response(&error_description, &return_path)
-                }
+                Err(e) => create_error_response(&e.to_string(), &return_path),
             }),
     )
 }
