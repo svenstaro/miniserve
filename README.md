@@ -14,6 +14,8 @@
 **miniserve** is a small, self-contained cross-platform CLI tool that allows you to just grab the binary and serve some file(s) via HTTP.
 Sometimes this is just a more practical and quick way than doing things properly.
 
+![Screenshot](screenshot.png)
+
 ## How to use
 
 ### Serve a directory:
