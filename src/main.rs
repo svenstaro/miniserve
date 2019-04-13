@@ -170,7 +170,9 @@ fn main() {
         })
         .collect::<Result<Vec<SocketAddr>, _>>();
 
-    // Note that this should not fail, since CLI parsing succeeded: valid IpAddr + valid port should imply valid SocketAddr
+    // Note that this should never fail, since CLI parsing succeeded
+    // This means the format of the IP address is valid, and so is the port
+    // Valid IpAddr + valid port == valid SocketAddr
     let socket_addresses = socket_addresses.expect("Failed to parse string as socket address");
 
     server::new(move || {
