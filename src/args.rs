@@ -81,12 +81,20 @@ fn parse_auth(src: &str) -> Result<(String, String), String> {
 
     let username = match split.next() {
         Some(username) => username,
-        None => return Err("Invalid credentials string, expected format is username:password".to_owned())
+        None => {
+            return Err(
+                "Invalid credentials string, expected format is username:password".to_owned(),
+            )
+        }
     };
 
     let password = match split.next() {
         Some(password) => password,
-        None => return Err("Invalid credentials string, expected format is username:password".to_owned())
+        None => {
+            return Err(
+                "Invalid credentials string, expected format is username:password".to_owned(),
+            )
+        }
     };
     // Should we allow empty passwords ?
 

@@ -139,10 +139,7 @@ fn main() {
             addresses.push_str(&format!(
                 "{}",
                 Color::Green
-                    .paint(format!(
-                        "/{random_route}",
-                        random_route = random_route,
-                    ))
+                    .paint(format!("/{random_route}", random_route = random_route,))
                     .bold()
             ));
         }
