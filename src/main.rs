@@ -134,14 +134,14 @@ fn main() {
                 ))
                 .bold()
         ));
-        let random_route = miniserve_config.clone().random_route;
-        if random_route.is_some() {
+
+        if let Some(random_route) = miniserve_config.clone().random_route {
             addresses.push_str(&format!(
                 "{}",
                 Color::Green
                     .paint(format!(
                         "/{random_route}",
-                        random_route = random_route.unwrap(),
+                        random_route = random_route,
                     ))
                     .bold()
             ));
