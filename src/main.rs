@@ -90,7 +90,7 @@ fn main() {
         .iter()
         .map(|&interface| {
             if interface == IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)) {
-                // If the interface is 0.0.0.0, we'll change it to localhost so that clicking the link will
+                // If the interface is 0.0.0.0, we'll change it to 127.0.0.1 so that clicking the link will
                 // also work on Windows. Why can't Windows interpret 0.0.0.0?
                 String::from("127.0.0.1")
             } else if interface.is_ipv6() {
