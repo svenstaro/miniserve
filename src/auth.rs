@@ -7,7 +7,6 @@ pub struct Auth;
 /// HTTP Basic authentication errors
 pub enum BasicAuthError {
     Base64DecodeError,
-    InvalidUsernameFormat,
 }
 
 #[derive(Clone, Debug)]
@@ -24,13 +23,14 @@ pub fn parse_basic_auth(
     let basic_removed = authorization_header.to_str().unwrap().replace("Basic ", "");
     let decoded = base64::decode(&basic_removed).map_err(|_| BasicAuthError::Base64DecodeError)?;
     let decoded_str = String::from_utf8_lossy(&decoded);
-    let strings: Vec<&str> = decoded_str.splitn(2, ':').collect();
-    if strings.len() != 2 {
-        return Err(BasicAuthError::InvalidUsernameFormat);
-    }
+    let credentials: Vec<&str> = decoded_str.splitn(2, ':').collect();
+
+    // If argument parsing went fine, it means the HTTP credentials string is well formatted
+    // So we can safely unpack the username and the password
+
     Ok(BasicAuthParams {
-        username: strings[0].to_owned(),
-        password: strings[1].to_owned(),
+        username: credentials[0].to_owned(),
+        password: credentials[1].to_owned(),
     })
 }
 
@@ -49,11 +49,6 @@ impl Middleware<crate::MiniserveConfig> for Auth {
                             "Error decoding basic auth base64: '{}'",
                             auth_headers.to_str().unwrap()
                         ))));
-                    }
-                    Err(BasicAuthError::InvalidUsernameFormat) => {
-                        return Ok(Response::Done(
-                            HttpResponse::BadRequest().body("Invalid basic auth format"),
-                        ));
                     }
                 };
                 if auth_req.username != required_auth.username

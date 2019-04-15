@@ -77,13 +77,35 @@ fn parse_interface(src: &str) -> Result<IpAddr, std::net::AddrParseError> {
 
 /// Checks wether the auth string is valid, i.e. it follows the syntax username:password
 fn parse_auth(src: &str) -> Result<(String, String), String> {
-    match src.find(':') {
-        Some(_) => {
-            let split = src.split(':').collect::<Vec<_>>();
-            Ok((split[0].to_owned(), split[1].to_owned()))
+    let mut split = src.splitn(2, ':');
+
+    let username = match split.next() {
+        Some(username) => username,
+        None => {
+            return Err(
+                "Invalid credentials string, expected format is username:password".to_owned(),
+            )
         }
-        None => Err("Correct format is username:password".to_owned()),
+    };
+
+    let password = match split.next() {
+        // This allows empty passwords, as the spec does not forbid it
+        Some(password) => password,
+        None => {
+            return Err(
+                "Invalid credentials string, expected format is username:password".to_owned(),
+            )
+        }
+    };
+
+    // To make it Windows-compatible, the password needs to be shorter than 255 characters.
+    // After 255 characters, Windows will truncate the value.
+    // As for the username, the spec does not mention a limit in length
+    if password.len() > 255 {
+        return Err("Password length cannot exceed 255 characters".to_owned());
     }
+
+    Ok((username.to_owned(), password.to_owned()))
 }
 
 /// Parses the command line arguments
