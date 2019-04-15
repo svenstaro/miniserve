@@ -89,6 +89,7 @@ fn parse_auth(src: &str) -> Result<(String, String), String> {
     };
 
     let password = match split.next() {
+        // This allows empty passwords, as the spec does not forbid it
         Some(password) => password,
         None => {
             return Err(
@@ -96,10 +97,12 @@ fn parse_auth(src: &str) -> Result<(String, String), String> {
             )
         }
     };
-    // Should we allow empty passwords ?
 
-    if username.len() > 255 {
-        return Err("Username length cannot exceed 255 characters".to_owned());
+    // To make it Windows-compatible,the password needs to be shorter than 255 characters.
+    // After 255 characters, Windows will truncate the value.
+    // As for the username, the spec does not mention a limit in length
+    if password.len() > 255 {
+        return Err("Password length cannot exceed 255 characters".to_owned());
     }
 
     Ok((username.to_owned(), password.to_owned()))
