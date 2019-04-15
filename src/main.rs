@@ -92,7 +92,7 @@ fn main() {
             if interface == IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)) {
                 // If the interface is 0.0.0.0, we'll change it to 127.0.0.1 so that clicking the link will
                 // also work on Windows. Why can't Windows interpret 0.0.0.0?
-                String::from("127.0.0.1")
+                "127.0.0.1".to_string()
             } else if interface.is_ipv6() {
                 // If the interface is IPv6 then we'll print it with brackets so that it is clickable.
                 format!("[{}]", interface)
@@ -171,7 +171,7 @@ fn main() {
         .collect::<Result<Vec<SocketAddr>, _>>();
 
     // Note that this should never fail, since CLI parsing succeeded
-    // This means the format of the IP address is valid, and so is the port
+    // This means the format of each IP address is valid, and so is the port
     // Valid IpAddr + valid port == valid SocketAddr
     let socket_addresses = socket_addresses.expect("Failed to parse string as socket address");
 
