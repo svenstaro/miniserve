@@ -50,8 +50,8 @@ install:
 
 script:
   # If this is a normal, non-deployment build...
-  - if [[ -z $TARGET ]]; then cargo build --verbose; fi
-  - if [[ -n $TARGET ]]; then cargo build --verbose --release --target $TARGET; fi
+  - if [[ -z $TARGET ]]; then cargo build --verbose && cargo test; fi
+  - if [[ -n $TARGET ]]; then cargo build --verbose --release --target $TARGET && cargo test; fi
 
 before_deploy:
   # If this is a binary deployment...
