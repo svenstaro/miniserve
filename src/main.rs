@@ -5,7 +5,7 @@ use actix_web::{fs, middleware, server, App};
 use clap::crate_version;
 use simplelog::{Config, LevelFilter, TermLogger};
 use std::io::{self, Write};
-use std::net::{IpAddr, Ipv4Addr, SocketAddr, ToSocketAddrs};
+use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use std::thread;
 use std::time::Duration;
 use yansi::{Color, Paint};
@@ -85,18 +85,22 @@ fn main() {
 
     let inside_config = miniserve_config.clone();
 
-    let interfaces = miniserve_config.interfaces.iter().map(|&interface| {
-        if interface == IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)) {
-            // If the interface is 0.0.0.0, we'll change it to localhost so that clicking the link will
-            // also work on Windows. Why can't Windows interpret 0.0.0.0?
-            String::from("localhost")
-        } else if interface.is_ipv6() {
-            // If the interface is IPv6 then we'll print it with brackets so that it is clickable.
-            format!("[{}]", interface)
-        } else {
-            format!("{}", interface)
-        }
-    });
+    let interfaces = miniserve_config
+        .interfaces
+        .iter()
+        .map(|&interface| {
+            if interface == IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)) {
+                // If the interface is 0.0.0.0, we'll change it to 127.0.0.1 so that clicking the link will
+                // also work on Windows. Why can't Windows interpret 0.0.0.0?
+                "127.0.0.1".to_string()
+            } else if interface.is_ipv6() {
+                // If the interface is IPv6 then we'll print it with brackets so that it is clickable.
+                format!("[{}]", interface)
+            } else {
+                format!("{}", interface)
+            }
+        })
+        .collect::<Vec<String>>();
 
     let canon_path = miniserve_config.path.canonicalize().unwrap();
     let path_string = canon_path.to_string_lossy();
@@ -120,7 +124,7 @@ fn main() {
         }
     }
     let mut addresses = String::new();
-    for interface in interfaces {
+    for interface in &interfaces {
         if !addresses.is_empty() {
             addresses.push_str(", ");
         }
@@ -129,7 +133,7 @@ fn main() {
             Color::Green
                 .paint(format!(
                     "http://{interface}:{port}",
-                    interface = interface,
+                    interface = &interface,
                     port = miniserve_config.port
                 ))
                 .bold()
@@ -154,30 +158,30 @@ fn main() {
     );
     println!("\nQuit by pressing CTRL-C");
 
+    let socket_addresses = interfaces
+        .iter()
+        .map(|interface| {
+            format!(
+                "{interface}:{port}",
+                interface = &interface,
+                port = miniserve_config.port,
+            )
+            .parse::<SocketAddr>()
+        })
+        .collect::<Result<Vec<SocketAddr>, _>>();
+
+    // Note that this should never fail, since CLI parsing succeeded
+    // This means the format of each IP address is valid, and so is the port
+    // Valid IpAddr + valid port == valid SocketAddr
+    let socket_addresses = socket_addresses.expect("Failed to parse string as socket address");
+
     server::new(move || {
         App::with_state(inside_config.clone())
             .middleware(auth::Auth)
             .middleware(middleware::Logger::default())
             .configure(configure_app)
     })
-    .bind(
-        miniserve_config
-            .interfaces
-            .iter()
-            .map(|interface| {
-                format!(
-                    "{interface}:{port}",
-                    interface = &interface,
-                    port = miniserve_config.port,
-                )
-                .to_socket_addrs()
-                .unwrap()
-                .next()
-                .unwrap()
-            })
-            .collect::<Vec<SocketAddr>>()
-            .as_slice(),
-    )
+    .bind(socket_addresses.as_slice())
     .expect("Couldn't bind server")
     .shutdown_timeout(0)
     .start();
