@@ -60,7 +60,7 @@ fn starts_ok_with_non_default_port() -> Result<(), Error> {
 
     sleep(Duration::from_secs(1));
 
-    let body = reqwest::get("http://localhost:8080")?;
+    let body = reqwest::get(format!("http://localhost:{}", port).as_str())?;
     let parsed = Document::from_read(body)?;
     for &file in FILES {
         assert!(parsed.find(Text).any(|x| x.text() == file));
