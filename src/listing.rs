@@ -240,7 +240,7 @@ pub fn directory_listing<S>(
         }
     }
 
-    let color_scheme = color_scheme.unwrap_or(default_color_scheme.clone());
+    let color_scheme = color_scheme.unwrap_or_else(|| default_color_scheme.clone());
 
     if let Some(compression_method) = &download {
         log::info!(
