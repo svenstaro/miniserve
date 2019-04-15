@@ -98,7 +98,7 @@ fn parse_auth(src: &str) -> Result<(String, String), String> {
         }
     };
 
-    // To make it Windows-compatible,the password needs to be shorter than 255 characters.
+    // To make it Windows-compatible, the password needs to be shorter than 255 characters.
     // After 255 characters, Windows will truncate the value.
     // As for the username, the spec does not mention a limit in length
     if password.len() > 255 {
