@@ -306,6 +306,9 @@ fn css(color_scheme: &ColorScheme) -> Markup {
     .container {{
         padding: 1.5rem 5rem;
     }}
+    .title {{
+        word-break: break-word;
+    }}
     a {{
         text-decoration: none;
     }}
