@@ -486,12 +486,15 @@ fn css(color_scheme: &ColorScheme) -> Markup {
     }}
     .back {{
         position: fixed;
+        width: 3.8rem;
+        height: 3.8rem;
+        align-items: center;
+        justify-content: center;
         bottom: 3rem;
         right: 3.75rem;
         background: {back_button_background};
         border-radius: 100%;
         box-shadow: 0 0 8px -4px #888888;
-        padding: 1.4rem 1.5rem;
         color: {back_button_link_color};
         display: none;
     }}
@@ -593,7 +596,7 @@ fn css(color_scheme: &ColorScheme) -> Markup {
             display: block;
         }}
         .back {{
-            display: initial;
+            display: flex;
         }}
         .back {{
             right: 1.5rem;
