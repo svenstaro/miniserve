@@ -2,7 +2,7 @@ use assert_cmd::prelude::*;
 use assert_fs::fixture::TempDir;
 use assert_fs::prelude::*;
 use clap::{crate_name, crate_version};
-use portpicker::pick_unused_port;
+use port_check::free_local_port;
 use reqwest;
 use select::document::Document;
 use select::predicate::Text;
@@ -50,7 +50,7 @@ fn starts_ok_with_no_option() -> Result<(), Error> {
 fn starts_ok_with_non_default_port() -> Result<(), Error> {
     let tmpdir = tmpdir()?;
 
-    let port = pick_unused_port().unwrap();
+    let port = free_local_port().unwrap();
     let mut child = Command::cargo_bin("miniserve")?
         .arg(tmpdir.path())
         .arg("-p")
