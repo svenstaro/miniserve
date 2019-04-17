@@ -10,7 +10,7 @@ use crate::themes::ColorScheme;
 
 /// Renders the file listing
 pub fn page(
-    page_title: &str,
+    serve_path: &str,
     entries: Vec<Entry>,
     is_root: bool,
     page_parent: Option<String>,
@@ -23,7 +23,7 @@ pub fn page(
     current_dir: &str,
 ) -> Markup {
     html! {
-        (page_header(page_title, &color_scheme, file_upload))
+        (page_header(serve_path, &color_scheme, file_upload))
         body#drop-container {
             @if file_upload {
                 div.drag-form {
@@ -32,10 +32,10 @@ pub fn page(
                     }
                 }
             }
-            (color_scheme_selector(&sort_method, &sort_order, &color_scheme, &default_color_scheme))
+            (color_scheme_selector(&sort_method, &sort_order, &color_scheme, &default_color_scheme, serve_path))
             div.container {
                 span#top { }
-                h1.title { (page_title) }
+                h1.title { "Index of " (serve_path) }
                 div.toolbar {
                     div.download {
                         @for compression_method in CompressionMethod::iter() {
@@ -92,6 +92,7 @@ fn color_scheme_selector(
     sort_order: &Option<SortingOrder>,
     active_color_scheme: &ColorScheme,
     default_color_scheme: &ColorScheme,
+    serve_path: &str,
 ) -> Markup {
     html! {
         nav {
@@ -104,11 +105,11 @@ fn color_scheme_selector(
                         @for color_scheme in ColorScheme::iter() {
                             @if active_color_scheme == &color_scheme {
                                 li.active {
-                                    (color_scheme_link(&sort_method, &sort_order, &color_scheme, &default_color_scheme))
+                                    (color_scheme_link(&sort_method, &sort_order, &color_scheme, &default_color_scheme, serve_path))
                                 }
                             } @else {
                                 li {
-                                    (color_scheme_link(&sort_method, &sort_order, &color_scheme, &default_color_scheme))
+                                    (color_scheme_link(&sort_method, &sort_order, &color_scheme, &default_color_scheme, serve_path))
                                 }
                             }
                         }
@@ -125,9 +126,10 @@ fn color_scheme_link(
     sort_order: &Option<SortingOrder>,
     color_scheme: &ColorScheme,
     default_color_scheme: &ColorScheme,
+    serve_path: &str,
 ) -> Markup {
     let link = parametrized_link(
-        "",
+        serve_path,
         &sort_method,
         &sort_order,
         &color_scheme,
@@ -684,14 +686,14 @@ fn chevron_down() -> Markup {
 }
 
 /// Partial: page header
-fn page_header(page_title: &str, color_scheme: &ColorScheme, file_upload: bool) -> Markup {
+fn page_header(serve_path: &str, color_scheme: &ColorScheme, file_upload: bool) -> Markup {
     html! {
         (DOCTYPE)
         html {
             meta charset="utf-8";
             meta http-equiv="X-UA-Compatible" content="IE=edge";
             meta name="viewport" content="width=device-width, initial-scale=1";
-            title { (page_title) }
+            title { "Index of " (serve_path) }
             style { (css(&color_scheme)) }
             @if file_upload {
                 (PreEscaped(r#"

@@ -132,8 +132,8 @@ pub fn directory_listing<S>(
     default_color_scheme: themes::ColorScheme,
     upload_route: String,
 ) -> Result<HttpResponse, io::Error> {
-    let title = format!("Index of {}", req.path());
-    let base = Path::new(req.path());
+    let serve_path = req.path();
+    let base = Path::new(serve_path);
     let random_route = format!("/{}", random_route.unwrap_or_default());
     let is_root = base.parent().is_none() || req.path() == random_route;
     let page_parent = base.parent().map(|p| p.display().to_string());
@@ -274,7 +274,7 @@ pub fn directory_listing<S>(
             .content_type("text/html; charset=utf-8")
             .body(
                 renderer::page(
-                    &title,
+                    serve_path,
                     entries,
                     is_root,
                     page_parent,
