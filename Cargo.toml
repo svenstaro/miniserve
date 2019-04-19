@@ -45,6 +45,8 @@ failure = "0.1.5"
 log = "0.4.6"
 strum = "0.15.0"
 strum_macros = "0.15.0"
+sha2 = "0.8.0"
+hex = "0.3.2"
 
 [dev-dependencies]
 assert_cmd = "0.11"

@@ -1,6 +1,7 @@
 use actix_web::http::header;
 use actix_web::middleware::{Middleware, Response};
 use actix_web::{HttpRequest, HttpResponse, Result};
+use sha2::{Sha256, Digest};
 
 pub struct Auth;
 
@@ -14,6 +15,19 @@ pub enum BasicAuthError {
 pub struct BasicAuthParams {
     pub username: String,
     pub password: String,
+}
+
+#[derive(Clone, Debug)]
+pub enum RequiredAuthPassword {
+    Plain(String),
+    Sha256(String),
+}
+
+#[derive(Clone, Debug)]
+/// Authentication structure to match BasicAuthParams against
+pub struct RequiredAuth {
+    pub username: String,
+    pub password: RequiredAuthPassword,
 }
 
 /// Decode a HTTP basic auth string into a tuple of username and password.
@@ -34,6 +48,22 @@ pub fn parse_basic_auth(
     })
 }
 
+pub fn match_auth(basic_auth: BasicAuthParams, required_auth: &RequiredAuth) -> bool {
+    if basic_auth.username != required_auth.username {
+        return false;
+    }
+
+    match &required_auth.password {
+        RequiredAuthPassword::Plain(ref required_password) => basic_auth.password == *required_password,
+        RequiredAuthPassword::Sha256(password_hash) => {
+            let mut hasher = Sha256::new();
+            hasher.input(basic_auth.password);
+            let received_hash = hex::encode(hasher.result());
+            received_hash == *password_hash
+        }
+    }
+}
+
 impl Middleware<crate::MiniserveConfig> for Auth {
     fn response(
         &self,
@@ -51,9 +81,7 @@ impl Middleware<crate::MiniserveConfig> for Auth {
                         ))));
                     }
                 };
-                if auth_req.username != required_auth.username
-                    || auth_req.password != required_auth.password
-                {
+                if match_auth(auth_req, required_auth) {
                     let new_resp = HttpResponse::Unauthorized().finish();
                     return Ok(Response::Done(new_resp));
                 }

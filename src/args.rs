@@ -39,7 +39,7 @@ struct CLIArgs {
 
     /// Set authentication (username:password)
     #[structopt(short = "a", long = "auth", parse(try_from_str = "parse_auth"))]
-    auth: Option<(String, String)>,
+    auth: Option<auth::RequiredAuth>,
 
     /// Generate a random 6-hexdigit route
     #[structopt(long = "random-route")]
@@ -76,36 +76,42 @@ fn parse_interface(src: &str) -> Result<IpAddr, std::net::AddrParseError> {
 }
 
 /// Checks wether the auth string is valid, i.e. it follows the syntax username:password
-fn parse_auth(src: &str) -> Result<(String, String), String> {
+fn parse_auth(src: &str) -> Result<auth::RequiredAuth, String> {
     let mut split = src.splitn(2, ':');
+    let errmsg = "Invalid credentials string, expected format is username:password".to_owned();
 
     let username = match split.next() {
         Some(username) => username,
-        None => {
-            return Err(
-                "Invalid credentials string, expected format is username:password".to_owned(),
-            )
-        }
+        None => return Err(errmsg),
+    };
+
+    let second_part = match split.next() {
+        // This allows empty passwords, as the spec does not forbid it
+        Some(password) => password,
+        None => return Err(errmsg),
     };
 
     let password = match split.next() {
-        // This allows empty passwords, as the spec does not forbid it
-        Some(password) => password,
+        Some(hash) => match second_part {
+            "sha256" => auth::RequiredAuthPassword::Sha256(hash.to_owned()),
+            _ => return Err("Invalid hash method, valid methods is sha256".to_owned())
+        },
         None => {
-            return Err(
-                "Invalid credentials string, expected format is username:password".to_owned(),
-            )
-        }
+            // To make it Windows-compatible, the password needs to be shorter than 255 characters.
+            // After 255 characters, Windows will truncate the value.
+            // As for the username, the spec does not mention a limit in length
+            if second_part.len() > 255 {
+                return Err("Password length cannot exceed 255 characters".to_owned());
+            }
+
+            auth::RequiredAuthPassword::Plain(second_part.to_owned())
+        },
     };
 
-    // To make it Windows-compatible, the password needs to be shorter than 255 characters.
-    // After 255 characters, Windows will truncate the value.
-    // As for the username, the spec does not mention a limit in length
-    if password.len() > 255 {
-        return Err("Password length cannot exceed 255 characters".to_owned());
-    }
-
-    Ok((username.to_owned(), password.to_owned()))
+    Ok(auth::RequiredAuth {
+        username: username.to_owned(),
+        password,
+    })
 }
 
 /// Parses the command line arguments
@@ -119,11 +125,6 @@ pub fn parse_args() -> crate::MiniserveConfig {
             IpAddr::V6(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0)),
             IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)),
         ]
-    };
-
-    let auth = match args.auth {
-        Some((username, password)) => Some(auth::BasicAuthParams { username, password }),
-        None => None,
     };
 
     let random_route = if args.random_route {
@@ -141,7 +142,7 @@ pub fn parse_args() -> crate::MiniserveConfig {
         path: args.path.unwrap_or_else(|| PathBuf::from(".")),
         port: args.port,
         interfaces,
-        auth,
+        auth: args.auth,
         path_explicitly_chosen,
         no_symlinks: args.no_symlinks,
         random_route,
