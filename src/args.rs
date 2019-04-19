@@ -37,7 +37,7 @@ struct CLIArgs {
     )]
     interfaces: Vec<IpAddr>,
 
-    /// Set authentication (username:password)
+    /// Set authentication (username:password, username:sha256:hash, or username:sha512:hash)
     #[structopt(short = "a", long = "auth", parse(try_from_str = "parse_auth"))]
     auth: Option<auth::RequiredAuth>,
 
