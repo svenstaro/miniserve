@@ -95,7 +95,7 @@ fn parse_auth(src: &str) -> Result<auth::RequiredAuth, String> {
         match second_part {
             "sha256" => auth::RequiredAuthPassword::Sha256(hash.to_owned()),
             "sha512" => auth::RequiredAuthPassword::Sha512(hash.to_owned()),
-            _ => return Err("Invalid hash method, valid methods is sha256".to_owned())
+            _ => return Err("Invalid hash method, only accept either sha256 or sha512".to_owned())
         }
     } else {
         // To make it Windows-compatible, the password needs to be shorter than 255 characters.
