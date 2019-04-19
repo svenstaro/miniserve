@@ -88,7 +88,7 @@ impl Middleware<crate::MiniserveConfig> for Auth {
                         ))));
                     }
                 };
-                if match_auth(auth_req, required_auth) {
+                if !match_auth(auth_req, required_auth) {
                     let new_resp = HttpResponse::Unauthorized().finish();
                     return Ok(Response::Done(new_resp));
                 }
