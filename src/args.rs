@@ -200,4 +200,31 @@ mod tests {
 
         Ok(())
     }
+
+    #[test]
+    fn parse_auth_invalid_syntax() {
+        assert_eq!(
+            parse_auth("foo").unwrap_err(),
+            "Invalid credentials string, expected format is username:password".to_owned()
+        );
+    }
+
+    #[test]
+    fn parse_auth_invalid_hash_method() {
+        assert_eq!(
+            parse_auth("username:blahblah:hash").unwrap_err(),
+            "Invalid hash method, only accept either sha256 or sha512".to_owned()
+        );
+    }
+
+    #[test]
+    fn parse_auth_excessive_length() {
+        let password = &"x".repeat(256);
+        let param = "username:".to_owned() + password;
+
+        assert_eq!(
+            parse_auth(&*param).unwrap_err(),
+            "Password length cannot exceed 255 characters".to_owned()
+        );
+    }
 }
