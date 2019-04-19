@@ -172,26 +172,32 @@ mod tests {
     }
 
     #[test]
-    fn parse_auth_plain() {
+    fn parse_auth_plain() -> Result<(), String> {
         assert_eq!(
-            parse_auth("username:password").unwrap(),
+            parse_auth("username:password")?,
             create_required_auth("username", "password", "plain")
         );
+
+        Ok(())
     }
 
     #[test]
-    fn parse_auth_sha256() {
+    fn parse_auth_sha256() -> Result<(), String> {
         assert_eq!(
-            parse_auth("username:sha256:hash").unwrap(),
+            parse_auth("username:sha256:hash")?,
             create_required_auth("username", "hash", "sha256")
         );
+
+        Ok(())
     }
 
     #[test]
-    fn parse_auth_sha512() {
+    fn parse_auth_sha512() -> Result<(), String> {
         assert_eq!(
-            parse_auth("username:sha512:hash").unwrap(),
+            parse_auth("username:sha512:hash")?,
             create_required_auth("username", "hash", "sha512")
         );
+
+        Ok(())
     }
 }
