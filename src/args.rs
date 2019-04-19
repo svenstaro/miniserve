@@ -91,22 +91,21 @@ fn parse_auth(src: &str) -> Result<auth::RequiredAuth, String> {
         None => return Err(errmsg),
     };
 
-    let password = match split.next() {
-        Some(hash) => match second_part {
+    let password = if let Some(hash) = split.next() {
+        match second_part {
             "sha256" => auth::RequiredAuthPassword::Sha256(hash.to_owned()),
             "sha512" => auth::RequiredAuthPassword::Sha512(hash.to_owned()),
             _ => return Err("Invalid hash method, valid methods is sha256".to_owned())
-        },
-        None => {
-            // To make it Windows-compatible, the password needs to be shorter than 255 characters.
-            // After 255 characters, Windows will truncate the value.
-            // As for the username, the spec does not mention a limit in length
-            if second_part.len() > 255 {
-                return Err("Password length cannot exceed 255 characters".to_owned());
-            }
+        }
+    } else {
+        // To make it Windows-compatible, the password needs to be shorter than 255 characters.
+        // After 255 characters, Windows will truncate the value.
+        // As for the username, the spec does not mention a limit in length
+        if second_part.len() > 255 {
+            return Err("Password length cannot exceed 255 characters".to_owned());
+        }
 
-            auth::RequiredAuthPassword::Plain(second_part.to_owned())
-        },
+        auth::RequiredAuthPassword::Plain(second_part.to_owned())
     };
 
     Ok(auth::RequiredAuth {
