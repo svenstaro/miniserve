@@ -62,10 +62,13 @@ pub fn match_auth(basic_auth: BasicAuthParams, required_auth: &RequiredAuth) -> 
 }
 
 pub fn compare_hash<T: Digest>(password: String, hash: &String) -> bool {
+    get_hash_hex::<T>(password) == *hash
+}
+
+fn get_hash_hex<T: Digest>(text: String) -> String {
     let mut hasher = T::new();
-    hasher.input(password);
-    let received_hash = hex::encode(hasher.result());
-    received_hash == *hash
+    hasher.input(text);
+    hex::encode(hasher.result())
 }
 
 impl Middleware<crate::MiniserveConfig> for Auth {
