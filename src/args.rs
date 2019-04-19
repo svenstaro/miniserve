@@ -77,7 +77,7 @@ fn parse_interface(src: &str) -> Result<IpAddr, std::net::AddrParseError> {
 
 /// Checks wether the auth string is valid, i.e. it follows the syntax username:password
 fn parse_auth(src: &str) -> Result<auth::RequiredAuth, String> {
-    let mut split = src.splitn(2, ':');
+    let mut split = src.splitn(3, ':');
     let errmsg = "Invalid credentials string, expected format is username:password".to_owned();
 
     let username = match split.next() {
@@ -150,5 +150,49 @@ pub fn parse_args() -> crate::MiniserveConfig {
         default_color_scheme,
         overwrite_files: args.overwrite_files,
         file_upload: args.file_upload,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn create_required_auth (username: &str, password: &str, encrypt: &str) -> auth::RequiredAuth {
+        use auth::*;
+        use RequiredAuthPassword::*;
+
+        RequiredAuth {
+            username: username.to_owned(),
+            password: match encrypt {
+                "plain" => Plain(password.to_owned()),
+                "sha256" => Sha256(password.to_owned()),
+                "sha512" => Sha512(password.to_owned()),
+                _ => panic!("Unknown encryption type")
+            },
+        }
+    }
+
+    #[test]
+    fn parse_auth_plain() {
+        assert_eq!(
+            parse_auth("username:password").unwrap(),
+            create_required_auth("username", "password", "plain")
+        );
+    }
+
+    #[test]
+    fn parse_auth_sha256() {
+        assert_eq!(
+            parse_auth("username:sha256:hash").unwrap(),
+            create_required_auth("username", "hash", "sha256")
+        );
+    }
+
+    #[test]
+    fn parse_auth_sha512() {
+        assert_eq!(
+            parse_auth("username:sha512:hash").unwrap(),
+            create_required_auth("username", "hash", "sha512")
+        );
     }
 }

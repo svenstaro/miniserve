@@ -17,14 +17,14 @@ pub struct BasicAuthParams {
     pub password: String,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum RequiredAuthPassword {
     Plain(String),
     Sha256(String),
     Sha512(String),
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 /// Authentication structure to match BasicAuthParams against
 pub struct RequiredAuth {
     pub username: String,
@@ -65,7 +65,7 @@ pub fn compare_hash<T: Digest>(password: String, hash: &String) -> bool {
     get_hash_hex::<T>(password) == *hash
 }
 
-fn get_hash_hex<T: Digest>(text: String) -> String {
+pub fn get_hash_hex<T: Digest>(text: String) -> String {
     let mut hasher = T::new();
     hasher.input(text);
     hex::encode(hasher.result())
@@ -103,5 +103,93 @@ impl Middleware<crate::MiniserveConfig> for Auth {
             }
         }
         Ok(Response::Done(resp))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    
+    #[test]
+    fn get_hash_hex_sha256() {
+        let expectation = "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad".to_owned();
+        let received = get_hash_hex::<Sha256>("abc".to_owned());
+        assert_eq!(expectation, received);
+    }
+
+    #[test]
+    fn get_hash_hex_sha512() {
+        let expectation = "ddaf35a193617abacc417349ae20413112e6fa4e89a97ea20a9eeee64b55d39a2192992a274fc1a836ba3c23a3feebbd454d4423643ce80e2a9ac94fa54ca49f".to_owned();
+        let received = get_hash_hex::<Sha512>("abc".to_owned());
+        assert_eq!(expectation, received);
+    }
+
+    fn create_auth_params (username: &str, password: &str) -> BasicAuthParams {
+        BasicAuthParams {
+            username: username.to_owned(),
+            password: password.to_owned(),
+        }
+    }
+
+    fn create_required_auth (username: &str, password: &str, encrypt: &str) -> RequiredAuth {
+        use RequiredAuthPassword::*;
+
+        RequiredAuth {
+            username: username.to_owned(),
+            password: match encrypt {
+                "plain" => Plain(password.to_owned()),
+                "sha256" => Sha256(get_hash_hex::<sha2::Sha256>(password.to_owned())),
+                "sha512" => Sha512(get_hash_hex::<sha2::Sha512>(password.to_owned())),
+                _ => panic!("Unknown encryption type")
+            },
+        }
+    }
+
+    #[test]
+    fn match_auth_plain_password_should_pass() {
+        assert!(match_auth(
+            create_auth_params("obi", "hello there"),
+            &create_required_auth("obi", "hello there", "plain"),
+        ));
+    }
+
+    #[test]
+    fn match_auth_plain_password_should_fail() {
+        assert!(!match_auth(
+            create_auth_params("obi", "hello there"),
+            &create_required_auth("obi", "hi!", "plain"),
+        ));
+    }
+
+    #[test]
+    fn match_auth_sha256_password_should_pass() {
+        assert!(match_auth(
+            create_auth_params("obi", "hello there"),
+            &create_required_auth("obi", "hello there", "sha256"),
+        ));
+    }
+
+    #[test]
+    fn match_auth_sha256_password_should_fail() {
+        assert!(!match_auth(
+            create_auth_params("obi", "hello there"),
+            &create_required_auth("obi", "hi!", "sha256"),
+        ));
+    }
+
+    #[test]
+    fn match_auth_sha512_password_should_pass() {
+        assert!(match_auth(
+            create_auth_params("obi", "hello there"),
+            &create_required_auth("obi", "hello there", "sha512"),
+        ));
+    }
+
+    #[test]
+    fn match_auth_sha512_password_should_fail() {
+        assert!(!match_auth(
+            create_auth_params("obi", "hello there"),
+            &create_required_auth("obi", "hi!", "sha512"),
+        ));
     }
 }
