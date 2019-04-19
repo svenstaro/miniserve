@@ -1,7 +1,7 @@
 use actix_web::http::header;
 use actix_web::middleware::{Middleware, Response};
 use actix_web::{HttpRequest, HttpResponse, Result};
-use sha2::{Sha256, Digest};
+use sha2::{Sha256, Sha512, Digest};
 
 pub struct Auth;
 
@@ -21,6 +21,7 @@ pub struct BasicAuthParams {
 pub enum RequiredAuthPassword {
     Plain(String),
     Sha256(String),
+    Sha512(String),
 }
 
 #[derive(Clone, Debug)]
@@ -55,13 +56,16 @@ pub fn match_auth(basic_auth: BasicAuthParams, required_auth: &RequiredAuth) -> 
 
     match &required_auth.password {
         RequiredAuthPassword::Plain(ref required_password) => basic_auth.password == *required_password,
-        RequiredAuthPassword::Sha256(password_hash) => {
-            let mut hasher = Sha256::new();
-            hasher.input(basic_auth.password);
-            let received_hash = hex::encode(hasher.result());
-            received_hash == *password_hash
-        }
+        RequiredAuthPassword::Sha256(password_hash) => compare_hash::<Sha256>(basic_auth.password, password_hash),
+        RequiredAuthPassword::Sha512(password_hash) => compare_hash::<Sha512>(basic_auth.password, password_hash),
     }
+}
+
+pub fn compare_hash<T: Digest>(password: String, hash: &String) -> bool {
+    let mut hasher = T::new();
+    hasher.input(password);
+    let received_hash = hex::encode(hasher.result());
+    received_hash == *hash
 }
 
 impl Middleware<crate::MiniserveConfig> for Auth {

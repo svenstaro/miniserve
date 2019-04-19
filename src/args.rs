@@ -94,6 +94,7 @@ fn parse_auth(src: &str) -> Result<auth::RequiredAuth, String> {
     let password = match split.next() {
         Some(hash) => match second_part {
             "sha256" => auth::RequiredAuthPassword::Sha256(hash.to_owned()),
+            "sha512" => auth::RequiredAuthPassword::Sha512(hash.to_owned()),
             _ => return Err("Invalid hash method, valid methods is sha256".to_owned())
         },
         None => {
