@@ -47,7 +47,7 @@ pub fn page(
                             form id="file_submit" action={(upload_route) "?path=" (current_dir)} method="POST" enctype="multipart/form-data" {
                                 p { "Select a file to upload or drag it anywhere into the window" }
                                 div {
-                                    input#file-input type="file" name="file_to_upload" {}
+                                    input#file-input type="file" name="file_to_upload" required="" {}
                                     button type="submit" { "Upload file" }
                                 }
                             }
