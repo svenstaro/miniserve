@@ -109,7 +109,7 @@ impl Middleware<crate::MiniserveConfig> for Auth {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn get_hash_hex_sha256() {
         let expectation = "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad".to_owned();
@@ -124,14 +124,14 @@ mod tests {
         assert_eq!(expectation, received);
     }
 
-    fn create_auth_params (username: &str, password: &str) -> BasicAuthParams {
+    fn create_auth_params(username: &str, password: &str) -> BasicAuthParams {
         BasicAuthParams {
             username: username.to_owned(),
             password: password.to_owned(),
         }
     }
 
-    fn create_required_auth (username: &str, password: &str, encrypt: &str) -> RequiredAuth {
+    fn create_required_auth(username: &str, password: &str, encrypt: &str) -> RequiredAuth {
         use RequiredAuthPassword::*;
 
         RequiredAuth {
