@@ -763,8 +763,7 @@ fn humanize_systemtime(src_time: Option<SystemTime>) -> Option<String> {
 /// Renders error page when file uploading fails
 pub fn file_upload_error(error_description: &str, return_address: &str) -> Markup {
     html! {
-        h1 { "File uploading failed" }
-        p { (error_description) }
+        pre { (error_description) }
         a href=(return_address) {
             "Go back to file listing"
         }
