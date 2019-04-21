@@ -10,7 +10,6 @@ use std::time::SystemTime;
 use strum_macros::{Display, EnumString};
 
 use crate::archive;
-use crate::errors;
 use crate::renderer;
 use crate::themes;
 
@@ -263,10 +262,9 @@ pub fn directory_listing<S>(
                     .body(Body::Streaming(Box::new(once(Ok(content))))))
             }
             Err(err) => {
-                errors::print_error_chain(err);
                 Ok(HttpResponse::Ok()
                     .status(http::StatusCode::INTERNAL_SERVER_ERROR)
-                    .body(""))
+                    .body(err.to_string()))
             }
         }
     } else {
