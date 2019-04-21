@@ -12,6 +12,7 @@ use strum_macros::{Display, EnumString};
 use crate::archive;
 use crate::renderer;
 use crate::themes;
+use crate::errors;
 
 /// Query parameters
 #[derive(Deserialize)]
@@ -262,10 +263,10 @@ pub fn directory_listing<S>(
                     .body(Body::Streaming(Box::new(once(Ok(content))))))
             }
             Err(err) => {
-                log::error!("{}", &err);
+                errors::log_error_chain(err.to_string());
                 Ok(HttpResponse::Ok()
                     .status(http::StatusCode::INTERNAL_SERVER_ERROR)
-                    .body(err.to_string()))
+                    .body(renderer::render_error(&err.to_string(), serve_path).into_string())
             }
         }
     } else {

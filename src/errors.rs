@@ -50,6 +50,12 @@ pub enum ContextualErrorKind {
     ArchiveCreationError(String, Box<ContextualError>),
 }
 
+pub fn log_error_chain(description: String) {
+    for cause in description.lines() {
+        log::error!("{}", cause);
+    }
+}
+
 /// Based on https://boats.gitlab.io/failure/error-errorkind.html
 pub struct ContextualError {
     inner: Context<ContextualErrorKind>,

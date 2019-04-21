@@ -10,8 +10,8 @@ use std::{
     path::{Component, PathBuf},
 };
 
-use crate::errors::ContextualErrorKind;
-use crate::renderer::file_upload_error;
+use crate::errors::{self, ContextualErrorKind};
+use crate::renderer;
 
 /// Query parameters
 #[derive(Debug, Deserialize)]
@@ -31,11 +31,11 @@ fn save_file(
         )));
     }
 
-    let mut file = match std::fs::File::create(file_path) {
+    let mut file = match std::fs::File::create(&file_path) {
         Ok(file) => file,
         Err(e) => {
             return Box::new(future::err(ContextualErrorKind::IOError(
-                "Failed to create file".to_string(),
+                format!("Failed to create file in {}", file_path.display()),
                 e,
             )));
         }
@@ -175,10 +175,10 @@ fn create_error_response(
     description: &str,
     return_path: &str,
 ) -> FutureResult<HttpResponse, actix_web::error::Error> {
-    log::error!("{}", description);
+    errors::log_error_chain(description.to_string());
     future::ok(
         HttpResponse::BadRequest()
             .content_type("text/html; charset=utf-8")
-            .body(file_upload_error(description, return_path).into_string()),
+            .body(renderer::render_error(description, return_path).into_string()),
     )
 }
