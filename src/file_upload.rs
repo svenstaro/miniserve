@@ -1,5 +1,3 @@
-use crate::errors::FileUploadErrorKind;
-use crate::renderer::file_upload_error;
 use actix_web::{
     dev, http::header, multipart, FromRequest, FutureResponse, HttpMessage, HttpRequest,
     HttpResponse, Query,
@@ -12,6 +10,9 @@ use std::{
     path::{Component, PathBuf},
 };
 
+use crate::errors::ContextualErrorKind;
+use crate::renderer::file_upload_error;
+
 /// Query parameters
 #[derive(Debug, Deserialize)]
 struct QueryParameters {
@@ -23,24 +24,32 @@ fn save_file(
     field: multipart::Field<dev::Payload>,
     file_path: PathBuf,
     overwrite_files: bool,
-) -> Box<Future<Item = i64, Error = FileUploadErrorKind>> {
+) -> Box<Future<Item = i64, Error = ContextualErrorKind>> {
     if !overwrite_files && file_path.exists() {
-        return Box::new(future::err(FileUploadErrorKind::FileExist));
+        return Box::new(future::err(ContextualErrorKind::CustomError(
+            "File already exists, and the overwrite_files option has not been set".to_string(),
+        )));
     }
+
     let mut file = match std::fs::File::create(file_path) {
         Ok(file) => file,
         Err(e) => {
-            return Box::new(future::err(FileUploadErrorKind::IOError(e)));
+            return Box::new(future::err(ContextualErrorKind::IOError(
+                "Failed to create file".to_string(),
+                e,
+            )));
         }
     };
     Box::new(
         field
-            .map_err(FileUploadErrorKind::MultipartError)
+            .map_err(ContextualErrorKind::MultipartError)
             .fold(0i64, move |acc, bytes| {
                 let rt = file
                     .write_all(bytes.as_ref())
                     .map(|_| acc + bytes.len() as i64)
-                    .map_err(FileUploadErrorKind::IOError);
+                    .map_err(|e| {
+                        ContextualErrorKind::IOError("Failed to write to file".to_string(), e)
+                    });
                 future::result(rt)
             }),
     )
@@ -51,44 +60,56 @@ fn handle_multipart(
     item: multipart::MultipartItem<dev::Payload>,
     mut file_path: PathBuf,
     overwrite_files: bool,
-) -> Box<Stream<Item = i64, Error = FileUploadErrorKind>> {
+) -> Box<Stream<Item = i64, Error = ContextualErrorKind>> {
     match item {
         multipart::MultipartItem::Field(field) => {
             let filename = field
                 .headers()
                 .get(header::CONTENT_DISPOSITION)
-                .ok_or(FileUploadErrorKind::ParseError)
+                .ok_or(ContextualErrorKind::ParseError)
                 .and_then(|cd| {
                     header::ContentDisposition::from_raw(cd)
-                        .map_err(|_| FileUploadErrorKind::ParseError)
+                        .map_err(|_| ContextualErrorKind::ParseError)
                 })
                 .and_then(|content_disposition| {
                     content_disposition
                         .get_filename()
-                        .ok_or(FileUploadErrorKind::ParseError)
+                        .ok_or(ContextualErrorKind::ParseError)
                         .map(String::from)
                 });
-            let err = |e: FileUploadErrorKind| Box::new(future::err(e).into_stream());
+            let err = |e: ContextualErrorKind| Box::new(future::err(e).into_stream());
             match filename {
                 Ok(f) => {
                     match fs::metadata(&file_path) {
                         Ok(metadata) => {
-                            if !metadata.is_dir() || metadata.permissions().readonly() {
-                                return err(FileUploadErrorKind::InsufficientPermissions);
+                            if !metadata.is_dir() {
+                                return err(ContextualErrorKind::InvalidPathError(format!(
+                                    "cannot upload file to {}, since it's not a directory",
+                                    &file_path.display()
+                                )));
+                            } else if metadata.permissions().readonly() {
+                                return err(ContextualErrorKind::InsufficientPermissionsError(
+                                    file_path.display().to_string(),
+                                ));
                             }
                         }
                         Err(_) => {
-                            return err(FileUploadErrorKind::InsufficientPermissions);
+                            return err(ContextualErrorKind::InsufficientPermissionsError(
+                                file_path.display().to_string(),
+                            ));
                         }
                     }
                     file_path = file_path.join(f);
                     Box::new(save_file(field, file_path, overwrite_files).into_stream())
                 }
-                Err(e) => err(e),
+                Err(e) => err(e(
+                    "HTTP header".to_string(),
+                    "Failed to retrieve the name of the file to upload".to_string(),
+                )),
             }
         }
         multipart::MultipartItem::Nested(mp) => Box::new(
-            mp.map_err(FileUploadErrorKind::MultipartError)
+            mp.map_err(ContextualErrorKind::MultipartError)
                 .map(move |item| handle_multipart(item, file_path.clone(), overwrite_files))
                 .flatten(),
         ),
@@ -134,7 +155,7 @@ pub fn upload_file(req: &HttpRequest<crate::MiniserveConfig>) -> FutureResponse<
     let overwrite_files = req.state().overwrite_files;
     Box::new(
         req.multipart()
-            .map_err(FileUploadErrorKind::MultipartError)
+            .map_err(ContextualErrorKind::MultipartError)
             .map(move |item| handle_multipart(item, target_dir.clone(), overwrite_files))
             .flatten()
             .collect()

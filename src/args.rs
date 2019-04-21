@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use structopt::StructOpt;
 
 use crate::auth;
+use crate::errors::{ContextualError, ContextualErrorKind};
 use crate::themes;
 
 /// Possible characters for random routes
@@ -76,15 +77,13 @@ fn parse_interface(src: &str) -> Result<IpAddr, std::net::AddrParseError> {
 }
 
 /// Checks wether the auth string is valid, i.e. it follows the syntax username:password
-fn parse_auth(src: &str) -> Result<(String, String), String> {
+fn parse_auth(src: &str) -> Result<(String, String), ContextualError> {
     let mut split = src.splitn(2, ':');
 
     let username = match split.next() {
         Some(username) => username,
         None => {
-            return Err(
-                "Invalid credentials string, expected format is username:password".to_owned(),
-            )
+            return Err(ContextualError::new(ContextualErrorKind::InvalidAuthFormat));
         }
     };
 
@@ -92,9 +91,7 @@ fn parse_auth(src: &str) -> Result<(String, String), String> {
         // This allows empty passwords, as the spec does not forbid it
         Some(password) => password,
         None => {
-            return Err(
-                "Invalid credentials string, expected format is username:password".to_owned(),
-            )
+            return Err(ContextualError::new(ContextualErrorKind::InvalidAuthFormat));
         }
     };
 
@@ -102,7 +99,9 @@ fn parse_auth(src: &str) -> Result<(String, String), String> {
     // After 255 characters, Windows will truncate the value.
     // As for the username, the spec does not mention a limit in length
     if password.len() > 255 {
-        return Err("Password length cannot exceed 255 characters".to_owned());
+        return Err(ContextualError::new(
+            ContextualErrorKind::PasswordTooLongError,
+        ));
     }
 
     Ok((username.to_owned(), password.to_owned()))
