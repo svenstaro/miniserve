@@ -10,9 +10,9 @@ use std::time::SystemTime;
 use strum_macros::{Display, EnumString};
 
 use crate::archive;
+use crate::errors;
 use crate::renderer;
 use crate::themes;
-use crate::errors;
 
 /// Query parameters
 #[derive(Deserialize)]
@@ -266,7 +266,7 @@ pub fn directory_listing<S>(
                 errors::log_error_chain(err.to_string());
                 Ok(HttpResponse::Ok()
                     .status(http::StatusCode::INTERNAL_SERVER_ERROR)
-                    .body(renderer::render_error(&err.to_string(), serve_path).into_string())
+                    .body(renderer::render_error(&err.to_string(), serve_path).into_string()))
             }
         }
     } else {
