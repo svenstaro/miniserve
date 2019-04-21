@@ -175,6 +175,7 @@ fn create_error_response(
     description: &str,
     return_path: &str,
 ) -> FutureResult<HttpResponse, actix_web::error::Error> {
+    log::error!("{}", description);
     future::ok(
         HttpResponse::BadRequest()
             .content_type("text/html; charset=utf-8")

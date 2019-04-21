@@ -261,9 +261,12 @@ pub fn directory_listing<S>(
                     .chunked()
                     .body(Body::Streaming(Box::new(once(Ok(content))))))
             }
-            Err(err) => Ok(HttpResponse::Ok()
-                .status(http::StatusCode::INTERNAL_SERVER_ERROR)
-                .body(err.to_string())),
+            Err(err) => {
+                log::error!("{}", &err);
+                Ok(HttpResponse::Ok()
+                    .status(http::StatusCode::INTERNAL_SERVER_ERROR)
+                    .body(err.to_string()))
+            }
         }
     } else {
         Ok(HttpResponse::Ok()
