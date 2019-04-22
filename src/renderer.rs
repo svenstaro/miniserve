@@ -760,7 +760,7 @@ fn humanize_systemtime(src_time: Option<SystemTime>) -> Option<String> {
         .map(|duration| HumanTime::from(duration).to_text_en(Accuracy::Rough, Tense::Past))
 }
 
-/// Renders error page when file uploading fails
+/// Renders an error on the webpage
 pub fn render_error(error_description: &str, return_address: &str) -> Markup {
     html! {
         pre { (error_description) }
