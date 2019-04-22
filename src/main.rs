@@ -61,7 +61,7 @@ pub struct MiniserveConfig {
 fn main() {
     match run() {
         Ok(()) => (),
-        Err(e) => eprintln!("\n{}\n", Paint::red(e)),
+        Err(e) => errors::log_error_chain(e.to_string()),
     }
 }
 
