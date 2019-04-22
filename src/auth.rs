@@ -50,10 +50,12 @@ impl Middleware<crate::MiniserveConfig> for Auth {
                 let auth_req = match parse_basic_auth(auth_headers) {
                     Ok(auth_req) => auth_req,
                     Err(err) => {
-                        return Ok(Response::Done(HttpResponse::BadRequest().body(format!(
-                            "An error occured during HTTP authentication\ncaused by: {}",
-                            err
-                        ))))
+                        let auth_err = ContextualError::new(
+                            ContextualErrorKind::HTTPAuthenticationError(Box::new(err)),
+                        );
+                        return Ok(Response::Done(
+                            HttpResponse::BadRequest().body(auth_err.to_string()),
+                        ));
                     }
                 };
                 if auth_req.username != required_auth.username

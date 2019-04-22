@@ -48,6 +48,13 @@ pub enum ContextualErrorKind {
         _0, _1
     )]
     ArchiveCreationError(String, Box<ContextualError>),
+
+    /// This error might occur when the HTTP authentication fails
+    #[fail(
+        display = "An error occured during HTTP authentication\ncaused by: {}",
+        _0
+    )]
+    HTTPAuthenticationError(Box<ContextualError>),
 }
 
 pub fn log_error_chain(description: String) {
