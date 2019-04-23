@@ -55,42 +55,41 @@ pub fn create_archive(
 /// Compresses a given folder in .tar.gz format, and returns the result as a stream of bytes
 fn tgz_compress(dir: &PathBuf, skip_symlinks: bool) -> Result<(String, Bytes), ContextualError> {
     let src_dir = dir.display().to_string();
-    let inner_folder = match dir.file_name() {
-        Some(directory_name) => match directory_name.to_str() {
-            Some(directory) => directory,
-            None => {
-                // https://doc.rust-lang.org/std/ffi/struct.OsStr.html#method.to_str
-                return Err(ContextualError::new(ContextualErrorKind::InvalidPathError(
-                    "Directory name contains invalid UTF-8 characters".to_string(),
-                )));
-            }
-        },
-        None => {
-            // https://doc.rust-lang.org/std/path/struct.Path.html#method.file_name
-            return Err(ContextualError::new(ContextualErrorKind::InvalidPathError(
-                "Directory name terminates in \"..\"".to_string(),
-            )));
+    if let Some(inner_folder) = dir.file_name() {
+        if let Some(directory) = inner_folder.to_str() {
+            let dst_filename = format!("{}.tar", directory);
+            let dst_tgz_filename = format!("{}.gz", dst_filename);
+            let mut tgz_data = Bytes::new();
+
+            let tar_data = tar(src_dir, directory.to_string(), skip_symlinks).map_err(|e| {
+                ContextualError::new(ContextualErrorKind::ArchiveCreationError(
+                    "tarball".to_string(),
+                    Box::new(e),
+                ))
+            })?;
+
+            let gz_data = gzip(&tar_data).map_err(|e| {
+                ContextualError::new(ContextualErrorKind::ArchiveCreationError(
+                    "GZIP archive".to_string(),
+                    Box::new(e),
+                ))
+            })?;
+
+            tgz_data.extend_from_slice(&gz_data);
+
+            Ok((dst_tgz_filename, tgz_data))
+        } else {
+            // https://doc.rust-lang.org/std/ffi/struct.OsStr.html#method.to_str
+            Err(ContextualError::new(ContextualErrorKind::InvalidPathError(
+                "Directory name contains invalid UTF-8 characters".to_string(),
+            )))
         }
-    };
-    let dst_filename = format!("{}.tar", inner_folder);
-    let dst_tgz_filename = format!("{}.gz", dst_filename);
-
-    let tar_content = tar(src_dir, inner_folder.to_string(), skip_symlinks).map_err(|e| {
-        ContextualError::new(ContextualErrorKind::ArchiveCreationError(
-            "tarball".to_string(),
-            Box::new(e),
-        ))
-    })?;
-    let gz_data = gzip(&tar_content).map_err(|e| {
-        ContextualError::new(ContextualErrorKind::ArchiveCreationError(
-            "GZIP archive".to_string(),
-            Box::new(e),
-        ))
-    })?;
-    let mut data = Bytes::new();
-    data.extend_from_slice(&gz_data);
-
-    Ok((dst_tgz_filename, data))
+    } else {
+        // https://doc.rust-lang.org/std/path/struct.Path.html#method.file_name
+        Err(ContextualError::new(ContextualErrorKind::InvalidPathError(
+            "Directory name terminates in \"..\"".to_string(),
+        )))
+    }
 }
 
 /// Creates a TAR archive of a folder, and returns it as a stream of bytes
