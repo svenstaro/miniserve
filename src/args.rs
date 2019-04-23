@@ -91,11 +91,16 @@ fn parse_auth(src: &str) -> Result<auth::RequiredAuth, String> {
         None => return Err(errmsg),
     };
 
-    let password = if let Some(hash) = split.next() {
+    let password = if let Some(hash_hex) = split.next() {
+        let hash_bin = match hex::decode(hash_hex) {
+            Ok(hash_bin) => hash_bin,
+            _ => return Err("Hash string is not a valid hex code".to_owned()),
+        };
+
         match second_part {
-            "sha256" => auth::RequiredAuthPassword::Sha256(hash.to_owned()),
-            "sha512" => auth::RequiredAuthPassword::Sha512(hash.to_owned()),
-            _ => return Err("Invalid hash method, only accept either sha256 or sha512".to_owned())
+            "sha256" => auth::RequiredAuthPassword::Sha256(hash_bin.to_owned()),
+            "sha512" => auth::RequiredAuthPassword::Sha512(hash_bin.to_owned()),
+            _ => return Err("Invalid hash method, only accept either sha256 or sha512".to_owned()),
         }
     } else {
         // To make it Windows-compatible, the password needs to be shorter than 255 characters.
@@ -164,8 +169,8 @@ mod tests {
             username: username.to_owned(),
             password: match encrypt {
                 "plain" => Plain(password.to_owned()),
-                "sha256" => Sha256(password.to_owned()),
-                "sha512" => Sha512(password.to_owned()),
+                "sha256" => Sha256(hex::decode(password.to_owned()).unwrap()),
+                "sha512" => Sha512(hex::decode(password.to_owned()).unwrap()),
                 _ => panic!("Unknown encryption type")
             },
         }
@@ -184,8 +189,8 @@ mod tests {
     #[test]
     fn parse_auth_sha256() -> Result<(), String> {
         assert_eq!(
-            parse_auth("username:sha256:hash")?,
-            create_required_auth("username", "hash", "sha256")
+            parse_auth("username:sha256:abcd")?,
+            create_required_auth("username", "abcd", "sha256")
         );
 
         Ok(())
@@ -194,8 +199,8 @@ mod tests {
     #[test]
     fn parse_auth_sha512() -> Result<(), String> {
         assert_eq!(
-            parse_auth("username:sha512:hash")?,
-            create_required_auth("username", "hash", "sha512")
+            parse_auth("username:sha512:abcd")?,
+            create_required_auth("username", "abcd", "sha512")
         );
 
         Ok(())
@@ -212,8 +217,16 @@ mod tests {
     #[test]
     fn parse_auth_invalid_hash_method() {
         assert_eq!(
-            parse_auth("username:blahblah:hash").unwrap_err(),
+            parse_auth("username:blahblah:abcd").unwrap_err(),
             "Invalid hash method, only accept either sha256 or sha512".to_owned()
+        );
+    }
+
+    #[test]
+    fn parse_auth_invalid_hash_string() {
+        assert_eq!(
+            parse_auth("username:sha256:invalid").unwrap_err(),
+            "Hash string is not a valid hex code".to_owned()
         );
     }
 

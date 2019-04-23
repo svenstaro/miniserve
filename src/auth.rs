@@ -20,8 +20,8 @@ pub struct BasicAuthParams {
 #[derive(Clone, Debug, PartialEq)]
 pub enum RequiredAuthPassword {
     Plain(String),
-    Sha256(String),
-    Sha512(String),
+    Sha256(Vec<u8>),
+    Sha512(Vec<u8>),
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -61,14 +61,14 @@ pub fn match_auth(basic_auth: BasicAuthParams, required_auth: &RequiredAuth) -> 
     }
 }
 
-pub fn compare_hash<T: Digest>(password: String, hash: &String) -> bool {
-    get_hash_hex::<T>(password) == *hash
+pub fn compare_hash<T: Digest>(password: String, hash: &Vec<u8>) -> bool {
+    get_hash::<T>(password) == *hash
 }
 
-pub fn get_hash_hex<T: Digest>(text: String) -> String {
+pub fn get_hash<T: Digest>(text: String) -> Vec<u8> {
     let mut hasher = T::new();
     hasher.input(text);
-    hex::encode(hasher.result())
+    hasher.result().to_vec()
 }
 
 impl Middleware<crate::MiniserveConfig> for Auth {
@@ -110,18 +110,23 @@ impl Middleware<crate::MiniserveConfig> for Auth {
 mod tests {
     use super::*;
 
+    fn assert_hex_eq(expectation: &str, received: Vec<u8>) {
+        let bin = hex::decode(expectation).expect("Provided string is not a valid hex code");
+        assert_eq!(bin, received);
+    }
+
     #[test]
     fn get_hash_hex_sha256() {
-        let expectation = "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad".to_owned();
-        let received = get_hash_hex::<Sha256>("abc".to_owned());
-        assert_eq!(expectation, received);
+        let expectation = "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad";
+        let received = get_hash::<Sha256>("abc".to_owned());
+        assert_hex_eq(expectation, received);
     }
 
     #[test]
     fn get_hash_hex_sha512() {
-        let expectation = "ddaf35a193617abacc417349ae20413112e6fa4e89a97ea20a9eeee64b55d39a2192992a274fc1a836ba3c23a3feebbd454d4423643ce80e2a9ac94fa54ca49f".to_owned();
-        let received = get_hash_hex::<Sha512>("abc".to_owned());
-        assert_eq!(expectation, received);
+        let expectation = "ddaf35a193617abacc417349ae20413112e6fa4e89a97ea20a9eeee64b55d39a2192992a274fc1a836ba3c23a3feebbd454d4423643ce80e2a9ac94fa54ca49f";
+        let received = get_hash::<Sha512>("abc".to_owned());
+        assert_hex_eq(expectation, received);
     }
 
     fn create_auth_params(username: &str, password: &str) -> BasicAuthParams {
@@ -138,8 +143,8 @@ mod tests {
             username: username.to_owned(),
             password: match encrypt {
                 "plain" => Plain(password.to_owned()),
-                "sha256" => Sha256(get_hash_hex::<sha2::Sha256>(password.to_owned())),
-                "sha512" => Sha512(get_hash_hex::<sha2::Sha512>(password.to_owned())),
+                "sha256" => Sha256(get_hash::<sha2::Sha256>(password.to_owned())),
+                "sha512" => Sha512(get_hash::<sha2::Sha512>(password.to_owned())),
                 _ => panic!("Unknown encryption type")
             },
         }
