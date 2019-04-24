@@ -232,11 +232,10 @@ mod tests {
 
     #[test]
     fn parse_auth_excessive_length() {
-        let password = &"x".repeat(256);
-        let param = "username:".to_owned() + password;
+        let auth_string = format!("username:{}", "x".repeat(256));
 
         assert_eq!(
-            parse_auth(&*param).unwrap_err(),
+            parse_auth(&*auth_string).unwrap_err(),
             "Password length cannot exceed 255 characters".to_owned()
         );
     }
