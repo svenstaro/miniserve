@@ -1,7 +1,7 @@
 use actix_web::http::header;
 use actix_web::middleware::{Middleware, Response};
 use actix_web::{HttpRequest, HttpResponse, Result};
-use sha2::{Sha256, Sha512, Digest};
+use sha2::{Digest, Sha256, Sha512};
 
 pub struct Auth;
 
@@ -55,9 +55,15 @@ pub fn match_auth(basic_auth: BasicAuthParams, required_auth: &RequiredAuth) -> 
     }
 
     match &required_auth.password {
-        RequiredAuthPassword::Plain(ref required_password) => basic_auth.password == *required_password,
-        RequiredAuthPassword::Sha256(password_hash) => compare_hash::<Sha256>(basic_auth.password, password_hash),
-        RequiredAuthPassword::Sha512(password_hash) => compare_hash::<Sha512>(basic_auth.password, password_hash),
+        RequiredAuthPassword::Plain(ref required_password) => {
+            basic_auth.password == *required_password
+        }
+        RequiredAuthPassword::Sha256(password_hash) => {
+            compare_hash::<Sha256>(basic_auth.password, password_hash)
+        }
+        RequiredAuthPassword::Sha512(password_hash) => {
+            compare_hash::<Sha512>(basic_auth.password, password_hash)
+        }
     }
 }
 
@@ -145,7 +151,7 @@ mod tests {
                 "plain" => Plain(password.to_owned()),
                 "sha256" => Sha256(get_hash::<sha2::Sha256>(password.to_owned())),
                 "sha512" => Sha512(get_hash::<sha2::Sha512>(password.to_owned())),
-                _ => panic!("Unknown encryption type")
+                _ => panic!("Unknown encryption type"),
             },
         }
     }

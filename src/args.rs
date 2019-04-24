@@ -161,7 +161,7 @@ pub fn parse_args() -> crate::MiniserveConfig {
 mod tests {
     use super::*;
 
-    fn create_required_auth (username: &str, password: &str, encrypt: &str) -> auth::RequiredAuth {
+    fn create_required_auth(username: &str, password: &str, encrypt: &str) -> auth::RequiredAuth {
         use auth::*;
         use RequiredAuthPassword::*;
 
@@ -171,7 +171,7 @@ mod tests {
                 "plain" => Plain(password.to_owned()),
                 "sha256" => Sha256(hex::decode(password.to_owned()).unwrap()),
                 "sha512" => Sha512(hex::decode(password.to_owned()).unwrap()),
-                _ => panic!("Unknown encryption type")
+                _ => panic!("Unknown encryption type"),
             },
         }
     }
