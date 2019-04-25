@@ -115,31 +115,26 @@ impl Middleware<crate::MiniserveConfig> for Auth {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use rstest::rstest_parametrize;
 
-    fn assert_hex_eq(expectation: &str, received: Vec<u8>) {
-        let bin = hex::decode(expectation).expect("Provided string is not a valid hex code");
-        assert_eq!(bin, received);
-    }
-
-    #[test]
-    fn get_hash_hex_sha256() {
-        let expectation = "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad";
-        let received = get_hash::<Sha256>("abc".to_owned());
-        assert_hex_eq(expectation, received);
-    }
-
-    #[test]
-    fn get_hash_hex_sha512() {
-        let expectation = "ddaf35a193617abacc417349ae20413112e6fa4e89a97ea20a9eeee64b55d39a2192992a274fc1a836ba3c23a3feebbd454d4423643ce80e2a9ac94fa54ca49f";
-        let received = get_hash::<Sha512>("abc".to_owned());
-        assert_hex_eq(expectation, received);
-    }
-
-    fn create_auth_params(username: &str, password: &str) -> BasicAuthParams {
-        BasicAuthParams {
-            username: username.to_owned(),
-            password: password.to_owned(),
+    fn get_hash_func(name: &str) -> impl FnOnce(String) -> Vec<u8> {
+        match name {
+            "sha256" => get_hash::<Sha256>,
+            "sha512" => get_hash::<Sha512>,
+            _ => panic!("Invalid hash method"),
         }
+    }
+
+    #[rstest_parametrize(
+        password, hash_method, hash,
+        case("abc", "sha256", "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"),
+        case("abc", "sha512", "ddaf35a193617abacc417349ae20413112e6fa4e89a97ea20a9eeee64b55d39a2192992a274fc1a836ba3c23a3feebbd454d4423643ce80e2a9ac94fa54ca49f"),
+    )]
+    fn test_get_hash(password: &str, hash_method: &str, hash: &str) {
+        let hash_func = get_hash_func(hash_method);
+        let expected = hex::decode(hash).expect("Provided hash is not a valid hex code");
+        let received = hash_func(password.to_owned());
+        assert_eq!(received, expected);
     }
 
     fn create_required_auth(username: &str, password: &str, encrypt: &str) -> RequiredAuth {
@@ -156,51 +151,32 @@ mod tests {
         }
     }
 
-    #[test]
-    fn match_auth_plain_password_should_pass() {
-        assert!(match_auth(
-            create_auth_params("obi", "hello there"),
-            &create_required_auth("obi", "hello there", "plain"),
-        ));
-    }
-
-    #[test]
-    fn match_auth_plain_password_should_fail() {
-        assert!(!match_auth(
-            create_auth_params("obi", "hello there"),
-            &create_required_auth("obi", "hi!", "plain"),
-        ));
-    }
-
-    #[test]
-    fn match_auth_sha256_password_should_pass() {
-        assert!(match_auth(
-            create_auth_params("obi", "hello there"),
-            &create_required_auth("obi", "hello there", "sha256"),
-        ));
-    }
-
-    #[test]
-    fn match_auth_sha256_password_should_fail() {
-        assert!(!match_auth(
-            create_auth_params("obi", "hello there"),
-            &create_required_auth("obi", "hi!", "sha256"),
-        ));
-    }
-
-    #[test]
-    fn match_auth_sha512_password_should_pass() {
-        assert!(match_auth(
-            create_auth_params("obi", "hello there"),
-            &create_required_auth("obi", "hello there", "sha512"),
-        ));
-    }
-
-    #[test]
-    fn match_auth_sha512_password_should_fail() {
-        assert!(!match_auth(
-            create_auth_params("obi", "hello there"),
-            &create_required_auth("obi", "hi!", "sha512"),
-        ));
+    #[rstest_parametrize(
+        should_pass, param_username, param_password, required_username, required_password, encrypt,
+        case(true, "obi", "hello there", "obi", "hello there", "plain"),
+        case(false, "obi", "hello there", "obi", "hi!", "plain"),
+        case(true, "obi", "hello there", "obi", "hello there", "sha256"),
+        case(false, "obi", "hello there", "obi", "hi!", "sha256"),
+        case(true, "obi", "hello there", "obi", "hello there", "sha512"),
+        case(false, "obi", "hello there", "obi", "hi!", "sha512"),
+    )]
+    fn test_auth(
+        should_pass: bool,
+        param_username: &str,
+        param_password: &str,
+        required_username: &str,
+        required_password: &str,
+        encrypt: &str,
+    ) {
+        assert_eq!(
+            match_auth(
+                BasicAuthParams {
+                    username: param_username.to_owned(),
+                    password: param_password.to_owned(),
+                },
+                &create_required_auth(required_username, required_password, encrypt),
+            ),
+            should_pass,
+        )
     }
 }

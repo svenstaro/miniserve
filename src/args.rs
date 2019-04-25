@@ -160,6 +160,7 @@ pub fn parse_args() -> crate::MiniserveConfig {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use rstest::rstest_parametrize;
 
     fn create_required_auth(username: &str, password: &str, encrypt: &str) -> auth::RequiredAuth {
         use auth::*;
@@ -176,67 +177,35 @@ mod tests {
         }
     }
 
-    #[test]
-    fn parse_auth_plain() -> Result<(), String> {
+    #[rstest_parametrize(
+        auth_string, username, password, encrypt,
+        case("username:password", "username", "password", "plain"),
+        case("username:sha256:abcd", "username", "abcd", "sha256"),
+        case("username:sha512:abcd", "username", "abcd", "sha512")
+    )]
+    fn parse_auth_valid(auth_string: &str, username: &str, password: &str, encrypt: &str) {
         assert_eq!(
-            parse_auth("username:password")?,
-            create_required_auth("username", "password", "plain")
-        );
-
-        Ok(())
-    }
-
-    #[test]
-    fn parse_auth_sha256() -> Result<(), String> {
-        assert_eq!(
-            parse_auth("username:sha256:abcd")?,
-            create_required_auth("username", "abcd", "sha256")
-        );
-
-        Ok(())
-    }
-
-    #[test]
-    fn parse_auth_sha512() -> Result<(), String> {
-        assert_eq!(
-            parse_auth("username:sha512:abcd")?,
-            create_required_auth("username", "abcd", "sha512")
-        );
-
-        Ok(())
-    }
-
-    #[test]
-    fn parse_auth_invalid_syntax() {
-        assert_eq!(
-            parse_auth("foo").unwrap_err(),
-            "Invalid credentials string, expected format is username:password".to_owned()
+            parse_auth(auth_string).unwrap(),
+            create_required_auth(username, password, encrypt),
         );
     }
 
-    #[test]
-    fn parse_auth_invalid_hash_method() {
-        assert_eq!(
-            parse_auth("username:blahblah:abcd").unwrap_err(),
-            "Invalid hash method, only accept either sha256 or sha512".to_owned()
-        );
-    }
-
-    #[test]
-    fn parse_auth_invalid_hash_string() {
-        assert_eq!(
-            parse_auth("username:sha256:invalid").unwrap_err(),
-            "Hash string is not a valid hex code".to_owned()
-        );
-    }
-
-    #[test]
-    fn parse_auth_excessive_length() {
-        let auth_string = format!("username:{}", "x".repeat(256));
-
-        assert_eq!(
-            parse_auth(&*auth_string).unwrap_err(),
-            "Password length cannot exceed 255 characters".to_owned()
-        );
+    #[rstest_parametrize(
+        auth_string, err_msg,
+        case(
+            "foo",
+            "Invalid credentials string, expected format is username:password"
+        ),
+        case(
+            "username:blahblah:abcd",
+            "Invalid hash method, only accept either sha256 or sha512"
+        ),
+        case(
+            "username:sha256:invalid",
+            "Hash string is not a valid hex code"
+        ),
+    )]
+    fn parse_auth_invalid(auth_string: &str, err_msg: &str) {
+        assert_eq!(parse_auth(auth_string).unwrap_err(), err_msg.to_owned(),);
     }
 }
