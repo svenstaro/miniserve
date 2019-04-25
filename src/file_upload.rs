@@ -122,10 +122,11 @@ fn handle_multipart(
 /// invalid.
 /// This method returns future.
 pub fn upload_file(req: &HttpRequest<crate::MiniserveConfig>) -> FutureResponse<HttpResponse> {
-    let return_path: String = req.headers()[header::REFERER]
-        .to_str()
-        .unwrap_or("/")
-        .to_owned();
+    let return_path = if let Some(header) = req.headers().get(header::REFERER) {
+        header.to_str().unwrap_or("/").to_owned()
+    } else {
+        "/".to_string()
+    };
     let app_root_dir = if let Ok(dir) = req.state().path.canonicalize() {
         dir
     } else {

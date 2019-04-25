@@ -241,9 +241,10 @@ fn configure_app(app: App<MiniserveConfig>) -> App<MiniserveConfig> {
         let random_route = app.state().random_route.clone();
         let default_color_scheme = app.state().default_color_scheme.clone();
         let file_upload = app.state().file_upload;
-        upload_route = match app.state().random_route.clone() {
-            Some(random_route) => format!("/{}/upload", random_route),
-            None => "/upload".to_string(),
+        upload_route = if let Some(random_route) = app.state().random_route.clone() {
+            format!("/{}/upload", random_route)
+        } else {
+            "/upload".to_string()
         };
         if path.is_file() {
             None
