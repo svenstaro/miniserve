@@ -165,13 +165,18 @@ mod tests {
     }
 
     #[rstest_parametrize(
-        should_pass, param_username, param_password, required_username, required_password, encrypt,
+        should_pass,
+        param_username,
+        param_password,
+        required_username,
+        required_password,
+        encrypt,
         case(true, "obi", "hello there", "obi", "hello there", "plain"),
         case(false, "obi", "hello there", "obi", "hi!", "plain"),
         case(true, "obi", "hello there", "obi", "hello there", "sha256"),
         case(false, "obi", "hello there", "obi", "hi!", "sha256"),
         case(true, "obi", "hello there", "obi", "hello there", "sha512"),
-        case(false, "obi", "hello there", "obi", "hi!", "sha512"),
+        case(false, "obi", "hello there", "obi", "hi!", "sha512")
     )]
     fn test_auth(
         should_pass: bool,

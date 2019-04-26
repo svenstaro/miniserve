@@ -33,7 +33,10 @@ pub enum ContextualErrorKind {
     InvalidAuthFormat,
 
     /// This error might occure if the hash method is neither sha256 nor sha512
-    #[fail(display = "{} is not a valid hashing method. Expected sha256 or sha512", _0)]
+    #[fail(
+        display = "{} is not a valid hashing method. Expected sha256 or sha512",
+        _0
+    )]
     InvalidHashMethod(String),
 
     /// This error might occur if the HTTP auth hash password is not a valid hex code
