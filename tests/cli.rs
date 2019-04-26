@@ -3,9 +3,9 @@ use assert_fs::fixture::TempDir;
 use assert_fs::prelude::*;
 use clap::{crate_name, crate_version};
 use port_check::free_local_port;
-use pretty_assertions::assert_eq;
 use reqwest;
 use reqwest::multipart;
+use rstest::rstest;
 use select::document::Document;
 use select::predicate::{Attr, Text};
 use std::process::{Command, Stdio};
@@ -17,17 +17,24 @@ type Error = Box<std::error::Error>;
 static FILES: &[&str] = &["test.txt", "test.html", "test.mkv"];
 
 /// Test fixture which creates a temporary directory with a few files inside.
-pub fn tmpdir() -> Result<TempDir, Error> {
-    let tmpdir = assert_fs::TempDir::new()?;
+pub fn tmpdir() -> TempDir {
+    let tmpdir = assert_fs::TempDir::new().expect("Couldn't create a temp dir for tests");
     for &file in FILES {
-        tmpdir.child(file).write_str("Test Hello Yes")?;
+        tmpdir
+            .child(file)
+            .write_str("Test Hello Yes")
+            .expect("Couldn't write to file");
     }
-    Ok(tmpdir)
+    tmpdir
 }
 
-#[test]
-fn serves_requests_with_no_options() -> Result<(), Error> {
-    let tmpdir = tmpdir()?;
+/// Get a free port.
+pub fn port() -> u16 {
+    free_local_port().expect("Couldn't find a free local port")
+}
+
+#[rstest]
+fn serves_requests_with_no_options(tmpdir: TempDir) -> Result<(), Error> {
     let mut child = Command::cargo_bin("miniserve")?
         .arg(tmpdir.path())
         .stdout(Stdio::null())
@@ -46,11 +53,8 @@ fn serves_requests_with_no_options() -> Result<(), Error> {
     Ok(())
 }
 
-#[test]
-fn serves_requests_with_non_default_port() -> Result<(), Error> {
-    let tmpdir = tmpdir()?;
-
-    let port = free_local_port().unwrap();
+#[rstest]
+fn serves_requests_with_non_default_port(tmpdir: TempDir, port: u16) -> Result<(), Error> {
     let mut child = Command::cargo_bin("miniserve")?
         .arg(tmpdir.path())
         .arg("-p")
@@ -71,11 +75,8 @@ fn serves_requests_with_non_default_port() -> Result<(), Error> {
     Ok(())
 }
 
-#[test]
-fn auth_works() -> Result<(), Error> {
-    let tmpdir = tmpdir()?;
-
-    let port = free_local_port().unwrap();
+#[rstest]
+fn auth_works(tmpdir: TempDir, port: u16) -> Result<(), Error> {
     let mut child = Command::cargo_bin("miniserve")?
         .arg(tmpdir.path())
         .arg("-p")
@@ -103,13 +104,10 @@ fn auth_works() -> Result<(), Error> {
     Ok(())
 }
 
-#[test]
-fn uploading_files_works() -> Result<(), Error> {
-    let tmpdir = tmpdir()?;
-
+#[rstest]
+fn uploading_files_works(tmpdir: TempDir, port: u16) -> Result<(), Error> {
     let test_file_name = "uploaded test file.txt";
 
-    let port = free_local_port().unwrap();
     let mut child = Command::cargo_bin("miniserve")?
         .arg(tmpdir.path())
         .arg("-p")

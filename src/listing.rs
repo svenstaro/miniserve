@@ -263,10 +263,10 @@ pub fn directory_listing<S>(
                     .body(Body::Streaming(Box::new(once(Ok(content))))))
             }
             Err(err) => {
-                errors::print_error_chain(err);
+                errors::log_error_chain(err.to_string());
                 Ok(HttpResponse::Ok()
                     .status(http::StatusCode::INTERNAL_SERVER_ERROR)
-                    .body(""))
+                    .body(renderer::render_error(&err.to_string(), serve_path).into_string()))
             }
         }
     } else {

@@ -47,7 +47,7 @@ pub fn page(
                             form id="file_submit" action={(upload_route) "?path=" (current_dir)} method="POST" enctype="multipart/form-data" {
                                 p { "Select a file to upload or drag it anywhere into the window" }
                                 div {
-                                    input#file-input type="file" name="file_to_upload" {}
+                                    input#file-input type="file" name="file_to_upload" required="" {}
                                     button type="submit" { "Upload file" }
                                 }
                             }
@@ -760,11 +760,10 @@ fn humanize_systemtime(src_time: Option<SystemTime>) -> Option<String> {
         .map(|duration| HumanTime::from(duration).to_text_en(Accuracy::Rough, Tense::Past))
 }
 
-/// Renders error page when file uploading fails
-pub fn file_upload_error(error_description: &str, return_address: &str) -> Markup {
+/// Renders an error on the webpage
+pub fn render_error(error_description: &str, return_address: &str) -> Markup {
     html! {
-        h1 { "File uploading failed" }
-        p { (error_description) }
+        pre { (error_description) }
         a href=(return_address) {
             "Go back to file listing"
         }

@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use structopt::StructOpt;
 
 use crate::auth;
+use crate::errors::{ContextualError, ContextualErrorKind};
 use crate::themes;
 
 /// Possible characters for random routes
@@ -76,38 +77,44 @@ fn parse_interface(src: &str) -> Result<IpAddr, std::net::AddrParseError> {
 }
 
 /// Checks wether the auth string is valid, i.e. it follows the syntax username:password
-fn parse_auth(src: &str) -> Result<auth::RequiredAuth, String> {
+fn parse_auth(src: &str) -> Result<auth::RequiredAuth, ContextualError> {
     let mut split = src.splitn(3, ':');
-    let errmsg = "Invalid credentials string, expected format is username:password".to_owned();
+    let invalid_auth_format = Err(
+        ContextualError::new(ContextualErrorKind::InvalidAuthFormat)
+    );
 
     let username = match split.next() {
         Some(username) => username,
-        None => return Err(errmsg),
+        None => return invalid_auth_format,
     };
 
     let second_part = match split.next() {
         // This allows empty passwords, as the spec does not forbid it
         Some(password) => password,
-        None => return Err(errmsg),
+        None => return invalid_auth_format,
     };
 
     let password = if let Some(hash_hex) = split.next() {
         let hash_bin = match hex::decode(hash_hex) {
             Ok(hash_bin) => hash_bin,
-            _ => return Err("Hash string is not a valid hex code".to_owned()),
+            _ => return Err(ContextualError::new(ContextualErrorKind::InvalidPasswordHash)),
         };
 
         match second_part {
             "sha256" => auth::RequiredAuthPassword::Sha256(hash_bin.to_owned()),
             "sha512" => auth::RequiredAuthPassword::Sha512(hash_bin.to_owned()),
-            _ => return Err("Invalid hash method, only accept either sha256 or sha512".to_owned()),
+            _ => {
+                return Err(ContextualError::new(
+                    ContextualErrorKind::InvalidHashMethod(second_part.to_owned())
+                ))
+            },
         }
     } else {
         // To make it Windows-compatible, the password needs to be shorter than 255 characters.
         // After 255 characters, Windows will truncate the value.
         // As for the username, the spec does not mention a limit in length
         if second_part.len() > 255 {
-            return Err("Password length cannot exceed 255 characters".to_owned());
+            return Err(ContextualError::new(ContextualErrorKind::PasswordTooLongError));
         }
 
         auth::RequiredAuthPassword::Plain(second_part.to_owned())
@@ -194,18 +201,19 @@ mod tests {
         auth_string, err_msg,
         case(
             "foo",
-            "Invalid credentials string, expected format is username:password"
+            "Invalid format for credentials string. Expected username:password, username:sha256:hash or username:sha512:hash"
         ),
         case(
             "username:blahblah:abcd",
-            "Invalid hash method, only accept either sha256 or sha512"
+            "blahblah is not a valid hashing method. Expected sha256 or sha512"
         ),
         case(
             "username:sha256:invalid",
-            "Hash string is not a valid hex code"
+            "Invalid format for password hash. Expected hex code"
         ),
     )]
     fn parse_auth_invalid(auth_string: &str, err_msg: &str) {
-        assert_eq!(parse_auth(auth_string).unwrap_err(), err_msg.to_owned(),);
+        let err = parse_auth(auth_string).unwrap_err();
+        assert_eq!(format!("{}", err), err_msg.to_owned());
     }
 }
