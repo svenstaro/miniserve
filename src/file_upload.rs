@@ -3,21 +3,15 @@ use actix_web::{
     HttpResponse, Query,
 };
 use futures::{future, future::FutureResult, Future, Stream};
-use serde::Deserialize;
 use std::{
     fs,
     io::Write,
     path::{Component, PathBuf},
 };
 
-use crate::errors::{self, ContextualErrorKind};
+use crate::errors::{self, ContextualError, ContextualErrorKind};
+use crate::listing::QueryParameters;
 use crate::renderer;
-
-/// Query parameters
-#[derive(Debug, Deserialize)]
-struct QueryParameters {
-    path: PathBuf,
-}
 
 /// Create future to save file.
 fn save_file(
@@ -127,31 +121,49 @@ pub fn upload_file(req: &HttpRequest<crate::MiniserveConfig>) -> FutureResponse<
     } else {
         "/".to_string()
     };
-    let app_root_dir = if let Ok(dir) = req.state().path.canonicalize() {
-        dir
-    } else {
-        return Box::new(create_error_response("Internal server error", &return_path));
+
+    let app_root_dir = match req.state().path.canonicalize() {
+        Ok(dir) => dir,
+        Err(e) => {
+            let err = ContextualError::new(ContextualErrorKind::IOError(
+                "Failed to resolve path served by miniserve".to_string(),
+                e,
+            ));
+            return Box::new(create_error_response(&err.to_string(), &return_path));
+        }
     };
+
     let path = match Query::<QueryParameters>::extract(req) {
         Ok(query) => {
-            if let Ok(stripped_path) = query.path.strip_prefix(Component::RootDir) {
-                stripped_path.to_owned()
+            if let Some(path) = query.path.clone() {
+                if let Ok(stripped_path) = path.strip_prefix(Component::RootDir) {
+                    stripped_path.to_owned()
+                } else {
+                    path.clone()
+                }
             } else {
-                query.path.clone()
+                let err = ContextualError::new(ContextualErrorKind::InvalidHTTPRequestError(
+                    "Missing query parameter 'path'".to_string(),
+                ));
+                return Box::new(create_error_response(&err.to_string(), &return_path));
             }
         }
-        Err(_) => {
-            return Box::new(create_error_response(
-                "Unspecified parameter path",
-                &return_path,
-            ))
+        Err(e) => {
+            let err =
+                ContextualError::new(ContextualErrorKind::InvalidHTTPRequestError(e.to_string()));
+            return Box::new(create_error_response(&err.to_string(), &return_path));
         }
     };
 
     // If the target path is under the app root directory, save the file.
     let target_dir = match &app_root_dir.clone().join(path).canonicalize() {
         Ok(path) if path.starts_with(&app_root_dir) => path.clone(),
-        _ => return Box::new(create_error_response("Invalid path", &return_path)),
+        _ => {
+            let err = ContextualError::new(ContextualErrorKind::InvalidHTTPRequestError(
+                "Invalid value for 'path' parameter".to_string(),
+            ));
+            return Box::new(create_error_response(&err.to_string(), &return_path));
+        }
     };
     let overwrite_files = req.state().overwrite_files;
     Box::new(

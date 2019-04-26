@@ -5,7 +5,7 @@ use htmlescape::encode_minimal as escape_html_entity;
 use percent_encoding::{utf8_percent_encode, DEFAULT_ENCODE_SET};
 use serde::Deserialize;
 use std::io;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 use strum_macros::{Display, EnumString};
 
@@ -16,7 +16,8 @@ use crate::themes;
 
 /// Query parameters
 #[derive(Deserialize)]
-struct QueryParameters {
+pub struct QueryParameters {
+    pub path: Option<PathBuf>,
     sort: Option<SortingMethod>,
     order: Option<SortingOrder>,
     download: Option<archive::CompressionMethod>,

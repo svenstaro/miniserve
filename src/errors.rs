@@ -68,6 +68,10 @@ pub enum ContextualErrorKind {
         _0
     )]
     HTTPAuthenticationError(Box<ContextualError>),
+
+    /// This error might occur when an HTTP request is invalid
+    #[fail(display = "Invalid HTTP request\ncaused by: {}", _0)]
+    InvalidHTTPRequestError(String),
 }
 
 pub fn log_error_chain(description: String) {
