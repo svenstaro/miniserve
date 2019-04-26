@@ -97,9 +97,10 @@ fn parse_auth(src: &str) -> Result<auth::RequiredAuth, ContextualError> {
     };
 
     let password = if let Some(hash_hex) = split.next() {
-        let hash_bin = match hex::decode(hash_hex) {
-            Ok(hash_bin) => hash_bin,
-            _ => return Err(ContextualError::new(ContextualErrorKind::InvalidPasswordHash)),
+        let hash_bin = if let Ok(hash_bin) = hex::decode(hash_hex) {
+            hash_bin
+        } else {
+            return Err(ContextualError::new(ContextualErrorKind::InvalidPasswordHash))
         };
 
         match second_part {
