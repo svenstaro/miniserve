@@ -3,7 +3,7 @@ use structopt::clap::arg_enum;
 use strum_macros::EnumIter;
 
 arg_enum! {
-    #[derive(PartialEq, Deserialize, Clone, EnumIter)]
+    #[derive(PartialEq, Deserialize, Clone, EnumIter, Copy)]
     #[serde(rename_all = "lowercase")]
     pub enum ColorScheme {
         Archlinux,
@@ -17,8 +17,8 @@ impl ColorScheme {
     /// Returns the URL-compatible name of a color scheme
     /// This must correspond to the name of the variant, in lowercase
     /// See https://github.com/svenstaro/miniserve/pull/55 for explanations
-    pub fn to_slug(&self) -> String {
-        match &self {
+    pub fn to_slug(self) -> String {
+        match self {
             ColorScheme::Archlinux => "archlinux",
             ColorScheme::Zenburn => "zenburn",
             ColorScheme::Monokai => "monokai",
@@ -28,8 +28,8 @@ impl ColorScheme {
     }
 
     /// Returns wether a color scheme is dark
-    pub fn is_dark(&self) -> bool {
-        match &self {
+    pub fn is_dark(self) -> bool {
+        match self {
             ColorScheme::Archlinux => true,
             ColorScheme::Zenburn => true,
             ColorScheme::Monokai => true,

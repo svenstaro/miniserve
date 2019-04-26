@@ -25,7 +25,7 @@ pub struct QueryParameters {
 }
 
 /// Available sorting methods
-#[derive(Deserialize, Clone, EnumString, Display)]
+#[derive(Deserialize, Clone, EnumString, Display, Copy)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum SortingMethod {
@@ -40,7 +40,7 @@ pub enum SortingMethod {
 }
 
 /// Available sorting orders
-#[derive(Deserialize, Clone, EnumString, Display)]
+#[derive(Deserialize, Clone, EnumString, Display, Copy)]
 pub enum SortingOrder {
     /// Ascending order
     #[serde(alias = "asc")]
@@ -146,10 +146,10 @@ pub fn directory_listing<S>(
     let (sort_method, sort_order, download, color_scheme) =
         if let Ok(query) = Query::<QueryParameters>::extract(req) {
             (
-                query.sort.clone(),
-                query.order.clone(),
+                query.sort,
+                query.order,
                 query.download.clone(),
-                query.theme.clone(),
+                query.theme,
             )
         } else {
             (None, None, None, None)
@@ -211,7 +211,7 @@ pub fn directory_listing<S>(
         }
     }
 
-    if let Some(sorting_method) = &sort_method {
+    if let Some(sorting_method) = sort_method {
         match sorting_method {
             SortingMethod::Name => entries
                 .sort_by(|e1, e2| alphanumeric_sort::compare_str(e1.name.clone(), e2.name.clone())),
@@ -235,13 +235,13 @@ pub fn directory_listing<S>(
         entries.sort_by(|e1, e2| alphanumeric_sort::compare_str(e1.name.clone(), e2.name.clone()))
     }
 
-    if let Some(sorting_order) = &sort_order {
+    if let Some(sorting_order) = sort_order {
         if let SortingOrder::Descending = sorting_order {
             entries.reverse()
         }
     }
 
-    let color_scheme = color_scheme.unwrap_or_else(|| default_color_scheme.clone());
+    let color_scheme = color_scheme.unwrap_or_else(|| default_color_scheme);
 
     if let Some(compression_method) = &download {
         log::info!(

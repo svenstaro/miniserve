@@ -239,7 +239,7 @@ fn configure_app(app: App<MiniserveConfig>) -> App<MiniserveConfig> {
         let path = &app.state().path;
         let no_symlinks = app.state().no_symlinks;
         let random_route = app.state().random_route.clone();
-        let default_color_scheme = app.state().default_color_scheme.clone();
+        let default_color_scheme = app.state().default_color_scheme;
         let file_upload = app.state().file_upload;
         upload_route = if let Some(random_route) = app.state().random_route.clone() {
             format!("/{}/upload", random_route)
@@ -261,7 +261,7 @@ fn configure_app(app: App<MiniserveConfig>) -> App<MiniserveConfig> {
                             no_symlinks,
                             file_upload,
                             random_route.clone(),
-                            default_color_scheme.clone(),
+                            default_color_scheme,
                             u_r.clone(),
                         )
                     }),

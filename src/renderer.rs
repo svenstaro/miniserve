@@ -23,7 +23,7 @@ pub fn page(
     current_dir: &str,
 ) -> Markup {
     html! {
-        (page_header(serve_path, &color_scheme, file_upload))
+        (page_header(serve_path, color_scheme, file_upload))
         body#drop-container {
             @if file_upload {
                 div.drag-form {
@@ -32,7 +32,7 @@ pub fn page(
                     }
                 }
             }
-            (color_scheme_selector(&sort_method, &sort_order, &color_scheme, &default_color_scheme, serve_path))
+            (color_scheme_selector(sort_method, sort_order, color_scheme, default_color_scheme, serve_path))
             div.container {
                 span#top { }
                 h1.title { "Index of " (serve_path) }
@@ -56,9 +56,9 @@ pub fn page(
                 }
                 table {
                     thead {
-                        th { (build_link("name", "Name", &sort_method, &sort_order, &color_scheme, &default_color_scheme)) }
-                        th { (build_link("size", "Size", &sort_method, &sort_order, &color_scheme, &default_color_scheme)) }
-                        th { (build_link("date", "Last modification", &sort_method, &sort_order, &color_scheme, &default_color_scheme)) }
+                        th { (build_link("name", "Name", sort_method, sort_order, color_scheme, default_color_scheme)) }
+                        th { (build_link("size", "Size", sort_method, sort_order, color_scheme, default_color_scheme)) }
+                        th { (build_link("date", "Last modification", sort_method, sort_order, color_scheme, default_color_scheme)) }
                     }
                     tbody {
                         @if !is_root {
@@ -66,7 +66,7 @@ pub fn page(
                                 tr {
                                     td colspan="3" {
                                         span.root-chevron { (chevron_left()) }
-                                        a.root href=(parametrized_link(&parent, &sort_method, &sort_order, &color_scheme, &default_color_scheme)) {
+                                        a.root href=(parametrized_link(&parent, sort_method, sort_order, color_scheme, default_color_scheme)) {
                                             "Parent directory"
                                         }
                                     }
@@ -74,7 +74,7 @@ pub fn page(
                             }
                         }
                         @for entry in entries {
-                            (entry_row(entry, &sort_method, &sort_order, &color_scheme, &default_color_scheme))
+                            (entry_row(entry, sort_method, sort_order, color_scheme, default_color_scheme))
                         }
                     }
                 }
@@ -88,10 +88,10 @@ pub fn page(
 
 /// Partial: color scheme selector
 fn color_scheme_selector(
-    sort_method: &Option<SortingMethod>,
-    sort_order: &Option<SortingOrder>,
-    active_color_scheme: &ColorScheme,
-    default_color_scheme: &ColorScheme,
+    sort_method: Option<SortingMethod>,
+    sort_order: Option<SortingOrder>,
+    active_color_scheme: ColorScheme,
+    default_color_scheme: ColorScheme,
     serve_path: &str,
 ) -> Markup {
     html! {
@@ -103,13 +103,13 @@ fn color_scheme_selector(
                     }
                     ul {
                         @for color_scheme in ColorScheme::iter() {
-                            @if active_color_scheme == &color_scheme {
+                            @if active_color_scheme == color_scheme {
                                 li.active {
-                                    (color_scheme_link(&sort_method, &sort_order, &color_scheme, &default_color_scheme, serve_path))
+                                    (color_scheme_link(sort_method, sort_order, color_scheme, default_color_scheme, serve_path))
                                 }
                             } @else {
                                 li {
-                                    (color_scheme_link(&sort_method, &sort_order, &color_scheme, &default_color_scheme, serve_path))
+                                    (color_scheme_link(sort_method, sort_order, color_scheme, default_color_scheme, serve_path))
                                 }
                             }
                         }
@@ -122,18 +122,18 @@ fn color_scheme_selector(
 
 /// Partial: color scheme link
 fn color_scheme_link(
-    sort_method: &Option<SortingMethod>,
-    sort_order: &Option<SortingOrder>,
-    color_scheme: &ColorScheme,
-    default_color_scheme: &ColorScheme,
+    sort_method: Option<SortingMethod>,
+    sort_order: Option<SortingOrder>,
+    color_scheme: ColorScheme,
+    default_color_scheme: ColorScheme,
     serve_path: &str,
 ) -> Markup {
     let link = parametrized_link(
         serve_path,
-        &sort_method,
-        &sort_order,
-        &color_scheme,
-        &default_color_scheme,
+        sort_method,
+        sort_order,
+        color_scheme,
+        default_color_scheme,
     );
     let title = format!("Switch to {} theme", color_scheme);
 
@@ -165,10 +165,10 @@ fn archive_button(compress_method: CompressionMethod) -> Markup {
 /// If they are set, adds query parameters to links to keep them across pages
 fn parametrized_link(
     link: &str,
-    sort_method: &Option<SortingMethod>,
-    sort_order: &Option<SortingOrder>,
-    color_scheme: &ColorScheme,
-    default_color_scheme: &ColorScheme,
+    sort_method: Option<SortingMethod>,
+    sort_order: Option<SortingOrder>,
+    color_scheme: ColorScheme,
+    default_color_scheme: ColorScheme,
 ) -> String {
     if let Some(method) = sort_method {
         if let Some(order) = sort_order {
@@ -193,10 +193,10 @@ fn parametrized_link(
 fn build_link(
     name: &str,
     title: &str,
-    sort_method: &Option<SortingMethod>,
-    sort_order: &Option<SortingOrder>,
-    color_scheme: &ColorScheme,
-    default_color_scheme: &ColorScheme,
+    sort_method: Option<SortingMethod>,
+    sort_order: Option<SortingOrder>,
+    color_scheme: ColorScheme,
+    default_color_scheme: ColorScheme,
 ) -> Markup {
     let mut link = format!("?sort={}&order=asc", name);
     let mut help = format!("Sort by {} in ascending order", name);
@@ -231,17 +231,17 @@ fn build_link(
 /// Partial: row for an entry
 fn entry_row(
     entry: Entry,
-    sort_method: &Option<SortingMethod>,
-    sort_order: &Option<SortingOrder>,
-    color_scheme: &ColorScheme,
-    default_color_scheme: &ColorScheme,
+    sort_method: Option<SortingMethod>,
+    sort_order: Option<SortingOrder>,
+    color_scheme: ColorScheme,
+    default_color_scheme: ColorScheme,
 ) -> Markup {
     html! {
         tr {
             td {
                 p {
                     @if entry.is_dir() {
-                        a.directory href=(parametrized_link(&entry.link, &sort_method, &sort_order, &color_scheme, &default_color_scheme)) {
+                        a.directory href=(parametrized_link(&entry.link, sort_method, sort_order, color_scheme, default_color_scheme)) {
                             (entry.name) "/"
                         }
                     } @else if entry.is_file() {
@@ -256,7 +256,7 @@ fn entry_row(
                             }
                         }
                     } @else if entry.is_symlink() {
-                        a.symlink href=(parametrized_link(&entry.link, &sort_method, &sort_order, &color_scheme, &default_color_scheme)) {
+                        a.symlink href=(parametrized_link(&entry.link, sort_method, sort_order, color_scheme, default_color_scheme)) {
                            (entry.name)  span.symlink-symbol { "⇢" }
                         }
                     }
@@ -286,8 +286,8 @@ fn entry_row(
 }
 
 /// Partial: CSS
-fn css(color_scheme: &ColorScheme) -> Markup {
-    let theme = color_scheme.clone().get_theme();
+fn css(color_scheme: ColorScheme) -> Markup {
+    let theme = color_scheme.get_theme();
 
     let css = format!("
      html {{
@@ -686,7 +686,7 @@ fn chevron_down() -> Markup {
 }
 
 /// Partial: page header
-fn page_header(serve_path: &str, color_scheme: &ColorScheme, file_upload: bool) -> Markup {
+fn page_header(serve_path: &str, color_scheme: ColorScheme, file_upload: bool) -> Markup {
     html! {
         (DOCTYPE)
         html {
@@ -694,7 +694,7 @@ fn page_header(serve_path: &str, color_scheme: &ColorScheme, file_upload: bool) 
             meta http-equiv="X-UA-Compatible" content="IE=edge";
             meta name="viewport" content="width=device-width, initial-scale=1";
             title { "Index of " (serve_path) }
-            style { (css(&color_scheme)) }
+            style { (css(color_scheme)) }
             @if file_upload {
                 (PreEscaped(r#"
                 <script>
