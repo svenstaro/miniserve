@@ -38,7 +38,8 @@ struct CLIArgs {
     )]
     interfaces: Vec<IpAddr>,
 
-    /// Set authentication (username:password, username:sha256:hash, or username:sha512:hash)
+    /// Set authentication. Currently supported formats:
+    /// username:password, username:sha256:hash, username:sha512:hash
     #[structopt(short = "a", long = "auth", parse(try_from_str = "parse_auth"))]
     auth: Option<auth::RequiredAuth>,
 
@@ -88,6 +89,7 @@ fn parse_auth(src: &str) -> Result<auth::RequiredAuth, ContextualError> {
         None => return invalid_auth_format,
     };
 
+    // second_part is either password in username:password or method in username:method:hash
     let second_part = match split.next() {
         // This allows empty passwords, as the spec does not forbid it
         Some(password) => password,
@@ -169,6 +171,7 @@ mod tests {
     use super::*;
     use rstest::rstest_parametrize;
 
+    /// Helper function that creates a `RequiredAuth` structure
     fn create_required_auth(username: &str, password: &str, encrypt: &str) -> auth::RequiredAuth {
         use auth::*;
         use RequiredAuthPassword::*;
@@ -209,6 +212,10 @@ mod tests {
         ),
         case(
             "username:sha256:invalid",
+            "Invalid format for password hash. Expected hex code"
+        ),
+        case(
+            "username:sha512:invalid",
             "Invalid format for password hash. Expected hex code"
         ),
     )]

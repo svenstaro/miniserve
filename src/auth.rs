@@ -15,6 +15,7 @@ pub struct BasicAuthParams {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+/// `password` field of `RequiredAuth`
 pub enum RequiredAuthPassword {
     Plain(String),
     Sha256(Vec<u8>),
@@ -22,7 +23,7 @@ pub enum RequiredAuthPassword {
 }
 
 #[derive(Clone, Debug, PartialEq)]
-/// Authentication structure to match BasicAuthParams against
+/// Authentication structure to match `BasicAuthParams` against
 pub struct RequiredAuth {
     pub username: String,
     pub password: RequiredAuthPassword,
@@ -54,6 +55,7 @@ pub fn parse_basic_auth(
     })
 }
 
+/// Verify authentication
 pub fn match_auth(basic_auth: BasicAuthParams, required_auth: &RequiredAuth) -> bool {
     if basic_auth.username != required_auth.username {
         return false;
@@ -72,10 +74,12 @@ pub fn match_auth(basic_auth: BasicAuthParams, required_auth: &RequiredAuth) -> 
     }
 }
 
+/// Return `true` if hashing of `password` by `T` algorithm equals to `hash`
 pub fn compare_hash<T: Digest>(password: String, hash: &Vec<u8>) -> bool {
     get_hash::<T>(password) == *hash
 }
 
+/// Get hash of a `text`
 pub fn get_hash<T: Digest>(text: String) -> Vec<u8> {
     let mut hasher = T::new();
     hasher.input(text);
@@ -124,6 +128,7 @@ mod tests {
     use super::*;
     use rstest::rstest_parametrize;
 
+    /// Return a hashing function corresponds to given name
     fn get_hash_func(name: &str) -> impl FnOnce(String) -> Vec<u8> {
         match name {
             "sha256" => get_hash::<Sha256>,
@@ -144,6 +149,7 @@ mod tests {
         assert_eq!(received, expected);
     }
 
+    /// Helper function that creates a `RequiredAuth` structure and encrypt `password` if necessary
     fn create_required_auth(username: &str, password: &str, encrypt: &str) -> RequiredAuth {
         use RequiredAuthPassword::*;
 
