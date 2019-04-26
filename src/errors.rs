@@ -27,8 +27,18 @@ pub enum ContextualErrorKind {
     InvalidPathError(String),
 
     /// This error might occur if the HTTP credential string does not respect the expected format
-    #[fail(display = "Invalid format for credentials string. Expected is username:format")]
+    #[fail(
+        display = "Invalid format for credentials string. Expected username:password, username:sha256:hash or username:sha512:hash"
+    )]
     InvalidAuthFormat,
+
+    /// This error might occure if the hash method is neither sha256 nor sha512
+    #[fail(display = "{} is not a valid hashing method. Expected sha256 or sha512", _0)]
+    InvalidHashMethod(String),
+
+    /// This error might occur if the HTTP auth hash password is not a valid hex code
+    #[fail(display = "Invalid format for password hash. Expected hex code")]
+    InvalidPasswordHash,
 
     /// This error might occur if the HTTP auth password exceeds 255 characters
     #[fail(display = "HTTP password length exceeds 255 characters")]
