@@ -2,12 +2,9 @@ use actix_web::http::header;
 use actix_web::middleware::{Middleware, Response};
 use actix_web::{HttpRequest, HttpResponse, Result};
 
-pub struct Auth;
+use crate::errors::{ContextualError, ContextualErrorKind};
 
-/// HTTP Basic authentication errors
-pub enum BasicAuthError {
-    Base64DecodeError,
-}
+pub struct Auth;
 
 #[derive(Clone, Debug)]
 /// HTTP Basic authentication parameters
@@ -19,9 +16,17 @@ pub struct BasicAuthParams {
 /// Decode a HTTP basic auth string into a tuple of username and password.
 pub fn parse_basic_auth(
     authorization_header: &header::HeaderValue,
-) -> Result<BasicAuthParams, BasicAuthError> {
-    let basic_removed = authorization_header.to_str().unwrap().replace("Basic ", "");
-    let decoded = base64::decode(&basic_removed).map_err(|_| BasicAuthError::Base64DecodeError)?;
+) -> Result<BasicAuthParams, ContextualError> {
+    let basic_removed = authorization_header
+        .to_str()
+        .map_err(|e| {
+            ContextualError::new(ContextualErrorKind::ParseError(
+                "HTTP authentication header".to_string(),
+                e.to_string(),
+            ))
+        })?
+        .replace("Basic ", "");
+    let decoded = base64::decode(&basic_removed).map_err(ContextualErrorKind::Base64DecodeError)?;
     let decoded_str = String::from_utf8_lossy(&decoded);
     let credentials: Vec<&str> = decoded_str.splitn(2, ':').collect();
 
@@ -44,11 +49,13 @@ impl Middleware<crate::MiniserveConfig> for Auth {
             if let Some(auth_headers) = req.headers().get(header::AUTHORIZATION) {
                 let auth_req = match parse_basic_auth(auth_headers) {
                     Ok(auth_req) => auth_req,
-                    Err(BasicAuthError::Base64DecodeError) => {
-                        return Ok(Response::Done(HttpResponse::BadRequest().body(format!(
-                            "Error decoding basic auth base64: '{}'",
-                            auth_headers.to_str().unwrap()
-                        ))));
+                    Err(err) => {
+                        let auth_err = ContextualError::new(
+                            ContextualErrorKind::HTTPAuthenticationError(Box::new(err)),
+                        );
+                        return Ok(Response::Done(
+                            HttpResponse::BadRequest().body(auth_err.to_string()),
+                        ));
                     }
                 };
                 if auth_req.username != required_auth.username
