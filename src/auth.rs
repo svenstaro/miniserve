@@ -3,7 +3,7 @@ use actix_web::middleware::{Middleware, Response};
 use actix_web::{HttpRequest, HttpResponse, Result};
 use sha2::{Digest, Sha256, Sha512};
 
-use crate::errors::{ContextualError, ContextualErrorKind};
+use crate::errors::ContextualError;
 
 pub struct Auth;
 
@@ -36,13 +36,10 @@ pub fn parse_basic_auth(
     let basic_removed = authorization_header
         .to_str()
         .map_err(|e| {
-            ContextualError::new(ContextualErrorKind::ParseError(
-                "HTTP authentication header".to_string(),
-                e.to_string(),
-            ))
+            ContextualError::ParseError("HTTP authentication header".to_string(), e.to_string())
         })?
         .replace("Basic ", "");
-    let decoded = base64::decode(&basic_removed).map_err(ContextualErrorKind::Base64DecodeError)?;
+    let decoded = base64::decode(&basic_removed).map_err(ContextualError::Base64DecodeError)?;
     let decoded_str = String::from_utf8_lossy(&decoded);
     let credentials: Vec<&str> = decoded_str.splitn(2, ':').collect();
 
@@ -97,9 +94,7 @@ impl Middleware<crate::MiniserveConfig> for Auth {
                 let auth_req = match parse_basic_auth(auth_headers) {
                     Ok(auth_req) => auth_req,
                     Err(err) => {
-                        let auth_err = ContextualError::new(
-                            ContextualErrorKind::HTTPAuthenticationError(Box::new(err)),
-                        );
+                        let auth_err = ContextualError::HTTPAuthenticationError(Box::new(err));
                         return Ok(Response::Done(
                             HttpResponse::BadRequest().body(auth_err.to_string()),
                         ));

@@ -46,7 +46,7 @@ Sometimes this is just a more practical and quick way than doing things properly
 - Easy to use
 - Just works: Correct MIME types handling out of the box
 - Single binary drop-in with no extra dependencies required
-- Authentication support with username and password
+- Authentication support with username and password (and hashed password)
 - Mega fast and highly parallel (thanks to [Rust](https://www.rust-lang.org/) and [Actix](https://actix.rs/))
 - Folder download (compressed in .tar.gz)
 - File uploading

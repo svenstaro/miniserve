@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use structopt::StructOpt;
 
 use crate::auth;
-use crate::errors::{ContextualError, ContextualErrorKind};
+use crate::errors::ContextualError;
 use crate::themes;
 
 /// Possible characters for random routes
@@ -80,7 +80,7 @@ fn parse_interface(src: &str) -> Result<IpAddr, std::net::AddrParseError> {
 /// Checks wether the auth string is valid, i.e. it follows the syntax username:password
 fn parse_auth(src: &str) -> Result<auth::RequiredAuth, ContextualError> {
     let mut split = src.splitn(3, ':');
-    let invalid_auth_format = Err(ContextualError::new(ContextualErrorKind::InvalidAuthFormat));
+    let invalid_auth_format = Err(ContextualError::InvalidAuthFormat);
 
     let username = match split.next() {
         Some(username) => username,
@@ -98,28 +98,20 @@ fn parse_auth(src: &str) -> Result<auth::RequiredAuth, ContextualError> {
         let hash_bin = if let Ok(hash_bin) = hex::decode(hash_hex) {
             hash_bin
         } else {
-            return Err(ContextualError::new(
-                ContextualErrorKind::InvalidPasswordHash,
-            ));
+            return Err(ContextualError::InvalidPasswordHash);
         };
 
         match second_part {
             "sha256" => auth::RequiredAuthPassword::Sha256(hash_bin.to_owned()),
             "sha512" => auth::RequiredAuthPassword::Sha512(hash_bin.to_owned()),
-            _ => {
-                return Err(ContextualError::new(
-                    ContextualErrorKind::InvalidHashMethod(second_part.to_owned()),
-                ))
-            }
+            _ => return Err(ContextualError::InvalidHashMethod(second_part.to_owned())),
         }
     } else {
         // To make it Windows-compatible, the password needs to be shorter than 255 characters.
         // After 255 characters, Windows will truncate the value.
         // As for the username, the spec does not mention a limit in length
         if second_part.len() > 255 {
-            return Err(ContextualError::new(
-                ContextualErrorKind::PasswordTooLongError,
-            ));
+            return Err(ContextualError::PasswordTooLongError);
         }
 
         auth::RequiredAuthPassword::Plain(second_part.to_owned())

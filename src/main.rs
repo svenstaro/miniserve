@@ -19,7 +19,7 @@ mod listing;
 mod renderer;
 mod themes;
 
-use crate::errors::{ContextualError, ContextualErrorKind};
+use crate::errors::ContextualError;
 
 #[derive(Clone)]
 /// Configuration of the Miniserve application
@@ -84,10 +84,7 @@ fn run() -> Result<(), ContextualError> {
             .path
             .symlink_metadata()
             .map_err(|e| {
-                ContextualError::new(ContextualErrorKind::IOError(
-                    "Failed to retrieve symlink's metadata".to_string(),
-                    e,
-                ))
+                ContextualError::IOError("Failed to retrieve symlink's metadata".to_string(), e)
             })?
             .file_type()
             .is_symlink()
@@ -117,10 +114,7 @@ fn run() -> Result<(), ContextualError> {
         .collect::<Vec<String>>();
 
     let canon_path = miniserve_config.path.canonicalize().map_err(|e| {
-        ContextualError::new(ContextualErrorKind::IOError(
-            "Failed to resolve path to be served".to_string(),
-            e,
-        ))
+        ContextualError::IOError("Failed to resolve path to be served".to_string(), e)
     })?;
     let path_string = canon_path.to_string_lossy();
 
@@ -135,20 +129,14 @@ fn run() -> Result<(), ContextualError> {
             "      Invoke with -h|--help to see options or invoke as `miniserve .` to hide this advice."
         );
         print!("Starting server in ");
-        io::stdout().flush().map_err(|e| {
-            ContextualError::new(ContextualErrorKind::IOError(
-                "Failed to write data".to_string(),
-                e,
-            ))
-        })?;
+        io::stdout()
+            .flush()
+            .map_err(|e| ContextualError::IOError("Failed to write data".to_string(), e))?;
         for c in "3… 2… 1… \n".chars() {
             print!("{}", c);
-            io::stdout().flush().map_err(|e| {
-                ContextualError::new(ContextualErrorKind::IOError(
-                    "Failed to write data".to_string(),
-                    e,
-                ))
-            })?;
+            io::stdout()
+                .flush()
+                .map_err(|e| ContextualError::IOError("Failed to write data".to_string(), e))?;
             thread::sleep(Duration::from_millis(500));
         }
     }
@@ -196,10 +184,10 @@ fn run() -> Result<(), ContextualError> {
             // Note that this should never fail, since CLI parsing succeeded
             // This means the format of each IP address is valid, and so is the port
             // Valid IpAddr + valid port == valid SocketAddr
-            return Err(ContextualError::new(ContextualErrorKind::ParseError(
+            return Err(ContextualError::ParseError(
                 "string as socket address".to_string(),
                 e.to_string(),
-            )));
+            ));
         }
     };
 
@@ -210,12 +198,7 @@ fn run() -> Result<(), ContextualError> {
             .configure(configure_app)
     })
     .bind(socket_addresses.as_slice())
-    .map_err(|e| {
-        ContextualError::new(ContextualErrorKind::IOError(
-            "Failed to bind server".to_string(),
-            e,
-        ))
-    })?
+    .map_err(|e| ContextualError::IOError("Failed to bind server".to_string(), e))?
     .shutdown_timeout(0)
     .start();
 
