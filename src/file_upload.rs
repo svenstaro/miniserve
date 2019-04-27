@@ -30,7 +30,7 @@ fn save_file(
         Ok(file) => file,
         Err(e) => {
             return Box::new(future::err(ContextualErrorKind::IOError(
-                format!("Failed to create file {}", file_path.display()),
+                format!("Failed to create {}", file_path.display()),
                 e,
             )));
         }

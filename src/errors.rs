@@ -34,7 +34,7 @@ pub enum ContextualErrorKind {
 
     /// This error might occure if the hash method is neither sha256 nor sha512
     #[fail(
-        display = "{} is not a valid hashing method. Expected sha256 or sha512",
+        display = "Invalid hashing method {}. Expected sha256 or sha512",
         _0
     )]
     InvalidHashMethod(String),
