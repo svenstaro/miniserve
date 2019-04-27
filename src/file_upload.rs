@@ -10,7 +10,7 @@ use std::{
     path::{Component, PathBuf},
 };
 
-use crate::errors::{self, ContextualErrorKind};
+use crate::errors::{self, ContextualError};
 use crate::renderer;
 
 /// Query parameters
@@ -24,9 +24,9 @@ fn save_file(
     field: multipart::Field<dev::Payload>,
     file_path: PathBuf,
     overwrite_files: bool,
-) -> Box<Future<Item = i64, Error = ContextualErrorKind>> {
+) -> Box<Future<Item = i64, Error = ContextualError>> {
     if !overwrite_files && file_path.exists() {
-        return Box::new(future::err(ContextualErrorKind::CustomError(
+        return Box::new(future::err(ContextualError::CustomError(
             "File already exists, and the overwrite_files option has not been set".to_string(),
         )));
     }
@@ -34,7 +34,7 @@ fn save_file(
     let mut file = match std::fs::File::create(&file_path) {
         Ok(file) => file,
         Err(e) => {
-            return Box::new(future::err(ContextualErrorKind::IOError(
+            return Box::new(future::err(ContextualError::IOError(
                 format!("Failed to create file in {}", file_path.display()),
                 e,
             )));
@@ -42,13 +42,13 @@ fn save_file(
     };
     Box::new(
         field
-            .map_err(ContextualErrorKind::MultipartError)
+            .map_err(ContextualError::MultipartError)
             .fold(0i64, move |acc, bytes| {
                 let rt = file
                     .write_all(bytes.as_ref())
                     .map(|_| acc + bytes.len() as i64)
                     .map_err(|e| {
-                        ContextualErrorKind::IOError("Failed to write to file".to_string(), e)
+                        ContextualError::IOError("Failed to write to file".to_string(), e)
                     });
                 future::result(rt)
             }),
@@ -60,41 +60,41 @@ fn handle_multipart(
     item: multipart::MultipartItem<dev::Payload>,
     mut file_path: PathBuf,
     overwrite_files: bool,
-) -> Box<Stream<Item = i64, Error = ContextualErrorKind>> {
+) -> Box<Stream<Item = i64, Error = ContextualError>> {
     match item {
         multipart::MultipartItem::Field(field) => {
             let filename = field
                 .headers()
                 .get(header::CONTENT_DISPOSITION)
-                .ok_or(ContextualErrorKind::ParseError)
+                .ok_or(ContextualError::ParseError)
                 .and_then(|cd| {
                     header::ContentDisposition::from_raw(cd)
-                        .map_err(|_| ContextualErrorKind::ParseError)
+                        .map_err(|_| ContextualError::ParseError)
                 })
                 .and_then(|content_disposition| {
                     content_disposition
                         .get_filename()
-                        .ok_or(ContextualErrorKind::ParseError)
+                        .ok_or(ContextualError::ParseError)
                         .map(String::from)
                 });
-            let err = |e: ContextualErrorKind| Box::new(future::err(e).into_stream());
+            let err = |e: ContextualError| Box::new(future::err(e).into_stream());
             match filename {
                 Ok(f) => {
                     match fs::metadata(&file_path) {
                         Ok(metadata) => {
                             if !metadata.is_dir() {
-                                return err(ContextualErrorKind::InvalidPathError(format!(
+                                return err(ContextualError::InvalidPathError(format!(
                                     "cannot upload file to {}, since it's not a directory",
                                     &file_path.display()
                                 )));
                             } else if metadata.permissions().readonly() {
-                                return err(ContextualErrorKind::InsufficientPermissionsError(
+                                return err(ContextualError::InsufficientPermissionsError(
                                     file_path.display().to_string(),
                                 ));
                             }
                         }
                         Err(_) => {
-                            return err(ContextualErrorKind::InsufficientPermissionsError(
+                            return err(ContextualError::InsufficientPermissionsError(
                                 file_path.display().to_string(),
                             ));
                         }
@@ -109,7 +109,7 @@ fn handle_multipart(
             }
         }
         multipart::MultipartItem::Nested(mp) => Box::new(
-            mp.map_err(ContextualErrorKind::MultipartError)
+            mp.map_err(ContextualError::MultipartError)
                 .map(move |item| handle_multipart(item, file_path.clone(), overwrite_files))
                 .flatten(),
         ),
@@ -156,7 +156,7 @@ pub fn upload_file(req: &HttpRequest<crate::MiniserveConfig>) -> FutureResponse<
     let overwrite_files = req.state().overwrite_files;
     Box::new(
         req.multipart()
-            .map_err(ContextualErrorKind::MultipartError)
+            .map_err(ContextualError::MultipartError)
             .map(move |item| handle_multipart(item, target_dir.clone(), overwrite_files))
             .flatten()
             .collect()
