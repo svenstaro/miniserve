@@ -22,6 +22,15 @@ pub fn page(
     upload_route: &str,
     current_dir: &str,
 ) -> Markup {
+    let upload_action = build_upload_action(
+        upload_route,
+        current_dir,
+        sort_method,
+        sort_order,
+        color_scheme,
+        default_color_scheme,
+    );
+
     html! {
         (page_header(serve_path, color_scheme, file_upload))
         body#drop-container {
@@ -39,12 +48,12 @@ pub fn page(
                 div.toolbar {
                     div.download {
                         @for compression_method in CompressionMethod::iter() {
-                            (archive_button(compression_method))
+                            (archive_button(compression_method, sort_method, sort_order, color_scheme, default_color_scheme))
                         }
                     }
                     @if file_upload {
                         div.upload {
-                            form id="file_submit" action={(upload_route) "?path=" (current_dir)} method="POST" enctype="multipart/form-data" {
+                            form id="file_submit" action=(upload_action) method="POST" enctype="multipart/form-data" {
                                 p { "Select a file to upload or drag it anywhere into the window" }
                                 div {
                                     input#file-input type="file" name="file_to_upload" required="" {}
@@ -84,6 +93,29 @@ pub fn page(
             }
         }
     }
+}
+
+/// Build the action of the upload form
+fn build_upload_action(
+    upload_route: &str,
+    current_dir: &str,
+    sort_method: Option<SortingMethod>,
+    sort_order: Option<SortingOrder>,
+    color_scheme: ColorScheme,
+    default_color_scheme: ColorScheme,
+) -> String {
+    let mut upload_action = format!("{}?path={}", upload_route, current_dir);
+    if let Some(sorting_method) = sort_method {
+        upload_action = format!("{}&sort={}", upload_action, &sorting_method);
+    }
+    if let Some(sorting_order) = sort_order {
+        upload_action = format!("{}&order={}", upload_action, &sorting_order);
+    }
+    if color_scheme != default_color_scheme {
+        upload_action = format!("{}&theme={}", upload_action, color_scheme.to_slug());
+    }
+
+    upload_action
 }
 
 /// Partial: color scheme selector
@@ -151,8 +183,30 @@ fn color_scheme_link(
 }
 
 /// Partial: archive button
-fn archive_button(compress_method: CompressionMethod) -> Markup {
-    let link = format!("?download={}", compress_method);
+fn archive_button(
+    compress_method: CompressionMethod,
+    sort_method: Option<SortingMethod>,
+    sort_order: Option<SortingOrder>,
+    color_scheme: ColorScheme,
+    default_color_scheme: ColorScheme,
+) -> Markup {
+    let link =
+        if sort_method.is_none() && sort_order.is_none() && color_scheme == default_color_scheme {
+            format!("?download={}", compress_method)
+        } else {
+            format!(
+                "{}&download={}",
+                parametrized_link(
+                    "",
+                    sort_method,
+                    sort_order,
+                    color_scheme,
+                    default_color_scheme
+                ),
+                compress_method
+            )
+        };
+
     let text = format!("Download .{}", compress_method.extension());
 
     html! {
@@ -325,7 +379,7 @@ fn css(color_scheme: ColorScheme) -> Markup {
         font-weight: bold;
         color: {directory_link_color};
     }}
-    a.file, a.file:visited {{
+    a.file, a.file:visited, .error-back, .error-back:visited {{
         color: {file_link_color};
     }}
     a.symlink, a.symlink:visited {{
@@ -581,6 +635,22 @@ fn css(color_scheme: ColorScheme) -> Markup {
         width: 100%;
         text-align: center;
     }}
+    .error {{
+        margin: 2rem;
+    }}
+    .error p {{
+        margin: 1rem 0;
+        font-size: 0.9rem;
+        word-break: break-all;
+    }}
+    .error p:first-of-type {{
+        font-size: 1.25rem;
+        color: {error_color};
+        margin-bottom: 2rem;
+    }}
+    .error-nav {{
+        margin-top: 4rem;
+    }}
     @media (max-width: 760px) {{
         nav {{
             padding: 0 2.5rem;
@@ -661,7 +731,8 @@ fn css(color_scheme: ColorScheme) -> Markup {
         drag_border_color = theme.drag_border_color,
         drag_text_color = theme.drag_text_color,
         size_background_color = theme.size_background_color,
-        size_text_color = theme.size_text_color);
+        size_text_color = theme.size_text_color,
+        error_color = theme.error_color);
     (PreEscaped(css))
 }
 
@@ -761,11 +832,40 @@ fn humanize_systemtime(src_time: Option<SystemTime>) -> Option<String> {
 }
 
 /// Renders an error on the webpage
-pub fn render_error(error_description: &str, return_address: &str) -> Markup {
+pub fn render_error(
+    error_description: &str,
+    return_address: &str,
+    sort_method: Option<SortingMethod>,
+    sort_order: Option<SortingOrder>,
+    color_scheme: ColorScheme,
+    default_color_scheme: ColorScheme,
+    has_referer: bool,
+) -> Markup {
+    let link = if has_referer {
+        return_address.to_string()
+    } else {
+        parametrized_link(
+            return_address,
+            sort_method,
+            sort_order,
+            color_scheme,
+            default_color_scheme,
+        )
+    };
+
     html! {
-        pre { (error_description) }
-        a href=(return_address) {
-            "Go back to file listing"
+        body {
+            (page_header("Error", color_scheme, false))
+            div.error {
+                @for error in error_description.lines() {
+                    p { (error) }
+                }
+                div.error-nav {
+                    a.error-back href=(link) {
+                        "Go back to file listing"
+                    }
+                }
+            }
         }
     }
 }

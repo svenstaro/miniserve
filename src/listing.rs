@@ -18,10 +18,10 @@ use crate::themes;
 #[derive(Deserialize)]
 pub struct QueryParameters {
     pub path: Option<PathBuf>,
-    sort: Option<SortingMethod>,
-    order: Option<SortingOrder>,
+    pub sort: Option<SortingMethod>,
+    pub order: Option<SortingOrder>,
+    pub theme: Option<themes::ColorScheme>,
     download: Option<archive::CompressionMethod>,
-    theme: Option<themes::ColorScheme>,
 }
 
 /// Available sorting methods
@@ -145,12 +145,7 @@ pub fn directory_listing<S>(
 
     let (sort_method, sort_order, download, color_scheme) =
         if let Ok(query) = Query::<QueryParameters>::extract(req) {
-            (
-                query.sort,
-                query.order,
-                query.download.clone(),
-                query.theme,
-            )
+            (query.sort, query.order, query.download.clone(), query.theme)
         } else {
             (None, None, None, None)
         };
@@ -159,7 +154,7 @@ pub fn directory_listing<S>(
 
     for entry in dir.path.read_dir()? {
         if dir.is_visible(&entry) {
-            let entry = entry.unwrap();
+            let entry = entry?;
             let p = match entry.path().strip_prefix(&dir.path) {
                 Ok(p) => base.join(p),
                 Err(_) => continue,
@@ -267,7 +262,18 @@ pub fn directory_listing<S>(
                 errors::log_error_chain(err.to_string());
                 Ok(HttpResponse::Ok()
                     .status(http::StatusCode::INTERNAL_SERVER_ERROR)
-                    .body(renderer::render_error(&err.to_string(), serve_path).into_string()))
+                    .body(
+                        renderer::render_error(
+                            &err.to_string(),
+                            serve_path,
+                            sort_method,
+                            sort_order,
+                            color_scheme,
+                            default_color_scheme,
+                            false,
+                        )
+                        .into_string(),
+                    ))
             }
         }
     } else {

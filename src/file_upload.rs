@@ -10,8 +10,9 @@ use std::{
 };
 
 use crate::errors::{self, ContextualError, ContextualErrorKind};
-use crate::listing::QueryParameters;
+use crate::listing::{QueryParameters, SortingMethod, SortingOrder};
 use crate::renderer;
+use crate::themes::ColorScheme;
 
 /// Create future to save file.
 fn save_file(
@@ -29,7 +30,7 @@ fn save_file(
         Ok(file) => file,
         Err(e) => {
             return Box::new(future::err(ContextualErrorKind::IOError(
-                format!("Failed to create file in {}", file_path.display()),
+                format!("Failed to create file {}", file_path.display()),
                 e,
             )));
         }
@@ -115,11 +116,60 @@ fn handle_multipart(
 /// server root directory. Any path which will go outside of this directory is considered
 /// invalid.
 /// This method returns future.
-pub fn upload_file(req: &HttpRequest<crate::MiniserveConfig>) -> FutureResponse<HttpResponse> {
+pub fn upload_file(
+    req: &HttpRequest<crate::MiniserveConfig>,
+    default_color_scheme: ColorScheme,
+) -> FutureResponse<HttpResponse> {
     let return_path = if let Some(header) = req.headers().get(header::REFERER) {
         header.to_str().unwrap_or("/").to_owned()
     } else {
         "/".to_string()
+    };
+
+    let (path, sort_method, sort_order, color_scheme) = match Query::<QueryParameters>::extract(req)
+    {
+        Ok(query) => {
+            let sort_param = query.sort;
+            let order_param = query.order;
+            let theme_param = query.theme.unwrap_or(default_color_scheme);
+
+            if let Some(path) = query.path.clone() {
+                if let Ok(stripped_path) = path.strip_prefix(Component::RootDir) {
+                    (
+                        stripped_path.to_owned(),
+                        sort_param,
+                        order_param,
+                        theme_param,
+                    )
+                } else {
+                    (path.clone(), sort_param, order_param, theme_param)
+                }
+            } else {
+                let err = ContextualError::new(ContextualErrorKind::InvalidHTTPRequestError(
+                    "Missing query parameter 'path'".to_string(),
+                ));
+                return Box::new(create_error_response(
+                    &err.to_string(),
+                    &return_path,
+                    sort_param,
+                    order_param,
+                    theme_param,
+                    default_color_scheme,
+                ));
+            }
+        }
+        Err(e) => {
+            let err =
+                ContextualError::new(ContextualErrorKind::InvalidHTTPRequestError(e.to_string()));
+            return Box::new(create_error_response(
+                &err.to_string(),
+                &return_path,
+                None,
+                None,
+                default_color_scheme,
+                default_color_scheme,
+            ));
+        }
     };
 
     let app_root_dir = match req.state().path.canonicalize() {
@@ -129,29 +179,14 @@ pub fn upload_file(req: &HttpRequest<crate::MiniserveConfig>) -> FutureResponse<
                 "Failed to resolve path served by miniserve".to_string(),
                 e,
             ));
-            return Box::new(create_error_response(&err.to_string(), &return_path));
-        }
-    };
-
-    let path = match Query::<QueryParameters>::extract(req) {
-        Ok(query) => {
-            if let Some(path) = query.path.clone() {
-                if let Ok(stripped_path) = path.strip_prefix(Component::RootDir) {
-                    stripped_path.to_owned()
-                } else {
-                    path.clone()
-                }
-            } else {
-                let err = ContextualError::new(ContextualErrorKind::InvalidHTTPRequestError(
-                    "Missing query parameter 'path'".to_string(),
-                ));
-                return Box::new(create_error_response(&err.to_string(), &return_path));
-            }
-        }
-        Err(e) => {
-            let err =
-                ContextualError::new(ContextualErrorKind::InvalidHTTPRequestError(e.to_string()));
-            return Box::new(create_error_response(&err.to_string(), &return_path));
+            return Box::new(create_error_response(
+                &err.to_string(),
+                &return_path,
+                sort_method,
+                sort_order,
+                color_scheme,
+                default_color_scheme,
+            ));
         }
     };
 
@@ -162,7 +197,14 @@ pub fn upload_file(req: &HttpRequest<crate::MiniserveConfig>) -> FutureResponse<
             let err = ContextualError::new(ContextualErrorKind::InvalidHTTPRequestError(
                 "Invalid value for 'path' parameter".to_string(),
             ));
-            return Box::new(create_error_response(&err.to_string(), &return_path));
+            return Box::new(create_error_response(
+                &err.to_string(),
+                &return_path,
+                sort_method,
+                sort_order,
+                color_scheme,
+                default_color_scheme,
+            ));
         }
     };
     let overwrite_files = req.state().overwrite_files;
@@ -178,7 +220,14 @@ pub fn upload_file(req: &HttpRequest<crate::MiniserveConfig>) -> FutureResponse<
                         .header(header::LOCATION, return_path.to_string())
                         .finish(),
                 ),
-                Err(e) => create_error_response(&e.to_string(), &return_path),
+                Err(e) => create_error_response(
+                    &e.to_string(),
+                    &return_path,
+                    sort_method,
+                    sort_order,
+                    color_scheme,
+                    default_color_scheme,
+                ),
             }),
     )
 }
@@ -187,11 +236,26 @@ pub fn upload_file(req: &HttpRequest<crate::MiniserveConfig>) -> FutureResponse<
 fn create_error_response(
     description: &str,
     return_path: &str,
+    sorting_method: Option<SortingMethod>,
+    sorting_order: Option<SortingOrder>,
+    color_scheme: ColorScheme,
+    default_color_scheme: ColorScheme,
 ) -> FutureResult<HttpResponse, actix_web::error::Error> {
     errors::log_error_chain(description.to_string());
     future::ok(
         HttpResponse::BadRequest()
             .content_type("text/html; charset=utf-8")
-            .body(renderer::render_error(description, return_path).into_string()),
+            .body(
+                renderer::render_error(
+                    description,
+                    return_path,
+                    sorting_method,
+                    sorting_order,
+                    color_scheme,
+                    default_color_scheme,
+                    true,
+                )
+                .into_string(),
+            ),
     )
 }

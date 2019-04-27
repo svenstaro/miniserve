@@ -274,9 +274,11 @@ fn configure_app(app: App<MiniserveConfig>) -> App<MiniserveConfig> {
 
     if let Some(s) = s {
         if app.state().file_upload {
+            let default_color_scheme = app.state().default_color_scheme;
             // Allow file upload
-            app.resource(&upload_route, |r| {
-                r.method(Method::POST).f(file_upload::upload_file)
+            app.resource(&upload_route, move |r| {
+                r.method(Method::POST)
+                    .f(move |file| file_upload::upload_file(file, default_color_scheme))
             })
             // Handle directories
             .handler(&full_route, s)
