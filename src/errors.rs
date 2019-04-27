@@ -1,8 +1,7 @@
-use failure::{Backtrace, Context, Fail};
-use std::fmt::{self, Debug, Display};
+use failure::Fail;
 
 #[derive(Debug, Fail)]
-pub enum ContextualErrorKind {
+pub enum ContextualError {
     /// Fully customized errors, not inheriting from any error
     #[fail(display = "{}", _0)]
     CustomError(String),
@@ -73,58 +72,9 @@ pub fn log_error_chain(description: String) {
     }
 }
 
-/// Based on https://boats.gitlab.io/failure/error-errorkind.html
-pub struct ContextualError {
-    inner: Context<ContextualErrorKind>,
-}
-
-impl ContextualError {
-    pub fn new(kind: ContextualErrorKind) -> ContextualError {
-        ContextualError {
-            inner: Context::new(kind),
-        }
-    }
-}
-
-impl Fail for ContextualError {
-    fn cause(&self) -> Option<&Fail> {
-        self.inner.cause()
-    }
-
-    fn backtrace(&self) -> Option<&Backtrace> {
-        self.inner.backtrace()
-    }
-}
-
-impl Display for ContextualError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        Display::fmt(&self.inner, f)
-    }
-}
-
-impl Debug for ContextualError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        Debug::fmt(&self.inner, f)
-    }
-}
-
-impl From<Context<ContextualErrorKind>> for ContextualError {
-    fn from(inner: Context<ContextualErrorKind>) -> ContextualError {
-        ContextualError { inner }
-    }
-}
-
-impl From<ContextualErrorKind> for ContextualError {
-    fn from(kind: ContextualErrorKind) -> ContextualError {
-        ContextualError {
-            inner: Context::new(kind),
-        }
-    }
-}
-
-/// This allows to create CustomErrors more simply
+/// This makes creating CustomErrors easier
 impl From<String> for ContextualError {
     fn from(msg: String) -> ContextualError {
-        ContextualError::new(ContextualErrorKind::CustomError(msg))
+        ContextualError::CustomError(msg)
     }
 }
