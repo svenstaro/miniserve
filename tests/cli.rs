@@ -90,10 +90,13 @@ fn serves_requests_with_non_default_port(tmpdir: TempDir, port: u16) -> Result<(
         "testpassword"
     ),
 )]
-fn auth_works(cli_auth_arg: &str, client_username: &str, client_password: &str) -> Result<(), Error> {
-    let tmpdir = self::tmpdir();
-    let port = self::port();
-
+fn auth_works(
+    tmpdir: TempDir,
+    port: u16,
+    cli_auth_arg: &str,
+    client_username: &str,
+    client_password: &str
+) -> Result<(), Error> {
     let mut child = Command::cargo_bin("miniserve")?
         .arg(tmpdir.path())
         .arg("-p")
