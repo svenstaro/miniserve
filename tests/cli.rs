@@ -1,5 +1,5 @@
-mod helpers;
-use helpers::*;
+mod fixtures;
+use fixtures::*;
 
 #[test]
 /// Show help and exit.

@@ -1,5 +1,5 @@
-mod helpers;
-use helpers::*;
+mod fixtures;
+use fixtures::*;
 
 #[rstest]
 fn serves_requests_with_no_options(tmpdir: TempDir) -> Result<(), Error> {

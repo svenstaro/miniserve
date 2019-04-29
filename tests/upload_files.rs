@@ -1,5 +1,5 @@
-mod helpers;
-use helpers::*;
+mod fixtures;
+use fixtures::*;
 
 #[rstest]
 fn uploading_files_works(tmpdir: TempDir, port: u16) -> Result<(), Error> {

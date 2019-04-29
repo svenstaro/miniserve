@@ -1,5 +1,5 @@
-mod helpers;
-use helpers::*;
+mod fixtures;
+use fixtures::*;
 
 #[rstest_parametrize(
     cli_auth_arg, client_username, client_password,
