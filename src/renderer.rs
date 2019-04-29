@@ -648,6 +648,9 @@ fn css(color_scheme: ColorScheme) -> Markup {
         color: {error_color};
         margin-bottom: 2rem;
     }}
+    .error p:nth-of-type(2) {{
+        font-weight: bold;
+    }}
     .error-nav {{
         margin-top: 4rem;
     }}
@@ -857,6 +860,7 @@ pub fn render_error(
         body {
             (page_header("Error", color_scheme, false))
             div.error {
+                p { "Error" }
                 @for error in error_description.lines() {
                     p { (error) }
                 }
