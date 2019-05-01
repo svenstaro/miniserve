@@ -1,5 +1,9 @@
 mod fixtures;
-use fixtures::*;
+
+use assert_cmd::prelude::*;
+use clap::{crate_name, crate_version};
+use fixtures::Error;
+use std::process::Command;
 
 #[test]
 /// Show help and exit.

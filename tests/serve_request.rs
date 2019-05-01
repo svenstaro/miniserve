@@ -1,5 +1,14 @@
 mod fixtures;
-use fixtures::*;
+
+use assert_cmd::prelude::*;
+use assert_fs::fixture::TempDir;
+use fixtures::{port, tmpdir, Error, FILES};
+use rstest::rstest;
+use select::document::Document;
+use select::predicate::Text;
+use std::process::{Command, Stdio};
+use std::thread::sleep;
+use std::time::Duration;
 
 #[rstest]
 fn serves_requests_with_no_options(tmpdir: TempDir) -> Result<(), Error> {

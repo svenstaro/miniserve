@@ -1,5 +1,14 @@
 mod fixtures;
-use fixtures::*;
+
+use assert_cmd::prelude::*;
+use assert_fs::fixture::TempDir;
+use fixtures::{port, tmpdir, Error, FILES};
+use rstest::rstest_parametrize;
+use select::document::Document;
+use select::predicate::Text;
+use std::process::{Command, Stdio};
+use std::thread::sleep;
+use std::time::Duration;
 
 #[rstest_parametrize(
     cli_auth_arg, client_username, client_password,
@@ -20,7 +29,7 @@ fn auth_works(
     port: u16,
     cli_auth_arg: &str,
     client_username: &str,
-    client_password: &str
+    client_password: &str,
 ) -> Result<(), Error> {
     let mut child = Command::cargo_bin("miniserve")?
         .arg(tmpdir.path())

@@ -1,5 +1,15 @@
 mod fixtures;
-use fixtures::*;
+
+use assert_cmd::prelude::*;
+use assert_fs::fixture::TempDir;
+use fixtures::{port, tmpdir, Error};
+use reqwest::multipart;
+use rstest::rstest;
+use select::document::Document;
+use select::predicate::{Attr, Text};
+use std::process::{Command, Stdio};
+use std::thread::sleep;
+use std::time::Duration;
 
 #[rstest]
 fn uploading_files_works(tmpdir: TempDir, port: u16) -> Result<(), Error> {
