@@ -65,6 +65,7 @@ fn main() {
     }
 }
 
+#[allow(clippy::block_in_if_condition_stmt)]
 fn run() -> Result<(), ContextualError> {
     if cfg!(windows) && !Paint::enable_windows_ascii() {
         Paint::disable();

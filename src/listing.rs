@@ -123,6 +123,7 @@ pub fn file_handler(req: &HttpRequest<crate::MiniserveConfig>) -> Result<fs::Nam
 
 /// List a directory and renders a HTML file accordingly
 /// Adapted from https://docs.rs/actix-web/0.7.13/src/actix_web/fs.rs.html#564
+#[allow(clippy::identity_conversion)]
 pub fn directory_listing<S>(
     dir: &fs::Directory,
     req: &HttpRequest<S>,
