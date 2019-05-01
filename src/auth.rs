@@ -129,6 +129,9 @@ impl Middleware<crate::MiniserveConfig> for Auth {
     }
 }
 
+/// Builds the unauthorized response body
+/// The reason why log_error_chain is optional is to handle cases where the auth pop-up appears and when the user clicks Cancel.
+/// In those case, we do not log the error to the terminal since it does not really matter.
 fn build_unauthorized_response(
     req: &HttpRequest<crate::MiniserveConfig>,
     error: ContextualError,
