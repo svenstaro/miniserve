@@ -3,7 +3,8 @@ use actix_web::middleware::{Middleware, Response};
 use actix_web::{HttpRequest, HttpResponse, Result};
 use sha2::{Digest, Sha256, Sha512};
 
-use crate::errors::ContextualError;
+use crate::errors::{self, ContextualError};
+use crate::renderer;
 
 pub struct Auth;
 
@@ -96,13 +97,19 @@ impl Middleware<crate::MiniserveConfig> for Auth {
                     Err(err) => {
                         let auth_err = ContextualError::HTTPAuthenticationError(Box::new(err));
                         return Ok(Response::Done(
-                            HttpResponse::BadRequest().body(auth_err.to_string()),
+                            HttpResponse::BadRequest()
+                                .body(build_unauthorized_response(&req, auth_err, true)),
                         ));
                     }
                 };
                 if !match_auth(auth_req, required_auth) {
-                    let new_resp = HttpResponse::Unauthorized().finish();
-                    return Ok(Response::Done(new_resp));
+                    return Ok(Response::Done(HttpResponse::Unauthorized().body(
+                        build_unauthorized_response(
+                            &req,
+                            ContextualError::InvalidHTTPCredentials,
+                            true,
+                        ),
+                    )));
                 }
             } else {
                 let new_resp = HttpResponse::Unauthorized()
@@ -110,12 +117,38 @@ impl Middleware<crate::MiniserveConfig> for Auth {
                         header::WWW_AUTHENTICATE,
                         header::HeaderValue::from_static("Basic realm=\"miniserve\""),
                     )
-                    .finish();
+                    .body(build_unauthorized_response(
+                        &req,
+                        ContextualError::InvalidHTTPCredentials,
+                        false,
+                    ));
                 return Ok(Response::Done(new_resp));
             }
         }
         Ok(Response::Done(resp))
     }
+}
+
+fn build_unauthorized_response(
+    req: &HttpRequest<crate::MiniserveConfig>,
+    error: ContextualError,
+    log_error_chain: bool,
+) -> String {
+    let error = ContextualError::HTTPAuthenticationError(Box::new(error));
+
+    if log_error_chain {
+        errors::log_error_chain(error.to_string());
+    }
+    renderer::render_error(
+        &error.to_string(),
+        req.path(),
+        None,
+        None,
+        req.state().default_color_scheme,
+        req.state().default_color_scheme,
+        false,
+    )
+    .into_string()
 }
 
 #[cfg(test)]

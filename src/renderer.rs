@@ -32,7 +32,7 @@ pub fn page(
     );
 
     html! {
-        (page_header(serve_path, color_scheme, file_upload))
+        (page_header(serve_path, color_scheme, file_upload, false))
         body#drop-container {
             @if file_upload {
                 div.drag-form {
@@ -760,14 +760,23 @@ fn chevron_down() -> Markup {
 }
 
 /// Partial: page header
-fn page_header(serve_path: &str, color_scheme: ColorScheme, file_upload: bool) -> Markup {
+fn page_header(
+    serve_path: &str,
+    color_scheme: ColorScheme,
+    file_upload: bool,
+    is_error: bool,
+) -> Markup {
     html! {
         (DOCTYPE)
         html {
             meta charset="utf-8";
             meta http-equiv="X-UA-Compatible" content="IE=edge";
             meta name="viewport" content="width=device-width, initial-scale=1";
-            title { "Index of " (serve_path) }
+            @if is_error {
+                title { (serve_path) }
+            } else {
+                title { "Index of " (serve_path) }
+            }
             style { (css(color_scheme)) }
             @if file_upload {
                 (PreEscaped(r#"
@@ -858,7 +867,7 @@ pub fn render_error(
 
     html! {
         body {
-            (page_header("Error", color_scheme, false))
+            (page_header("Error", color_scheme, false, true))
             div.error {
                 p { "Error" }
                 @for error in error_description.lines() {

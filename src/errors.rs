@@ -65,6 +65,10 @@ pub enum ContextualError {
     )]
     HTTPAuthenticationError(Box<ContextualError>),
 
+    /// This error might occur when the HTTP credentials are not correct
+    #[fail(display = "Invalid credentials for HTTP authentication")]
+    InvalidHTTPCredentials,
+
     /// This error might occur when an HTTP request is invalid
     #[fail(display = "Invalid HTTP request\ncaused by: {}", _0)]
     InvalidHTTPRequestError(String),
