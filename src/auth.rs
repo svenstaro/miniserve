@@ -75,9 +75,8 @@ pub fn match_auth(basic_auth: BasicAuthParams, required_auth: &RequiredAuth) -> 
 }
 
 /// Return `true` if hashing of `password` by `T` algorithm equals to `hash`
-#[allow(clippy::ptr_arg)]
-pub fn compare_hash<T: Digest>(password: String, hash: &Vec<u8>) -> bool {
-    get_hash::<T>(password) == *hash
+pub fn compare_hash<T: Digest>(password: String, hash: &[u8]) -> bool {
+    get_hash::<T>(password) == hash
 }
 
 /// Get hash of a `text`

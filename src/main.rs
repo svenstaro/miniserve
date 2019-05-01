@@ -65,7 +65,6 @@ fn main() {
     }
 }
 
-#[allow(clippy::block_in_if_condition_stmt)]
 fn run() -> Result<(), ContextualError> {
     if cfg!(windows) && !Paint::enable_windows_ascii() {
         Paint::disable();
@@ -84,12 +83,12 @@ fn run() -> Result<(), ContextualError> {
         && miniserve_config
             .path
             .symlink_metadata()
-            .map_err(|e| {
+            .map_err(|e|
                 ContextualError::IOError(
                     "Failed to retrieve symlink's metadata".to_string(),
                     e,
                 )
-            })?
+            )?
             .file_type()
             .is_symlink()
     {
