@@ -147,7 +147,7 @@ fn build_unauthorized_response(
     }
     let return_path = match &req.state().random_route {
         Some(random_route) => format!("/{}", random_route),
-        None => req.path().to_string(),
+        None => "/".to_string(),
     };
 
     renderer::render_error(
