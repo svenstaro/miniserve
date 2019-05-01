@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 pub use assert_cmd::prelude::*;
 pub use assert_fs::fixture::TempDir;
 pub use assert_fs::prelude::*;
