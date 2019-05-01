@@ -1,7 +1,7 @@
 #![feature(proc_macro_hygiene)]
 
 use actix_web::http::Method;
-use actix_web::{fs, middleware, server, App};
+use actix_web::{fs, middleware, server, App, HttpRequest, HttpResponse};
 use clap::crate_version;
 use simplelog::{Config, LevelFilter, TermLogger};
 use std::io::{self, Write};
@@ -247,7 +247,8 @@ fn configure_app(app: App<MiniserveConfig>) -> App<MiniserveConfig> {
                             default_color_scheme,
                             u_r.clone(),
                         )
-                    }),
+                    })
+                    .default_handler(p404),
             )
         }
     };
@@ -273,4 +274,24 @@ fn configure_app(app: App<MiniserveConfig>) -> App<MiniserveConfig> {
         // Handle single files
         app.resource(&full_route, |r| r.f(listing::file_handler))
     }
+}
+
+fn p404(req: &HttpRequest<crate::MiniserveConfig>) -> Result<HttpResponse, io::Error> {
+    let err_404 = ContextualError::RouteNotFoundError(req.uri().to_string());
+    let default_color_scheme = req.state().default_color_scheme;
+
+    errors::log_error_chain(err_404.to_string());
+
+    Ok(actix_web::HttpResponse::NotFound().body(
+        renderer::render_error(
+            &err_404.to_string(),
+            "/",
+            None,
+            None,
+            default_color_scheme,
+            default_color_scheme,
+            false,
+        )
+        .into_string(),
+    ))
 }

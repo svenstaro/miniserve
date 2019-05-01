@@ -72,6 +72,10 @@ pub enum ContextualError {
     /// This error might occur when an HTTP request is invalid
     #[fail(display = "Invalid HTTP request\ncaused by: {}", _0)]
     InvalidHTTPRequestError(String),
+
+    /// This error might occur when trying to access a page that does not exist
+    #[fail(display = "Route {} could not be found", _0)]
+    RouteNotFoundError(String),
 }
 
 pub fn log_error_chain(description: String) {
