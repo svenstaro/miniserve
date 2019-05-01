@@ -1,4 +1,4 @@
-use actix_web::http::header;
+use actix_web::http::{header, StatusCode};
 use actix_web::middleware::{Middleware, Response};
 use actix_web::{HttpRequest, HttpResponse, Result};
 use sha2::{Digest, Sha256, Sha512};
@@ -98,7 +98,7 @@ impl Middleware<crate::MiniserveConfig> for Auth {
                         let auth_err = ContextualError::HTTPAuthenticationError(Box::new(err));
                         return Ok(Response::Done(
                             HttpResponse::BadRequest()
-                                .body(build_unauthorized_response(&req, auth_err, true)),
+                                .body(build_unauthorized_response(&req, auth_err, true, StatusCode::BAD_REQUEST)),
                         ));
                     }
                 };
@@ -108,6 +108,7 @@ impl Middleware<crate::MiniserveConfig> for Auth {
                             &req,
                             ContextualError::InvalidHTTPCredentials,
                             true,
+                            StatusCode::UNAUTHORIZED,
                         ),
                     )));
                 }
@@ -121,6 +122,7 @@ impl Middleware<crate::MiniserveConfig> for Auth {
                         &req,
                         ContextualError::InvalidHTTPCredentials,
                         false,
+                        StatusCode::UNAUTHORIZED,
                     ));
                 return Ok(Response::Done(new_resp));
             }
@@ -136,6 +138,7 @@ fn build_unauthorized_response(
     req: &HttpRequest<crate::MiniserveConfig>,
     error: ContextualError,
     log_error_chain: bool,
+    error_code: StatusCode,
 ) -> String {
     let error = ContextualError::HTTPAuthenticationError(Box::new(error));
 
@@ -149,6 +152,7 @@ fn build_unauthorized_response(
 
     renderer::render_error(
         &error.to_string(),
+        error_code,
         &return_path,
         None,
         None,

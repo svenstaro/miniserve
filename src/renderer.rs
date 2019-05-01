@@ -1,3 +1,4 @@
+use actix_web::http::StatusCode;
 use chrono::{DateTime, Duration, Utc};
 use chrono_humanize::{Accuracy, HumanTime, Tense};
 use maud::{html, Markup, PreEscaped, DOCTYPE};
@@ -846,6 +847,7 @@ fn humanize_systemtime(src_time: Option<SystemTime>) -> Option<String> {
 /// Renders an error on the webpage
 pub fn render_error(
     error_description: &str,
+    error_code: StatusCode,
     return_address: &str,
     sort_method: Option<SortingMethod>,
     sort_order: Option<SortingOrder>,
@@ -867,9 +869,9 @@ pub fn render_error(
 
     html! {
         body {
-            (page_header("Error", color_scheme, false, true))
+            (page_header(&error_code.to_string(), color_scheme, false, true))
             div.error {
-                p { "Error" }
+                p { (error_code.to_string()) }
                 @for error in error_description.lines() {
                     p { (error) }
                 }

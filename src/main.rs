@@ -1,6 +1,6 @@
 #![feature(proc_macro_hygiene)]
 
-use actix_web::http::Method;
+use actix_web::http::{Method, StatusCode};
 use actix_web::{fs, middleware, server, App, HttpRequest, HttpResponse};
 use clap::crate_version;
 use simplelog::{Config, LevelFilter, TermLogger};
@@ -284,7 +284,7 @@ fn p404(req: &HttpRequest<crate::MiniserveConfig>) -> Result<HttpResponse, io::E
     let default_color_scheme = req.state().default_color_scheme;
     let return_address = match &req.state().random_route {
         Some(random_route) => format!("/{}", random_route),
-        None => req.path().to_string(),
+        None => "/".to_string(),
     };
 
     errors::log_error_chain(err_404.to_string());
@@ -292,6 +292,7 @@ fn p404(req: &HttpRequest<crate::MiniserveConfig>) -> Result<HttpResponse, io::E
     Ok(actix_web::HttpResponse::NotFound().body(
         renderer::render_error(
             &err_404.to_string(),
+            StatusCode::NOT_FOUND,
             &return_address,
             None,
             None,

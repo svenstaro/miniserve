@@ -1,5 +1,5 @@
 use actix_web::{
-    dev, http::header, multipart, FromRequest, FutureResponse, HttpMessage, HttpRequest,
+    dev, http::{header, StatusCode}, multipart, FromRequest, FutureResponse, HttpMessage, HttpRequest,
     HttpResponse, Query,
 };
 use futures::{future, future::FutureResult, Future, Stream};
@@ -150,6 +150,7 @@ pub fn upload_file(
                 );
                 return Box::new(create_error_response(
                     &err.to_string(),
+                    StatusCode::BAD_REQUEST,
                     &return_path,
                     sort_param,
                     order_param,
@@ -162,6 +163,7 @@ pub fn upload_file(
             let err = ContextualError::InvalidHTTPRequestError(e.to_string());
             return Box::new(create_error_response(
                 &err.to_string(),
+                StatusCode::BAD_REQUEST,
                 &return_path,
                 None,
                 None,
@@ -180,6 +182,7 @@ pub fn upload_file(
             );
             return Box::new(create_error_response(
                 &err.to_string(),
+                StatusCode::INTERNAL_SERVER_ERROR,
                 &return_path,
                 sort_method,
                 sort_order,
@@ -198,6 +201,7 @@ pub fn upload_file(
             );
             return Box::new(create_error_response(
                 &err.to_string(),
+                StatusCode::BAD_REQUEST,
                 &return_path,
                 sort_method,
                 sort_order,
@@ -221,6 +225,7 @@ pub fn upload_file(
                 ),
                 Err(e) => create_error_response(
                     &e.to_string(),
+                    StatusCode::INTERNAL_SERVER_ERROR,
                     &return_path,
                     sort_method,
                     sort_order,
@@ -234,6 +239,7 @@ pub fn upload_file(
 /// Convenience method for creating response errors, if file upload fails.
 fn create_error_response(
     description: &str,
+    error_code: StatusCode,
     return_path: &str,
     sorting_method: Option<SortingMethod>,
     sorting_order: Option<SortingOrder>,
@@ -247,6 +253,7 @@ fn create_error_response(
             .body(
                 renderer::render_error(
                     description,
+                    error_code,
                     return_path,
                     sorting_method,
                     sorting_order,

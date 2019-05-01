@@ -1,4 +1,5 @@
 use actix_web::{fs, http, Body, FromRequest, HttpRequest, HttpResponse, Query, Result};
+use actix_web::http::StatusCode;
 use bytesize::ByteSize;
 use futures::stream::once;
 use htmlescape::encode_minimal as escape_html_entity;
@@ -265,6 +266,7 @@ pub fn directory_listing<S>(
                     .body(
                         renderer::render_error(
                             &err.to_string(),
+                            StatusCode::INTERNAL_SERVER_ERROR,
                             serve_path,
                             sort_method,
                             sort_order,
