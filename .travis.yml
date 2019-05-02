@@ -1,10 +1,8 @@
 language: rust
 dist: xenial
 
-rust:
-  - stable
-  - beta
-  - nightly
+rust: []
+env: []
 
 addons:
   apt:
@@ -20,6 +18,9 @@ matrix:
     - rust: stable
     - rust: beta
   include:
+    - rust: stable
+    - rust: beta
+    - rust: nightly
     - rust: nightly
       env:
         - TARGET=x86_64-unknown-linux-musl
