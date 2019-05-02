@@ -280,7 +280,7 @@ fn configure_app(app: App<MiniserveConfig>) -> App<MiniserveConfig> {
 }
 
 fn error_404(req: &HttpRequest<crate::MiniserveConfig>) -> Result<HttpResponse, io::Error> {
-    let err_404 = ContextualError::RouteNotFoundError(req.uri().to_string());
+    let err_404 = ContextualError::RouteNotFoundError(req.path().to_string());
     let default_color_scheme = req.state().default_color_scheme;
     let return_address = match &req.state().random_route {
         Some(random_route) => format!("/{}", random_route),
