@@ -1,7 +1,7 @@
 use actix_web::{
     dev,
     http::{header, StatusCode},
-    multipart, FromRequest, FutureResponse, HttpMessage, HttpRequest, HttpResponse, Query,
+    multipart, FutureResponse, HttpMessage, HttpRequest, HttpResponse,
 };
 use futures::{future, future::FutureResult, Future, Stream};
 use std::{
@@ -11,7 +11,7 @@ use std::{
 };
 
 use crate::errors::{self, ContextualError};
-use crate::listing::{QueryParameters, SortingMethod, SortingOrder};
+use crate::listing::{self, SortingMethod, SortingOrder};
 use crate::renderer;
 use crate::themes::ColorScheme;
 
@@ -127,48 +127,24 @@ pub fn upload_file(
         "/".to_string()
     };
 
-    let (path, sort_method, sort_order, color_scheme) = match Query::<QueryParameters>::extract(req)
-    {
-        Ok(query) => {
-            let sort_param = query.sort;
-            let order_param = query.order;
-            let theme_param = query.theme.unwrap_or(default_color_scheme);
-
-            if let Some(path) = query.path.clone() {
-                if let Ok(stripped_path) = path.strip_prefix(Component::RootDir) {
-                    (
-                        stripped_path.to_owned(),
-                        sort_param,
-                        order_param,
-                        theme_param,
-                    )
-                } else {
-                    (path.clone(), sort_param, order_param, theme_param)
-                }
-            } else {
-                let err = ContextualError::InvalidHTTPRequestError(
-                    "Missing query parameter 'path'".to_string(),
-                );
-                return Box::new(create_error_response(
-                    &err.to_string(),
-                    StatusCode::BAD_REQUEST,
-                    &return_path,
-                    sort_param,
-                    order_param,
-                    theme_param,
-                    default_color_scheme,
-                ));
-            }
-        }
-        Err(e) => {
-            let err = ContextualError::InvalidHTTPRequestError(e.to_string());
+    let (sort_method, sort_order, _, color_scheme, path) = listing::extract_query_parameters(req);
+    let color_scheme = color_scheme.unwrap_or(default_color_scheme);
+    let upload_path = match path {
+        Some(path) => match path.strip_prefix(Component::RootDir) {
+            Ok(stripped_path) => stripped_path.to_owned(),
+            Err(_) => path.clone(),
+        },
+        None => {
+            let err = ContextualError::InvalidHTTPRequestError(
+                "Missing query parameter 'path'".to_string(),
+            );
             return Box::new(create_error_response(
                 &err.to_string(),
                 StatusCode::BAD_REQUEST,
                 &return_path,
-                None,
-                None,
-                default_color_scheme,
+                sort_method,
+                sort_order,
+                color_scheme,
                 default_color_scheme,
             ));
         }
@@ -194,7 +170,7 @@ pub fn upload_file(
     };
 
     // If the target path is under the app root directory, save the file.
-    let target_dir = match &app_root_dir.clone().join(path).canonicalize() {
+    let target_dir = match &app_root_dir.clone().join(upload_path).canonicalize() {
         Ok(path) if path.starts_with(&app_root_dir) => path.clone(),
         _ => {
             let err = ContextualError::InvalidHTTPRequestError(
@@ -260,6 +236,7 @@ fn create_error_response(
                     sorting_order,
                     color_scheme,
                     default_color_scheme,
+                    true,
                     true,
                 )
                 .into_string(),

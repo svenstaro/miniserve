@@ -287,6 +287,9 @@ fn error_404(req: &HttpRequest<crate::MiniserveConfig>) -> Result<HttpResponse, 
         None => "/".to_string(),
     };
 
+    let (sort_method, sort_order, _, color_scheme, _) = listing::extract_query_parameters(req);
+    let color_scheme = color_scheme.unwrap_or(default_color_scheme);
+
     errors::log_error_chain(err_404.to_string());
 
     Ok(actix_web::HttpResponse::NotFound().body(
@@ -294,11 +297,12 @@ fn error_404(req: &HttpRequest<crate::MiniserveConfig>) -> Result<HttpResponse, 
             &err_404.to_string(),
             StatusCode::NOT_FOUND,
             &return_address,
-            None,
-            None,
-            default_color_scheme,
+            sort_method,
+            sort_order,
+            color_scheme,
             default_color_scheme,
             false,
+            true,
         )
         .into_string(),
     ))

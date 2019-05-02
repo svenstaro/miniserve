@@ -10,10 +10,10 @@ use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 use strum_macros::{Display, EnumString};
 
-use crate::archive;
+use crate::archive::{self, CompressionMethod};
 use crate::errors;
 use crate::renderer;
-use crate::themes;
+use crate::themes::ColorScheme;
 
 /// Query parameters
 #[derive(Deserialize)]
@@ -21,8 +21,8 @@ pub struct QueryParameters {
     pub path: Option<PathBuf>,
     pub sort: Option<SortingMethod>,
     pub order: Option<SortingOrder>,
-    pub theme: Option<themes::ColorScheme>,
-    download: Option<archive::CompressionMethod>,
+    pub theme: Option<ColorScheme>,
+    download: Option<CompressionMethod>,
 }
 
 /// Available sorting methods
@@ -131,7 +131,7 @@ pub fn directory_listing<S>(
     skip_symlinks: bool,
     file_upload: bool,
     random_route: Option<String>,
-    default_color_scheme: themes::ColorScheme,
+    default_color_scheme: ColorScheme,
     upload_route: String,
 ) -> Result<HttpResponse, io::Error> {
     let serve_path = req.path();
@@ -144,12 +144,7 @@ pub fn directory_listing<S>(
         Err(_) => base.to_path_buf(),
     };
 
-    let (sort_method, sort_order, download, color_scheme) =
-        if let Ok(query) = Query::<QueryParameters>::extract(req) {
-            (query.sort, query.order, query.download.clone(), query.theme)
-        } else {
-            (None, None, None, None)
-        };
+    let (sort_method, sort_order, download, color_scheme, _) = extract_query_parameters(req);
 
     let mut entries: Vec<Entry> = Vec::new();
 
@@ -273,6 +268,7 @@ pub fn directory_listing<S>(
                             color_scheme,
                             default_color_scheme,
                             false,
+                            true,
                         )
                         .into_string(),
                     ))
@@ -297,5 +293,27 @@ pub fn directory_listing<S>(
                 )
                 .into_string(),
             ))
+    }
+}
+
+pub fn extract_query_parameters<S>(
+    req: &HttpRequest<S>,
+) -> (
+    Option<SortingMethod>,
+    Option<SortingOrder>,
+    Option<CompressionMethod>,
+    Option<ColorScheme>,
+    Option<PathBuf>,
+) {
+    if let Ok(query) = Query::<QueryParameters>::extract(req) {
+        (
+            query.sort,
+            query.order,
+            query.download.clone(),
+            query.theme,
+            query.path.clone(),
+        )
+    } else {
+        (None, None, None, None, None)
     }
 }

@@ -854,6 +854,7 @@ pub fn render_error(
     color_scheme: ColorScheme,
     default_color_scheme: ColorScheme,
     has_referer: bool,
+    display_back_link: bool,
 ) -> Markup {
     let link = if has_referer {
         return_address.to_string()
@@ -875,9 +876,11 @@ pub fn render_error(
                 @for error in error_description.lines() {
                     p { (error) }
                 }
-                div.error-nav {
-                    a.error-back href=(link) {
-                        "Go back to file listing"
+                @if display_back_link {
+                    div.error-nav {
+                        a.error-back href=(link) {
+                            "Go back to file listing"
+                        }
                     }
                 }
             }

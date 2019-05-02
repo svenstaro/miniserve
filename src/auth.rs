@@ -163,6 +163,7 @@ fn build_unauthorized_response(
         req.state().default_color_scheme,
         req.state().default_color_scheme,
         false,
+        false,
     )
     .into_string()
 }
