@@ -163,6 +163,7 @@ fn build_unauthorized_response(
     .into_string()
 }
 
+#[cfg_attr(rustfmt, rustfmt_skip)]
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -205,12 +206,7 @@ mod tests {
     }
 
     #[rstest_parametrize(
-        should_pass,
-        param_username,
-        param_password,
-        required_username,
-        required_password,
-        encrypt,
+        should_pass, param_username, param_password, required_username, required_password, encrypt,
         case(true, "obi", "hello there", "obi", "hello there", "plain"),
         case(false, "obi", "hello there", "obi", "hi!", "plain"),
         case(true, "obi", "hello there", "obi", "hello there", "sha256"),

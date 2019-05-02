@@ -161,6 +161,7 @@ pub fn parse_args() -> crate::MiniserveConfig {
     }
 }
 
+#[cfg_attr(rustfmt, rustfmt_skip)]
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -183,10 +184,7 @@ mod tests {
     }
 
     #[rstest_parametrize(
-        auth_string,
-        username,
-        password,
-        encrypt,
+        auth_string, username, password, encrypt,
         case("username:password", "username", "password", "plain"),
         case("username:sha256:abcd", "username", "abcd", "sha256"),
         case("username:sha512:abcd", "username", "abcd", "sha512")
