@@ -11,7 +11,7 @@ use std::time::SystemTime;
 use strum_macros::{Display, EnumString};
 
 use crate::archive::{self, CompressionMethod};
-use crate::errors;
+use crate::errors::{self, ContextualError};
 use crate::renderer;
 use crate::themes::ColorScheme;
 
@@ -305,15 +305,18 @@ pub fn extract_query_parameters<S>(
     Option<ColorScheme>,
     Option<PathBuf>,
 ) {
-    if let Ok(query) = Query::<QueryParameters>::extract(req) {
-        (
+    match Query::<QueryParameters>::extract(req) {
+        Ok(query) => (
             query.sort,
             query.order,
             query.download.clone(),
             query.theme,
             query.path.clone(),
-        )
-    } else {
-        (None, None, None, None, None)
+        ),
+        Err(e) => {
+            let err = ContextualError::ParseError("query parameters".to_string(), e.to_string());
+            errors::log_error_chain(err.to_string());
+            (None, None, None, None, None)
+        }
     }
 }
