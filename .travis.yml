@@ -47,6 +47,9 @@ matrix:
         - BIN_NAME=miniserve
         - PROPER_NAME=miniserve-osx-x86_64
       os: osx
+    - rust: nightly-2019-04-26
+      env:
+        - CLIPPY=true
 
 before_install:
   - rustup self update
@@ -55,10 +58,12 @@ before_install:
 install:
   # On Apple, the default target is already the right one.
   - if [[ -n $TARGET && $TARGET != "x86_64-apple-darwin" ]]; then rustup target add $TARGET; fi
+  - if [[ -n $CLIPPY ]]; then rustup component add clippy; fi
 
 script:
   # If this is a normal, non-deployment build...
-  - if [[ -z $TARGET ]]; then cargo build --verbose && RUST_BACKTRACE=1 cargo test; fi
+  - if [[ -z $TARGET && -z $CLIPPY ]]; then cargo build --verbose && RUST_BACKTRACE=1 cargo test; fi
+  - if [[ -n $CLIPPY ]]; then cargo clippy -- --deny clippy::all; fi
   - if [[ -n $TARGET ]]; then cargo build --verbose --release --target $TARGET; fi
 
 before_deploy:

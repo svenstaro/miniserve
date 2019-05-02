@@ -9,6 +9,7 @@ use crate::listing::{Entry, SortingMethod, SortingOrder};
 use crate::themes::ColorScheme;
 
 /// Renders the file listing
+#[allow(clippy::too_many_arguments)]
 pub fn page(
     serve_path: &str,
     entries: Vec<Entry>,
