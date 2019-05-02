@@ -96,10 +96,14 @@ impl Middleware<crate::MiniserveConfig> for Auth {
                     Ok(auth_req) => auth_req,
                     Err(err) => {
                         let auth_err = ContextualError::HTTPAuthenticationError(Box::new(err));
-                        return Ok(Response::Done(
-                            HttpResponse::BadRequest()
-                                .body(build_unauthorized_response(&req, auth_err, true, StatusCode::BAD_REQUEST)),
-                        ));
+                        return Ok(Response::Done(HttpResponse::BadRequest().body(
+                            build_unauthorized_response(
+                                &req,
+                                auth_err,
+                                true,
+                                StatusCode::BAD_REQUEST,
+                            ),
+                        )));
                     }
                 };
                 if !match_auth(auth_req, required_auth) {

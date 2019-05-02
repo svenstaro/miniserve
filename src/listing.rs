@@ -1,5 +1,5 @@
-use actix_web::{fs, http, Body, FromRequest, HttpRequest, HttpResponse, Query, Result};
 use actix_web::http::StatusCode;
+use actix_web::{fs, http, Body, FromRequest, HttpRequest, HttpResponse, Query, Result};
 use bytesize::ByteSize;
 use futures::stream::once;
 use htmlescape::encode_minimal as escape_html_entity;

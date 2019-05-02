@@ -1,6 +1,7 @@
 use actix_web::{
-    dev, http::{header, StatusCode}, multipart, FromRequest, FutureResponse, HttpMessage, HttpRequest,
-    HttpResponse, Query,
+    dev,
+    http::{header, StatusCode},
+    multipart, FromRequest, FutureResponse, HttpMessage, HttpRequest, HttpResponse, Query,
 };
 use futures::{future, future::FutureResult, Future, Stream};
 use std::{
