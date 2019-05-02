@@ -16,11 +16,16 @@ addons:
 matrix:
   allow_failures:
     - rust: stable
+      env: []
     - rust: beta
+      env: []
   include:
     - rust: stable
+      env: []
     - rust: beta
+      env: []
     - rust: nightly
+      env: []
     - rust: nightly
       env:
         - TARGET=x86_64-unknown-linux-musl
