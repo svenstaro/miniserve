@@ -1,6 +1,8 @@
 language: rust
 dist: xenial
 
+# According to https://docs.travis-ci.com/user/customizing-the-build#rows-that-are-allowed-to-fail,
+# these empty arrays are actually required.
 rust: []
 env: []
 
