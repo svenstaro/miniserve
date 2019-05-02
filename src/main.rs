@@ -248,7 +248,7 @@ fn configure_app(app: App<MiniserveConfig>) -> App<MiniserveConfig> {
                             u_r.clone(),
                         )
                     })
-                    .default_handler(p404),
+                    .default_handler(error_404),
             )
         }
     };
@@ -266,20 +266,20 @@ fn configure_app(app: App<MiniserveConfig>) -> App<MiniserveConfig> {
             })
             // Handle directories
             .handler(&full_route, s)
-            .default_resource(|r| r.method(Method::GET).f(p404))
+            .default_resource(|r| r.method(Method::GET).f(error_404))
         } else {
             // Handle directories
             app.handler(&full_route, s)
-                .default_resource(|r| r.method(Method::GET).f(p404))
+                .default_resource(|r| r.method(Method::GET).f(error_404))
         }
     } else {
         // Handle single files
         app.resource(&full_route, |r| r.f(listing::file_handler))
-            .default_resource(|r| r.method(Method::GET).f(p404))
+            .default_resource(|r| r.method(Method::GET).f(error_404))
     }
 }
 
-fn p404(req: &HttpRequest<crate::MiniserveConfig>) -> Result<HttpResponse, io::Error> {
+fn error_404(req: &HttpRequest<crate::MiniserveConfig>) -> Result<HttpResponse, io::Error> {
     let err_404 = ContextualError::RouteNotFoundError(req.uri().to_string());
     let default_color_scheme = req.state().default_color_scheme;
     let return_address = match &req.state().random_route {
