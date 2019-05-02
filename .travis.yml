@@ -22,7 +22,8 @@ matrix:
     - rust: beta
       env: []
     - rust: nightly
-      env: CLIPPY=true
+      env:
+        - CLIPPY=true
   include:
     - rust: stable
       env: []
