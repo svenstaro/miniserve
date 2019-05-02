@@ -17,6 +17,8 @@ matrix:
   allow_failures:
     - rust: stable
     - rust: beta
+    - rust: nightly
+      env: CLIPPY=true
   include:
     - rust: stable
     - rust: beta
@@ -41,6 +43,9 @@ matrix:
         - PROPER_NAME=miniserve-osx-x86_64
       os: osx
     - rust: nightly
+      env:
+        - CLIPPY=true
+    - rust: stable
       env:
         - CLIPPY=true
 
