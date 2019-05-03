@@ -127,9 +127,9 @@ pub fn upload_file(
         "/".to_string()
     };
 
-    let (sort_method, sort_order, _, color_scheme, path) = listing::extract_query_parameters(req);
-    let color_scheme = color_scheme.unwrap_or(default_color_scheme);
-    let upload_path = match path {
+    let query_params = listing::extract_query_parameters(req);
+    let color_scheme = query_params.theme.unwrap_or(default_color_scheme);
+    let upload_path = match query_params.path.clone() {
         Some(path) => match path.strip_prefix(Component::RootDir) {
             Ok(stripped_path) => stripped_path.to_owned(),
             Err(_) => path.clone(),
@@ -142,8 +142,8 @@ pub fn upload_file(
                 &err.to_string(),
                 StatusCode::BAD_REQUEST,
                 &return_path,
-                sort_method,
-                sort_order,
+                query_params.sort,
+                query_params.order,
                 color_scheme,
                 default_color_scheme,
             ));
@@ -161,8 +161,8 @@ pub fn upload_file(
                 &err.to_string(),
                 StatusCode::INTERNAL_SERVER_ERROR,
                 &return_path,
-                sort_method,
-                sort_order,
+                query_params.sort,
+                query_params.order,
                 color_scheme,
                 default_color_scheme,
             ));
@@ -180,8 +180,8 @@ pub fn upload_file(
                 &err.to_string(),
                 StatusCode::BAD_REQUEST,
                 &return_path,
-                sort_method,
-                sort_order,
+                query_params.sort,
+                query_params.order,
                 color_scheme,
                 default_color_scheme,
             ));
@@ -204,8 +204,8 @@ pub fn upload_file(
                     &e.to_string(),
                     StatusCode::INTERNAL_SERVER_ERROR,
                     &return_path,
-                    sort_method,
-                    sort_order,
+                    query_params.sort,
+                    query_params.order,
                     color_scheme,
                     default_color_scheme,
                 ),

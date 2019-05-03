@@ -145,7 +145,7 @@ pub fn directory_listing<S>(
         Err(_) => base.to_path_buf(),
     };
 
-    let (sort_method, sort_order, download, color_scheme, _) = extract_query_parameters(req);
+    let query_params = extract_query_parameters(req);
 
     let mut entries: Vec<Entry> = Vec::new();
 
@@ -203,7 +203,7 @@ pub fn directory_listing<S>(
         }
     }
 
-    if let Some(sorting_method) = sort_method {
+    if let Some(sorting_method) = query_params.sort {
         match sorting_method {
             SortingMethod::Name => entries
                 .sort_by(|e1, e2| alphanumeric_sort::compare_str(e1.name.clone(), e2.name.clone())),
@@ -227,15 +227,15 @@ pub fn directory_listing<S>(
         entries.sort_by(|e1, e2| alphanumeric_sort::compare_str(e1.name.clone(), e2.name.clone()))
     }
 
-    if let Some(sorting_order) = sort_order {
+    if let Some(sorting_order) = query_params.order {
         if let SortingOrder::Descending = sorting_order {
             entries.reverse()
         }
     }
 
-    let color_scheme = color_scheme.unwrap_or_else(|| default_color_scheme);
+    let color_scheme = query_params.theme.unwrap_or(default_color_scheme);
 
-    if let Some(compression_method) = &download {
+    if let Some(compression_method) = &query_params.download {
         log::info!(
             "Creating an archive ({extension}) of {path}...",
             extension = compression_method.extension(),
@@ -264,8 +264,8 @@ pub fn directory_listing<S>(
                             &err.to_string(),
                             StatusCode::INTERNAL_SERVER_ERROR,
                             serve_path,
-                            sort_method,
-                            sort_order,
+                            query_params.sort,
+                            query_params.order,
                             color_scheme,
                             default_color_scheme,
                             false,
@@ -284,8 +284,8 @@ pub fn directory_listing<S>(
                     entries,
                     is_root,
                     page_parent,
-                    sort_method,
-                    sort_order,
+                    query_params.sort,
+                    query_params.order,
                     default_color_scheme,
                     color_scheme,
                     file_upload,
@@ -297,27 +297,25 @@ pub fn directory_listing<S>(
     }
 }
 
-pub fn extract_query_parameters<S>(
-    req: &HttpRequest<S>,
-) -> (
-    Option<SortingMethod>,
-    Option<SortingOrder>,
-    Option<CompressionMethod>,
-    Option<ColorScheme>,
-    Option<PathBuf>,
-) {
+pub fn extract_query_parameters<S>(req: &HttpRequest<S>) -> QueryParameters {
     match Query::<QueryParameters>::extract(req) {
-        Ok(query) => (
-            query.sort,
-            query.order,
-            query.download.clone(),
-            query.theme,
-            query.path.clone(),
-        ),
+        Ok(query) => QueryParameters {
+            sort: query.sort,
+            order: query.order,
+            download: query.download.clone(),
+            theme: query.theme,
+            path: query.path.clone(),
+        },
         Err(e) => {
             let err = ContextualError::ParseError("query parameters".to_string(), e.to_string());
             errors::log_error_chain(err.to_string());
-            (None, None, None, None, None)
+            QueryParameters {
+                sort: None,
+                order: None,
+                download: None,
+                theme: None,
+                path: None,
+            }
         }
     }
 }

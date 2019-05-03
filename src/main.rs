@@ -83,7 +83,9 @@ fn run() -> Result<(), ContextualError> {
         && miniserve_config
             .path
             .symlink_metadata()
-            .map_err(|e| ContextualError::IOError("Failed to retrieve symlink's metadata".to_string(), e))?
+            .map_err(|e| {
+                ContextualError::IOError("Failed to retrieve symlink's metadata".to_string(), e)
+            })?
             .file_type()
             .is_symlink()
     {
@@ -285,8 +287,8 @@ fn error_404(req: &HttpRequest<crate::MiniserveConfig>) -> Result<HttpResponse, 
         None => "/".to_string(),
     };
 
-    let (sort_method, sort_order, _, color_scheme, _) = listing::extract_query_parameters(req);
-    let color_scheme = color_scheme.unwrap_or(default_color_scheme);
+    let query_params = listing::extract_query_parameters(req);
+    let color_scheme = query_params.theme.unwrap_or(default_color_scheme);
 
     errors::log_error_chain(err_404.to_string());
 
@@ -295,8 +297,8 @@ fn error_404(req: &HttpRequest<crate::MiniserveConfig>) -> Result<HttpResponse, 
             &err_404.to_string(),
             StatusCode::NOT_FOUND,
             &return_address,
-            sort_method,
-            sort_order,
+            query_params.sort,
+            query_params.order,
             color_scheme,
             default_color_scheme,
             false,

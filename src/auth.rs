@@ -168,7 +168,7 @@ fn build_unauthorized_response(
     .into_string()
 }
 
-#[cfg_attr(rustfmt, rustfmt_skip)]
+#[rustfmt::skip]
 #[cfg(test)]
 mod tests {
     use super::*;
