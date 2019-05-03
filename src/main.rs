@@ -83,9 +83,7 @@ fn run() -> Result<(), ContextualError> {
         && miniserve_config
             .path
             .symlink_metadata()
-            .map_err(|e| {
-                ContextualError::IOError("Failed to retrieve symlink's metadata".to_string(), e)
-            })?
+            .map_err(|e| ContextualError::IOError("Failed to retrieve symlink's metadata".to_string(), e))?
             .file_type()
             .is_symlink()
     {
