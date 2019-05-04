@@ -24,7 +24,7 @@ use std::time::Duration;
         "testpassword"
     ),
 )]
-fn auth_works(
+fn auth_accepts(
     tmpdir: TempDir,
     port: u16,
     cli_auth_arg: &str,
@@ -52,6 +52,63 @@ fn auth_works(
     for &file in FILES {
         assert!(parsed.find(Text).any(|x| x.text() == file));
     }
+
+    child.kill()?;
+
+    Ok(())
+}
+
+#[rstest_parametrize(
+    cli_auth_arg, client_username, client_password,
+    case("rightuser:rightpassword", "wronguser", "rightpassword"),
+    case(
+        "rightuser:sha256:314eee236177a721d0e58d3ca4ff01795cdcad1e8478ba8183a2e58d69c648c0",
+        "wronguser",
+        "rightpassword"
+    ),
+    case(
+        "rightuser:sha512:84ec4056571afeec9f5b59453305877e9a66c3f9a1d91733fde759b370c1d540b9dc58bfc88c5980ad2d020c3a8ee84f21314a180856f5a82ba29ecba29e2cab",
+        "wronguser",
+        "rightpassword"
+    ),
+    case("rightuser:rightpassword", "rightuser", "wrongpassword"),
+    case(
+        "rightuser:sha256:314eee236177a721d0e58d3ca4ff01795cdcad1e8478ba8183a2e58d69c648c0",
+        "rightuser",
+        "wrongpassword"
+    ),
+    case(
+        "rightuser:sha512:84ec4056571afeec9f5b59453305877e9a66c3f9a1d91733fde759b370c1d540b9dc58bfc88c5980ad2d020c3a8ee84f21314a180856f5a82ba29ecba29e2cab",
+        "rightuser",
+        "wrongpassword"
+    ),
+)]
+fn auth_rejects(
+    tmpdir: TempDir,
+    port: u16,
+    cli_auth_arg: &str,
+    client_username: &str,
+    client_password: &str,
+) -> Result<(), Error> {
+    let mut child = Command::cargo_bin("miniserve")?
+        .arg(tmpdir.path())
+        .arg("-p")
+        .arg(port.to_string())
+        .arg("-a")
+        .arg(cli_auth_arg)
+        .stdout(Stdio::null())
+        .spawn()?;
+
+    sleep(Duration::from_secs(1));
+
+    let client = reqwest::Client::new();
+    let status = client
+        .get(format!("http://localhost:{}", port).as_str())
+        .basic_auth(client_username, Some(client_password))
+        .send()?
+        .status();
+
+    assert_eq!(status.canonical_reason(), Some("Unauthorized"));
 
     child.kill()?;
 
