@@ -79,12 +79,13 @@ fn parse_interface(src: &str) -> Result<IpAddr, std::net::AddrParseError> {
 
 /// Parse a string of multiple authentication requirements
 fn parse_auth(src: &str) -> Result<auth::RequiredAuth, ContextualError> {
-    let mut required_auth = auth::RequiredAuth::new();
-
-    for pair in src.split_whitespace().map(parse_single_auth) {
-        let (username, password) = pair?;
-        required_auth.insert(username.to_owned(), password);
-    }
+    let required_auth = src
+        .split_whitespace()
+        .map(parse_single_auth)
+        .collect::<Result<Vec<_>, ContextualError>>()?
+        .iter()
+        .cloned()
+        .collect::<auth::RequiredAuth>();
 
     Ok(required_auth)
 }
@@ -237,17 +238,15 @@ mod tests {
     fn parse_multiple_auth_valid() -> Result<(), ContextualError> {
         let hex2str = |x: &str| hex::decode(x).expect("Invalid hex code");
 
-        let pairs = [
+        let expected: auth::RequiredAuth = [
             ("usr0", auth::RequiredAuthPassword::Plain("pwd0".to_owned())),
             ("usr1", auth::RequiredAuthPassword::Plain("pwd1".to_owned())),
             ("usr2", auth::RequiredAuthPassword::Sha256(hex2str("abcd"))),
             ("usr3", auth::RequiredAuthPassword::Sha512(hex2str("abcd"))),
-        ];
-
-        let mut expected = auth::RequiredAuth::new();
-        for (username, password) in pairs.iter() {
-            expected.insert(username.to_owned().to_string(), password.clone());
-        }
+        ]
+            .iter()
+            .map(|(username, password)| (username.to_owned().to_string(), password.clone()))
+            .collect();
 
         assert_eq!(
             parse_auth("usr0:pwd0 usr1:pwd1 usr2:sha256:abcd usr3:sha512:abcd")?,
