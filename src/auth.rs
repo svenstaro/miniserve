@@ -2,6 +2,7 @@ use actix_web::http::header;
 use actix_web::middleware::{Middleware, Response};
 use actix_web::{HttpRequest, HttpResponse, Result};
 use sha2::{Digest, Sha256, Sha512};
+use std::collections::HashMap;
 
 use crate::errors::{ContextualError};
 
@@ -22,12 +23,8 @@ pub enum RequiredAuthPassword {
     Sha512(Vec<u8>),
 }
 
-#[derive(Clone, Debug, PartialEq)]
 /// Authentication structure to match `BasicAuthParams` against
-pub struct RequiredAuth {
-    pub username: String,
-    pub password: RequiredAuthPassword,
-}
+pub type RequiredAuth = HashMap<String, RequiredAuthPassword>;
 
 /// Decode a HTTP basic auth string into a tuple of username and password.
 pub fn parse_basic_auth(
@@ -57,20 +54,20 @@ pub fn parse_basic_auth(
 
 /// Verify authentication
 pub fn match_auth(basic_auth: BasicAuthParams, required_auth: &RequiredAuth) -> bool {
-    if basic_auth.username != required_auth.username {
-        return false;
-    }
-
-    match &required_auth.password {
-        RequiredAuthPassword::Plain(ref required_password) => {
-            basic_auth.password == *required_password
+    if let Some(password) = required_auth.get(&basic_auth.username) {
+        match &password {
+            RequiredAuthPassword::Plain(ref required_password) => {
+                basic_auth.password == *required_password
+            }
+            RequiredAuthPassword::Sha256(password_hash) => {
+                compare_hash::<Sha256>(basic_auth.password, password_hash)
+            }
+            RequiredAuthPassword::Sha512(password_hash) => {
+                compare_hash::<Sha512>(basic_auth.password, password_hash)
+            }
         }
-        RequiredAuthPassword::Sha256(password_hash) => {
-            compare_hash::<Sha256>(basic_auth.password, password_hash)
-        }
-        RequiredAuthPassword::Sha512(password_hash) => {
-            compare_hash::<Sha512>(basic_auth.password, password_hash)
-        }
+    } else {
+        false
     }
 }
 
@@ -150,16 +147,19 @@ mod tests {
     /// Helper function that creates a `RequiredAuth` structure and encrypt `password` if necessary
     fn create_required_auth(username: &str, password: &str, encrypt: &str) -> RequiredAuth {
         use RequiredAuthPassword::*;
+        let mut required_auth = RequiredAuth::new();
 
-        RequiredAuth {
-            username: username.to_owned(),
-            password: match encrypt {
+        required_auth.insert(
+            username.to_owned(),
+            match encrypt {
                 "plain" => Plain(password.to_owned()),
                 "sha256" => Sha256(get_hash::<sha2::Sha256>(password.to_owned())),
                 "sha512" => Sha512(get_hash::<sha2::Sha512>(password.to_owned())),
                 _ => panic!("Unknown encryption type"),
             },
-        }
+        );
+
+        required_auth
     }
 
     #[rstest_parametrize(

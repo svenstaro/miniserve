@@ -77,8 +77,20 @@ fn parse_interface(src: &str) -> Result<IpAddr, std::net::AddrParseError> {
     src.parse::<IpAddr>()
 }
 
-/// Checks wether the auth string is valid, i.e. it follows the syntax username:password
+/// Parse a string of multiple authentication requirements
 fn parse_auth(src: &str) -> Result<auth::RequiredAuth, ContextualError> {
+    let mut required_auth = auth::RequiredAuth::new();
+
+    for pair in src.split_whitespace().map(parse_single_auth) {
+        let (username, password) = pair?;
+        required_auth.insert(username.to_owned(), password);
+    }
+
+    Ok(required_auth)
+}
+
+/// Parse a single authentication requirement
+fn parse_single_auth(src: &str) -> Result<(String, auth::RequiredAuthPassword), ContextualError> {
     let mut split = src.splitn(3, ':');
     let invalid_auth_format = Err(ContextualError::InvalidAuthFormat);
 
@@ -119,10 +131,7 @@ fn parse_auth(src: &str) -> Result<auth::RequiredAuth, ContextualError> {
         auth::RequiredAuthPassword::Plain(second_part.to_owned())
     };
 
-    Ok(auth::RequiredAuth {
-        username: username.to_owned(),
-        password,
-    })
+    Ok((username.to_owned(), password))
 }
 
 /// Parses the command line arguments
@@ -172,16 +181,19 @@ mod tests {
     fn create_required_auth(username: &str, password: &str, encrypt: &str) -> auth::RequiredAuth {
         use auth::*;
         use RequiredAuthPassword::*;
+        let mut required_auth = RequiredAuth::new();
 
-        RequiredAuth {
-            username: username.to_owned(),
-            password: match encrypt {
+        required_auth.insert(
+            username.to_owned(),
+            match encrypt {
                 "plain" => Plain(password.to_owned()),
                 "sha256" => Sha256(hex::decode(password.to_owned()).unwrap()),
                 "sha512" => Sha512(hex::decode(password.to_owned()).unwrap()),
                 _ => panic!("Unknown encryption type"),
             },
-        }
+        );
+
+        required_auth
     }
 
     #[rstest_parametrize(
