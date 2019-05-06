@@ -205,7 +205,7 @@ mod tests {
         ),
         case(
             "username:blahblah:abcd",
-            "Invalid hashing method blahblah. Expected sha256 or sha512"
+            "blahblah is not a valid hashing method. Expected sha256 or sha512"
         ),
         case(
             "username:sha256:invalid",
