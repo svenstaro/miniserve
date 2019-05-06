@@ -7,7 +7,7 @@ use std::path::PathBuf;
 use strum_macros::{Display, EnumIter, EnumString};
 use tar::Builder;
 
-use crate::errors::ContextualError;
+use crate::errors::{ContextualError};
 
 /// Available compression methods
 #[derive(Deserialize, Clone, EnumIter, EnumString, Display)]
@@ -62,11 +62,17 @@ fn tgz_compress(dir: &PathBuf, skip_symlinks: bool) -> Result<(String, Bytes), C
             let mut tgz_data = Bytes::new();
 
             let tar_data = tar(src_dir, directory.to_string(), skip_symlinks).map_err(|e| {
-                ContextualError::ArchiveCreationError("tarball".to_string(), Box::new(e))
+                ContextualError::ArchiveCreationError(
+                    "tarball".to_string(),
+                    Box::new(e),
+                )
             })?;
 
             let gz_data = gzip(&tar_data).map_err(|e| {
-                ContextualError::ArchiveCreationError("GZIP archive".to_string(), Box::new(e))
+                ContextualError::ArchiveCreationError(
+                    "GZIP archive".to_string(),
+                    Box::new(e),
+                )
             })?;
 
             tgz_data.extend_from_slice(&gz_data);
@@ -109,7 +115,10 @@ fn tar(
         })?;
 
     let tar_content = tar_builder.into_inner().map_err(|e| {
-        ContextualError::IOError("Failed to finish writing the TAR archive".to_string(), e)
+        ContextualError::IOError(
+            "Failed to finish writing the TAR archive".to_string(),
+            e,
+        )
     })?;
 
     Ok(tar_content)
@@ -117,14 +126,24 @@ fn tar(
 
 /// Compresses a stream of bytes using the GZIP algorithm, and returns the resulting stream
 fn gzip(mut data: &[u8]) -> Result<Vec<u8>, ContextualError> {
-    let mut encoder = Encoder::new(Vec::new())
-        .map_err(|e| ContextualError::IOError("Failed to create GZIP encoder".to_string(), e))?;
-    io::copy(&mut data, &mut encoder)
-        .map_err(|e| ContextualError::IOError("Failed to write GZIP data".to_string(), e))?;
-    let data = encoder
-        .finish()
-        .into_result()
-        .map_err(|e| ContextualError::IOError("Failed to write GZIP trailer".to_string(), e))?;
+    let mut encoder = Encoder::new(Vec::new()).map_err(|e| {
+        ContextualError::IOError(
+            "Failed to create GZIP encoder".to_string(),
+            e,
+        )
+    })?;
+    io::copy(&mut data, &mut encoder).map_err(|e| {
+        ContextualError::IOError(
+            "Failed to write GZIP data".to_string(),
+            e,
+        )
+    })?;
+    let data = encoder.finish().into_result().map_err(|e| {
+        ContextualError::IOError(
+            "Failed to write GZIP trailer".to_string(),
+            e,
+        )
+    })?;
 
     Ok(data)
 }
