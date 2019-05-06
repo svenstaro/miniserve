@@ -9,6 +9,7 @@ use select::predicate::Text;
 use std::process::{Command, Stdio};
 use std::thread::sleep;
 use std::time::Duration;
+use reqwest::StatusCode;
 
 #[rstest_parametrize(
     cli_auth_arg, client_username, client_password,
@@ -108,7 +109,7 @@ fn auth_rejects(
         .send()?
         .status();
 
-    assert_eq!(status.canonical_reason(), Some("Unauthorized"));
+    assert_eq!(status, StatusCode::UNAUTHORIZED);
 
     child.kill()?;
 
