@@ -44,11 +44,15 @@ fn auth_accepts(
     sleep(Duration::from_secs(1));
 
     let client = reqwest::Client::new();
-    let body = client
+    let response = client
         .get(format!("http://localhost:{}", port).as_str())
         .basic_auth(client_username, Some(client_password))
-        .send()?
-        .error_for_status()?;
+        .send()?;
+
+    let status_code = response.status();
+    assert_eq!(status_code, StatusCode::OK);
+
+    let body = response.error_for_status()?;
     let parsed = Document::from_read(body)?;
     for &file in FILES {
         assert!(parsed.find(Text).any(|x| x.text() == file));
