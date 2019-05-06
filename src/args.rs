@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use structopt::StructOpt;
 
 use crate::auth;
-use crate::errors::ContextualError;
+use crate::errors::{ContextualError};
 use crate::themes;
 
 /// Possible characters for random routes
@@ -99,13 +99,15 @@ fn parse_auth(src: &str) -> Result<auth::RequiredAuth, ContextualError> {
         let hash_bin = if let Ok(hash_bin) = hex::decode(hash_hex) {
             hash_bin
         } else {
-            return Err(ContextualError::InvalidPasswordHash);
+            return Err(ContextualError::InvalidPasswordHash)
         };
 
         match second_part {
             "sha256" => auth::RequiredAuthPassword::Sha256(hash_bin.to_owned()),
             "sha512" => auth::RequiredAuthPassword::Sha512(hash_bin.to_owned()),
-            _ => return Err(ContextualError::InvalidHashMethod(second_part.to_owned())),
+            _ => {
+                return Err(ContextualError::InvalidHashMethod(second_part.to_owned()))
+            },
         }
     } else {
         // To make it Windows-compatible, the password needs to be shorter than 255 characters.
