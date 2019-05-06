@@ -9,6 +9,7 @@ use select::predicate::Text;
 use std::process::{Command, Stdio};
 use std::thread::sleep;
 use std::time::Duration;
+use reqwest::StatusCode;
 
 #[rstest_parametrize(
     cli_auth_arg, client_username, client_password,
@@ -49,7 +50,7 @@ fn auth_works(
         .send()?;
 
     let status_code = response.status();
-    assert_eq!(status_code.canonical_reason(), Some("OK"));
+    assert_eq!(status_code, StatusCode::OK);
 
     let body = response.error_for_status()?;
     let parsed = Document::from_read(body)?;
