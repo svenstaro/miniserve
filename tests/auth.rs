@@ -3,13 +3,13 @@ mod fixtures;
 use assert_cmd::prelude::*;
 use assert_fs::fixture::TempDir;
 use fixtures::{port, tmpdir, Error, FILES};
+use reqwest::StatusCode;
 use rstest::rstest_parametrize;
 use select::document::Document;
 use select::predicate::Text;
 use std::process::{Command, Stdio};
 use std::thread::sleep;
 use std::time::Duration;
-use reqwest::StatusCode;
 
 #[rstest_parametrize(
     cli_auth_arg, client_username, client_password,

@@ -846,6 +846,7 @@ fn humanize_systemtime(src_time: Option<SystemTime>) -> Option<String> {
 }
 
 /// Renders an error on the webpage
+#[allow(clippy::too_many_arguments)]
 pub fn render_error(
     error_description: &str,
     error_code: StatusCode,
