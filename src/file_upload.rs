@@ -1,9 +1,9 @@
 use actix_web::{
-    dev, http::header, multipart, FromRequest, FutureResponse, HttpMessage, HttpRequest,
-    HttpResponse, Query,
+    dev,
+    http::{header, StatusCode},
+    multipart, FutureResponse, HttpMessage, HttpRequest, HttpResponse,
 };
 use futures::{future, future::FutureResult, Future, Stream};
-use serde::Deserialize;
 use std::{
     fs,
     io::Write,
@@ -11,13 +11,9 @@ use std::{
 };
 
 use crate::errors::{self, ContextualError};
+use crate::listing::{self, SortingMethod, SortingOrder};
 use crate::renderer;
-
-/// Query parameters
-#[derive(Debug, Deserialize)]
-struct QueryParameters {
-    path: PathBuf,
-}
+use crate::themes::ColorScheme;
 
 /// Create future to save file.
 fn save_file(
@@ -35,7 +31,7 @@ fn save_file(
         Ok(file) => file,
         Err(e) => {
             return Box::new(future::err(ContextualError::IOError(
-                format!("Failed to create file in {}", file_path.display()),
+                format!("Failed to create {}", file_path.display()),
                 e,
             )));
         }
@@ -121,37 +117,75 @@ fn handle_multipart(
 /// server root directory. Any path which will go outside of this directory is considered
 /// invalid.
 /// This method returns future.
-pub fn upload_file(req: &HttpRequest<crate::MiniserveConfig>) -> FutureResponse<HttpResponse> {
+pub fn upload_file(
+    req: &HttpRequest<crate::MiniserveConfig>,
+    default_color_scheme: ColorScheme,
+) -> FutureResponse<HttpResponse> {
     let return_path = if let Some(header) = req.headers().get(header::REFERER) {
         header.to_str().unwrap_or("/").to_owned()
     } else {
         "/".to_string()
     };
-    let app_root_dir = if let Ok(dir) = req.state().path.canonicalize() {
-        dir
-    } else {
-        return Box::new(create_error_response("Internal server error", &return_path));
-    };
-    let path = match Query::<QueryParameters>::extract(req) {
-        Ok(query) => {
-            if let Ok(stripped_path) = query.path.strip_prefix(Component::RootDir) {
-                stripped_path.to_owned()
-            } else {
-                query.path.clone()
-            }
-        }
-        Err(_) => {
+
+    let query_params = listing::extract_query_parameters(req);
+    let color_scheme = query_params.theme.unwrap_or(default_color_scheme);
+    let upload_path = match query_params.path.clone() {
+        Some(path) => match path.strip_prefix(Component::RootDir) {
+            Ok(stripped_path) => stripped_path.to_owned(),
+            Err(_) => path.clone(),
+        },
+        None => {
+            let err = ContextualError::InvalidHTTPRequestError(
+                "Missing query parameter 'path'".to_string(),
+            );
             return Box::new(create_error_response(
-                "Unspecified parameter path",
+                &err.to_string(),
+                StatusCode::BAD_REQUEST,
                 &return_path,
-            ))
+                query_params.sort,
+                query_params.order,
+                color_scheme,
+                default_color_scheme,
+            ));
+        }
+    };
+
+    let app_root_dir = match req.state().path.canonicalize() {
+        Ok(dir) => dir,
+        Err(e) => {
+            let err = ContextualError::IOError(
+                "Failed to resolve path served by miniserve".to_string(),
+                e,
+            );
+            return Box::new(create_error_response(
+                &err.to_string(),
+                StatusCode::INTERNAL_SERVER_ERROR,
+                &return_path,
+                query_params.sort,
+                query_params.order,
+                color_scheme,
+                default_color_scheme,
+            ));
         }
     };
 
     // If the target path is under the app root directory, save the file.
-    let target_dir = match &app_root_dir.clone().join(path).canonicalize() {
+    let target_dir = match &app_root_dir.clone().join(upload_path).canonicalize() {
         Ok(path) if path.starts_with(&app_root_dir) => path.clone(),
-        _ => return Box::new(create_error_response("Invalid path", &return_path)),
+        _ => {
+            let err = ContextualError::InvalidHTTPRequestError(
+                "Invalid value for 'path' parameter".to_string(),
+            );
+            return Box::new(create_error_response(
+                &err.to_string(),
+                StatusCode::BAD_REQUEST,
+                &return_path,
+                query_params.sort,
+                query_params.order,
+                color_scheme,
+                default_color_scheme,
+            ));
+        }
     };
     let overwrite_files = req.state().overwrite_files;
     Box::new(
@@ -166,7 +200,15 @@ pub fn upload_file(req: &HttpRequest<crate::MiniserveConfig>) -> FutureResponse<
                         .header(header::LOCATION, return_path.to_string())
                         .finish(),
                 ),
-                Err(e) => create_error_response(&e.to_string(), &return_path),
+                Err(e) => create_error_response(
+                    &e.to_string(),
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    &return_path,
+                    query_params.sort,
+                    query_params.order,
+                    color_scheme,
+                    default_color_scheme,
+                ),
             }),
     )
 }
@@ -174,12 +216,30 @@ pub fn upload_file(req: &HttpRequest<crate::MiniserveConfig>) -> FutureResponse<
 /// Convenience method for creating response errors, if file upload fails.
 fn create_error_response(
     description: &str,
+    error_code: StatusCode,
     return_path: &str,
+    sorting_method: Option<SortingMethod>,
+    sorting_order: Option<SortingOrder>,
+    color_scheme: ColorScheme,
+    default_color_scheme: ColorScheme,
 ) -> FutureResult<HttpResponse, actix_web::error::Error> {
     errors::log_error_chain(description.to_string());
     future::ok(
         HttpResponse::BadRequest()
             .content_type("text/html; charset=utf-8")
-            .body(renderer::render_error(description, return_path).into_string()),
+            .body(
+                renderer::render_error(
+                    description,
+                    error_code,
+                    return_path,
+                    sorting_method,
+                    sorting_order,
+                    color_scheme,
+                    default_color_scheme,
+                    true,
+                    true,
+                )
+                .into_string(),
+            ),
     )
 }

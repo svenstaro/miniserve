@@ -164,6 +164,7 @@ pub fn parse_args() -> crate::MiniserveConfig {
     }
 }
 
+#[rustfmt::skip]
 #[cfg(test)]
 mod tests {
     use super::*;

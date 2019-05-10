@@ -3,7 +3,7 @@ use structopt::clap::arg_enum;
 use strum_macros::EnumIter;
 
 arg_enum! {
-    #[derive(PartialEq, Deserialize, Clone, EnumIter)]
+    #[derive(PartialEq, Deserialize, Clone, EnumIter, Copy)]
     #[serde(rename_all = "lowercase")]
     pub enum ColorScheme {
         Archlinux,
@@ -17,8 +17,8 @@ impl ColorScheme {
     /// Returns the URL-compatible name of a color scheme
     /// This must correspond to the name of the variant, in lowercase
     /// See https://github.com/svenstaro/miniserve/pull/55 for explanations
-    pub fn to_slug(&self) -> String {
-        match &self {
+    pub fn to_slug(self) -> String {
+        match self {
             ColorScheme::Archlinux => "archlinux",
             ColorScheme::Zenburn => "zenburn",
             ColorScheme::Monokai => "monokai",
@@ -28,8 +28,8 @@ impl ColorScheme {
     }
 
     /// Returns wether a color scheme is dark
-    pub fn is_dark(&self) -> bool {
-        match &self {
+    pub fn is_dark(self) -> bool {
+        match self {
             ColorScheme::Archlinux => true,
             ColorScheme::Zenburn => true,
             ColorScheme::Monokai => true,
@@ -81,6 +81,7 @@ impl ColorScheme {
                 drag_text_color: "#fefefe".to_string(),
                 size_background_color: "#5294e2".to_string(),
                 size_text_color: "#fefefe".to_string(),
+                error_color: "#e44b4b".to_string(),
             },
             ColorScheme::Zenburn => Theme {
                 background: "#3f3f3f".to_string(),
@@ -123,6 +124,7 @@ impl ColorScheme {
                 drag_text_color: "#efefef".to_string(),
                 size_background_color: "#7f9f7f".to_string(),
                 size_text_color: "#efefef".to_string(),
+                error_color: "#d06565".to_string(),
             },
             ColorScheme::Monokai => Theme {
                 background: "#272822".to_string(),
@@ -165,6 +167,7 @@ impl ColorScheme {
                 drag_text_color: "#F8F8F2".to_string(),
                 size_background_color: "#75715E".to_string(),
                 size_text_color: "#F8F8F2".to_string(),
+                error_color: "#d02929".to_string(),
             },
             ColorScheme::Squirrel => Theme {
                 background: "#FFFFFF".to_string(),
@@ -207,6 +210,7 @@ impl ColorScheme {
                 drag_text_color: "#ffffff".to_string(),
                 size_background_color: "#323232".to_string(),
                 size_text_color: "#FFFFFF".to_string(),
+                error_color: "#d02424".to_string(),
             },
         }
     }
@@ -254,4 +258,5 @@ pub struct Theme {
     pub drag_text_color: String,
     pub size_background_color: String,
     pub size_text_color: String,
+    pub error_color: String,
 }
