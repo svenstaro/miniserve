@@ -22,7 +22,7 @@ pub enum RequiredAuthPassword {
     Sha512(Vec<u8>),
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 /// Authentication structure to match `BasicAuthParams` against
 pub struct RequiredAuth {
     pub username: String,
@@ -138,7 +138,7 @@ mod tests {
     use rstest::rstest_parametrize;
 
     /// Return a hashing function corresponds to given name
-    fn get_hash_func(name: &str) -> impl FnOnce(String) -> Vec<u8> {
+    fn get_hash_func(name: &str) -> impl FnOnce(&String) -> Vec<u8> {
         match name {
             "sha256" => get_hash::<Sha256>,
             "sha512" => get_hash::<Sha512>,
@@ -154,26 +154,25 @@ mod tests {
     fn test_get_hash(password: &str, hash_method: &str, hash: &str) {
         let hash_func = get_hash_func(hash_method);
         let expected = hex::decode(hash).expect("Provided hash is not a valid hex code");
-        let received = hash_func(password.to_owned());
+        let received = hash_func(&password.to_owned());
         assert_eq!(received, expected);
     }
 
     /// Helper function that creates a `RequiredAuth` structure and encrypt `password` if necessary
     fn create_required_auth(username: &str, password: &str, encrypt: &str) -> RequiredAuth {
         use RequiredAuthPassword::*;
-        let mut required_auth = RequiredAuth::new();
 
-        required_auth.insert(
-            username.to_owned(),
-            match encrypt {
-                "plain" => Plain(password.to_owned()),
-                "sha256" => Sha256(get_hash::<sha2::Sha256>(password.to_owned())),
-                "sha512" => Sha512(get_hash::<sha2::Sha512>(password.to_owned())),
-                _ => panic!("Unknown encryption type"),
-            },
-        );
+        let password = match encrypt {
+            "plain" => Plain(password.to_owned()),
+            "sha256" => Sha256(get_hash::<sha2::Sha256>(&password.to_owned())),
+            "sha512" => Sha512(get_hash::<sha2::Sha512>(&password.to_owned())),
+            _ => panic!("Unknown encryption type"),
+        };
 
-        required_auth
+        RequiredAuth {
+            username: username.to_owned(),
+            password,
+        }
     }
 
     #[rstest_parametrize(
@@ -185,7 +184,7 @@ mod tests {
         case(true, "obi", "hello there", "obi", "hello there", "sha512"),
         case(false, "obi", "hello there", "obi", "hi!", "sha512"),
     )]
-    fn test_auth(
+    fn test_single_auth(
         should_pass: bool,
         param_username: &str,
         param_password: &str,
@@ -199,7 +198,7 @@ mod tests {
                     username: param_username.to_owned(),
                     password: param_password.to_owned(),
                 },
-                &create_required_auth(required_username, required_password, encrypt),
+                &[create_required_auth(required_username, required_password, encrypt)],
             ),
             should_pass,
         )

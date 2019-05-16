@@ -172,19 +172,18 @@ mod tests {
     fn create_required_auth(username: &str, password: &str, encrypt: &str) -> auth::RequiredAuth {
         use auth::*;
         use RequiredAuthPassword::*;
-        let mut required_auth = RequiredAuth::new();
 
-        required_auth.insert(
-            username.to_owned(),
-            match encrypt {
-                "plain" => Plain(password.to_owned()),
-                "sha256" => Sha256(hex::decode(password.to_owned()).unwrap()),
-                "sha512" => Sha512(hex::decode(password.to_owned()).unwrap()),
-                _ => panic!("Unknown encryption type"),
-            },
-        );
+        let password = match encrypt {
+            "plain" => Plain(password.to_owned()),
+            "sha256" => Sha256(hex::decode(password.to_owned()).unwrap()),
+            "sha512" => Sha512(hex::decode(password.to_owned()).unwrap()),
+            _ => panic!("Unknown encryption type"),
+        };
 
-        required_auth
+        auth::RequiredAuth {
+            username: username.to_owned(),
+            password,
+        }
     }
 
     #[rstest_parametrize(
@@ -193,7 +192,7 @@ mod tests {
         case("username:sha256:abcd", "username", "abcd", "sha256"),
         case("username:sha512:abcd", "username", "abcd", "sha512")
     )]
-    fn parse_single_auth_valid(auth_string: &str, username: &str, password: &str, encrypt: &str) {
+    fn parse_auth_valid(auth_string: &str, username: &str, password: &str, encrypt: &str) {
         assert_eq!(
             parse_auth(auth_string).unwrap(),
             create_required_auth(username, password, encrypt),
@@ -219,30 +218,8 @@ mod tests {
             "Invalid format for password hash. Expected hex code"
         ),
     )]
-    fn parse_single_auth_invalid(auth_string: &str, err_msg: &str) {
+    fn parse_auth_invalid(auth_string: &str, err_msg: &str) {
         let err = parse_auth(auth_string).unwrap_err();
         assert_eq!(format!("{}", err), err_msg.to_owned());
-    }
-
-    #[test]
-    fn parse_multiple_auth_valid() -> Result<(), ContextualError> {
-        let hex2str = |x: &str| hex::decode(x).expect("Invalid hex code");
-
-        let expected: auth::RequiredAuth = [
-            ("usr0", auth::RequiredAuthPassword::Plain("pwd0".to_owned())),
-            ("usr1", auth::RequiredAuthPassword::Plain("pwd1".to_owned())),
-            ("usr2", auth::RequiredAuthPassword::Sha256(hex2str("abcd"))),
-            ("usr3", auth::RequiredAuthPassword::Sha512(hex2str("abcd"))),
-        ]
-            .iter()
-            .map(|(username, password)| (username.to_owned().to_string(), password.clone()))
-            .collect();
-
-        assert_eq!(
-            parse_auth("usr0:pwd0 usr1:pwd1 usr2:sha256:abcd usr3:sha512:abcd")?,
-            expected,
-        );
-
-        Ok(())
     }
 }
