@@ -41,7 +41,7 @@ struct CLIArgs {
     /// Set authentication. Currently supported formats:
     /// username:password, username:sha256:hash, username:sha512:hash
     #[structopt(short = "a", long = "auth", parse(try_from_str = "parse_auth"))]
-    auth: Option<auth::RequiredAuth>,
+    auth: Vec<auth::RequiredAuth>,
 
     /// Generate a random 6-hexdigit route
     #[structopt(long = "random-route")]
@@ -77,21 +77,8 @@ fn parse_interface(src: &str) -> Result<IpAddr, std::net::AddrParseError> {
     src.parse::<IpAddr>()
 }
 
-/// Parse a string of multiple authentication requirements
+/// Parse authentication requirement
 fn parse_auth(src: &str) -> Result<auth::RequiredAuth, ContextualError> {
-    let required_auth = src
-        .split_whitespace()
-        .map(parse_single_auth)
-        .collect::<Result<Vec<_>, ContextualError>>()?
-        .iter()
-        .cloned()
-        .collect::<auth::RequiredAuth>();
-
-    Ok(required_auth)
-}
-
-/// Parse a single authentication requirement
-fn parse_single_auth(src: &str) -> Result<(String, auth::RequiredAuthPassword), ContextualError> {
     let mut split = src.splitn(3, ':');
     let invalid_auth_format = Err(ContextualError::InvalidAuthFormat);
 
@@ -132,7 +119,10 @@ fn parse_single_auth(src: &str) -> Result<(String, auth::RequiredAuthPassword), 
         auth::RequiredAuthPassword::Plain(second_part.to_owned())
     };
 
-    Ok((username.to_owned(), password))
+    Ok(auth::RequiredAuth {
+        username: username.to_owned(),
+        password,
+    })
 }
 
 /// Parses the command line arguments

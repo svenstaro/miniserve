@@ -37,7 +37,7 @@ pub struct MiniserveConfig {
     pub interfaces: Vec<IpAddr>,
 
     /// Enable HTTP basic authentication
-    pub auth: Option<auth::RequiredAuth>,
+    pub auth: Vec<auth::RequiredAuth>,
 
     /// If false, miniserve will serve the current working directory
     pub path_explicitly_chosen: bool,

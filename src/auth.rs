@@ -2,7 +2,6 @@ use actix_web::http::header;
 use actix_web::middleware::{Middleware, Response};
 use actix_web::{HttpRequest, HttpResponse, Result};
 use sha2::{Digest, Sha256, Sha512};
-use std::collections::HashMap;
 
 use crate::errors::{ContextualError};
 
@@ -23,8 +22,12 @@ pub enum RequiredAuthPassword {
     Sha512(Vec<u8>),
 }
 
+#[derive(Clone, Debug)]
 /// Authentication structure to match `BasicAuthParams` against
-pub type RequiredAuth = HashMap<String, RequiredAuthPassword>;
+pub struct RequiredAuth {
+    pub username: String,
+    pub password: RequiredAuthPassword,
+}
 
 /// Decode a HTTP basic auth string into a tuple of username and password.
 pub fn parse_basic_auth(
@@ -53,31 +56,36 @@ pub fn parse_basic_auth(
 }
 
 /// Verify authentication
-pub fn match_auth(basic_auth: BasicAuthParams, required_auth: &RequiredAuth) -> bool {
-    if let Some(password) = required_auth.get(&basic_auth.username) {
-        match &password {
-            RequiredAuthPassword::Plain(ref required_password) => {
-                basic_auth.password == *required_password
-            }
-            RequiredAuthPassword::Sha256(password_hash) => {
-                compare_hash::<Sha256>(basic_auth.password, password_hash)
-            }
-            RequiredAuthPassword::Sha512(password_hash) => {
-                compare_hash::<Sha512>(basic_auth.password, password_hash)
-            }
+pub fn match_auth(basic_auth: BasicAuthParams, required_auth: &[RequiredAuth]) -> bool {
+    required_auth.iter().any(
+        |RequiredAuth { username, password }|
+            basic_auth.username == *username &&
+            compare_password(&basic_auth.password, password)
+    )
+}
+
+/// Return `true` if `basic_auth_pwd` meets `required_auth_pwd`'s requirement
+pub fn compare_password (basic_auth_pwd: &String, required_auth_pwd: &RequiredAuthPassword) -> bool {
+    match &required_auth_pwd {
+        RequiredAuthPassword::Plain(required_password) => {
+            *basic_auth_pwd == *required_password
         }
-    } else {
-        false
+        RequiredAuthPassword::Sha256(password_hash) => {
+            compare_hash::<Sha256>(basic_auth_pwd, password_hash)
+        }
+        RequiredAuthPassword::Sha512(password_hash) => {
+            compare_hash::<Sha512>(basic_auth_pwd, password_hash)
+        }
     }
 }
 
 /// Return `true` if hashing of `password` by `T` algorithm equals to `hash`
-pub fn compare_hash<T: Digest>(password: String, hash: &[u8]) -> bool {
+pub fn compare_hash<T: Digest>(password: &String, hash: &[u8]) -> bool {
     get_hash::<T>(password) == hash
 }
 
 /// Get hash of a `text`
-pub fn get_hash<T: Digest>(text: String) -> Vec<u8> {
+pub fn get_hash<T: Digest>(text: &String) -> Vec<u8> {
     let mut hasher = T::new();
     hasher.input(text);
     hasher.result().to_vec()
@@ -89,32 +97,38 @@ impl Middleware<crate::MiniserveConfig> for Auth {
         req: &HttpRequest<crate::MiniserveConfig>,
         resp: HttpResponse,
     ) -> Result<Response> {
-        if let Some(ref required_auth) = req.state().auth {
-            if let Some(auth_headers) = req.headers().get(header::AUTHORIZATION) {
-                let auth_req = match parse_basic_auth(auth_headers) {
-                    Ok(auth_req) => auth_req,
-                    Err(err) => {
-                        let auth_err = ContextualError::HTTPAuthenticationError(Box::new(err));
-                        return Ok(Response::Done(
-                            HttpResponse::BadRequest().body(auth_err.to_string()),
-                        ));
-                    }
-                };
-                if !match_auth(auth_req, required_auth) {
-                    let new_resp = HttpResponse::Unauthorized().finish();
-                    return Ok(Response::Done(new_resp));
-                }
-            } else {
-                let new_resp = HttpResponse::Unauthorized()
-                    .header(
-                        header::WWW_AUTHENTICATE,
-                        header::HeaderValue::from_static("Basic realm=\"miniserve\""),
-                    )
-                    .finish();
-                return Ok(Response::Done(new_resp));
-            }
+        let required_auth = &req.state().auth;
+
+        if required_auth.len() == 0 {
+            return Ok(Response::Done(resp));
         }
-        Ok(Response::Done(resp))
+
+        if let Some(auth_headers) = req.headers().get(header::AUTHORIZATION) {
+            let auth_req = match parse_basic_auth(auth_headers) {
+                Ok(auth_req) => auth_req,
+                Err(err) => {
+                    let auth_err = ContextualError::HTTPAuthenticationError(Box::new(err));
+                    return Ok(Response::Done(
+                        HttpResponse::BadRequest().body(auth_err.to_string()),
+                    ));
+                }
+            };
+
+            if match_auth(auth_req, required_auth) {
+                return Ok(Response::Done(resp));
+            }
+
+            let new_resp = HttpResponse::Unauthorized().finish();
+            return Ok(Response::Done(new_resp));
+        }
+
+        let new_resp = HttpResponse::Unauthorized()
+            .header(
+                header::WWW_AUTHENTICATE,
+                header::HeaderValue::from_static("Basic realm=\"miniserve\""),
+            )
+            .finish();
+        Ok(Response::Done(new_resp))
     }
 }
 
