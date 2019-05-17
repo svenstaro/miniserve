@@ -1,3 +1,4 @@
+use actix_web::http::StatusCode;
 use chrono::{DateTime, Duration, Utc};
 use chrono_humanize::{Accuracy, HumanTime, Tense};
 use maud::{html, Markup, PreEscaped, DOCTYPE};
@@ -23,8 +24,17 @@ pub fn page(
     upload_route: &str,
     current_dir: &str,
 ) -> Markup {
+    let upload_action = build_upload_action(
+        upload_route,
+        current_dir,
+        sort_method,
+        sort_order,
+        color_scheme,
+        default_color_scheme,
+    );
+
     html! {
-        (page_header(serve_path, &color_scheme, file_upload))
+        (page_header(serve_path, color_scheme, file_upload, false))
         body#drop-container {
             @if file_upload {
                 div.drag-form {
@@ -33,19 +43,19 @@ pub fn page(
                     }
                 }
             }
-            (color_scheme_selector(&sort_method, &sort_order, &color_scheme, &default_color_scheme, serve_path))
+            (color_scheme_selector(sort_method, sort_order, color_scheme, default_color_scheme, serve_path))
             div.container {
                 span#top { }
                 h1.title { "Index of " (serve_path) }
                 div.toolbar {
                     div.download {
                         @for compression_method in CompressionMethod::iter() {
-                            (archive_button(compression_method))
+                            (archive_button(compression_method, sort_method, sort_order, color_scheme, default_color_scheme))
                         }
                     }
                     @if file_upload {
                         div.upload {
-                            form id="file_submit" action={(upload_route) "?path=" (current_dir)} method="POST" enctype="multipart/form-data" {
+                            form id="file_submit" action=(upload_action) method="POST" enctype="multipart/form-data" {
                                 p { "Select a file to upload or drag it anywhere into the window" }
                                 div {
                                     input#file-input type="file" name="file_to_upload" required="" {}
@@ -57,9 +67,9 @@ pub fn page(
                 }
                 table {
                     thead {
-                        th { (build_link("name", "Name", &sort_method, &sort_order, &color_scheme, &default_color_scheme)) }
-                        th { (build_link("size", "Size", &sort_method, &sort_order, &color_scheme, &default_color_scheme)) }
-                        th { (build_link("date", "Last modification", &sort_method, &sort_order, &color_scheme, &default_color_scheme)) }
+                        th { (build_link("name", "Name", sort_method, sort_order, color_scheme, default_color_scheme)) }
+                        th { (build_link("size", "Size", sort_method, sort_order, color_scheme, default_color_scheme)) }
+                        th { (build_link("date", "Last modification", sort_method, sort_order, color_scheme, default_color_scheme)) }
                     }
                     tbody {
                         @if !is_root {
@@ -67,7 +77,7 @@ pub fn page(
                                 tr {
                                     td colspan="3" {
                                         span.root-chevron { (chevron_left()) }
-                                        a.root href=(parametrized_link(&parent, &sort_method, &sort_order, &color_scheme, &default_color_scheme)) {
+                                        a.root href=(parametrized_link(&parent, sort_method, sort_order, color_scheme, default_color_scheme)) {
                                             "Parent directory"
                                         }
                                     }
@@ -75,7 +85,7 @@ pub fn page(
                             }
                         }
                         @for entry in entries {
-                            (entry_row(entry, &sort_method, &sort_order, &color_scheme, &default_color_scheme))
+                            (entry_row(entry, sort_method, sort_order, color_scheme, default_color_scheme))
                         }
                     }
                 }
@@ -87,12 +97,35 @@ pub fn page(
     }
 }
 
+/// Build the action of the upload form
+fn build_upload_action(
+    upload_route: &str,
+    current_dir: &str,
+    sort_method: Option<SortingMethod>,
+    sort_order: Option<SortingOrder>,
+    color_scheme: ColorScheme,
+    default_color_scheme: ColorScheme,
+) -> String {
+    let mut upload_action = format!("{}?path={}", upload_route, current_dir);
+    if let Some(sorting_method) = sort_method {
+        upload_action = format!("{}&sort={}", upload_action, &sorting_method);
+    }
+    if let Some(sorting_order) = sort_order {
+        upload_action = format!("{}&order={}", upload_action, &sorting_order);
+    }
+    if color_scheme != default_color_scheme {
+        upload_action = format!("{}&theme={}", upload_action, color_scheme.to_slug());
+    }
+
+    upload_action
+}
+
 /// Partial: color scheme selector
 fn color_scheme_selector(
-    sort_method: &Option<SortingMethod>,
-    sort_order: &Option<SortingOrder>,
-    active_color_scheme: &ColorScheme,
-    default_color_scheme: &ColorScheme,
+    sort_method: Option<SortingMethod>,
+    sort_order: Option<SortingOrder>,
+    active_color_scheme: ColorScheme,
+    default_color_scheme: ColorScheme,
     serve_path: &str,
 ) -> Markup {
     html! {
@@ -104,13 +137,13 @@ fn color_scheme_selector(
                     }
                     ul {
                         @for color_scheme in ColorScheme::iter() {
-                            @if active_color_scheme == &color_scheme {
+                            @if active_color_scheme == color_scheme {
                                 li.active {
-                                    (color_scheme_link(&sort_method, &sort_order, &color_scheme, &default_color_scheme, serve_path))
+                                    (color_scheme_link(sort_method, sort_order, color_scheme, default_color_scheme, serve_path))
                                 }
                             } @else {
                                 li {
-                                    (color_scheme_link(&sort_method, &sort_order, &color_scheme, &default_color_scheme, serve_path))
+                                    (color_scheme_link(sort_method, sort_order, color_scheme, default_color_scheme, serve_path))
                                 }
                             }
                         }
@@ -123,18 +156,18 @@ fn color_scheme_selector(
 
 /// Partial: color scheme link
 fn color_scheme_link(
-    sort_method: &Option<SortingMethod>,
-    sort_order: &Option<SortingOrder>,
-    color_scheme: &ColorScheme,
-    default_color_scheme: &ColorScheme,
+    sort_method: Option<SortingMethod>,
+    sort_order: Option<SortingOrder>,
+    color_scheme: ColorScheme,
+    default_color_scheme: ColorScheme,
     serve_path: &str,
 ) -> Markup {
     let link = parametrized_link(
         serve_path,
-        &sort_method,
-        &sort_order,
-        &color_scheme,
-        &default_color_scheme,
+        sort_method,
+        sort_order,
+        color_scheme,
+        default_color_scheme,
     );
     let title = format!("Switch to {} theme", color_scheme);
 
@@ -152,8 +185,30 @@ fn color_scheme_link(
 }
 
 /// Partial: archive button
-fn archive_button(compress_method: CompressionMethod) -> Markup {
-    let link = format!("?download={}", compress_method);
+fn archive_button(
+    compress_method: CompressionMethod,
+    sort_method: Option<SortingMethod>,
+    sort_order: Option<SortingOrder>,
+    color_scheme: ColorScheme,
+    default_color_scheme: ColorScheme,
+) -> Markup {
+    let link =
+        if sort_method.is_none() && sort_order.is_none() && color_scheme == default_color_scheme {
+            format!("?download={}", compress_method)
+        } else {
+            format!(
+                "{}&download={}",
+                parametrized_link(
+                    "",
+                    sort_method,
+                    sort_order,
+                    color_scheme,
+                    default_color_scheme
+                ),
+                compress_method
+            )
+        };
+
     let text = format!("Download .{}", compress_method.extension());
 
     html! {
@@ -166,10 +221,10 @@ fn archive_button(compress_method: CompressionMethod) -> Markup {
 /// If they are set, adds query parameters to links to keep them across pages
 fn parametrized_link(
     link: &str,
-    sort_method: &Option<SortingMethod>,
-    sort_order: &Option<SortingOrder>,
-    color_scheme: &ColorScheme,
-    default_color_scheme: &ColorScheme,
+    sort_method: Option<SortingMethod>,
+    sort_order: Option<SortingOrder>,
+    color_scheme: ColorScheme,
+    default_color_scheme: ColorScheme,
 ) -> String {
     if let Some(method) = sort_method {
         if let Some(order) = sort_order {
@@ -194,10 +249,10 @@ fn parametrized_link(
 fn build_link(
     name: &str,
     title: &str,
-    sort_method: &Option<SortingMethod>,
-    sort_order: &Option<SortingOrder>,
-    color_scheme: &ColorScheme,
-    default_color_scheme: &ColorScheme,
+    sort_method: Option<SortingMethod>,
+    sort_order: Option<SortingOrder>,
+    color_scheme: ColorScheme,
+    default_color_scheme: ColorScheme,
 ) -> Markup {
     let mut link = format!("?sort={}&order=asc", name);
     let mut help = format!("Sort by {} in ascending order", name);
@@ -232,17 +287,17 @@ fn build_link(
 /// Partial: row for an entry
 fn entry_row(
     entry: Entry,
-    sort_method: &Option<SortingMethod>,
-    sort_order: &Option<SortingOrder>,
-    color_scheme: &ColorScheme,
-    default_color_scheme: &ColorScheme,
+    sort_method: Option<SortingMethod>,
+    sort_order: Option<SortingOrder>,
+    color_scheme: ColorScheme,
+    default_color_scheme: ColorScheme,
 ) -> Markup {
     html! {
         tr {
             td {
                 p {
                     @if entry.is_dir() {
-                        a.directory href=(parametrized_link(&entry.link, &sort_method, &sort_order, &color_scheme, &default_color_scheme)) {
+                        a.directory href=(parametrized_link(&entry.link, sort_method, sort_order, color_scheme, default_color_scheme)) {
                             (entry.name) "/"
                         }
                     } @else if entry.is_file() {
@@ -257,7 +312,7 @@ fn entry_row(
                             }
                         }
                     } @else if entry.is_symlink() {
-                        a.symlink href=(parametrized_link(&entry.link, &sort_method, &sort_order, &color_scheme, &default_color_scheme)) {
+                        a.symlink href=(parametrized_link(&entry.link, sort_method, sort_order, color_scheme, default_color_scheme)) {
                            (entry.name)  span.symlink-symbol { "⇢" }
                         }
                     }
@@ -287,8 +342,8 @@ fn entry_row(
 }
 
 /// Partial: CSS
-fn css(color_scheme: &ColorScheme) -> Markup {
-    let theme = color_scheme.clone().get_theme();
+fn css(color_scheme: ColorScheme) -> Markup {
+    let theme = color_scheme.get_theme();
 
     let css = format!("
      html {{
@@ -326,7 +381,7 @@ fn css(color_scheme: &ColorScheme) -> Markup {
         font-weight: bold;
         color: {directory_link_color};
     }}
-    a.file, a.file:visited {{
+    a.file, a.file:visited, .error-back, .error-back:visited {{
         color: {file_link_color};
     }}
     a.symlink, a.symlink:visited {{
@@ -582,6 +637,25 @@ fn css(color_scheme: &ColorScheme) -> Markup {
         width: 100%;
         text-align: center;
     }}
+    .error {{
+        margin: 2rem;
+    }}
+    .error p {{
+        margin: 1rem 0;
+        font-size: 0.9rem;
+        word-break: break-all;
+    }}
+    .error p:first-of-type {{
+        font-size: 1.25rem;
+        color: {error_color};
+        margin-bottom: 2rem;
+    }}
+    .error p:nth-of-type(2) {{
+        font-weight: bold;
+    }}
+    .error-nav {{
+        margin-top: 4rem;
+    }}
     @media (max-width: 760px) {{
         nav {{
             padding: 0 2.5rem;
@@ -662,7 +736,8 @@ fn css(color_scheme: &ColorScheme) -> Markup {
         drag_border_color = theme.drag_border_color,
         drag_text_color = theme.drag_text_color,
         size_background_color = theme.size_background_color,
-        size_text_color = theme.size_text_color);
+        size_text_color = theme.size_text_color,
+        error_color = theme.error_color);
     (PreEscaped(css))
 }
 
@@ -687,15 +762,24 @@ fn chevron_down() -> Markup {
 }
 
 /// Partial: page header
-fn page_header(serve_path: &str, color_scheme: &ColorScheme, file_upload: bool) -> Markup {
+fn page_header(
+    serve_path: &str,
+    color_scheme: ColorScheme,
+    file_upload: bool,
+    is_error: bool,
+) -> Markup {
     html! {
         (DOCTYPE)
         html {
             meta charset="utf-8";
             meta http-equiv="X-UA-Compatible" content="IE=edge";
             meta name="viewport" content="width=device-width, initial-scale=1";
-            title { "Index of " (serve_path) }
-            style { (css(&color_scheme)) }
+            @if is_error {
+                title { (serve_path) }
+            } else {
+                title { "Index of " (serve_path) }
+            }
+            style { (css(color_scheme)) }
             @if file_upload {
                 (PreEscaped(r#"
                 <script>
@@ -762,11 +846,46 @@ fn humanize_systemtime(src_time: Option<SystemTime>) -> Option<String> {
 }
 
 /// Renders an error on the webpage
-pub fn render_error(error_description: &str, return_address: &str) -> Markup {
+#[allow(clippy::too_many_arguments)]
+pub fn render_error(
+    error_description: &str,
+    error_code: StatusCode,
+    return_address: &str,
+    sort_method: Option<SortingMethod>,
+    sort_order: Option<SortingOrder>,
+    color_scheme: ColorScheme,
+    default_color_scheme: ColorScheme,
+    has_referer: bool,
+    display_back_link: bool,
+) -> Markup {
+    let link = if has_referer {
+        return_address.to_string()
+    } else {
+        parametrized_link(
+            return_address,
+            sort_method,
+            sort_order,
+            color_scheme,
+            default_color_scheme,
+        )
+    };
+
     html! {
-        pre { (error_description) }
-        a href=(return_address) {
-            "Go back to file listing"
+        body {
+            (page_header(&error_code.to_string(), color_scheme, false, true))
+            div.error {
+                p { (error_code.to_string()) }
+                @for error in error_description.lines() {
+                    p { (error) }
+                }
+                @if display_back_link {
+                    div.error-nav {
+                        a.error-back href=(link) {
+                            "Go back to file listing"
+                        }
+                    }
+                }
+            }
         }
     }
 }

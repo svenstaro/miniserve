@@ -1,9 +1,10 @@
-use actix_web::http::header;
+use actix_web::http::{header, StatusCode};
 use actix_web::middleware::{Middleware, Response};
 use actix_web::{HttpRequest, HttpResponse, Result};
 use sha2::{Digest, Sha256, Sha512};
 
-use crate::errors::{ContextualError};
+use crate::errors::{self, ContextualError};
+use crate::renderer;
 
 pub struct Auth;
 
@@ -36,10 +37,7 @@ pub fn parse_basic_auth(
     let basic_removed = authorization_header
         .to_str()
         .map_err(|e| {
-            ContextualError::ParseError(
-                "HTTP authentication header".to_string(),
-                e.to_string(),
-            )
+            ContextualError::ParseError("HTTP authentication header".to_string(), e.to_string())
         })?
         .replace("Basic ", "");
     let decoded = base64::decode(&basic_removed).map_err(ContextualError::Base64DecodeError)?;
@@ -109,7 +107,14 @@ impl Middleware<crate::MiniserveConfig> for Auth {
                 Err(err) => {
                     let auth_err = ContextualError::HTTPAuthenticationError(Box::new(err));
                     return Ok(Response::Done(
-                        HttpResponse::BadRequest().body(auth_err.to_string()),
+                        HttpResponse::BadRequest().body(
+                            build_unauthorized_response(
+                                &req,
+                                auth_err,
+                                true,
+                                StatusCode::BAD_REQUEST,
+                            ),
+                        ),
                     ));
                 }
             };
@@ -118,20 +123,68 @@ impl Middleware<crate::MiniserveConfig> for Auth {
                 return Ok(Response::Done(resp));
             }
 
-            let new_resp = HttpResponse::Unauthorized().finish();
-            return Ok(Response::Done(new_resp));
+            return Ok(Response::Done(
+                HttpResponse::Unauthorized().body(
+                    build_unauthorized_response(
+                        &req,
+                        ContextualError::InvalidHTTPCredentials,
+                        true,
+                        StatusCode::UNAUTHORIZED,
+                    )
+                )
+            ));
         }
 
-        let new_resp = HttpResponse::Unauthorized()
-            .header(
-                header::WWW_AUTHENTICATE,
-                header::HeaderValue::from_static("Basic realm=\"miniserve\""),
-            )
-            .finish();
-        Ok(Response::Done(new_resp))
+        Ok(Response::Done(
+            HttpResponse::Unauthorized()
+                .header(
+                    header::WWW_AUTHENTICATE,
+                    header::HeaderValue::from_static("Basic realm=\"miniserve\""),
+                )
+                .body(build_unauthorized_response(
+                    &req,
+                    ContextualError::InvalidHTTPCredentials,
+                    true,
+                    StatusCode::UNAUTHORIZED,
+                ))
+        ))
     }
 }
 
+/// Builds the unauthorized response body
+/// The reason why log_error_chain is optional is to handle cases where the auth pop-up appears and when the user clicks Cancel.
+/// In those case, we do not log the error to the terminal since it does not really matter.
+fn build_unauthorized_response(
+    req: &HttpRequest<crate::MiniserveConfig>,
+    error: ContextualError,
+    log_error_chain: bool,
+    error_code: StatusCode,
+) -> String {
+    let error = ContextualError::HTTPAuthenticationError(Box::new(error));
+
+    if log_error_chain {
+        errors::log_error_chain(error.to_string());
+    }
+    let return_path = match &req.state().random_route {
+        Some(random_route) => format!("/{}", random_route),
+        None => "/".to_string(),
+    };
+
+    renderer::render_error(
+        &error.to_string(),
+        error_code,
+        &return_path,
+        None,
+        None,
+        req.state().default_color_scheme,
+        req.state().default_color_scheme,
+        false,
+        false,
+    )
+    .into_string()
+}
+
+#[rustfmt::skip]
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -182,7 +235,7 @@ mod tests {
         case(true, "obi", "hello there", "obi", "hello there", "sha256"),
         case(false, "obi", "hello there", "obi", "hi!", "sha256"),
         case(true, "obi", "hello there", "obi", "hello there", "sha512"),
-        case(false, "obi", "hello there", "obi", "hi!", "sha512"),
+        case(false, "obi", "hello there", "obi", "hi!", "sha512")
     )]
     fn test_single_auth(
         should_pass: bool,

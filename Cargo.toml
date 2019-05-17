@@ -36,10 +36,10 @@ structopt = "0.2.15"
 chrono = "0.4.6"
 chrono-humanize = "0.0.11"
 maud = { version = "0.20.0", features = ["actix-web"] }
-serde = { version = "1.0.90", features = ["derive"] }
-tar = "0.4.24"
+serde = { version = "1.0.91", features = ["derive"] }
+tar = "0.4.25"
 bytes = "0.4.12"
-futures = "0.1.26"
+futures = "0.1.27"
 libflate = "0.1.21"
 failure = "0.1.5"
 log = "0.4.6"

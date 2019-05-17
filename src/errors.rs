@@ -32,7 +32,10 @@ pub enum ContextualError {
     InvalidAuthFormat,
 
     /// This error might occure if the hash method is neither sha256 nor sha512
-    #[fail(display = "{} is not a valid hashing method. Expected sha256 or sha512", _0)]
+    #[fail(
+        display = "{} is not a valid hashing method. Expected sha256 or sha512",
+        _0
+    )]
     InvalidHashMethod(String),
 
     /// This error might occur if the HTTP auth hash password is not a valid hex code
@@ -64,6 +67,18 @@ pub enum ContextualError {
         _0
     )]
     HTTPAuthenticationError(Box<ContextualError>),
+
+    /// This error might occur when the HTTP credentials are not correct
+    #[fail(display = "Invalid credentials for HTTP authentication")]
+    InvalidHTTPCredentials,
+
+    /// This error might occur when an HTTP request is invalid
+    #[fail(display = "Invalid HTTP request\ncaused by: {}", _0)]
+    InvalidHTTPRequestError(String),
+
+    /// This error might occur when trying to access a page that does not exist
+    #[fail(display = "Route {} could not be found", _0)]
+    RouteNotFoundError(String),
 }
 
 pub fn log_error_chain(description: String) {

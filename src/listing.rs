@@ -1,3 +1,4 @@
+use actix_web::http::StatusCode;
 use actix_web::{fs, http, Body, FromRequest, HttpRequest, HttpResponse, Query, Result};
 use bytesize::ByteSize;
 use futures::stream::once;
@@ -5,26 +6,27 @@ use htmlescape::encode_minimal as escape_html_entity;
 use percent_encoding::{utf8_percent_encode, DEFAULT_ENCODE_SET};
 use serde::Deserialize;
 use std::io;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 use strum_macros::{Display, EnumString};
 
-use crate::archive;
-use crate::errors;
+use crate::archive::{self, CompressionMethod};
+use crate::errors::{self, ContextualError};
 use crate::renderer;
-use crate::themes;
+use crate::themes::ColorScheme;
 
 /// Query parameters
 #[derive(Deserialize)]
-struct QueryParameters {
-    sort: Option<SortingMethod>,
-    order: Option<SortingOrder>,
-    download: Option<archive::CompressionMethod>,
-    theme: Option<themes::ColorScheme>,
+pub struct QueryParameters {
+    pub path: Option<PathBuf>,
+    pub sort: Option<SortingMethod>,
+    pub order: Option<SortingOrder>,
+    pub theme: Option<ColorScheme>,
+    download: Option<CompressionMethod>,
 }
 
 /// Available sorting methods
-#[derive(Deserialize, Clone, EnumString, Display)]
+#[derive(Deserialize, Clone, EnumString, Display, Copy)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum SortingMethod {
@@ -39,7 +41,7 @@ pub enum SortingMethod {
 }
 
 /// Available sorting orders
-#[derive(Deserialize, Clone, EnumString, Display)]
+#[derive(Deserialize, Clone, EnumString, Display, Copy)]
 pub enum SortingOrder {
     /// Ascending order
     #[serde(alias = "asc")]
@@ -130,7 +132,7 @@ pub fn directory_listing<S>(
     skip_symlinks: bool,
     file_upload: bool,
     random_route: Option<String>,
-    default_color_scheme: themes::ColorScheme,
+    default_color_scheme: ColorScheme,
     upload_route: String,
 ) -> Result<HttpResponse, io::Error> {
     let serve_path = req.path();
@@ -143,23 +145,13 @@ pub fn directory_listing<S>(
         Err(_) => base.to_path_buf(),
     };
 
-    let (sort_method, sort_order, download, color_scheme) =
-        if let Ok(query) = Query::<QueryParameters>::extract(req) {
-            (
-                query.sort.clone(),
-                query.order.clone(),
-                query.download.clone(),
-                query.theme.clone(),
-            )
-        } else {
-            (None, None, None, None)
-        };
+    let query_params = extract_query_parameters(req);
 
     let mut entries: Vec<Entry> = Vec::new();
 
     for entry in dir.path.read_dir()? {
         if dir.is_visible(&entry) {
-            let entry = entry.unwrap();
+            let entry = entry?;
             let p = match entry.path().strip_prefix(&dir.path) {
                 Ok(p) => base.join(p),
                 Err(_) => continue,
@@ -211,7 +203,7 @@ pub fn directory_listing<S>(
         }
     }
 
-    if let Some(sorting_method) = &sort_method {
+    if let Some(sorting_method) = query_params.sort {
         match sorting_method {
             SortingMethod::Name => entries
                 .sort_by(|e1, e2| alphanumeric_sort::compare_str(e1.name.clone(), e2.name.clone())),
@@ -235,15 +227,15 @@ pub fn directory_listing<S>(
         entries.sort_by(|e1, e2| alphanumeric_sort::compare_str(e1.name.clone(), e2.name.clone()))
     }
 
-    if let Some(sorting_order) = &sort_order {
+    if let Some(sorting_order) = query_params.order {
         if let SortingOrder::Descending = sorting_order {
             entries.reverse()
         }
     }
 
-    let color_scheme = color_scheme.unwrap_or_else(|| default_color_scheme.clone());
+    let color_scheme = query_params.theme.unwrap_or(default_color_scheme);
 
-    if let Some(compression_method) = &download {
+    if let Some(compression_method) = &query_params.download {
         log::info!(
             "Creating an archive ({extension}) of {path}...",
             extension = compression_method.extension(),
@@ -267,7 +259,20 @@ pub fn directory_listing<S>(
                 errors::log_error_chain(err.to_string());
                 Ok(HttpResponse::Ok()
                     .status(http::StatusCode::INTERNAL_SERVER_ERROR)
-                    .body(renderer::render_error(&err.to_string(), serve_path).into_string()))
+                    .body(
+                        renderer::render_error(
+                            &err.to_string(),
+                            StatusCode::INTERNAL_SERVER_ERROR,
+                            serve_path,
+                            query_params.sort,
+                            query_params.order,
+                            color_scheme,
+                            default_color_scheme,
+                            false,
+                            true,
+                        )
+                        .into_string(),
+                    ))
             }
         }
     } else {
@@ -279,8 +284,8 @@ pub fn directory_listing<S>(
                     entries,
                     is_root,
                     page_parent,
-                    sort_method,
-                    sort_order,
+                    query_params.sort,
+                    query_params.order,
                     default_color_scheme,
                     color_scheme,
                     file_upload,
@@ -289,5 +294,28 @@ pub fn directory_listing<S>(
                 )
                 .into_string(),
             ))
+    }
+}
+
+pub fn extract_query_parameters<S>(req: &HttpRequest<S>) -> QueryParameters {
+    match Query::<QueryParameters>::extract(req) {
+        Ok(query) => QueryParameters {
+            sort: query.sort,
+            order: query.order,
+            download: query.download.clone(),
+            theme: query.theme,
+            path: query.path.clone(),
+        },
+        Err(e) => {
+            let err = ContextualError::ParseError("query parameters".to_string(), e.to_string());
+            errors::log_error_chain(err.to_string());
+            QueryParameters {
+                sort: None,
+                order: None,
+                download: None,
+                theme: None,
+                path: None,
+            }
+        }
     }
 }
