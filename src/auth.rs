@@ -63,7 +63,7 @@ pub fn match_auth(basic_auth: BasicAuthParams, required_auth: &[RequiredAuth]) -
 }
 
 /// Return `true` if `basic_auth_pwd` meets `required_auth_pwd`'s requirement
-pub fn compare_password (basic_auth_pwd: &String, required_auth_pwd: &RequiredAuthPassword) -> bool {
+pub fn compare_password (basic_auth_pwd: &str, required_auth_pwd: &RequiredAuthPassword) -> bool {
     match &required_auth_pwd {
         RequiredAuthPassword::Plain(required_password) => {
             *basic_auth_pwd == *required_password
@@ -78,12 +78,12 @@ pub fn compare_password (basic_auth_pwd: &String, required_auth_pwd: &RequiredAu
 }
 
 /// Return `true` if hashing of `password` by `T` algorithm equals to `hash`
-pub fn compare_hash<T: Digest>(password: &String, hash: &[u8]) -> bool {
+pub fn compare_hash<T: Digest>(password: &str, hash: &[u8]) -> bool {
     get_hash::<T>(password) == hash
 }
 
 /// Get hash of a `text`
-pub fn get_hash<T: Digest>(text: &String) -> Vec<u8> {
+pub fn get_hash<T: Digest>(text: &str) -> Vec<u8> {
     let mut hasher = T::new();
     hasher.input(text);
     hasher.result().to_vec()
@@ -97,7 +97,7 @@ impl Middleware<crate::MiniserveConfig> for Auth {
     ) -> Result<Response> {
         let required_auth = &req.state().auth;
 
-        if required_auth.len() == 0 {
+        if required_auth.is_empty() {
             return Ok(Response::Done(resp));
         }
 
@@ -191,7 +191,7 @@ mod tests {
     use rstest::rstest_parametrize;
 
     /// Return a hashing function corresponds to given name
-    fn get_hash_func(name: &str) -> impl FnOnce(&String) -> Vec<u8> {
+    fn get_hash_func(name: &str) -> impl FnOnce(&str) -> Vec<u8> {
         match name {
             "sha256" => get_hash::<Sha256>,
             "sha512" => get_hash::<Sha512>,
