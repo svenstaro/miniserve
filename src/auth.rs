@@ -188,7 +188,7 @@ fn build_unauthorized_response(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use rstest::rstest_parametrize;
+    use rstest::{rstest, rstest_parametrize, fixture};
 
     /// Return a hashing function corresponds to given name
     fn get_hash_func(name: &str) -> impl FnOnce(&str) -> Vec<u8> {
@@ -255,5 +255,78 @@ mod tests {
             ),
             should_pass,
         )
+    }
+
+    /// Helper function that creates a sample of multiple accounts
+    #[fixture]
+    fn account_sample() -> Vec<RequiredAuth> {
+        [
+            ("usr0", "pwd0", "plain"),
+            ("usr1", "pwd1", "plain"),
+            ("usr2", "pwd2", "sha256"),
+            ("usr3", "pwd3", "sha256"),
+            ("usr4", "pwd4", "sha512"),
+            ("usr5", "pwd5", "sha512"),
+        ]
+            .iter()
+            .map(|(username, password, encrypt)| create_required_auth(username, password, encrypt))
+            .collect()
+    }
+
+    #[rstest_parametrize(
+        username, password,
+        case("usr0", "pwd0"),
+        case("usr1", "pwd1"),
+        case("usr2", "pwd2"),
+        case("usr3", "pwd3"),
+        case("usr4", "pwd4"),
+        case("usr5", "pwd5"),
+    )]
+    fn test_multiple_auth_pass(
+        account_sample: Vec<RequiredAuth>,
+        username: &str,
+        password: &str,
+    ) {
+        assert!(match_auth(
+            BasicAuthParams {
+                username: username.to_owned(),
+                password: password.to_owned(),
+            },
+            &account_sample,
+        ));
+    }
+
+    #[rstest]
+    fn test_multiple_auth_wrong_username(account_sample: Vec<RequiredAuth>) {
+        assert_eq!(match_auth(
+            BasicAuthParams {
+                username: "unregistered user".to_owned(),
+                password: "pwd0".to_owned(),
+            },
+            &account_sample,
+        ), false);
+    }
+
+    #[rstest_parametrize(
+        username, password,
+        case("usr0", "pwd5"),
+        case("usr1", "pwd4"),
+        case("usr2", "pwd3"),
+        case("usr3", "pwd2"),
+        case("usr4", "pwd1"),
+        case("usr5", "pwd0"),
+    )]
+    fn test_multiple_auth_wrong_password(
+        account_sample: Vec<RequiredAuth>,
+        username: &str,
+        password: &str,
+    ) {
+        assert_eq!(match_auth(
+            BasicAuthParams {
+                username: username.to_owned(),
+                password: password.to_owned(),
+            },
+            &account_sample,
+        ), false);
     }
 }
