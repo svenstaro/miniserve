@@ -32,7 +32,7 @@ struct CLIArgs {
     /// Interface to listen on
     #[structopt(
         short = "i",
-        long = "if",
+        long = "interfaces",
         parse(try_from_str = "parse_interface"),
         raw(number_of_values = "1")
     )]
