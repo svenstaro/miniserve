@@ -102,6 +102,7 @@ fn auth_rejects(
         .arg("-a")
         .arg(cli_auth_arg)
         .stdout(Stdio::null())
+        .stderr(Stdio::null())
         .spawn()?;
 
     sleep(Duration::from_secs(1));
