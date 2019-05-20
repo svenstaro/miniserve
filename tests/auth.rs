@@ -4,7 +4,7 @@ use assert_cmd::prelude::*;
 use assert_fs::fixture::TempDir;
 use fixtures::{port, tmpdir, Error, FILES};
 use reqwest::StatusCode;
-use rstest::rstest_parametrize;
+use rstest::{rstest, rstest_parametrize};
 use select::document::Document;
 use select::predicate::Text;
 use std::process::{Command, Stdio};
@@ -110,6 +110,140 @@ fn auth_rejects(
     let status = client
         .get(format!("http://localhost:{}", port).as_str())
         .basic_auth(client_username, Some(client_password))
+        .send()?
+        .status();
+
+    assert_eq!(status, StatusCode::UNAUTHORIZED);
+
+    child.kill()?;
+
+    Ok(())
+}
+
+/// Helper functions that register multiple accounts
+#[cfg(test)]
+fn register_accounts<'a>(command: &'a mut Command) -> &'a mut Command {
+    command
+        .arg("--auth")
+        .arg("usr0:pwd0")
+        .arg("usr1:pwd1")
+        .arg("usr2:sha256:149d2937d1bce53fa683ae652291bd54cc8754444216a9e278b45776b76375af") // pwd2
+        .arg("usr3:sha256:ffc169417b4146cebe09a3e9ffbca33db82e3e593b4d04c0959a89c05b87e15d") // pwd3
+        .arg("usr4:sha512:68050a967d061ac480b414bc8f9a6d368ad0082203edcd23860e94c36178aad1a038e061716707d5479e23081a6d920dc6e9f88e5eb789cdd23e211d718d161a") // pwd4
+        .arg("usr5:sha512:be82a7dccd06122f9e232e9730e67e69e30ec61b268fd9b21a5e5d42db770d45586a1ce47816649a0107e9fadf079d9cf0104f0a3aaa0f67bad80289c3ba25a8") // pwd5
+}
+
+#[rstest_parametrize(
+    username, password,
+    case("usr0", "pwd0"),
+    case("usr1", "pwd1"),
+    case("usr2", "pwd2"),
+    case("usr3", "pwd3"),
+    case("usr4", "pwd4"),
+    case("usr5", "pwd5"),
+)]
+fn auth_multiple_accounts_pass(
+    tmpdir: TempDir,
+    port: u16,
+    username: &str,
+    password: &str,
+) -> Result<(), Error> {
+    let mut child = register_accounts(
+        Command::cargo_bin("miniserve")?
+            .arg(tmpdir.path())
+            .arg("-p")
+            .arg(port.to_string())
+            .stdout(Stdio::null())
+    )
+        .spawn()?;
+
+    sleep(Duration::from_secs(1));
+
+    let client = reqwest::Client::new();
+
+    let response = client
+        .get(format!("http://localhost:{}", port).as_str())
+        .basic_auth(username, Some(password))
+        .send()?;
+
+    let status = response.status();
+    assert_eq!(status, StatusCode::OK);
+
+    let body = response.error_for_status()?;
+    let parsed = Document::from_read(body)?;
+    for &file in FILES {
+        assert!(parsed.find(Text).any(|x| x.text() == file));
+    }
+
+    child.kill()?;
+
+    Ok(())
+}
+
+#[rstest]
+fn auth_multiple_accounts_wrong_username(
+    tmpdir: TempDir,
+    port: u16
+) -> Result<(), Error> {
+    let mut child = register_accounts(
+        Command::cargo_bin("miniserve")?
+            .arg(tmpdir.path())
+            .arg("-p")
+            .arg(port.to_string())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+    )
+        .spawn()?;
+
+    sleep(Duration::from_secs(1));
+
+    let client = reqwest::Client::new();
+
+    let status = client
+        .get(format!("http://localhost:{}", port).as_str())
+        .basic_auth("unregistered user", Some("pwd0"))
+        .send()?
+        .status();
+
+    assert_eq!(status, StatusCode::UNAUTHORIZED);
+
+    child.kill()?;
+
+    Ok(())
+}
+
+#[rstest_parametrize(
+    username, password,
+    case("usr0", "pwd5"),
+    case("usr1", "pwd4"),
+    case("usr2", "pwd3"),
+    case("usr3", "pwd2"),
+    case("usr4", "pwd1"),
+    case("usr5", "pwd0"),
+)]
+fn auth_multiple_accounts_wrong_password(
+    tmpdir: TempDir,
+    port: u16,
+    username: &str,
+    password: &str,
+) -> Result<(), Error> {
+    let mut child = register_accounts(
+        Command::cargo_bin("miniserve")?
+            .arg(tmpdir.path())
+            .arg("-p")
+            .arg(port.to_string())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+    )
+        .spawn()?;
+
+    sleep(Duration::from_secs(1));
+
+    let client = reqwest::Client::new();
+
+    let status = client
+        .get(format!("http://localhost:{}", port).as_str())
+        .basic_auth(username, Some(password))
         .send()?
         .status();
 
