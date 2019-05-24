@@ -53,7 +53,7 @@ pub fn parse_basic_auth(
     })
 }
 
-/// Verify authentication
+/// Return `true` if `basic_auth` is matches any of `required_auth`
 pub fn match_auth(basic_auth: BasicAuthParams, required_auth: &[RequiredAuth]) -> bool {
     required_auth.iter().any(
         |RequiredAuth { username, password }|
