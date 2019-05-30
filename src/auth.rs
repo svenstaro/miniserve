@@ -122,17 +122,6 @@ impl Middleware<crate::MiniserveConfig> for Auth {
             if match_auth(auth_req, required_auth) {
                 return Ok(Response::Done(resp));
             }
-
-            return Ok(Response::Done(
-                HttpResponse::Unauthorized().body(
-                    build_unauthorized_response(
-                        &req,
-                        ContextualError::InvalidHTTPCredentials,
-                        true,
-                        StatusCode::UNAUTHORIZED,
-                    )
-                )
-            ));
         }
 
         Ok(Response::Done(
