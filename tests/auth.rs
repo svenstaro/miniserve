@@ -126,10 +126,15 @@ fn register_accounts<'a>(command: &'a mut Command) -> &'a mut Command {
     command
         .arg("--auth")
         .arg("usr0:pwd0")
+        .arg("--auth")
         .arg("usr1:pwd1")
+        .arg("--auth")
         .arg("usr2:sha256:149d2937d1bce53fa683ae652291bd54cc8754444216a9e278b45776b76375af") // pwd2
+        .arg("--auth")
         .arg("usr3:sha256:ffc169417b4146cebe09a3e9ffbca33db82e3e593b4d04c0959a89c05b87e15d") // pwd3
+        .arg("--auth")
         .arg("usr4:sha512:68050a967d061ac480b414bc8f9a6d368ad0082203edcd23860e94c36178aad1a038e061716707d5479e23081a6d920dc6e9f88e5eb789cdd23e211d718d161a") // pwd4
+        .arg("--auth")
         .arg("usr5:sha512:be82a7dccd06122f9e232e9730e67e69e30ec61b268fd9b21a5e5d42db770d45586a1ce47816649a0107e9fadf079d9cf0104f0a3aaa0f67bad80289c3ba25a8") // pwd5
 }
 
@@ -149,12 +154,12 @@ fn auth_multiple_accounts_pass(
     password: &str,
 ) -> Result<(), Error> {
     let mut child = register_accounts(
-        Command::cargo_bin("miniserve")?
-            .arg(tmpdir.path())
-            .arg("-p")
-            .arg(port.to_string())
-            .stdout(Stdio::null())
+        &mut Command::cargo_bin("miniserve")?
     )
+        .arg("-p")
+        .arg(port.to_string())
+        .arg(tmpdir.path())
+        .stdout(Stdio::null())
         .spawn()?;
 
     sleep(Duration::from_secs(1));
