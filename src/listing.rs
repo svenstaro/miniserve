@@ -10,7 +10,7 @@ use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 use strum_macros::{Display, EnumString};
 
-use crate::archive::{self, CompressionMethod};
+use crate::archive::CompressionMethod;
 use crate::errors::{self, ContextualError};
 use crate::renderer;
 use crate::themes::ColorScheme;
@@ -241,7 +241,7 @@ pub fn directory_listing<S>(
             extension = compression_method.extension(),
             path = &dir.path.display().to_string()
         );
-        match archive::create_archive(&compression_method, &dir.path, skip_symlinks) {
+        match compression_method.create_archive(&dir.path, skip_symlinks) {
             Ok((filename, content)) => {
                 log::info!("{file} successfully created !", file = &filename);
                 Ok(HttpResponse::Ok()

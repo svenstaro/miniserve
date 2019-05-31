@@ -3,7 +3,7 @@ use bytes::Bytes;
 use libflate::gzip::Encoder;
 use serde::Deserialize;
 use std::io;
-use std::path::PathBuf;
+use std::path::Path;
 use strum_macros::{Display, EnumIter, EnumString};
 use tar::Builder;
 
@@ -38,32 +38,34 @@ impl CompressionMethod {
             CompressionMethod::TarGz => ContentEncoding::Gzip,
         }
     }
-}
-
-/// Creates an archive of a folder, using the algorithm the user chose from the web interface
-/// This method returns the archive as a stream of bytes
-pub fn create_archive(
-    method: &CompressionMethod,
-    dir: &PathBuf,
-    skip_symlinks: bool,
-) -> Result<(String, Bytes), ContextualError> {
-    match method {
-        CompressionMethod::TarGz => tgz_compress(&dir, skip_symlinks),
+    /// Creates an archive of a folder, using the algorithm the user chose from the web interface
+    /// This method returns the archive as a stream of bytes
+    pub fn create_archive<T: AsRef<Path>>(
+        &self,
+        dir: T,
+        skip_symlinks: bool,
+    ) -> Result<(String, Bytes), ContextualError> {
+        match self {
+            CompressionMethod::TarGz => tgz_compress(dir, skip_symlinks),
+        }
     }
 }
 
 /// Compresses a given folder in .tar.gz format, and returns the result as a stream of bytes
-fn tgz_compress(dir: &PathBuf, skip_symlinks: bool) -> Result<(String, Bytes), ContextualError> {
-    let src_dir = dir.display().to_string();
-    if let Some(inner_folder) = dir.file_name() {
+fn tgz_compress<T: AsRef<Path>>(
+    dir: T,
+    skip_symlinks: bool,
+) -> Result<(String, Bytes), ContextualError> {
+    if let Some(inner_folder) = dir.as_ref().file_name() {
         if let Some(directory) = inner_folder.to_str() {
             let dst_filename = format!("{}.tar", directory);
             let dst_tgz_filename = format!("{}.gz", dst_filename);
             let mut tgz_data = Bytes::new();
 
-            let tar_data = tar(src_dir, directory.to_string(), skip_symlinks).map_err(|e| {
-                ContextualError::ArchiveCreationError("tarball".to_string(), Box::new(e))
-            })?;
+            let tar_data =
+                tar(dir.as_ref(), directory.to_string(), skip_symlinks).map_err(|e| {
+                    ContextualError::ArchiveCreationError("tarball".to_string(), Box::new(e))
+                })?;
 
             let gz_data = gzip(&tar_data).map_err(|e| {
                 ContextualError::ArchiveCreationError("GZIP archive".to_string(), Box::new(e))
@@ -87,8 +89,8 @@ fn tgz_compress(dir: &PathBuf, skip_symlinks: bool) -> Result<(String, Bytes), C
 }
 
 /// Creates a TAR archive of a folder, and returns it as a stream of bytes
-fn tar(
-    src_dir: String,
+fn tar<T: AsRef<Path>>(
+    src_dir: T,
     inner_folder: String,
     skip_symlinks: bool,
 ) -> Result<Vec<u8>, ContextualError> {
@@ -97,12 +99,12 @@ fn tar(
     tar_builder.follow_symlinks(!skip_symlinks);
     // Recursively adds the content of src_dir into the archive stream
     tar_builder
-        .append_dir_all(inner_folder, &src_dir)
+        .append_dir_all(inner_folder, src_dir.as_ref())
         .map_err(|e| {
             ContextualError::IOError(
                 format!(
                     "Failed to append the content of {} to the TAR archive",
-                    &src_dir
+                    src_dir.as_ref().to_str().unwrap_or("file")
                 ),
                 e,
             )
