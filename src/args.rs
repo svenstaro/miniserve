@@ -41,8 +41,13 @@ struct CLIArgs {
     /// Set authentication. Currently supported formats:
     /// username:password, username:sha256:hash, username:sha512:hash
     /// (e.g. joe:123, joe:sha256:a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3)
-    #[structopt(short = "a", long = "auth", parse(try_from_str = "parse_auth"))]
-    auth: Option<auth::RequiredAuth>,
+    #[structopt(
+        short = "a",
+        long = "auth",
+        parse(try_from_str = "parse_auth"),
+        raw(number_of_values = "1")
+    )]
+    auth: Vec<auth::RequiredAuth>,
 
     /// Generate a random 6-hexdigit route
     #[structopt(long = "random-route")]
@@ -78,7 +83,7 @@ fn parse_interface(src: &str) -> Result<IpAddr, std::net::AddrParseError> {
     src.parse::<IpAddr>()
 }
 
-/// Checks wether the auth string is valid, i.e. it follows the syntax username:password
+/// Parse authentication requirement
 fn parse_auth(src: &str) -> Result<auth::RequiredAuth, ContextualError> {
     let mut split = src.splitn(3, ':');
     let invalid_auth_format = Err(ContextualError::InvalidAuthFormat);
@@ -173,14 +178,16 @@ mod tests {
         use auth::*;
         use RequiredAuthPassword::*;
 
-        RequiredAuth {
+        let password = match encrypt {
+            "plain" => Plain(password.to_owned()),
+            "sha256" => Sha256(hex::decode(password.to_owned()).unwrap()),
+            "sha512" => Sha512(hex::decode(password.to_owned()).unwrap()),
+            _ => panic!("Unknown encryption type"),
+        };
+
+        auth::RequiredAuth {
             username: username.to_owned(),
-            password: match encrypt {
-                "plain" => Plain(password.to_owned()),
-                "sha256" => Sha256(hex::decode(password.to_owned()).unwrap()),
-                "sha512" => Sha512(hex::decode(password.to_owned()).unwrap()),
-                _ => panic!("Unknown encryption type"),
-            },
+            password,
         }
     }
 
