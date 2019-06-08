@@ -238,9 +238,7 @@ fn parametrized_link(
         }
     }
 
-    if color_scheme != default_color_scheme {
-        return format!("{}?theme={}", link.to_string(), color_scheme.to_slug());
-    }
+    return format!("{}?theme={}", link.to_string(), color_scheme.to_slug());
 
     link.to_string()
 }
