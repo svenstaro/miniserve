@@ -20,7 +20,7 @@ fn save_file(
     field: multipart::Field<dev::Payload>,
     file_path: PathBuf,
     overwrite_files: bool,
-) -> Box<Future<Item = i64, Error = ContextualError>> {
+) -> Box<dyn Future<Item = i64, Error = ContextualError>> {
     if !overwrite_files && file_path.exists() {
         return Box::new(future::err(ContextualError::CustomError(
             "File already exists, and the overwrite_files option has not been set".to_string(),
@@ -56,7 +56,7 @@ fn handle_multipart(
     item: multipart::MultipartItem<dev::Payload>,
     mut file_path: PathBuf,
     overwrite_files: bool,
-) -> Box<Stream<Item = i64, Error = ContextualError>> {
+) -> Box<dyn Stream<Item = i64, Error = ContextualError>> {
     match item {
         multipart::MultipartItem::Field(field) => {
             let filename = field
