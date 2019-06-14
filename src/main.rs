@@ -16,6 +16,7 @@ mod auth;
 mod errors;
 mod file_upload;
 mod listing;
+mod pipe;
 mod renderer;
 mod themes;
 
@@ -79,17 +80,21 @@ fn run() -> Result<(), ContextualError> {
         TermLogger::init(LevelFilter::Error, Config::default())
     };
 
-    if miniserve_config.no_symlinks
-        && miniserve_config
+    if miniserve_config.no_symlinks {
+        let is_symlink = miniserve_config
             .path
             .symlink_metadata()
-            .map_err(|e| ContextualError::IOError("Failed to retrieve symlink's metadata".to_string(), e))?
+            .map_err(|e| {
+                ContextualError::IOError("Failed to retrieve symlink's metadata".to_string(), e)
+            })?
             .file_type()
-            .is_symlink()
-    {
-        return Err(ContextualError::from(
-            "The no-symlinks option cannot be used with a symlink path".to_string(),
-        ));
+            .is_symlink();
+
+        if is_symlink {
+            return Err(ContextualError::from(
+                "The no-symlinks option cannot be used with a symlink path".to_string(),
+            ));
+        }
     }
 
     let inside_config = miniserve_config.clone();

@@ -1,8 +1,6 @@
 use actix_web::http::ContentEncoding;
-use bytes::Bytes;
 use libflate::gzip::Encoder;
 use serde::Deserialize;
-use std::io;
 use std::path::Path;
 use strum_macros::{Display, EnumIter, EnumString};
 use tar::Builder;
@@ -10,70 +8,83 @@ use tar::Builder;
 use crate::errors::ContextualError;
 
 /// Available compression methods
-#[derive(Deserialize, Clone, EnumIter, EnumString, Display)]
+#[derive(Deserialize, Clone, Copy, EnumIter, EnumString, Display)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum CompressionMethod {
-    /// TAR GZ
+    /// Gzipped tarball
     TarGz,
+
+    /// Regular tarball
+    Tar,
 }
 
 impl CompressionMethod {
-    pub fn extension(&self) -> String {
-        match &self {
+    pub fn extension(self) -> String {
+        match self {
             CompressionMethod::TarGz => "tar.gz",
+            CompressionMethod::Tar => "tar",
         }
         .to_string()
     }
 
-    pub fn content_type(&self) -> String {
-        match &self {
+    pub fn content_type(self) -> String {
+        match self {
             CompressionMethod::TarGz => "application/gzip",
+            CompressionMethod::Tar => "application/tar",
         }
         .to_string()
     }
 
-    pub fn content_encoding(&self) -> ContentEncoding {
-        match &self {
+    pub fn content_encoding(self) -> ContentEncoding {
+        match self {
             CompressionMethod::TarGz => ContentEncoding::Gzip,
+            CompressionMethod::Tar => ContentEncoding::Identity,
         }
     }
-    /// Creates an archive of a folder, using the algorithm the user chose from the web interface
-    /// This method returns the archive as a stream of bytes
-    pub fn create_archive<T: AsRef<Path>>(
-        &self,
+
+    pub fn create_archive<T, W>(
+        self,
         dir: T,
         skip_symlinks: bool,
-    ) -> Result<(String, Bytes), ContextualError> {
+        out: W,
+    ) -> Result<(), ContextualError>
+    where
+        T: AsRef<Path>,
+        W: std::io::Write,
+    {
+        let dir = dir.as_ref();
         match self {
-            CompressionMethod::TarGz => tgz_compress(dir, skip_symlinks),
+            CompressionMethod::TarGz => tar_gz(dir, skip_symlinks, out),
+            CompressionMethod::Tar => tar_dir(dir, skip_symlinks, out),
         }
     }
 }
 
-/// Compresses a given folder in .tar.gz format, and returns the result as a stream of bytes
-fn tgz_compress<T: AsRef<Path>>(
-    dir: T,
-    skip_symlinks: bool,
-) -> Result<(String, Bytes), ContextualError> {
-    if let Some(inner_folder) = dir.as_ref().file_name() {
+fn tar_gz<W>(dir: &Path, skip_symlinks: bool, out: W) -> Result<(), ContextualError>
+where
+    W: std::io::Write,
+{
+    let mut out = Encoder::new(out).map_err(|e| ContextualError::IOError("GZIP".to_string(), e))?;
+
+    tar_dir(dir, skip_symlinks, &mut out)?;
+
+    out.finish()
+        .into_result()
+        .map_err(|e| ContextualError::IOError("GZIP finish".to_string(), e))?;
+
+    Ok(())
+}
+
+fn tar_dir<W>(dir: &Path, skip_symlinks: bool, out: W) -> Result<(), ContextualError>
+where
+    W: std::io::Write,
+{
+    if let Some(inner_folder) = dir.file_name() {
         if let Some(directory) = inner_folder.to_str() {
-            let dst_filename = format!("{}.tar", directory);
-            let dst_tgz_filename = format!("{}.gz", dst_filename);
-            let mut tgz_data = Bytes::new();
-
-            let tar_data =
-                tar(dir.as_ref(), directory.to_string(), skip_symlinks).map_err(|e| {
-                    ContextualError::ArchiveCreationError("tarball".to_string(), Box::new(e))
-                })?;
-
-            let gz_data = gzip(&tar_data).map_err(|e| {
-                ContextualError::ArchiveCreationError("GZIP archive".to_string(), Box::new(e))
-            })?;
-
-            tgz_data.extend_from_slice(&gz_data);
-
-            Ok((dst_tgz_filename, tgz_data))
+            tar(dir, directory.to_string(), skip_symlinks, out).map_err(|e| {
+                ContextualError::ArchiveCreationError("tarball".to_string(), Box::new(e))
+            })
         } else {
             // https://doc.rust-lang.org/std/ffi/struct.OsStr.html#method.to_str
             Err(ContextualError::InvalidPathError(
@@ -88,45 +99,36 @@ fn tgz_compress<T: AsRef<Path>>(
     }
 }
 
-/// Creates a TAR archive of a folder, and returns it as a stream of bytes
-fn tar<T: AsRef<Path>>(
-    src_dir: T,
+fn tar<W>(
+    src_dir: &Path,
     inner_folder: String,
     skip_symlinks: bool,
-) -> Result<Vec<u8>, ContextualError> {
-    let mut tar_builder = Builder::new(Vec::new());
+    out: W,
+) -> Result<(), ContextualError>
+where
+    W: std::io::Write,
+{
+    let mut tar_builder = Builder::new(out);
 
     tar_builder.follow_symlinks(!skip_symlinks);
+
     // Recursively adds the content of src_dir into the archive stream
     tar_builder
-        .append_dir_all(inner_folder, src_dir.as_ref())
+        .append_dir_all(inner_folder, src_dir)
         .map_err(|e| {
             ContextualError::IOError(
                 format!(
                     "Failed to append the content of {} to the TAR archive",
-                    src_dir.as_ref().to_str().unwrap_or("file")
+                    src_dir.to_str().unwrap_or("file")
                 ),
                 e,
             )
         })?;
 
-    let tar_content = tar_builder.into_inner().map_err(|e| {
+    // Finish the archive
+    tar_builder.into_inner().map_err(|e| {
         ContextualError::IOError("Failed to finish writing the TAR archive".to_string(), e)
     })?;
 
-    Ok(tar_content)
-}
-
-/// Compresses a stream of bytes using the GZIP algorithm, and returns the resulting stream
-fn gzip(mut data: &[u8]) -> Result<Vec<u8>, ContextualError> {
-    let mut encoder = Encoder::new(Vec::new())
-        .map_err(|e| ContextualError::IOError("Failed to create GZIP encoder".to_string(), e))?;
-    io::copy(&mut data, &mut encoder)
-        .map_err(|e| ContextualError::IOError("Failed to write GZIP data".to_string(), e))?;
-    let data = encoder
-        .finish()
-        .into_result()
-        .map_err(|e| ContextualError::IOError("Failed to write GZIP trailer".to_string(), e))?;
-
-    Ok(data)
+    Ok(())
 }
