@@ -1,3 +1,4 @@
+//! Define an adapter to implement `std::io::Write` on `Sender<Bytes>`.
 use bytes::{Bytes, BytesMut};
 use futures::sink::{Sink, Wait};
 use futures::sync::mpsc::Sender;
