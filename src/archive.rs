@@ -43,6 +43,11 @@ impl CompressionMethod {
         }
     }
 
+    /// Make an archive out of the given directory, and write the output to the given writer.
+    ///
+    /// Recursively includes all files and subdirectories.
+    ///
+    /// If `skip_symlinks` is `true`, symlinks fill not be followed and will just be ignored.
     pub fn create_archive<T, W>(
         self,
         dir: T,
@@ -61,6 +66,7 @@ impl CompressionMethod {
     }
 }
 
+/// Write a gzipped tarball of `dir` in `out`.
 fn tar_gz<W>(dir: &Path, skip_symlinks: bool, out: W) -> Result<(), ContextualError>
 where
     W: std::io::Write,
@@ -76,29 +82,31 @@ where
     Ok(())
 }
 
+/// Write a tarball of `dir` in `out`.
+///
+/// The target directory will be saved as a top-level directory in the archive.
+/// For example, if given `"a/b/c"`, it will be stored as just `"c"` in the archive.
 fn tar_dir<W>(dir: &Path, skip_symlinks: bool, out: W) -> Result<(), ContextualError>
 where
     W: std::io::Write,
 {
-    if let Some(inner_folder) = dir.file_name() {
-        if let Some(directory) = inner_folder.to_str() {
-            tar(dir, directory.to_string(), skip_symlinks, out).map_err(|e| {
-                ContextualError::ArchiveCreationError("tarball".to_string(), Box::new(e))
-            })
-        } else {
-            // https://doc.rust-lang.org/std/ffi/struct.OsStr.html#method.to_str
-            Err(ContextualError::InvalidPathError(
-                "Directory name contains invalid UTF-8 characters".to_string(),
-            ))
-        }
-    } else {
-        // https://doc.rust-lang.org/std/path/struct.Path.html#method.file_name
-        Err(ContextualError::InvalidPathError(
-            "Directory name terminates in \"..\"".to_string(),
-        ))
-    }
+    let inner_folder = dir.file_name().ok_or_else(|| {
+        ContextualError::InvalidPathError("Directory name terminates in \"..\"".to_string())
+    })?;
+
+    let directory = inner_folder.to_str().ok_or_else(|| {
+        ContextualError::InvalidPathError(
+            "Directory name contains invalid UTF-8 characters".to_string(),
+        )
+    })?;
+
+    tar(dir, directory.to_string(), skip_symlinks, out)
+        .map_err(|e| ContextualError::ArchiveCreationError("tarball".to_string(), Box::new(e)))
 }
 
+/// Writes a tarball of `dir` in `out`.
+///
+/// The content of `src_dir` will be saved in the archive as a folder named `inner_folder`.
 fn tar<W>(
     src_dir: &Path,
     inner_folder: String,

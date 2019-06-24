@@ -1,6 +1,5 @@
 use actix_web::{fs, Body, FromRequest, HttpRequest, HttpResponse, Query, Result};
 use bytesize::ByteSize;
-use failure::Fail;
 use futures::Stream;
 use htmlescape::encode_minimal as escape_html_entity;
 use percent_encoding::{utf8_percent_encode, DEFAULT_ENCODE_SET};
@@ -248,7 +247,8 @@ pub fn directory_listing<S>(
             compression_method.extension()
         );
 
-        // Create a pipe to connect the archive creation thread and the response.
+        // We will create the archive in a separate thread, and stream the content using a pipe.
+        // The pipe is made of a futures channel, and an adapter to implement the `Write` trait.
         // Include 10 messages of buffer for erratic connection speeds.
         let (tx, rx) = futures::sync::mpsc::channel(10);
         let pipe = crate::pipe::Pipe::new(tx);
@@ -261,9 +261,18 @@ pub fn directory_listing<S>(
             }
         });
 
-        // `<rx as Stream>::Error == ()` but we want `actix_web::error::Error`
-        // It can't happen, so let's just please the type checker.
+        // `rx` is a receiver of bytes - it can act like a `Stream` of bytes, and that's exactly
+        // what actix-web wants to stream the response.
+        //
+        // But right now the error types do not match:
+        // `<rx as Stream>::Error == ()`, but we want `actix_web::error::Error`
+        //
+        // That being said, `rx` will never fail because the `Stream` implementation for `Receiver`
+        // never returns an error - it simply cannot fail.
         let rx = rx.map_err(|_| unreachable!("pipes never fail"));
+
+        // At this point, `rx` implements everything actix want for a streamed response,
+        // so we can just give a `Box::new(rx)` as streaming body.
 
         Ok(HttpResponse::Ok()
             .content_type(compression_method.content_type())
