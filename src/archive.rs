@@ -85,7 +85,26 @@ where
 /// Write a tarball of `dir` in `out`.
 ///
 /// The target directory will be saved as a top-level directory in the archive.
-/// For example, if given `"a/b/c"`, it will be stored as just `"c"` in the archive.
+///
+/// For example, consider this directory structure:
+///
+/// ```
+/// a
+/// └── b
+///     └── c
+///         ├── e
+///         ├── f
+///         └── g
+/// ```
+///
+/// Making a tarball out of `"a/b/c"` will result in this archive content:
+///
+/// ```
+/// c
+/// ├── e
+/// ├── f
+/// └── g
+/// ```
 fn tar_dir<W>(dir: &Path, skip_symlinks: bool, out: W) -> Result<(), ContextualError>
 where
     W: std::io::Write,
