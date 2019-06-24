@@ -3,7 +3,7 @@
 use actix_web::http::{Method, StatusCode};
 use actix_web::{fs, middleware, server, App, HttpRequest, HttpResponse};
 use clap::crate_version;
-use simplelog::{Config, LevelFilter, TermLogger};
+use simplelog::{Config, LevelFilter, TermLogger, TerminalMode};
 use std::io::{self, Write};
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use std::thread;
@@ -75,9 +75,9 @@ fn run() -> Result<(), ContextualError> {
     let miniserve_config = args::parse_args();
 
     let _ = if miniserve_config.verbose {
-        TermLogger::init(LevelFilter::Info, Config::default())
+        TermLogger::init(LevelFilter::Info, Config::default(), TerminalMode::default())
     } else {
-        TermLogger::init(LevelFilter::Error, Config::default())
+        TermLogger::init(LevelFilter::Error, Config::default(), TerminalMode::default())
     };
 
     if miniserve_config.no_symlinks {
