@@ -1,7 +1,6 @@
-use actix_web::http::StatusCode;
-use actix_web::{fs, http, Body, FromRequest, HttpRequest, HttpResponse, Query, Result};
+use actix_web::{fs, Body, FromRequest, HttpRequest, HttpResponse, Query, Result};
 use bytesize::ByteSize;
-use futures::stream::once;
+use futures::Stream;
 use htmlescape::encode_minimal as escape_html_entity;
 use percent_encoding::{utf8_percent_encode, DEFAULT_ENCODE_SET};
 use serde::Deserialize;
@@ -235,46 +234,56 @@ pub fn directory_listing<S>(
 
     let color_scheme = query_params.theme.unwrap_or(default_color_scheme);
 
-    if let Some(compression_method) = &query_params.download {
+    if let Some(compression_method) = query_params.download {
         log::info!(
             "Creating an archive ({extension}) of {path}...",
             extension = compression_method.extension(),
             path = &dir.path.display().to_string()
         );
-        match compression_method.create_archive(&dir.path, skip_symlinks) {
-            Ok((filename, content)) => {
-                log::info!("{file} successfully created !", file = &filename);
-                Ok(HttpResponse::Ok()
-                    .content_type(compression_method.content_type())
-                    .content_encoding(compression_method.content_encoding())
-                    .header("Content-Transfer-Encoding", "binary")
-                    .header(
-                        "Content-Disposition",
-                        format!("attachment; filename={:?}", filename),
-                    )
-                    .chunked()
-                    .body(Body::Streaming(Box::new(once(Ok(content))))))
+
+        let filename = format!(
+            "{}.{}",
+            dir.path.file_name().unwrap().to_str().unwrap(),
+            compression_method.extension()
+        );
+
+        // We will create the archive in a separate thread, and stream the content using a pipe.
+        // The pipe is made of a futures channel, and an adapter to implement the `Write` trait.
+        // Include 10 messages of buffer for erratic connection speeds.
+        let (tx, rx) = futures::sync::mpsc::channel(10);
+        let pipe = crate::pipe::Pipe::new(tx);
+
+        // Start the actual archive creation in a separate thread.
+        let dir = dir.path.to_path_buf();
+        std::thread::spawn(move || {
+            if let Err(err) = compression_method.create_archive(dir, skip_symlinks, pipe) {
+                log::error!("Error during archive creation: {:?}", err);
             }
-            Err(err) => {
-                errors::log_error_chain(err.to_string());
-                Ok(HttpResponse::Ok()
-                    .status(http::StatusCode::INTERNAL_SERVER_ERROR)
-                    .body(
-                        renderer::render_error(
-                            &err.to_string(),
-                            StatusCode::INTERNAL_SERVER_ERROR,
-                            serve_path,
-                            query_params.sort,
-                            query_params.order,
-                            color_scheme,
-                            default_color_scheme,
-                            false,
-                            true,
-                        )
-                        .into_string(),
-                    ))
-            }
-        }
+        });
+
+        // `rx` is a receiver of bytes - it can act like a `Stream` of bytes, and that's exactly
+        // what actix-web wants to stream the response.
+        //
+        // But right now the error types do not match:
+        // `<rx as Stream>::Error == ()`, but we want `actix_web::error::Error`
+        //
+        // That being said, `rx` will never fail because the `Stream` implementation for `Receiver`
+        // never returns an error - it simply cannot fail.
+        let rx = rx.map_err(|_| unreachable!("pipes never fail"));
+
+        // At this point, `rx` implements everything actix want for a streamed response,
+        // so we can just give a `Box::new(rx)` as streaming body.
+
+        Ok(HttpResponse::Ok()
+            .content_type(compression_method.content_type())
+            .content_encoding(compression_method.content_encoding())
+            .header("Content-Transfer-Encoding", "binary")
+            .header(
+                "Content-Disposition",
+                format!("attachment; filename={:?}", filename),
+            )
+            .chunked()
+            .body(Body::Streaming(Box::new(rx))))
     } else {
         Ok(HttpResponse::Ok()
             .content_type("text/html; charset=utf-8")
@@ -302,7 +311,7 @@ pub fn extract_query_parameters<S>(req: &HttpRequest<S>) -> QueryParameters {
         Ok(query) => QueryParameters {
             sort: query.sort,
             order: query.order,
-            download: query.download.clone(),
+            download: query.download,
             theme: query.theme,
             path: query.path.clone(),
         },
