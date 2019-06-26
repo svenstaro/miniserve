@@ -1775,7 +1775,7 @@ dependencies = [
 [[package]]
 name = "rstest"
 version = "0.2.2"
-source = "git+https://github.com/la10736/rstest.git#fdee24cc026d3a68c2cd83b5388d4142020ed26d"
+source = "git+https://github.com/la10736/rstest.git#572306c58bc8d60501a0ad0a742263a098449f9f"
 dependencies = [
  "cfg-if 0.1.9 (registry+https://github.com/rust-lang/crates.io-index)",
  "proc-macro2 0.4.30 (registry+https://github.com/rust-lang/crates.io-index)",
