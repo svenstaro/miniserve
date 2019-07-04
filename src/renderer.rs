@@ -218,6 +218,20 @@ fn archive_button(
     }
 }
 
+// Append to the string after the link
+fn get_dir_last(link: &str) -> &str {
+    match link.chars().last() {
+        Some(d) => {
+            if d == '/' {
+                ""
+            }else {
+                "/"
+            }
+        },
+        None => "/"
+    }
+}
+
 /// If they are set, adds query parameters to links to keep them across pages
 fn parametrized_link(
     link: &str,
@@ -228,7 +242,13 @@ fn parametrized_link(
 ) -> String {
     if let Some(method) = sort_method {
         if let Some(order) = sort_order {
-            let parametrized_link = format!("{}?sort={}&order={}", link, method, order);
+            let parametrized_link = format!(
+                "{}{}?sort={}&order={}",
+                link,
+                get_dir_last(&link),
+                method,
+                order
+            );
 
             if color_scheme != default_color_scheme {
                 return format!("{}&theme={}", parametrized_link, color_scheme.to_slug());
@@ -239,10 +259,15 @@ fn parametrized_link(
     }
 
     if color_scheme != default_color_scheme {
-        return format!("{}?theme={}", link.to_string(), color_scheme.to_slug());
+        return format!(
+            "{}{}?theme={}",
+            link,
+            get_dir_last(&link),
+            color_scheme.to_slug()
+        );
     }
 
-    link.to_string()
+    format!("{}/", link)
 }
 
 /// Partial: table header link
@@ -671,6 +696,21 @@ fn css(color_scheme: ColorScheme) -> Markup {
         }}
         .mobile-info {{
             display: block;
+        }}
+        table tbody tr td {{
+            padding-top: 10px;
+            padding-bottom: 0;
+        }}
+        a.directory {{
+            display: block;
+            padding: 0.5625rem 0;
+        }}
+        .file-entry {{
+            align-items: center;
+        }}
+        a.file {{
+            flex: 1;
+            padding: 0.5625rem 0;
         }}
         .back {{
             display: flex;
