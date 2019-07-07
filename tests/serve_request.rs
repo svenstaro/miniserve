@@ -2,9 +2,10 @@ mod fixtures;
 
 use assert_cmd::prelude::*;
 use assert_fs::fixture::TempDir;
-use fixtures::{port, tmpdir, Error, FILES};
+use fixtures::{port, tmpdir, Error, DIRECTORIES, FILES};
 use rstest::rstest;
 use select::document::Document;
+use select::node::Node;
 use select::predicate::Text;
 use std::process::{Command, Stdio};
 use std::thread::sleep;
@@ -22,7 +23,7 @@ fn serves_requests_with_no_options(tmpdir: TempDir) -> Result<(), Error> {
     let body = reqwest::get("http://localhost:8080")?.error_for_status()?;
     let parsed = Document::from_read(body)?;
     for &file in FILES {
-        assert!(parsed.find(Text).any(|x| x.text() == file));
+        assert!(parsed.find(|x: &Node| x.text() == file).next().is_some());
     }
 
     child.kill()?;
@@ -44,7 +45,19 @@ fn serves_requests_with_non_default_port(tmpdir: TempDir, port: u16) -> Result<(
     let body = reqwest::get(format!("http://localhost:{}", port).as_str())?.error_for_status()?;
     let parsed = Document::from_read(body)?;
     for &file in FILES {
-        assert!(parsed.find(Text).any(|x| x.text() == file));
+        assert!(parsed.find(|x: &Node| x.text() == file).next().is_some());
+    }
+    for &directory in DIRECTORIES {
+        assert!(parsed
+            .find(|x: &Node| x.text() == directory)
+            .next()
+            .is_some());
+        let dir_body = reqwest::get(format!("http://localhost:{}/{}", port, directory).as_str())?
+            .error_for_status()?;
+        let dir_body_parsed = Document::from_read(dir_body)?;
+        for &file in FILES {
+            assert!(dir_body_parsed.find(|x: &Node| x.text() == file).next().is_some());
+        }
     }
 
     child.kill()?;

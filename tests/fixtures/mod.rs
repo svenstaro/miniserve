@@ -4,13 +4,18 @@ use port_check::free_local_port;
 use rstest::fixture;
 
 /// Error type used by tests
-pub type Error = Box<std::error::Error>;
+pub type Error = Box<dyn std::error::Error>;
 
 /// File names for testing purpose
 #[allow(dead_code)]
 pub static FILES: &[&str] = &["test.txt", "test.html", "test.mkv"];
 
-/// Test fixture which creates a temporary directory with a few files inside.
+/// Directory names for testing purpose
+#[allow(dead_code)]
+pub static DIRECTORIES: &[&str] = &["dira/", "dirb/", "dirc/"];
+
+/// Test fixture which creates a temporary directory with a few files and directories inside.
+/// The directories also contain files.
 #[fixture]
 #[allow(dead_code)]
 pub fn tmpdir() -> TempDir {
@@ -20,6 +25,14 @@ pub fn tmpdir() -> TempDir {
             .child(file)
             .write_str("Test Hello Yes")
             .expect("Couldn't write to file");
+    }
+    for &directory in DIRECTORIES {
+        for &file in FILES {
+            tmpdir
+                .child(format!("{}{}", directory, file))
+                .write_str(&format!("This is {}{}", directory, file))
+                .expect("Couldn't write to file");
+        }
     }
     tmpdir
 }
