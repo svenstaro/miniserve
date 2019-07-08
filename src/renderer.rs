@@ -224,7 +224,7 @@ fn get_dir_last(link: &str) -> &str {
         Some(d) => {
             if d == '/' {
                 ""
-            }else {
+            } else {
                 "/"
             }
         },
