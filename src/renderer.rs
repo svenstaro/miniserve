@@ -15,7 +15,6 @@ pub fn page(
     serve_path: &str,
     entries: Vec<Entry>,
     is_root: bool,
-    // page_parent: Option<String>,
     sort_method: Option<SortingMethod>,
     sort_order: Option<SortingOrder>,
     default_color_scheme: ColorScheme,
