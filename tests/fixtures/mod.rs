@@ -14,6 +14,10 @@ pub static FILES: &[&str] = &["test.txt", "test.html", "test.mkv"];
 #[allow(dead_code)]
 pub static DIRECTORIES: &[&str] = &["dira/", "dirb/", "dirc/"];
 
+/// Name of a deeply nested file
+#[allow(dead_code)]
+pub static DEEPLY_NESTED_FILE: &str = "very/deeply/nested/test.rs";
+
 /// Test fixture which creates a temporary directory with a few files and directories inside.
 /// The directories also contain files.
 #[fixture]
@@ -34,6 +38,10 @@ pub fn tmpdir() -> TempDir {
                 .expect("Couldn't write to file");
         }
     }
+    tmpdir
+        .child(&DEEPLY_NESTED_FILE)
+        .write_str("File in a deeply nested directory.")
+        .expect("Couldn't write to file");
     tmpdir
 }
 
