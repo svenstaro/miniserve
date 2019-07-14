@@ -15,7 +15,6 @@ pub fn page(
     serve_path: &str,
     entries: Vec<Entry>,
     is_root: bool,
-    page_parent: Option<String>,
     sort_method: Option<SortingMethod>,
     sort_order: Option<SortingOrder>,
     default_color_scheme: ColorScheme,
@@ -73,13 +72,11 @@ pub fn page(
                     }
                     tbody {
                         @if !is_root {
-                            @if let Some(parent) = page_parent {
-                                tr {
-                                    td colspan="3" {
-                                        span.root-chevron { (chevron_left()) }
-                                        a.root href=(parametrized_link(&parent, sort_method, sort_order, color_scheme, default_color_scheme)) {
-                                            "Parent directory"
-                                        }
+                            tr {
+                                td colspan="3" {
+                                    span.root-chevron { (chevron_left()) }
+                                    a.root href=(parametrized_link("../", sort_method, sort_order, color_scheme, default_color_scheme)) {
+                                        "Parent directory"
                                     }
                                 }
                             }
@@ -218,6 +215,23 @@ fn archive_button(
     }
 }
 
+// Is there a trailing "/"
+pub fn has_trailing(s: &str) -> bool {
+    match s.chars().last() {
+        Some(d) => d == '/',
+        None => false
+    }
+}
+
+// Add trailing "/" if conditions permit
+fn add_trailing(link: &str) -> String {
+    if has_trailing(&link) {
+        link.to_string()
+    }else {
+        format!("{}/", link)
+    }
+}
+
 /// If they are set, adds query parameters to links to keep them across pages
 fn parametrized_link(
     link: &str,
@@ -228,7 +242,12 @@ fn parametrized_link(
 ) -> String {
     if let Some(method) = sort_method {
         if let Some(order) = sort_order {
-            let parametrized_link = format!("{}?sort={}&order={}", link, method, order);
+            let parametrized_link = format!(
+                "{}?sort={}&order={}",
+                add_trailing(&link),
+                method,
+                order
+            );
 
             if color_scheme != default_color_scheme {
                 return format!("{}&theme={}", parametrized_link, color_scheme.to_slug());
@@ -239,10 +258,14 @@ fn parametrized_link(
     }
 
     if color_scheme != default_color_scheme {
-        return format!("{}?theme={}", link.to_string(), color_scheme.to_slug());
+        return format!(
+            "{}?theme={}",
+            add_trailing(&link),
+            color_scheme.to_slug()
+        );
     }
 
-    link.to_string()
+    add_trailing(&link)
 }
 
 /// Partial: table header link
@@ -671,6 +694,25 @@ fn css(color_scheme: ColorScheme) -> Markup {
         }}
         .mobile-info {{
             display: block;
+        }}
+        table tbody tr td {{
+            padding-top: 0;
+            padding-bottom: 0;
+        }}
+        a.directory {{
+            display: block;
+            padding: 0.5625rem 0;
+        }}
+        .file-entry {{
+            align-items: center;
+        }}
+        a.root, a.file, a.symlink {{
+            display: inline-block;
+            flex: 1;
+            padding: 0.5625rem 0;
+        }}
+        a.symlink {{
+            width: 100%;
         }}
         .back {{
             display: flex;

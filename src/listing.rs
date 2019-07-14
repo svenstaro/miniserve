@@ -138,7 +138,6 @@ pub fn directory_listing<S>(
     let base = Path::new(serve_path);
     let random_route = format!("/{}", random_route.unwrap_or_default());
     let is_root = base.parent().is_none() || req.path() == random_route;
-    let page_parent = base.parent().map(|p| p.display().to_string());
     let current_dir = match base.strip_prefix(random_route) {
         Ok(c_d) => Path::new("/").join(c_d),
         Err(_) => base.to_path_buf(),
@@ -285,6 +284,19 @@ pub fn directory_listing<S>(
             .chunked()
             .body(Body::Streaming(Box::new(rx))))
     } else {
+        // Redirect to directory
+        if !renderer::has_trailing(&serve_path) {
+            let query = match req.query_string() {
+                "" => String::new(),
+                _ => format!("?{}", req.query_string())
+            };
+            return Ok(
+                HttpResponse::MovedPermanenty()
+                    .header("Location", format!("{}/{}", serve_path, query))
+                    .body("301")
+            );
+        }
+
         Ok(HttpResponse::Ok()
             .content_type("text/html; charset=utf-8")
             .body(
@@ -292,7 +304,6 @@ pub fn directory_listing<S>(
                     serve_path,
                     entries,
                     is_root,
-                    page_parent,
                     query_params.sort,
                     query_params.order,
                     default_color_scheme,
