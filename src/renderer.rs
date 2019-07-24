@@ -215,19 +215,11 @@ fn archive_button(
     }
 }
 
-// Is there a trailing "/"
-pub fn has_trailing(s: &str) -> bool {
-    match s.chars().last() {
-        Some(d) => d == '/',
-        None => false
-    }
-}
-
-// Add trailing "/" if conditions permit
-fn add_trailing(link: &str) -> String {
-    if has_trailing(&link) {
+/// Ensure that there's always a trailing slash behind the `link`.
+fn make_link_with_trailing_slash(link: &str) -> String {
+    if link.ends_with('/') {
         link.to_string()
-    }else {
+    } else {
         format!("{}/", link)
     }
 }
@@ -244,7 +236,7 @@ fn parametrized_link(
         if let Some(order) = sort_order {
             let parametrized_link = format!(
                 "{}?sort={}&order={}",
-                add_trailing(&link),
+                make_link_with_trailing_slash(&link),
                 method,
                 order
             );
@@ -260,12 +252,12 @@ fn parametrized_link(
     if color_scheme != default_color_scheme {
         return format!(
             "{}?theme={}",
-            add_trailing(&link),
+            make_link_with_trailing_slash(&link),
             color_scheme.to_slug()
         );
     }
 
-    add_trailing(&link)
+    make_link_with_trailing_slash(&link)
 }
 
 /// Partial: table header link

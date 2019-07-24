@@ -135,6 +135,19 @@ pub fn directory_listing<S>(
     upload_route: String,
 ) -> Result<HttpResponse, io::Error> {
     let serve_path = req.path();
+
+    // In case the current path is a directory, we want to make sure that the current URL ends
+    // on a slash ("/").
+    if !serve_path.ends_with('/') {
+        let query = match req.query_string() {
+            "" => String::new(),
+            _ => format!("?{}", req.query_string()),
+        };
+        return Ok(HttpResponse::MovedPermanenty()
+            .header("Location", format!("{}/{}", serve_path, query))
+            .body("301"));
+    }
+
     let base = Path::new(serve_path);
     let random_route = format!("/{}", random_route.unwrap_or_default());
     let is_root = base.parent().is_none() || req.path() == random_route;
@@ -284,19 +297,6 @@ pub fn directory_listing<S>(
             .chunked()
             .body(Body::Streaming(Box::new(rx))))
     } else {
-        // Redirect to directory
-        if !renderer::has_trailing(&serve_path) {
-            let query = match req.query_string() {
-                "" => String::new(),
-                _ => format!("?{}", req.query_string())
-            };
-            return Ok(
-                HttpResponse::MovedPermanenty()
-                    .header("Location", format!("{}/{}", serve_path, query))
-                    .body("301")
-            );
-        }
-
         Ok(HttpResponse::Ok()
             .content_type("text/html; charset=utf-8")
             .body(
