@@ -2,7 +2,7 @@ use actix_web::{fs, Body, FromRequest, HttpRequest, HttpResponse, Query, Result}
 use bytesize::ByteSize;
 use futures::Stream;
 use htmlescape::encode_minimal as escape_html_entity;
-use percent_encoding::{utf8_percent_encode, DEFAULT_ENCODE_SET};
+use percent_encoding::{utf8_percent_encode, AsciiSet, CONTROLS};
 use serde::Deserialize;
 use std::io;
 use std::path::{Path, PathBuf};
@@ -13,6 +13,8 @@ use crate::archive::CompressionMethod;
 use crate::errors::{self, ContextualError};
 use crate::renderer;
 use crate::themes::ColorScheme;
+
+const FRAGMENT: &AsciiSet = &CONTROLS.add(b' ').add(b'"').add(b'<').add(b'>').add(b'`');
 
 /// Query parameters
 #[derive(Deserialize)]
@@ -169,7 +171,7 @@ pub fn directory_listing<S>(
             };
             // show file url as relative to static path
             let file_url =
-                utf8_percent_encode(&p.to_string_lossy(), DEFAULT_ENCODE_SET).to_string();
+                utf8_percent_encode(&p.to_string_lossy(), FRAGMENT).to_string();
             // " -- &quot;  & -- &amp;  ' -- &#x27;  < -- &lt;  > -- &gt;
             let file_name = escape_html_entity(&entry.file_name().to_string_lossy());
 
