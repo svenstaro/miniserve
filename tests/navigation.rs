@@ -59,7 +59,7 @@ fn can_navigate_into_dirs_and_back(tmpdir: TempDir, port: u16) -> Result<(), Err
 
         // Now check that we can actually get back to the original location we came from using the
         // link.
-        assert_eq!(resp.url(), &base_url);
+        assert_eq!(resp.url().as_str(), base_url.as_str());
     }
 
     child.kill()?;
