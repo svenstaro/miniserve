@@ -7,7 +7,7 @@ repository = "https://github.com/svenstaro/miniserve"
 license = "MIT"
 readme = "README.md"
 keywords = ["serve", "http-server", "static-files", "http", "server"]
-categories = ["command-line-utilities", "command-line-interface", "network-programming", "web-programming::http-server"]
+categories = ["command-line-utilities", "network-programming", "web-programming::http-server"]
 edition = "2018"
 
 [badges]
