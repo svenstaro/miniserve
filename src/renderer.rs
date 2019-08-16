@@ -34,7 +34,7 @@ pub fn page(
 
     html! {
         (DOCTYPE)
-            html {
+        html {
             (page_header(serve_path, color_scheme, file_upload, false))
             body#drop-container {
                 @if file_upload {
