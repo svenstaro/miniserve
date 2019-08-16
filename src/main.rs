@@ -287,7 +287,6 @@ fn error_404(req: &HttpRequest<crate::MiniserveConfig>) -> Result<HttpResponse, 
     let err_404 = ContextualError::RouteNotFoundError(req.path().to_string());
     let default_color_scheme = req.state().default_color_scheme;
     let uses_random_route = req.state().random_route.is_some();
-    let return_address = "/".to_string();
     let query_params = listing::extract_query_parameters(req);
     let color_scheme = query_params.theme.unwrap_or(default_color_scheme);
 
@@ -297,7 +296,7 @@ fn error_404(req: &HttpRequest<crate::MiniserveConfig>) -> Result<HttpResponse, 
         renderer::render_error(
             &err_404.to_string(),
             StatusCode::NOT_FOUND,
-            &return_address,
+            "/",
             query_params.sort,
             query_params.order,
             color_scheme,
