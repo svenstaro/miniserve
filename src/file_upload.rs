@@ -219,6 +219,7 @@ pub fn upload_file(
 }
 
 /// Convenience method for creating response errors, if file upload fails.
+#[allow(clippy::too_many_arguments)]
 fn create_error_response(
     description: &str,
     error_code: StatusCode,
