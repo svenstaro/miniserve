@@ -40,7 +40,7 @@ serde = { version = "1.0.99", features = ["derive"] }
 tar = "0.4.25"
 bytes = "0.4.12"
 futures = "0.1.28"
-libflate = "0.1.26"
+libflate = "0.1.27"
 failure = "0.1.5"
 log = "0.4.8"
 strum = "0.15.0"
