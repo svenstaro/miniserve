@@ -32,7 +32,7 @@ htmlescape = "0.3.1"
 bytesize = "1.0.0"
 nanoid = "0.2.0"
 alphanumeric-sort = "1.0.7"
-structopt = "0.2.18"
+structopt = "0.3.0"
 chrono = "0.4.8"
 chrono-humanize = "0.0.11"
 maud = { version = "0.21.0", features = ["actix-web"] }
