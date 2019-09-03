@@ -14,7 +14,9 @@ const ROUTE_ALPHABET: [char; 16] = [
 #[derive(StructOpt)]
 #[structopt(
     name = "miniserve",
-    raw(global_settings = "&[structopt::clap::AppSettings::ColoredHelp]")
+    author,
+    about,
+    global_settings = &[structopt::clap::AppSettings::ColoredHelp],
 )]
 struct CLIArgs {
     /// Be verbose, includes emitting access logs
@@ -33,8 +35,8 @@ struct CLIArgs {
     #[structopt(
         short = "i",
         long = "interfaces",
-        parse(try_from_str = "parse_interface"),
-        raw(number_of_values = "1")
+        parse(try_from_str = parse_interface),
+        number_of_values = 1,
     )]
     interfaces: Vec<IpAddr>,
 
@@ -44,8 +46,8 @@ struct CLIArgs {
     #[structopt(
         short = "a",
         long = "auth",
-        parse(try_from_str = "parse_auth"),
-        raw(number_of_values = "1")
+        parse(try_from_str = parse_auth),
+        number_of_values = 1,
     )]
     auth: Vec<auth::RequiredAuth>,
 
@@ -62,10 +64,8 @@ struct CLIArgs {
         short = "c",
         long = "color-scheme",
         default_value = "Squirrel",
-        raw(
-            possible_values = "&themes::ColorScheme::variants()",
-            case_insensitive = "true",
-        )
+        possible_values = &themes::ColorScheme::variants(),
+        case_insensitive = true,
     )]
     color_scheme: themes::ColorScheme,
 
