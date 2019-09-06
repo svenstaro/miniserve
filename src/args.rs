@@ -27,6 +27,10 @@ struct CLIArgs {
     #[structopt(name = "PATH", parse(from_os_str))]
     path: Option<PathBuf>,
 
+    /// serve index.* files by default
+    #[structopt(short = "d", long)]
+    default_index: bool,
+
     /// Port to use
     #[structopt(short = "p", long = "port", default_value = "8080")]
     port: u16,
