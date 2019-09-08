@@ -166,6 +166,7 @@ pub fn parse_args() -> crate::MiniserveConfig {
         no_symlinks: args.no_symlinks,
         random_route,
         default_color_scheme,
+        default_index: args.default_index,
         overwrite_files: args.overwrite_files,
         file_upload: args.file_upload,
     }
