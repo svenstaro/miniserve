@@ -7,7 +7,6 @@ use simplelog::{Config, LevelFilter, TermLogger, TerminalMode};
 use std::io::{self, Write};
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use std::thread;
-use std::path::PathBuf;
 use std::time::Duration;
 use yansi::{Color, Paint};
 
@@ -239,11 +238,10 @@ fn configure_app(app: App<MiniserveConfig>) -> App<MiniserveConfig> {
         if path.is_file() {
             None
         } else if app.state().default_index == true {
-            let mut index_path = PathBuf::from(path);
-            index_path.push("index.html");
             Some(
-                fs::StaticFiles::new(index_path)
+                fs::StaticFiles::new(path)
                     .expect("Failed to setup static file handler")
+                    .index_file("index.html")
             )
         } else {
             let u_r = upload_route.clone();
