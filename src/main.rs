@@ -52,8 +52,8 @@ pub struct MiniserveConfig {
     /// Default color scheme
     pub default_color_scheme: themes::ColorScheme,
 
-    /// Serve index.* files by default
-    pub default_index: bool,
+    /// name of an index files to serve by default
+    pub index: Option<std::path::PathBuf>,
 
     /// Enable file upload
     pub file_upload: bool,
@@ -237,11 +237,11 @@ fn configure_app(app: App<MiniserveConfig>) -> App<MiniserveConfig> {
         };
         if path.is_file() {
             None
-        } else if app.state().default_index == true {
+        } else if let Some(index_file) = &app.state().index {
             Some(
                 fs::StaticFiles::new(path)
                     .expect("Failed to setup static file handler")
-                    .index_file("index.html")
+                    .index_file(index_file.to_string_lossy())
             )
         } else {
             let u_r = upload_route.clone();

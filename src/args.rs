@@ -27,9 +27,9 @@ struct CLIArgs {
     #[structopt(name = "PATH", parse(from_os_str))]
     path: Option<PathBuf>,
 
-    /// serve index.* files by default
-    #[structopt(short = "d", long)]
-    default_index: bool,
+    /// name of an index files to serve by default
+    #[structopt(long, parse(from_os_str), name="index_file")]
+    index: Option<PathBuf>,
 
     /// Port to use
     #[structopt(short = "p", long = "port", default_value = "8080")]
@@ -166,7 +166,7 @@ pub fn parse_args() -> crate::MiniserveConfig {
         no_symlinks: args.no_symlinks,
         random_route,
         default_color_scheme,
-        default_index: args.default_index,
+        index: args.index,
         overwrite_files: args.overwrite_files,
         file_upload: args.file_upload,
     }
