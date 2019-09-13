@@ -122,6 +122,14 @@ fn run() -> Result<(), ContextualError> {
     let canon_path = miniserve_config.path.canonicalize().map_err(|e| {
         ContextualError::IOError("Failed to resolve path to be served".to_string(), e)
     })?;
+
+    if let Some(index_path) = &miniserve_config.index {
+        let has_index: std::path::PathBuf = [&canon_path, index_path].iter().collect();
+        if !has_index.exists() {
+
+            println!("{warning} The provided index file could not be found.", warning=Color::RGB(255, 192, 0).paint("Notice:").bold());
+        }
+    }
     let path_string = canon_path.to_string_lossy();
 
     println!(
