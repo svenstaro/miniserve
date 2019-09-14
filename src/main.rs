@@ -52,7 +52,7 @@ pub struct MiniserveConfig {
     /// Default color scheme
     pub default_color_scheme: themes::ColorScheme,
 
-    /// name of an index files to serve by default
+    /// name of an index file to serve by default
     pub index: Option<std::path::PathBuf>,
 
     /// Enable file upload
