@@ -1440,7 +1440,7 @@ dependencies = [
  "sha2 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "simplelog 0.7.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "structopt 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "strum 0.15.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "strum 0.16.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "strum_macros 0.15.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "tar 0.4.26 (registry+https://github.com/rust-lang/crates.io-index)",
  "url 2.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2410,7 +2410,7 @@ dependencies = [
 
 [[package]]
 name = "strum"
-version = "0.15.0"
+version = "0.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
@@ -3367,7 +3367,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum strsim 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)" = "8ea5119cdb4c55b55d432abb513a0429384878c15dde60cc77b1c99de1a95a6a"
 "checksum structopt 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)" = "2ac9d6e93dd792b217bf89cda5c14566e3043960c6f9da890c2ba5d09d07804c"
 "checksum structopt-derive 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)" = "2ae9e5165d463a0dea76967d021f8d0f9316057bf5163aa2a4843790e842ff37"
-"checksum strum 0.15.0 (registry+https://github.com/rust-lang/crates.io-index)" = "e5d1c33039533f051704951680f1adfd468fd37ac46816ded0d9ee068e60f05f"
+"checksum strum 0.16.0 (registry+https://github.com/rust-lang/crates.io-index)" = "6138f8f88a16d90134763314e3fc76fa3ed6a7db4725d6acf9a3ef95a3188d22"
 "checksum strum_macros 0.15.0 (registry+https://github.com/rust-lang/crates.io-index)" = "47cd23f5c7dee395a00fa20135e2ec0fffcdfa151c56182966d7a3261343432e"
 "checksum syn 0.15.44 (registry+https://github.com/rust-lang/crates.io-index)" = "9ca4b3b69a77cbe1ffc9e198781b7acb0c7365a883670e8f1c1bc66fba79a5c5"
 "checksum syn 1.0.5 (registry+https://github.com/rust-lang/crates.io-index)" = "66850e97125af79138385e9b88339cbcd037e3f28ceab8c5ad98e64f0f1f80bf"
