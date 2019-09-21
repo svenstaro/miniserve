@@ -21,7 +21,6 @@ codegen-units = 1
 panic = 'abort'
 
 [dependencies]
-clap = "2.29"
 yansi = "0.5"
 actix = "0.7"
 actix-web = "0.7"

@@ -2,7 +2,7 @@
 
 use actix_web::http::{Method, StatusCode};
 use actix_web::{fs, middleware, server, App, HttpRequest, HttpResponse};
-use clap::crate_version;
+use structopt::clap::crate_version;
 use simplelog::{Config, LevelFilter, TermLogger, TerminalMode};
 use std::io::{self, Write};
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
