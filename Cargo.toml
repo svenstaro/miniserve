@@ -21,7 +21,6 @@ codegen-units = 1
 panic = 'abort'
 
 [dependencies]
-clap = "2.29"
 yansi = "0.5"
 actix = "0.7"
 actix-web = "0.7"
@@ -31,22 +30,22 @@ percent-encoding = "2.1"
 htmlescape = "0.3.1"
 bytesize = "1.0.0"
 nanoid = "0.2.0"
-alphanumeric-sort = "1.0.7"
+alphanumeric-sort = "1.0.11"
 structopt = "0.3"
 chrono = "0.4.9"
 chrono-humanize = "0.0.11"
 maud = { version = "0.21.0", features = ["actix-web"] }
-serde = { version = "1.0.99", features = ["derive"] }
+serde = { version = "1.0.101", features = ["derive"] }
 tar = "0.4.25"
 bytes = "0.4.12"
 futures = "0.1.29"
 libflate = "0.1.26"
 failure = "0.1.5"
 log = "0.4.8"
-strum = "0.15.0"
-strum_macros = "0.15.0"
+strum = "0.16.0"
+strum_macros = "0.16.0"
 sha2 = "0.8.0"
-hex = "0.3.2"
+hex = "0.4.0"
 
 [dev-dependencies]
 assert_cmd = "0.11"

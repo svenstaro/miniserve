@@ -1,7 +1,7 @@
 mod fixtures;
 
 use assert_cmd::prelude::*;
-use clap::{crate_name, crate_version};
+use structopt::clap::{crate_name, crate_version};
 use fixtures::Error;
 use std::process::Command;
 

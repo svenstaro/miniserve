@@ -4,13 +4,14 @@ mod utils;
 use assert_cmd::prelude::*;
 use assert_fs::fixture::TempDir;
 use fixtures::{port, tmpdir, Error, DEEPLY_NESTED_FILE, DIRECTORIES};
+use pretty_assertions::{assert_eq, assert_ne};
 use rstest::rstest;
 use select::document::Document;
 use std::process::{Command, Stdio};
 use std::thread::sleep;
 use std::time::Duration;
-use utils::get_link_from_text;
 use url::Url;
+use utils::get_link_from_text;
 
 #[rstest]
 /// The index directory gets a trailing slash.

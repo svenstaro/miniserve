@@ -177,6 +177,7 @@ pub fn parse_args() -> crate::MiniserveConfig {
 mod tests {
     use super::*;
     use rstest::rstest_parametrize;
+    use pretty_assertions::assert_eq;
 
     /// Helper function that creates a `RequiredAuth` structure
     fn create_required_auth(username: &str, password: &str, encrypt: &str) -> auth::RequiredAuth {

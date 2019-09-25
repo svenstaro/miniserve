@@ -6,7 +6,6 @@ use fixtures::{port, tmpdir, Error, DIRECTORIES, FILES};
 use rstest::rstest;
 use select::document::Document;
 use select::node::Node;
-use std::io::BufReader;
 use std::process::{Command, Stdio};
 use std::thread::sleep;
 use std::time::Duration;
