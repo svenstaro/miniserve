@@ -3,7 +3,6 @@
 use actix_web::http::{Method, StatusCode};
 use actix_web::{fs, middleware, server, App, HttpRequest, HttpResponse};
 use structopt::clap::crate_version;
-use simplelog::{Config, LevelFilter, TermLogger, TerminalMode};
 use std::io::{self, Write};
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use std::thread;
@@ -74,11 +73,20 @@ fn run() -> Result<(), ContextualError> {
     let sys = actix::System::new("miniserve");
     let miniserve_config = args::parse_args();
 
-    let _ = if miniserve_config.verbose {
-        TermLogger::init(LevelFilter::Info, Config::default(), TerminalMode::default())
+    let log_level = if miniserve_config.verbose {
+        simplelog::LevelFilter::Info
     } else {
-        TermLogger::init(LevelFilter::Error, Config::default(), TerminalMode::default())
+        simplelog::LevelFilter::Error
     };
+
+    if let Err(_) = simplelog::TermLogger::init(
+        log_level,
+        simplelog::Config::default(),
+        simplelog::TerminalMode::Mixed,
+    ) {
+        simplelog::SimpleLogger::init(log_level, simplelog::Config::default())
+            .expect("Couldn't initialize logger")
+    }
 
     if miniserve_config.no_symlinks {
         let is_symlink = miniserve_config
