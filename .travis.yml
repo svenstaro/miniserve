@@ -47,7 +47,7 @@ matrix:
         - BIN_NAME=miniserve
         - PROPER_NAME=miniserve-osx-x86_64
       os: osx
-    - rust: nightly-2019-07-14
+    - rust: nightly-2019-09-19
       env:
         - CLIPPY=true
 
