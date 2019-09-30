@@ -2,11 +2,11 @@
 
 use actix_web::http::{Method, StatusCode};
 use actix_web::{fs, middleware, server, App, HttpRequest, HttpResponse};
-use structopt::clap::crate_version;
 use std::io::{self, Write};
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use std::thread;
 use std::time::Duration;
+use structopt::clap::crate_version;
 use yansi::{Color, Paint};
 
 mod archive;
@@ -79,11 +79,13 @@ fn run() -> Result<(), ContextualError> {
         simplelog::LevelFilter::Error
     };
 
-    if let Err(_) = simplelog::TermLogger::init(
+    if simplelog::TermLogger::init(
         log_level,
         simplelog::Config::default(),
         simplelog::TerminalMode::Mixed,
-    ) {
+    )
+    .is_err()
+    {
         simplelog::SimpleLogger::init(log_level, simplelog::Config::default())
             .expect("Couldn't initialize logger")
     }
