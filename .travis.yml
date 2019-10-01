@@ -62,9 +62,9 @@ install:
 
 script:
   # If this is a normal, non-deployment build...
-  - if [[ -z $TARGET && -z $CLIPPY ]]; then cargo build --verbose && RUST_BACKTRACE=1 cargo test; fi
+  - if [[ -z $TARGET && -z $CLIPPY ]]; then cargo build && RUST_BACKTRACE=1 cargo test; fi
   - if [[ -n $CLIPPY ]]; then cargo clippy -- --deny clippy::all; fi
-  - if [[ -n $TARGET ]]; then cargo build --verbose --release --target $TARGET; fi
+  - if [[ -n $TARGET ]]; then cargo build --release --locked --target $TARGET; fi
 
 before_deploy:
   # If this is a binary deployment...
