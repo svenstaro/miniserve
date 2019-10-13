@@ -55,6 +55,10 @@ struct CLIArgs {
     #[structopt(long = "path-prefix")]
     path_prefix: Option<String>,
 
+    /// Use a random path prefix
+    #[structopt(long = "random-path-prefix", conflicts_with("path-prefix"))]
+    random_path_prefix: bool,
+
     /// Do not follow symbolic links
     #[structopt(short = "P", long = "no-symlinks")]
     no_symlinks: bool,
