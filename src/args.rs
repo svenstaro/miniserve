@@ -51,9 +51,9 @@ struct CLIArgs {
     )]
     auth: Vec<auth::RequiredAuth>,
 
-    /// Generate a random 6-hexdigit route
-    #[structopt(long = "random-route")]
-    random_route: bool,
+    /// Use a specific path prefix
+    #[structopt(long = "path-prefix")]
+    path_prefix: Option<String>,
 
     /// Do not follow symbolic links
     #[structopt(short = "P", long = "no-symlinks")]
@@ -142,11 +142,7 @@ pub fn parse_args() -> crate::MiniserveConfig {
         ]
     };
 
-    let random_route = if args.random_route {
-        Some(nanoid::custom(6, &ROUTE_ALPHABET))
-    } else {
-        None
-    };
+    let path_prefix = args.path_prefix;
 
     let default_color_scheme = args.color_scheme;
 
@@ -160,7 +156,7 @@ pub fn parse_args() -> crate::MiniserveConfig {
         auth: args.auth,
         path_explicitly_chosen,
         no_symlinks: args.no_symlinks,
-        random_route,
+        path_prefix,
         default_color_scheme,
         overwrite_files: args.overwrite_files,
         file_upload: args.file_upload,
