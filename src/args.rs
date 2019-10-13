@@ -146,7 +146,11 @@ pub fn parse_args() -> crate::MiniserveConfig {
         ]
     };
 
-    let path_prefix = args.path_prefix;
+    let path_prefix = if args.random_path_prefix {
+        Some(nanoid::custom(6, &ROUTE_ALPHABET))
+    } else {
+        args.path_prefix
+    };
 
     let default_color_scheme = args.color_scheme;
 
