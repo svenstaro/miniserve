@@ -64,7 +64,7 @@ Sometimes this is just a more practical and quick way than doing things properly
     chmod +x miniserve-osx
     ./miniserve-osx
 
-Alternatively install view [Homebrew](https://brew.sh/).
+Alternatively install with [Homebrew](https://brew.sh/).
 
     brew install miniserve
     miniserve
