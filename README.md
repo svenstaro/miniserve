@@ -64,6 +64,11 @@ Sometimes this is just a more practical and quick way than doing things properly
     chmod +x miniserve-osx
     ./miniserve-osx
 
+Alternatively install with [Homebrew](https://brew.sh/).
+
+    brew install miniserve
+    miniserve
+
 **On Windows**: Download `miniserve-win.exe` from [the releases page](https://github.com/svenstaro/miniserve/releases) and run
 
     miniserve-win.exe
