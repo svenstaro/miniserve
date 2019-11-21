@@ -907,8 +907,8 @@ pub fn render_error(
     html! {
         (DOCTYPE)
         html {
+            (page_header(&error_code.to_string(), color_scheme, false, true))
             body {
-                (page_header(&error_code.to_string(), color_scheme, false, true))
                 div.error {
                     p { (error_code.to_string()) }
                     @for error in error_description.lines() {
