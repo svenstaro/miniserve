@@ -806,53 +806,55 @@ fn page_header(
     is_error: bool,
 ) -> Markup {
     html! {
-        meta charset="utf-8";
-        meta http-equiv="X-UA-Compatible" content="IE=edge";
-        meta name="viewport" content="width=device-width, initial-scale=1";
-        @if is_error {
-            title { (serve_path) }
-        } @else {
-            title { "Index of " (serve_path) }
-        }
-        style { (css(color_scheme)) }
-        @if file_upload {
-            (PreEscaped(r#"
-            <script>
-                window.onload = function() {
-                    const dropContainer = document.querySelector('#drop-container');
-                    const dragForm = document.querySelector('.drag-form');
-                    const fileInput = document.querySelector('#file-input');
-                    const collection = [];
+        head {
+            meta charset="utf-8";
+            meta http-equiv="X-UA-Compatible" content="IE=edge";
+            meta name="viewport" content="width=device-width, initial-scale=1";
+            @if is_error {
+                title { (serve_path) }
+            } @else {
+                title { "Index of " (serve_path) }
+            }
+            style { (css(color_scheme)) }
+            @if file_upload {
+                (PreEscaped(r#"
+                <script>
+                    window.onload = function() {
+                        const dropContainer = document.querySelector('#drop-container');
+                        const dragForm = document.querySelector('.drag-form');
+                        const fileInput = document.querySelector('#file-input');
+                        const collection = [];
 
-                    dropContainer.ondragover = function(e) {
-                        e.preventDefault();
-                    }
-
-                    dropContainer.ondragenter = function(e) {
-                        e.preventDefault();
-                        if (collection.length === 0) {
-                            dragForm.style.display = 'initial';
+                        dropContainer.ondragover = function(e) {
+                            e.preventDefault();
                         }
-                        collection.push(e.target);
-                    };
 
-                    dropContainer.ondragleave = function(e) {
-                        e.preventDefault();
-                        collection.splice(collection.indexOf(e.target), 1);
-                        if (collection.length === 0) {
+                        dropContainer.ondragenter = function(e) {
+                            e.preventDefault();
+                            if (collection.length === 0) {
+                                dragForm.style.display = 'initial';
+                            }
+                            collection.push(e.target);
+                        };
+
+                        dropContainer.ondragleave = function(e) {
+                            e.preventDefault();
+                            collection.splice(collection.indexOf(e.target), 1);
+                            if (collection.length === 0) {
+                                dragForm.style.display = 'none';
+                            }
+                        };
+
+                        dropContainer.ondrop = function(e) {
+                            e.preventDefault();
+                            fileInput.files = e.dataTransfer.files;
+                            file_submit.submit();
                             dragForm.style.display = 'none';
-                        }
-                    };
-
-                    dropContainer.ondrop = function(e) {
-                        e.preventDefault();
-                        fileInput.files = e.dataTransfer.files;
-                        file_submit.submit();
-                        dragForm.style.display = 'none';
-                    };
-                }
-            </script>
-            "#))
+                        };
+                    }
+                </script>
+                "#))
+            }
         }
     }
 }
