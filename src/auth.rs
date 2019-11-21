@@ -55,19 +55,17 @@ pub fn parse_basic_auth(
 
 /// Return `true` if `basic_auth` is matches any of `required_auth`
 pub fn match_auth(basic_auth: BasicAuthParams, required_auth: &[RequiredAuth]) -> bool {
-    required_auth.iter().any(
-        |RequiredAuth { username, password }|
-            basic_auth.username == *username &&
-            compare_password(&basic_auth.password, password)
-    )
+    required_auth
+        .iter()
+        .any(|RequiredAuth { username, password }| {
+            basic_auth.username == *username && compare_password(&basic_auth.password, password)
+        })
 }
 
 /// Return `true` if `basic_auth_pwd` meets `required_auth_pwd`'s requirement
-pub fn compare_password (basic_auth_pwd: &str, required_auth_pwd: &RequiredAuthPassword) -> bool {
+pub fn compare_password(basic_auth_pwd: &str, required_auth_pwd: &RequiredAuthPassword) -> bool {
     match &required_auth_pwd {
-        RequiredAuthPassword::Plain(required_password) => {
-            *basic_auth_pwd == *required_password
-        }
+        RequiredAuthPassword::Plain(required_password) => *basic_auth_pwd == *required_password,
         RequiredAuthPassword::Sha256(password_hash) => {
             compare_hash::<Sha256>(basic_auth_pwd, password_hash)
         }
@@ -106,16 +104,9 @@ impl Middleware<crate::MiniserveConfig> for Auth {
                 Ok(auth_req) => auth_req,
                 Err(err) => {
                     let auth_err = ContextualError::HTTPAuthenticationError(Box::new(err));
-                    return Ok(Response::Done(
-                        HttpResponse::BadRequest().body(
-                            build_unauthorized_response(
-                                &req,
-                                auth_err,
-                                true,
-                                StatusCode::BAD_REQUEST,
-                            ),
-                        ),
-                    ));
+                    return Ok(Response::Done(HttpResponse::BadRequest().body(
+                        build_unauthorized_response(&req, auth_err, true, StatusCode::BAD_REQUEST),
+                    )));
                 }
             };
 
@@ -135,7 +126,7 @@ impl Middleware<crate::MiniserveConfig> for Auth {
                     ContextualError::InvalidHTTPCredentials,
                     true,
                     StatusCode::UNAUTHORIZED,
-                ))
+                )),
         ))
     }
 }
@@ -178,6 +169,7 @@ fn build_unauthorized_response(
 mod tests {
     use super::*;
     use rstest::{rstest, rstest_parametrize, fixture};
+    use pretty_assertions::assert_eq;
 
     /// Return a hashing function corresponds to given name
     fn get_hash_func(name: &str) -> impl FnOnce(&str) -> Vec<u8> {

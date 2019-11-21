@@ -3,6 +3,7 @@ mod fixtures;
 use assert_cmd::prelude::*;
 use assert_fs::fixture::TempDir;
 use fixtures::{port, tmpdir, Error, FILES};
+use pretty_assertions::assert_eq;
 use reqwest::StatusCode;
 use rstest::{rstest, rstest_parametrize};
 use select::document::Document;
@@ -136,17 +137,19 @@ fn register_accounts<'a>(command: &'a mut Command) -> &'a mut Command {
         .arg("--auth")
         .arg("usr4:sha512:68050a967d061ac480b414bc8f9a6d368ad0082203edcd23860e94c36178aad1a038e061716707d5479e23081a6d920dc6e9f88e5eb789cdd23e211d718d161a") // pwd4
         .arg("--auth")
-        .arg("usr5:sha512:be82a7dccd06122f9e232e9730e67e69e30ec61b268fd9b21a5e5d42db770d45586a1ce47816649a0107e9fadf079d9cf0104f0a3aaa0f67bad80289c3ba25a8") // pwd5
+        .arg("usr5:sha512:be82a7dccd06122f9e232e9730e67e69e30ec61b268fd9b21a5e5d42db770d45586a1ce47816649a0107e9fadf079d9cf0104f0a3aaa0f67bad80289c3ba25a8")
+    // pwd5
 }
 
 #[rstest_parametrize(
-    username, password,
+    username,
+    password,
     case("usr0", "pwd0"),
     case("usr1", "pwd1"),
     case("usr2", "pwd2"),
     case("usr3", "pwd3"),
     case("usr4", "pwd4"),
-    case("usr5", "pwd5"),
+    case("usr5", "pwd5")
 )]
 fn auth_multiple_accounts_pass(
     tmpdir: TempDir,
@@ -154,9 +157,7 @@ fn auth_multiple_accounts_pass(
     username: &str,
     password: &str,
 ) -> Result<(), Error> {
-    let mut child = register_accounts(
-        &mut Command::cargo_bin("miniserve")?
-    )
+    let mut child = register_accounts(&mut Command::cargo_bin("miniserve")?)
         .arg("-p")
         .arg(port.to_string())
         .arg(tmpdir.path())
@@ -187,19 +188,16 @@ fn auth_multiple_accounts_pass(
 }
 
 #[rstest]
-fn auth_multiple_accounts_wrong_username(
-    tmpdir: TempDir,
-    port: u16
-) -> Result<(), Error> {
+fn auth_multiple_accounts_wrong_username(tmpdir: TempDir, port: u16) -> Result<(), Error> {
     let mut child = register_accounts(
         Command::cargo_bin("miniserve")?
             .arg(tmpdir.path())
             .arg("-p")
             .arg(port.to_string())
             .stdout(Stdio::null())
-            .stderr(Stdio::null())
+            .stderr(Stdio::null()),
     )
-        .spawn()?;
+    .spawn()?;
 
     sleep(Duration::from_secs(1));
 
@@ -219,13 +217,14 @@ fn auth_multiple_accounts_wrong_username(
 }
 
 #[rstest_parametrize(
-    username, password,
+    username,
+    password,
     case("usr0", "pwd5"),
     case("usr1", "pwd4"),
     case("usr2", "pwd3"),
     case("usr3", "pwd2"),
     case("usr4", "pwd1"),
-    case("usr5", "pwd0"),
+    case("usr5", "pwd0")
 )]
 fn auth_multiple_accounts_wrong_password(
     tmpdir: TempDir,
@@ -239,9 +238,9 @@ fn auth_multiple_accounts_wrong_password(
             .arg("-p")
             .arg(port.to_string())
             .stdout(Stdio::null())
-            .stderr(Stdio::null())
+            .stderr(Stdio::null()),
     )
-        .spawn()?;
+    .spawn()?;
 
     sleep(Duration::from_secs(1));
 
