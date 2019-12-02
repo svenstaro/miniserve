@@ -24,6 +24,8 @@ pub fn page(
     current_dir: &str,
     tar_enabled: bool,
     zip_enabled: bool,
+    raw: bool,
+    host_port: &str,
 ) -> Markup {
     let upload_action = build_upload_action(
         upload_route,
@@ -46,27 +48,32 @@ pub fn page(
                         }
                     }
                 }
-                (color_scheme_selector(sort_method, sort_order, color_scheme, default_color_scheme, serve_path))
+                @if !raw {
+                    (color_scheme_selector(sort_method, sort_order, color_scheme, default_color_scheme, serve_path))
+                }
                 div.container {
                     span#top { }
                     h1.title { "Index of " (serve_path) }
                     div.toolbar {
-                        @if tar_enabled || zip_enabled {
-                            div.download {
-                                @for compression_method in CompressionMethod::iter() {
-                                    @if compression_method.is_enabled(tar_enabled, zip_enabled) {
-                                        (archive_button(compression_method, sort_method, sort_order, color_scheme, default_color_scheme))
+                        @if !raw {
+                            @if tar_enabled || zip_enabled {
+                                div.download {
+                                    @for compression_method in CompressionMethod::iter() {
+                                        @if compression_method.is_enabled(tar_enabled, zip_enabled) {
+                                            (archive_button(compression_method, sort_method, sort_order, color_scheme, default_color_scheme))
+                                        }
                                     }
                                 }
                             }
-                        }
-                        @if file_upload {
-                            div.upload {
-                                form id="file_submit" action=(upload_action) method="POST" enctype="multipart/form-data" {
-                                    p { "Select a file to upload or drag it anywhere into the window" }
-                                    div {
-                                        input#file-input type="file" name="file_to_upload" required="" {}
-                                        button type="submit" { "Upload file" }
+                            (wget_download(&serve_path, &host_port))
+                            @if file_upload {
+                                div.upload {
+                                    form id="file_submit" action=(upload_action) method="POST" enctype="multipart/form-data" {
+                                        p { "Select a file to upload or drag it anywhere into the window" }
+                                        div {
+                                            input#file-input type="file" name="file_to_upload" required="" {}
+                                            button type="submit" { "Upload file" }
+                                        }
                                     }
                                 }
                             }
@@ -74,33 +81,57 @@ pub fn page(
                     }
                     table {
                         thead {
-                            th { (build_link("name", "Name", sort_method, sort_order, color_scheme, default_color_scheme)) }
-                            th { (build_link("size", "Size", sort_method, sort_order, color_scheme, default_color_scheme)) }
-                            th { (build_link("date", "Last modification", sort_method, sort_order, color_scheme, default_color_scheme)) }
+
+                            @if !raw {
+                                th { (build_link("name", "Name", sort_method, sort_order, color_scheme, default_color_scheme)) }
+                                th { (build_link("size", "Size", sort_method, sort_order, color_scheme, default_color_scheme)) }
+                                th { (build_link("date", "Last modification", sort_method, sort_order, color_scheme, default_color_scheme)) }
+                            } @else {
+                                th { (build_td("Name")) }
+                                th { (build_td("Size")) }
+                                th { (build_td("Last modification")) }
+                            }
                         }
                         tbody {
                             @if !is_root {
                                 tr {
                                     td colspan="3" {
                                         span.root-chevron { (chevron_left()) }
-                                        a.root href=(parametrized_link("../", sort_method, sort_order, color_scheme, default_color_scheme)) {
+                                        a.root href=(parametrized_link("../", sort_method, sort_order, color_scheme, default_color_scheme, raw)) {
                                             "Parent directory"
                                         }
                                     }
                                 }
                             }
                             @for entry in entries {
-                                (entry_row(entry, sort_method, sort_order, color_scheme, default_color_scheme))
+                                (entry_row(entry, sort_method, sort_order, color_scheme, default_color_scheme, raw))
                             }
                         }
                     }
-                    a.back href="#top" {
-                        (arrow_up())
+                    @if !raw {
+                        a.back href="#top" {
+                            (arrow_up())
+                        }
                     }
+                    
                 }
             }
         }
     }
+}
+
+fn wget_download(serve_path: &str, host_port: &str) -> Markup {
+    let mut count = serve_path.matches('/').count() - 1;
+    if count > 0 {
+        count -= 1
+    }
+
+    return html! {
+        div.downloadWget {
+            p { "Wget:" }
+            pre { (format!("wget -r -c -nH -np --cut-dirs={} -R \"index.html*\" http://{}{}?raw=true", count, host_port, serve_path)) }
+        }
+    };
 }
 
 /// Build the action of the upload form
@@ -174,6 +205,7 @@ fn color_scheme_link(
         sort_order,
         color_scheme,
         default_color_scheme,
+        false,
     );
     let title = format!("Switch to {} theme", color_scheme);
 
@@ -209,7 +241,8 @@ fn archive_button(
                     sort_method,
                     sort_order,
                     color_scheme,
-                    default_color_scheme
+                    default_color_scheme,
+                    false
                 ),
                 compress_method
             )
@@ -240,6 +273,7 @@ fn parametrized_link(
     sort_order: Option<SortingOrder>,
     color_scheme: ColorScheme,
     default_color_scheme: ColorScheme,
+    raw: bool,
 ) -> String {
     if let Some(method) = sort_method {
         if let Some(order) = sort_order {
@@ -256,6 +290,10 @@ fn parametrized_link(
 
             return parametrized_link;
         }
+    }
+
+    if raw {
+        return format!("{}?raw=true", make_link_with_trailing_slash(&link),);
     }
 
     if color_scheme != default_color_scheme {
@@ -308,6 +346,14 @@ fn build_link(
     }
 }
 
+fn build_td(name: &str) -> Markup {
+    html! {
+        span {
+            p { (name) }
+        }
+    }
+}
+
 /// Partial: row for an entry
 fn entry_row(
     entry: Entry,
@@ -315,13 +361,14 @@ fn entry_row(
     sort_order: Option<SortingOrder>,
     color_scheme: ColorScheme,
     default_color_scheme: ColorScheme,
+    raw: bool,
 ) -> Markup {
     html! {
         tr {
             td {
                 p {
                     @if entry.is_dir() {
-                        a.directory href=(parametrized_link(&entry.link, sort_method, sort_order, color_scheme, default_color_scheme)) {
+                        a.directory href=(parametrized_link(&entry.link, sort_method, sort_order, color_scheme, default_color_scheme, raw)) {
                             (entry.name) "/"
                         }
                     } @else if entry.is_file() {
@@ -336,7 +383,7 @@ fn entry_row(
                             }
                         }
                     } @else if entry.is_symlink() {
-                        a.symlink href=(parametrized_link(&entry.link, sort_method, sort_order, color_scheme, default_color_scheme)) {
+                        a.symlink href=(parametrized_link(&entry.link, sort_method, sort_order, color_scheme, default_color_scheme, raw)) {
                            (entry.name)  span.symlink-symbol { "⇢" }
                         }
                     }
@@ -555,7 +602,7 @@ fn css(color_scheme: ColorScheme) -> Markup {
     .mobile-info {{
         display: none;
     }}
-    th a, th a:visited, .chevron {{
+    th a, th p, th a:visited, .chevron {{
         color: {table_header_text_color};
     }}
     .chevron, .root-chevron {{
@@ -591,7 +638,6 @@ fn css(color_scheme: ColorScheme) -> Markup {
     }}
     .toolbar {{
         display: flex;
-        justify-content: space-between;
         flex-wrap: wrap;
     }}
     .download {{
@@ -616,6 +662,20 @@ fn css(color_scheme: ColorScheme) -> Markup {
     }}
     .download a:not(:last-of-type) {{
         margin-right: 1rem;
+    }}
+    .downloadWget {{
+        display: flex;
+        align-self: flex-end;
+        margin-left: 1rem;
+    }}
+    .downloadWget p {{
+        align-self: center;
+    }}
+    .downloadWget pre {{
+        max-width: 275px;
+        overflow-x: auto;
+        margin-left: 1rem;
+        user-select: all;
     }}
     .upload {{
         margin-top: 1rem;
@@ -909,6 +969,7 @@ pub fn render_error(
             sort_order,
             color_scheme,
             default_color_scheme,
+            false,
         )
     };
 

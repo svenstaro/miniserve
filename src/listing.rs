@@ -24,6 +24,7 @@ pub struct QueryParameters {
     pub sort: Option<SortingMethod>,
     pub order: Option<SortingOrder>,
     pub theme: Option<ColorScheme>,
+    pub raw: Option<bool>,
     download: Option<CompressionMethod>,
 }
 
@@ -143,6 +144,7 @@ pub fn directory_listing<S>(
 
     // In case the current path is a directory, we want to make sure that the current URL ends
     // on a slash ("/").
+    let host_port = req.connection_info().host().to_string();
     if !serve_path.ends_with('/') {
         let query = match req.query_string() {
             "" => String::new(),
@@ -250,6 +252,8 @@ pub fn directory_listing<S>(
 
     let color_scheme = query_params.theme.unwrap_or(default_color_scheme);
 
+    let raw = query_params.raw.unwrap_or(false);
+
     if let Some(compression_method) = query_params.download {
         if !compression_method.is_enabled(tar_enabled, zip_enabled) {
             return Ok(HttpResponse::Forbidden()
@@ -335,6 +339,8 @@ pub fn directory_listing<S>(
                     &current_dir.display().to_string(),
                     tar_enabled,
                     zip_enabled,
+                    raw,
+                    &host_port,
                 )
                 .into_string(),
             ))
@@ -349,6 +355,7 @@ pub fn extract_query_parameters<S>(req: &HttpRequest<S>) -> QueryParameters {
             download: query.download,
             theme: query.theme,
             path: query.path.clone(),
+            raw: query.raw,
         },
         Err(e) => {
             let err = ContextualError::ParseError("query parameters".to_string(), e.to_string());
@@ -359,6 +366,7 @@ pub fn extract_query_parameters<S>(req: &HttpRequest<S>) -> QueryParameters {
                 download: None,
                 theme: None,
                 path: None,
+                raw: None,
             }
         }
     }
