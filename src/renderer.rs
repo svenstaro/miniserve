@@ -22,6 +22,7 @@ pub fn page(
     file_upload: bool,
     upload_route: &str,
     current_dir: &str,
+    archives: bool,
 ) -> Markup {
     let upload_action = build_upload_action(
         upload_route,
@@ -49,9 +50,11 @@ pub fn page(
                     span#top { }
                     h1.title { "Index of " (serve_path) }
                     div.toolbar {
-                        div.download {
-                            @for compression_method in CompressionMethod::iter() {
-                                (archive_button(compression_method, sort_method, sort_order, color_scheme, default_color_scheme))
+                        @if download {
+                            div.download {
+                                @for compression_method in CompressionMethod::iter() {
+                                    (archive_button(compression_method, sort_method, sort_order, color_scheme, default_color_scheme))
+                                }
                             }
                         }
                         @if file_upload {
