@@ -197,7 +197,7 @@ pub fn upload_file(
             .then(move |e| match e {
                 Ok(_) => future::ok(
                     HttpResponse::SeeOther()
-                        .header(header::LOCATION, return_path.to_string())
+                        .header(header::LOCATION, return_path)
                         .finish(),
                 ),
                 Err(e) => create_error_response(

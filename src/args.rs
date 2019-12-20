@@ -108,8 +108,8 @@ fn parse_auth(src: &str) -> Result<auth::RequiredAuth, ContextualError> {
         };
 
         match second_part {
-            "sha256" => auth::RequiredAuthPassword::Sha256(hash_bin.to_owned()),
-            "sha512" => auth::RequiredAuthPassword::Sha512(hash_bin.to_owned()),
+            "sha256" => auth::RequiredAuthPassword::Sha256(hash_bin),
+            "sha512" => auth::RequiredAuthPassword::Sha512(hash_bin),
             _ => return Err(ContextualError::InvalidHashMethod(second_part.to_owned())),
         }
     } else {
