@@ -50,7 +50,7 @@ pub fn page(
                     span#top { }
                     h1.title { "Index of " (serve_path) }
                     div.toolbar {
-                        @if download {
+                        @if archives {
                             div.download {
                                 @for compression_method in CompressionMethod::iter() {
                                     (archive_button(compression_method, sort_method, sort_order, color_scheme, default_color_scheme))
