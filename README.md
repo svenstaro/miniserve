@@ -75,7 +75,8 @@ Alternatively install with [Homebrew](https://brew.sh/).
 
 **With Cargo**: You will need the _nightly_ version of Rust to compile the project. Then you can run
 
-    cargo install miniserve
+    rustup toolchain add nightly
+    cargo +nightly install -f miniserve
     miniserve
 
 **With Docker:** If you prefer using Docker for this, run
