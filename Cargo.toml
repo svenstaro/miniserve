@@ -44,7 +44,7 @@ failure = "0.1.5"
 log = "0.4.8"
 strum = "0.17.1"
 strum_macros = "0.17.1"
-sha2 = "0.8.0"
+sha2 = "0.8.1"
 hex = "0.4.0"
 
 [dev-dependencies]
