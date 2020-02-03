@@ -52,7 +52,10 @@ pub struct MiniserveConfig {
     /// Default color scheme
     pub default_color_scheme: themes::ColorScheme,
 
-    /// name of an index file to serve by default
+    /// The name of a directory index file to serve, like "index.html"
+    ///
+    /// Normally, when miniserve serves a directory, it creates a listing for that directory.
+    /// However, if a directory contains this file, miniserve will serve that file instead.
     pub index: Option<std::path::PathBuf>,
 
     /// Enable file upload

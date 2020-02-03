@@ -27,7 +27,10 @@ struct CLIArgs {
     #[structopt(name = "PATH", parse(from_os_str))]
     path: Option<PathBuf>,
 
-    /// name of an index file to serve by default
+    /// The name of a directory index file to serve, like "index.html"
+    ///
+    /// Normally, when miniserve serves a directory, it creates a listing for that directory.
+    /// However, if a directory contains this file, miniserve will serve that file instead.
     #[structopt(long, parse(from_os_str), name="index_file")]
     index: Option<PathBuf>,
 
