@@ -68,9 +68,11 @@ fn serves_requests_with_non_default_port(tmpdir: TempDir, port: u16) -> Result<(
 }
 
 #[rstest]
-fn serves_requests_custom_index_notice(tmpdir: TempDir) -> Result<(), Error> {
+fn serves_requests_custom_index_notice(tmpdir: TempDir, port: u16) -> Result<(), Error> {
     let mut child = Command::cargo_bin("miniserve")?
         .arg("--index=not.html")
+        .arg("-p")
+        .arg(port.to_string())
         .arg(tmpdir.path())
         .stdout(Stdio::piped())
         .spawn()?;
