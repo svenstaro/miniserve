@@ -33,61 +33,64 @@ pub fn page(
     );
 
     html! {
-        (page_header(serve_path, color_scheme, file_upload, false))
-        body#drop-container {
-            @if file_upload {
-                div.drag-form {
-                    div.drag-title {
-                        h1 { "Drop your file here to upload it" }
-                    }
-                }
-            }
-            (color_scheme_selector(sort_method, sort_order, color_scheme, default_color_scheme, serve_path))
-            div.container {
-                span#top { }
-                h1.title { "Index of " (serve_path) }
-                div.toolbar {
-                    div.download {
-                        @for compression_method in CompressionMethod::iter() {
-                            (archive_button(compression_method, sort_method, sort_order, color_scheme, default_color_scheme))
+        (DOCTYPE)
+        html {
+            (page_header(serve_path, color_scheme, file_upload, false))
+            body#drop-container {
+                @if file_upload {
+                    div.drag-form {
+                        div.drag-title {
+                            h1 { "Drop your file here to upload it" }
                         }
                     }
-                    @if file_upload {
-                        div.upload {
-                            form id="file_submit" action=(upload_action) method="POST" enctype="multipart/form-data" {
-                                p { "Select a file to upload or drag it anywhere into the window" }
-                                div {
-                                    input#file-input type="file" name="file_to_upload" required="" {}
-                                    button type="submit" { "Upload file" }
-                                }
+                }
+                (color_scheme_selector(sort_method, sort_order, color_scheme, default_color_scheme, serve_path))
+                div.container {
+                    span#top { }
+                    h1.title { "Index of " (serve_path) }
+                    div.toolbar {
+                        div.download {
+                            @for compression_method in CompressionMethod::iter() {
+                                (archive_button(compression_method, sort_method, sort_order, color_scheme, default_color_scheme))
                             }
                         }
-                    }
-                }
-                table {
-                    thead {
-                        th { (build_link("name", "Name", sort_method, sort_order, color_scheme, default_color_scheme)) }
-                        th { (build_link("size", "Size", sort_method, sort_order, color_scheme, default_color_scheme)) }
-                        th { (build_link("date", "Last modification", sort_method, sort_order, color_scheme, default_color_scheme)) }
-                    }
-                    tbody {
-                        @if !is_root {
-                            tr {
-                                td colspan="3" {
-                                    span.root-chevron { (chevron_left()) }
-                                    a.root href=(parametrized_link("../", sort_method, sort_order, color_scheme, default_color_scheme)) {
-                                        "Parent directory"
+                        @if file_upload {
+                            div.upload {
+                                form id="file_submit" action=(upload_action) method="POST" enctype="multipart/form-data" {
+                                    p { "Select a file to upload or drag it anywhere into the window" }
+                                    div {
+                                        input#file-input type="file" name="file_to_upload" required="" {}
+                                        button type="submit" { "Upload file" }
                                     }
                                 }
                             }
                         }
-                        @for entry in entries {
-                            (entry_row(entry, sort_method, sort_order, color_scheme, default_color_scheme))
+                    }
+                    table {
+                        thead {
+                            th { (build_link("name", "Name", sort_method, sort_order, color_scheme, default_color_scheme)) }
+                            th { (build_link("size", "Size", sort_method, sort_order, color_scheme, default_color_scheme)) }
+                            th { (build_link("date", "Last modification", sort_method, sort_order, color_scheme, default_color_scheme)) }
+                        }
+                        tbody {
+                            @if !is_root {
+                                tr {
+                                    td colspan="3" {
+                                        span.root-chevron { (chevron_left()) }
+                                        a.root href=(parametrized_link("../", sort_method, sort_order, color_scheme, default_color_scheme)) {
+                                            "Parent directory"
+                                        }
+                                    }
+                                }
+                            }
+                            @for entry in entries {
+                                (entry_row(entry, sort_method, sort_order, color_scheme, default_color_scheme))
+                            }
                         }
                     }
-                }
-                a.back href="#top" {
-                    (arrow_up())
+                    a.back href="#top" {
+                        (arrow_up())
+                    }
                 }
             }
         }
@@ -803,14 +806,13 @@ fn page_header(
     is_error: bool,
 ) -> Markup {
     html! {
-        (DOCTYPE)
-        html {
+        head {
             meta charset="utf-8";
             meta http-equiv="X-UA-Compatible" content="IE=edge";
             meta name="viewport" content="width=device-width, initial-scale=1";
             @if is_error {
                 title { (serve_path) }
-            } else {
+            } @else {
                 title { "Index of " (serve_path) }
             }
             style { (css(color_scheme)) }
@@ -905,17 +907,20 @@ pub fn render_error(
     };
 
     html! {
-        body {
+        (DOCTYPE)
+        html {
             (page_header(&error_code.to_string(), color_scheme, false, true))
-            div.error {
-                p { (error_code.to_string()) }
-                @for error in error_description.lines() {
-                    p { (error) }
-                }
-                @if display_back_link {
-                    div.error-nav {
-                        a.error-back href=(link) {
-                            "Go back to file listing"
+            body {
+                div.error {
+                    p { (error_code.to_string()) }
+                    @for error in error_description.lines() {
+                        p { (error) }
+                    }
+                    @if display_back_link {
+                        div.error-nav {
+                            a.error-back href=(link) {
+                                "Go back to file listing"
+                            }
                         }
                     }
                 }

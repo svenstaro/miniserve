@@ -120,6 +120,7 @@ fn handle_multipart(
 pub fn upload_file(
     req: &HttpRequest<crate::MiniserveConfig>,
     default_color_scheme: ColorScheme,
+    uses_random_route: bool
 ) -> FutureResponse<HttpResponse> {
     let return_path = if let Some(header) = req.headers().get(header::REFERER) {
         header.to_str().unwrap_or("/").to_owned()
@@ -146,6 +147,7 @@ pub fn upload_file(
                 query_params.order,
                 color_scheme,
                 default_color_scheme,
+                uses_random_route
             ));
         }
     };
@@ -165,6 +167,7 @@ pub fn upload_file(
                 query_params.order,
                 color_scheme,
                 default_color_scheme,
+                uses_random_route
             ));
         }
     };
@@ -184,6 +187,7 @@ pub fn upload_file(
                 query_params.order,
                 color_scheme,
                 default_color_scheme,
+                uses_random_route
             ));
         }
     };
@@ -208,12 +212,14 @@ pub fn upload_file(
                     query_params.order,
                     color_scheme,
                     default_color_scheme,
+                    uses_random_route
                 ),
             }),
     )
 }
 
 /// Convenience method for creating response errors, if file upload fails.
+#[allow(clippy::too_many_arguments)]
 fn create_error_response(
     description: &str,
     error_code: StatusCode,
@@ -222,6 +228,7 @@ fn create_error_response(
     sorting_order: Option<SortingOrder>,
     color_scheme: ColorScheme,
     default_color_scheme: ColorScheme,
+    uses_random_route: bool
 ) -> FutureResult<HttpResponse, actix_web::error::Error> {
     errors::log_error_chain(description.to_string());
     future::ok(
@@ -237,7 +244,7 @@ fn create_error_response(
                     color_scheme,
                     default_color_scheme,
                     true,
-                    true,
+                    !uses_random_route,
                 )
                 .into_string(),
             ),

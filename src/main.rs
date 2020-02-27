@@ -267,6 +267,7 @@ fn configure_app(app: App<MiniserveConfig>) -> App<MiniserveConfig> {
     };
 
     let random_route = app.state().random_route.clone().unwrap_or_default();
+    let uses_random_route = app.state().random_route.clone().is_some();
     let full_route = format!("/{}", random_route);
 
     if let Some(s) = s {
@@ -275,7 +276,7 @@ fn configure_app(app: App<MiniserveConfig>) -> App<MiniserveConfig> {
             // Allow file upload
             app.resource(&upload_route, move |r| {
                 r.method(Method::POST)
-                    .f(move |file| file_upload::upload_file(file, default_color_scheme))
+                    .f(move |file| file_upload::upload_file(file, default_color_scheme, uses_random_route))
             })
             // Handle directories
             .handler(&full_route, s)
@@ -295,11 +296,7 @@ fn configure_app(app: App<MiniserveConfig>) -> App<MiniserveConfig> {
 fn error_404(req: &HttpRequest<crate::MiniserveConfig>) -> Result<HttpResponse, io::Error> {
     let err_404 = ContextualError::RouteNotFoundError(req.path().to_string());
     let default_color_scheme = req.state().default_color_scheme;
-    let return_address = match &req.state().random_route {
-        Some(random_route) => format!("/{}", random_route),
-        None => "/".to_string(),
-    };
-
+    let uses_random_route = req.state().random_route.is_some();
     let query_params = listing::extract_query_parameters(req);
     let color_scheme = query_params.theme.unwrap_or(default_color_scheme);
 
@@ -309,13 +306,13 @@ fn error_404(req: &HttpRequest<crate::MiniserveConfig>) -> Result<HttpResponse, 
         renderer::render_error(
             &err_404.to_string(),
             StatusCode::NOT_FOUND,
-            &return_address,
+            "/",
             query_params.sort,
             query_params.order,
             color_scheme,
             default_color_scheme,
             false,
-            true,
+            !uses_random_route,
         )
         .into_string(),
     ))
