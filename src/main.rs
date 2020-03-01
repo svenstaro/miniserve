@@ -51,6 +51,12 @@ pub struct MiniserveConfig {
     /// Default color scheme
     pub default_color_scheme: themes::ColorScheme,
 
+    /// The name of a directory index file to serve, like "index.html"
+    ///
+    /// Normally, when miniserve serves a directory, it creates a listing for that directory.
+    /// However, if a directory contains this file, miniserve will serve that file instead.
+    pub index: Option<std::path::PathBuf>,
+
     /// Enable file upload
     pub file_upload: bool,
 
@@ -129,6 +135,14 @@ fn run() -> Result<(), ContextualError> {
     let canon_path = miniserve_config.path.canonicalize().map_err(|e| {
         ContextualError::IOError("Failed to resolve path to be served".to_string(), e)
     })?;
+
+    if let Some(index_path) = &miniserve_config.index {
+        let has_index: std::path::PathBuf = [&canon_path, index_path].iter().collect();
+        if !has_index.exists() {
+
+            println!("{warning} The provided index file could not be found.", warning=Color::RGB(255, 192, 0).paint("Notice:").bold());
+        }
+    }
     let path_string = canon_path.to_string_lossy();
 
     println!(
@@ -244,6 +258,12 @@ fn configure_app(app: App<MiniserveConfig>) -> App<MiniserveConfig> {
         };
         if path.is_file() {
             None
+        } else if let Some(index_file) = &app.state().index {
+            Some(
+                fs::StaticFiles::new(path)
+                    .expect("Failed to setup static file handler")
+                    .index_file(index_file.to_string_lossy())
+            )
         } else {
             let u_r = upload_route.clone();
             Some(
