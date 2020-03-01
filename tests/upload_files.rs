@@ -59,3 +59,49 @@ fn uploading_files_works(tmpdir: TempDir, port: u16) -> Result<(), Error> {
 
     Ok(())
 }
+
+#[rstest]
+fn uploading_files_is_prevented(tmpdir: TempDir, port: u16) -> Result<(), Error> {
+    let test_file_name = "uploaded test file.txt";
+
+    let mut child = Command::cargo_bin("miniserve")?
+        .arg(tmpdir.path())
+        .arg("-p")
+        .arg(port.to_string())
+        .stdout(Stdio::null())
+        .spawn()?;
+
+    sleep(Duration::from_secs(1));
+
+    // Before uploading, check whether the uploaded file does not yet exist.
+    let body = reqwest::get(format!("http://localhost:{}", port).as_str())?.error_for_status()?;
+    let parsed = Document::from_read(body)?;
+    assert!(parsed.find(Text).all(|x| x.text() != test_file_name));
+    
+    // Ensure the file upload form is not present
+    assert!(parsed.find(Attr("id", "file_submit")).next().is_none());
+    
+    // Then try to upload anyway
+    let form = multipart::Form::new();
+    let part = multipart::Part::text("this should not be uploaded")
+        .file_name(test_file_name)
+        .mime_str("text/plain")?;
+    let form = form.part("file_to_upload", part);
+
+    let client = reqwest::Client::new();
+    // Ensure uploading fails and returns an error
+    assert!(client
+        .post(format!("http://localhost:{}{}", port, "/upload?path=/").as_str())
+        .multipart(form)
+        .send()?
+        .error_for_status().is_err());
+
+    // After uploading, check whether the uploaded file is now getting listed.
+    let body = reqwest::get(format!("http://localhost:{}", port).as_str())?;
+    let parsed = Document::from_read(body)?;
+    assert!(!parsed.find(Text).any(|x| x.text() == test_file_name));
+
+    child.kill()?;
+
+    Ok(())
+}
