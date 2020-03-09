@@ -168,7 +168,7 @@ fn build_unauthorized_response(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use rstest::{rstest, rstest_parametrize, fixture};
+    use rstest::{rstest, fixture};
     use pretty_assertions::assert_eq;
 
     /// Return a hashing function corresponds to given name
@@ -180,7 +180,7 @@ mod tests {
         }
     }
 
-    #[rstest_parametrize(
+    #[rstest(
         password, hash_method, hash,
         case("abc", "sha256", "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"),
         case("abc", "sha512", "ddaf35a193617abacc417349ae20413112e6fa4e89a97ea20a9eeee64b55d39a2192992a274fc1a836ba3c23a3feebbd454d4423643ce80e2a9ac94fa54ca49f"),
@@ -209,7 +209,7 @@ mod tests {
         }
     }
 
-    #[rstest_parametrize(
+    #[rstest(
         should_pass, param_username, param_password, required_username, required_password, encrypt,
         case(true, "obi", "hello there", "obi", "hello there", "plain"),
         case(false, "obi", "hello there", "obi", "hi!", "plain"),
@@ -254,7 +254,7 @@ mod tests {
             .collect()
     }
 
-    #[rstest_parametrize(
+    #[rstest(
         username, password,
         case("usr0", "pwd0"),
         case("usr1", "pwd1"),
@@ -288,7 +288,7 @@ mod tests {
         ), false);
     }
 
-    #[rstest_parametrize(
+    #[rstest(
         username, password,
         case("usr0", "pwd5"),
         case("usr1", "pwd4"),

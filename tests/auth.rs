@@ -5,14 +5,14 @@ use assert_fs::fixture::TempDir;
 use fixtures::{port, tmpdir, Error, FILES};
 use pretty_assertions::assert_eq;
 use reqwest::StatusCode;
-use rstest::{rstest, rstest_parametrize};
+use rstest::rstest;
 use select::document::Document;
 use select::predicate::Text;
 use std::process::{Command, Stdio};
 use std::thread::sleep;
 use std::time::Duration;
 
-#[rstest_parametrize(
+#[rstest(
     cli_auth_arg, client_username, client_password,
     case("testuser:testpassword", "testuser", "testpassword"),
     case(
@@ -64,7 +64,7 @@ fn auth_accepts(
     Ok(())
 }
 
-#[rstest_parametrize(
+#[rstest(
     cli_auth_arg, client_username, client_password,
     case("rightuser:rightpassword", "wronguser", "rightpassword"),
     case(
@@ -141,7 +141,7 @@ fn register_accounts<'a>(command: &'a mut Command) -> &'a mut Command {
     // pwd5
 }
 
-#[rstest_parametrize(
+#[rstest(
     username,
     password,
     case("usr0", "pwd0"),
@@ -216,7 +216,7 @@ fn auth_multiple_accounts_wrong_username(tmpdir: TempDir, port: u16) -> Result<(
     Ok(())
 }
 
-#[rstest_parametrize(
+#[rstest(
     username,
     password,
     case("usr0", "pwd5"),

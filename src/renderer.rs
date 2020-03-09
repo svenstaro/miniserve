@@ -775,27 +775,27 @@ fn css(color_scheme: ColorScheme) -> Markup {
         size_background_color = theme.size_background_color,
         size_text_color = theme.size_text_color,
         error_color = theme.error_color);
-    (PreEscaped(css))
+    PreEscaped(css)
 }
 
 /// Partial: up arrow
 fn arrow_up() -> Markup {
-    (PreEscaped("⇪".to_string()))
+    PreEscaped("⇪".to_string())
 }
 
 /// Partial: chevron left
 fn chevron_left() -> Markup {
-    (PreEscaped("◂".to_string()))
+    PreEscaped("◂".to_string())
 }
 
 /// Partial: chevron up
 fn chevron_up() -> Markup {
-    (PreEscaped("▴".to_string()))
+    PreEscaped("▴".to_string())
 }
 
 /// Partial: chevron up
 fn chevron_down() -> Markup {
-    (PreEscaped("▾".to_string()))
+    PreEscaped("▾".to_string())
 }
 
 /// Partial: page header
