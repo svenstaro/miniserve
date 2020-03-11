@@ -31,7 +31,7 @@ struct CLIArgs {
     ///
     /// Normally, when miniserve serves a directory, it creates a listing for that directory.
     /// However, if a directory contains this file, miniserve will serve that file instead.
-    #[structopt(long, parse(from_os_str), name="index_file")]
+    #[structopt(long, parse(from_os_str), name = "index_file")]
     index: Option<PathBuf>,
 
     /// Port to use
@@ -83,7 +83,7 @@ struct CLIArgs {
     /// Enable overriding existing files during file upload
     #[structopt(short = "o", long = "overwrite-files")]
     overwrite_files: bool,
-    
+
     /// Disable archive generation
     #[structopt(short = "r", long = "disable-archives")]
     disable_archives: bool,

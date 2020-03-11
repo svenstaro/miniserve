@@ -62,7 +62,7 @@ pub struct MiniserveConfig {
 
     /// Enable upload to override existing files
     pub overwrite_files: bool,
-    
+
     /// If false, creation of archives is disabled
     pub archives: bool,
 }
@@ -142,8 +142,10 @@ fn run() -> Result<(), ContextualError> {
     if let Some(index_path) = &miniserve_config.index {
         let has_index: std::path::PathBuf = [&canon_path, index_path].iter().collect();
         if !has_index.exists() {
-
-            println!("{warning} The provided index file could not be found.", warning=Color::RGB(255, 192, 0).paint("Notice:").bold());
+            println!(
+                "{warning} The provided index file could not be found.",
+                warning = Color::RGB(255, 192, 0).paint("Notice:").bold()
+            );
         }
     }
     let path_string = canon_path.to_string_lossy();
@@ -266,7 +268,7 @@ fn configure_app(app: App<MiniserveConfig>) -> App<MiniserveConfig> {
             Some(
                 fs::StaticFiles::new(path)
                     .expect("Failed to setup static file handler")
-                    .index_file(index_file.to_string_lossy())
+                    .index_file(index_file.to_string_lossy()),
             )
         } else {
             let u_r = upload_route.clone();
@@ -283,7 +285,7 @@ fn configure_app(app: App<MiniserveConfig>) -> App<MiniserveConfig> {
                             random_route.clone(),
                             default_color_scheme,
                             u_r.clone(),
-                            archives_enabled
+                            archives_enabled,
                         )
                     })
                     .default_handler(error_404),
@@ -300,8 +302,9 @@ fn configure_app(app: App<MiniserveConfig>) -> App<MiniserveConfig> {
             let default_color_scheme = app.state().default_color_scheme;
             // Allow file upload
             app.resource(&upload_route, move |r| {
-                r.method(Method::POST)
-                    .f(move |file| file_upload::upload_file(file, default_color_scheme, uses_random_route))
+                r.method(Method::POST).f(move |file| {
+                    file_upload::upload_file(file, default_color_scheme, uses_random_route)
+                })
             })
             // Handle directories
             .handler(&full_route, s)

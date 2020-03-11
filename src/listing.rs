@@ -1,5 +1,5 @@
-use actix_web::{fs, Body, FromRequest, HttpRequest, HttpResponse, Query, Result};
 use actix_web::http::StatusCode;
+use actix_web::{fs, Body, FromRequest, HttpRequest, HttpResponse, Query, Result};
 use bytesize::ByteSize;
 use futures::Stream;
 use htmlescape::encode_minimal as escape_html_entity;
@@ -172,8 +172,7 @@ pub fn directory_listing<S>(
                 Err(_) => continue,
             };
             // show file url as relative to static path
-            let file_url =
-                utf8_percent_encode(&p.to_string_lossy(), FRAGMENT).to_string();
+            let file_url = utf8_percent_encode(&p.to_string_lossy(), FRAGMENT).to_string();
             // " -- &quot;  & -- &amp;  ' -- &#x27;  < -- &lt;  > -- &gt;
             let file_name = escape_html_entity(&entry.file_name().to_string_lossy());
 
@@ -265,9 +264,9 @@ pub fn directory_listing<S>(
                         default_color_scheme,
                         false,
                         false,
-                    ).into_string()
-                )
-            );
+                    )
+                    .into_string(),
+                ));
         }
         log::info!(
             "Creating an archive ({extension}) of {path}...",
