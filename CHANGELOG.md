@@ -1,4 +1,7 @@
 # 0.6.0 - TBD
+- Add option to disable archives [#235](https://github.com/svenstaro/miniserve/pull/235) (thanks @DamianX)
+- Fix minor bug when using `--random-route` [#219](https://github.com/svenstaro/miniserve/pull/219)
+- Add a default index serving option [#189](https://github.com/svenstaro/miniserve/pull/189)
 
 # 0.5.0 - 2019-06-24
 - Add streaming download of tar archives (thanks @gyscos)
