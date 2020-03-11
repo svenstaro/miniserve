@@ -62,6 +62,9 @@ pub struct MiniserveConfig {
 
     /// Enable upload to override existing files
     pub overwrite_files: bool,
+    
+    /// If false, creation of archives is disabled
+    pub archives: bool,
 }
 
 fn main() {
@@ -251,6 +254,7 @@ fn configure_app(app: App<MiniserveConfig>) -> App<MiniserveConfig> {
         let random_route = app.state().random_route.clone();
         let default_color_scheme = app.state().default_color_scheme;
         let file_upload = app.state().file_upload;
+        let archives_enabled = app.state().archives;
         upload_route = if let Some(random_route) = app.state().random_route.clone() {
             format!("/{}/upload", random_route)
         } else {
@@ -279,6 +283,7 @@ fn configure_app(app: App<MiniserveConfig>) -> App<MiniserveConfig> {
                             random_route.clone(),
                             default_color_scheme,
                             u_r.clone(),
+                            archives_enabled
                         )
                     })
                     .default_handler(error_404),

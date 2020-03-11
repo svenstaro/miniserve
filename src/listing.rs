@@ -1,4 +1,5 @@
 use actix_web::{fs, Body, FromRequest, HttpRequest, HttpResponse, Query, Result};
+use actix_web::http::StatusCode;
 use bytesize::ByteSize;
 use futures::Stream;
 use htmlescape::encode_minimal as escape_html_entity;
@@ -126,7 +127,7 @@ pub fn file_handler(req: &HttpRequest<crate::MiniserveConfig>) -> Result<fs::Nam
 
 /// List a directory and renders a HTML file accordingly
 /// Adapted from https://docs.rs/actix-web/0.7.13/src/actix_web/fs.rs.html#564
-#[allow(clippy::identity_conversion)]
+#[allow(clippy::identity_conversion, clippy::too_many_arguments)]
 pub fn directory_listing<S>(
     dir: &fs::Directory,
     req: &HttpRequest<S>,
@@ -135,6 +136,7 @@ pub fn directory_listing<S>(
     random_route: Option<String>,
     default_color_scheme: ColorScheme,
     upload_route: String,
+    archives_enabled: bool,
 ) -> Result<HttpResponse, io::Error> {
     let serve_path = req.path();
 
@@ -249,6 +251,24 @@ pub fn directory_listing<S>(
     let color_scheme = query_params.theme.unwrap_or(default_color_scheme);
 
     if let Some(compression_method) = query_params.download {
+        if !archives_enabled {
+            return Ok(HttpResponse::Forbidden()
+                .content_type("text/html; charset=utf-8")
+                .body(
+                    renderer::render_error(
+                        "Archive creation is disabled.",
+                        StatusCode::FORBIDDEN,
+                        "/",
+                        None,
+                        None,
+                        color_scheme,
+                        default_color_scheme,
+                        false,
+                        false,
+                    ).into_string()
+                )
+            );
+        }
         log::info!(
             "Creating an archive ({extension}) of {path}...",
             extension = compression_method.extension(),
@@ -313,6 +333,7 @@ pub fn directory_listing<S>(
                     file_upload,
                     &upload_route,
                     &current_dir.display().to_string(),
+                    archives_enabled,
                 )
                 .into_string(),
             ))

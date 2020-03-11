@@ -83,6 +83,10 @@ struct CLIArgs {
     /// Enable overriding existing files during file upload
     #[structopt(short = "o", long = "overwrite-files")]
     overwrite_files: bool,
+    
+    /// Disable archive generation
+    #[structopt(short = "r", long = "disable-archives")]
+    disable_archives: bool,
 }
 
 /// Checks wether an interface is valid, i.e. it can be parsed into an IP address
@@ -172,6 +176,7 @@ pub fn parse_args() -> crate::MiniserveConfig {
         index: args.index,
         overwrite_files: args.overwrite_files,
         file_upload: args.file_upload,
+        archives: !args.disable_archives,
     }
 }
 
