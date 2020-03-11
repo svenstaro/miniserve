@@ -49,7 +49,7 @@ hex = "0.4.2"
 
 [dev-dependencies]
 assert_cmd = "0.12"
-reqwest = "0.9"
+reqwest = { version = "0.10", features = ["blocking"] }
 assert_fs = "0.13"
 select = "0.4"
 port_check = "0.1"

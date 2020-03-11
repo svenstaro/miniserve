@@ -5,6 +5,7 @@ use assert_fs::fixture::TempDir;
 use fixtures::{port, tmpdir, Error, FILES};
 use pretty_assertions::assert_eq;
 use reqwest::StatusCode;
+use reqwest::blocking::Client;
 use rstest::rstest;
 use select::document::Document;
 use select::predicate::Text;
@@ -44,7 +45,7 @@ fn auth_accepts(
 
     sleep(Duration::from_secs(1));
 
-    let client = reqwest::Client::new();
+    let client = Client::new();
     let response = client
         .get(format!("http://localhost:{}", port).as_str())
         .basic_auth(client_username, Some(client_password))
@@ -108,7 +109,7 @@ fn auth_rejects(
 
     sleep(Duration::from_secs(1));
 
-    let client = reqwest::Client::new();
+    let client = Client::new();
     let status = client
         .get(format!("http://localhost:{}", port).as_str())
         .basic_auth(client_username, Some(client_password))
@@ -166,7 +167,7 @@ fn auth_multiple_accounts_pass(
 
     sleep(Duration::from_secs(1));
 
-    let client = reqwest::Client::new();
+    let client = Client::new();
 
     let response = client
         .get(format!("http://localhost:{}", port).as_str())
@@ -201,7 +202,7 @@ fn auth_multiple_accounts_wrong_username(tmpdir: TempDir, port: u16) -> Result<(
 
     sleep(Duration::from_secs(1));
 
-    let client = reqwest::Client::new();
+    let client = Client::new();
 
     let status = client
         .get(format!("http://localhost:{}", port).as_str())
@@ -244,7 +245,7 @@ fn auth_multiple_accounts_wrong_password(
 
     sleep(Duration::from_secs(1));
 
-    let client = reqwest::Client::new();
+    let client = Client::new();
 
     let status = client
         .get(format!("http://localhost:{}", port).as_str())

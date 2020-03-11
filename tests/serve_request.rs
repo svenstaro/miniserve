@@ -19,7 +19,7 @@ fn serves_requests_with_no_options(tmpdir: TempDir) -> Result<(), Error> {
 
     sleep(Duration::from_secs(1));
 
-    let body = reqwest::get("http://localhost:8080")?.error_for_status()?;
+    let body = reqwest::blocking::get("http://localhost:8080")?.error_for_status()?;
     let parsed = Document::from_read(body)?;
     for &file in FILES {
         assert!(parsed.find(|x: &Node| x.text() == file).next().is_some());
@@ -41,7 +41,7 @@ fn serves_requests_with_non_default_port(tmpdir: TempDir, port: u16) -> Result<(
 
     sleep(Duration::from_secs(1));
 
-    let body = reqwest::get(format!("http://localhost:{}", port).as_str())?.error_for_status()?;
+    let body = reqwest::blocking::get(format!("http://localhost:{}", port).as_str())?.error_for_status()?;
     let parsed = Document::from_read(body)?;
     for &file in FILES {
         assert!(parsed.find(|x: &Node| x.text() == file).next().is_some());
@@ -51,7 +51,7 @@ fn serves_requests_with_non_default_port(tmpdir: TempDir, port: u16) -> Result<(
             .find(|x: &Node| x.text() == directory)
             .next()
             .is_some());
-        let dir_body = reqwest::get(format!("http://localhost:{}/{}", port, directory).as_str())?
+        let dir_body = reqwest::blocking::get(format!("http://localhost:{}/{}", port, directory).as_str())?
             .error_for_status()?;
         let dir_body_parsed = Document::from_read(dir_body)?;
         for &file in FILES {

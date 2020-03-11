@@ -27,7 +27,7 @@ fn index_gets_trailing_slash(tmpdir: TempDir, port: u16) -> Result<(), Error> {
 
     let base_url = Url::parse(&format!("http://localhost:{}", port))?;
     let expected_url = format!("{}", base_url);
-    let resp = reqwest::get(base_url.as_str())?;
+    let resp = reqwest::blocking::get(base_url.as_str())?;
     assert_eq!(resp.url().as_str(), expected_url);
 
     child.kill()?;
@@ -48,15 +48,15 @@ fn can_navigate_into_dirs_and_back(tmpdir: TempDir, port: u16) -> Result<(), Err
     sleep(Duration::from_secs(1));
 
     let base_url = Url::parse(&format!("http://localhost:{}/", port))?;
-    let initial_body = reqwest::get(base_url.as_str())?.error_for_status()?;
+    let initial_body = reqwest::blocking::get(base_url.as_str())?.error_for_status()?;
     let initial_parsed = Document::from_read(initial_body)?;
     for &directory in DIRECTORIES {
         let dir_elem = get_link_from_text(&initial_parsed, &directory).expect("Dir not found.");
-        let body = reqwest::get(&format!("{}{}", base_url, dir_elem))?.error_for_status()?;
+        let body = reqwest::blocking::get(&format!("{}{}", base_url, dir_elem))?.error_for_status()?;
         let parsed = Document::from_read(body)?;
         let back_link =
             get_link_from_text(&parsed, "Parent directory").expect("Back link not found.");
-        let resp = reqwest::get(&format!("{}{}", base_url, back_link))?;
+        let resp = reqwest::blocking::get(&format!("{}{}", base_url, back_link))?;
 
         // Now check that we can actually get back to the original location we came from using the
         // link.
@@ -96,7 +96,7 @@ fn can_navigate_deep_into_dirs_and_back(tmpdir: TempDir, port: u16) -> Result<()
     // In the end, we'll have to end up where we came from.
     let mut next_url = base_url.clone();
     for dir_name in dir_names.iter() {
-        let resp = reqwest::get(next_url.as_str())?;
+        let resp = reqwest::blocking::get(next_url.as_str())?;
         let body = resp.error_for_status()?;
         let parsed = Document::from_read(body)?;
         let dir_elem = get_link_from_text(&parsed, &dir_name).expect("Dir not found.");
@@ -106,7 +106,7 @@ fn can_navigate_deep_into_dirs_and_back(tmpdir: TempDir, port: u16) -> Result<()
 
     // Now try to get out the tree again using links only.
     while next_url != base_url {
-        let resp = reqwest::get(next_url.as_str())?;
+        let resp = reqwest::blocking::get(next_url.as_str())?;
         let body = resp.error_for_status()?;
         let parsed = Document::from_read(body)?;
         let dir_elem =
