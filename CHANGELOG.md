@@ -1,4 +1,4 @@
-# 0.6.0 - TBD
+# 0.6.0 - 2020-03-14
 - Add option to disable archives [#235](https://github.com/svenstaro/miniserve/pull/235) (thanks @DamianX)
 - Fix minor bug when using `--random-route` [#219](https://github.com/svenstaro/miniserve/pull/219)
 - Add a default index serving option [#189](https://github.com/svenstaro/miniserve/pull/189)
