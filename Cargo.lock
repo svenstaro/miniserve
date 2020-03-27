@@ -395,7 +395,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "assert_cmd"
-version = "0.12.0"
+version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "doc-comment 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -403,6 +403,7 @@ dependencies = [
  "predicates 1.0.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "predicates-core 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "predicates-tree 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "wait-timeout 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -1556,7 +1557,7 @@ dependencies = [
  "actix 0.7.9 (registry+https://github.com/rust-lang/crates.io-index)",
  "actix-web 0.7.19 (registry+https://github.com/rust-lang/crates.io-index)",
  "alphanumeric-sort 1.0.12 (registry+https://github.com/rust-lang/crates.io-index)",
- "assert_cmd 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "assert_cmd 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "assert_fs 0.13.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "base64 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "bytes 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3216,6 +3217,14 @@ version = "0.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
+name = "wait-timeout"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "libc 0.2.67 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "walkdir"
 version = "2.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3421,7 +3430,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum arc-swap 0.4.4 (registry+https://github.com/rust-lang/crates.io-index)" = "d7b8a9123b8027467bce0099fe556c628a53c8d83df0507084c31e9ba2e39aff"
 "checksum arrayref 0.3.6 (registry+https://github.com/rust-lang/crates.io-index)" = "a4c527152e37cf757a3f78aae5a06fbeefdb07ccc535c980a3208ee3060dd544"
 "checksum arrayvec 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)" = "cff77d8686867eceff3105329d4698d96c2391c176d5d03adc90c7389162b5b8"
-"checksum assert_cmd 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)" = "6283bac8dd7226470d491bc4737816fea4ca1fba7a2847f2e9097fd6bfb4624c"
+"checksum assert_cmd 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)" = "36101401a715c232f2c63a534a4b639415064b79d128d2a60d35678f8fb45204"
 "checksum assert_fs 0.13.1 (registry+https://github.com/rust-lang/crates.io-index)" = "815b47a19f74a89ba726736cdac88c9fba28a655b16ea01225adae328b26f1bf"
 "checksum atty 0.2.14 (registry+https://github.com/rust-lang/crates.io-index)" = "d9b39be18770d11421cdb1b9947a45dd3f37e93092cbf377614828a319d5fee8"
 "checksum autocfg 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)" = "1d49d90015b3c36167a20fe2810c5cd875ad504b39cff3d4eae7977e6b7c1cb2"
@@ -3734,6 +3743,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum vec_map 0.8.1 (registry+https://github.com/rust-lang/crates.io-index)" = "05c78687fb1a80548ae3250346c3db86a80a7cdd77bda190189f2d0a0987c81a"
 "checksum version_check 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)" = "914b1a6776c4c929a602fafd8bc742e06365d4bcbe48c30f9cca5824f70dc9dd"
 "checksum version_check 0.9.1 (registry+https://github.com/rust-lang/crates.io-index)" = "078775d0255232fb988e6fccf26ddc9d1ac274299aaedcedce21c6f72cc533ce"
+"checksum wait-timeout 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = "9f200f5b12eb75f8c1ed65abd4b2db8a6e1b138a20de009dacee265a2498f3f6"
 "checksum walkdir 2.3.1 (registry+https://github.com/rust-lang/crates.io-index)" = "777182bc735b6424e1a57516d35ed72cb8019d85c8c9bf536dccb3445c1a2f7d"
 "checksum want 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)" = "1ce8a968cb1cd110d136ff8b819a556d6fb6d919363c61534f6860c7eb172ba0"
 "checksum wasi 0.9.0+wasi-snapshot-preview1 (registry+https://github.com/rust-lang/crates.io-index)" = "cccddf32554fecc6acb585f82a32a72e28b48f8c4c1883ddfeeeaa96f7d8e519"

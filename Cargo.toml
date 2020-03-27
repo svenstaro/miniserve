@@ -48,7 +48,7 @@ sha2 = "0.8.1"
 hex = "0.4.2"
 
 [dev-dependencies]
-assert_cmd = "0.12"
+assert_cmd = "1.0"
 reqwest = { version = "0.10", features = ["blocking"] }
 assert_fs = "0.13"
 select = "0.4"
