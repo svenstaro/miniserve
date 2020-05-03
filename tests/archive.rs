@@ -42,6 +42,11 @@ fn archives_are_disabled(tmpdir: TempDir, port: u16) -> Result<(), Error> {
             .status(),
         StatusCode::FORBIDDEN
     );
+    assert_eq!(
+        reqwest::blocking::get(format!("http://localhost:{}/?download=zip", port).as_str())?
+            .status(),
+        StatusCode::FORBIDDEN
+    );
 
     child.kill()?;
 
