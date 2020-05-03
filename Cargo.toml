@@ -46,6 +46,7 @@ strum = "0.18.0"
 strum_macros = "0.18.0"
 sha2 = "0.8.1"
 hex = "0.4.2"
+zip = "0.5.5"
 
 [dev-dependencies]
 assert_cmd = "1.0"
