@@ -268,26 +268,19 @@ where
 fn zip_data<W>(
     src_dir: &Path,
     skip_symlinks: bool,
-    out: W,
+    mut out: W,
 ) -> Result<(), ContextualError>
 where
     W: std::io::Write,
 {
     let mut data = Vec::new();
-    {
-        let memory_file = Cursor::new(&mut data);
-        create_zip_from_directory(memory_file, &src_dir.to_path_buf(), skip_symlinks).map_err(|e| {
-            ContextualError::ArchiveCreationError("Failed to create the ZIP archive".to_string(), Box::new(e))
-        })?;
-    }
-
-    let mut buffer = BufWriter::new(out);
-    buffer.write_all(&mut data).map_err(|e| {
-        ContextualError::IOError("Failed to write the ZIP archive".to_string(), e)
+    let memory_file = Cursor::new(&mut data);
+    create_zip_from_directory(memory_file, &src_dir.to_path_buf(), skip_symlinks).map_err(|e| {
+        ContextualError::ArchiveCreationError("Failed to create the ZIP archive".to_string(), Box::new(e))
     })?;
 
-    buffer.flush().map_err(|e| {
-        ContextualError::IOError("Failed to finish writing the ZIP archive".to_string(), e)
+    out.write_all(data.as_mut_slice()).map_err(|e| {
+        ContextualError::IOError("Failed to write the ZIP archive".to_string(), e)
     })?;
 
     Ok(())
