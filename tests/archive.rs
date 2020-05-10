@@ -17,7 +17,6 @@ fn archives_are_disabled(tmpdir: TempDir, port: u16) -> Result<(), Error> {
         .arg(tmpdir.path())
         .arg("-p")
         .arg(port.to_string())
-        .arg("-r")
         .stdout(Stdio::null())
         .spawn()?;
 

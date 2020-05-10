@@ -1,7 +1,6 @@
 use actix_web::http::ContentEncoding;
 use libflate::gzip::Encoder;
 use zip::{ZipWriter, write};
-use std::io::BufWriter;
 use std::fs::File;
 use std::path::PathBuf;
 use serde::Deserialize;
@@ -51,6 +50,14 @@ impl CompressionMethod {
             CompressionMethod::TarGz => ContentEncoding::Gzip,
             CompressionMethod::Tar => ContentEncoding::Identity,
             CompressionMethod::Zip => ContentEncoding::Identity,
+        }
+    }
+
+    pub fn is_enabled(self, tar_enabled: bool, zip_enabled: bool,) -> bool {
+        match self {
+            CompressionMethod::TarGz => tar_enabled,
+            CompressionMethod::Tar => tar_enabled,
+            CompressionMethod::Zip => zip_enabled,
         }
     }
 
@@ -258,7 +265,9 @@ where
         }
     }
 
-    zip_writer.finish().unwrap();
+    zip_writer.finish().map_err(|_| {
+        ContextualError::CustomError("Could not finish writing ZIP archive".to_string())
+    })?;
     Ok(())
 }
 
