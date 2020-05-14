@@ -89,7 +89,8 @@ struct CLIArgs {
     enable_tar: bool,
 
     /// Enable zip archive generation
-    /// Zipping large directories can result in out-of-memory exception
+    ///
+    /// WARNING: Zipping large directories can result in out-of-memory exception
     /// because zip generation is done in memory and cannot be sent on the fly
     #[structopt(short = "z", long = "enable-zip")]
     enable_zip: bool,
