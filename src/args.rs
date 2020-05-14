@@ -84,9 +84,15 @@ struct CLIArgs {
     #[structopt(short = "o", long = "overwrite-files")]
     overwrite_files: bool,
 
-    /// Disable archive generation
-    #[structopt(short = "r", long = "disable-archives")]
-    disable_archives: bool,
+    /// Enable tar archive generation
+    #[structopt(short = "r", long = "enable-tar")]
+    enable_tar: bool,
+
+    /// Enable zip archive generation
+    /// Zipping large directories can result in out-of-memory exception
+    /// because zip generation is done in memory and cannot be sent on the fly
+    #[structopt(short = "z", long = "enable-zip")]
+    enable_zip: bool,
 }
 
 /// Checks wether an interface is valid, i.e. it can be parsed into an IP address
@@ -176,7 +182,8 @@ pub fn parse_args() -> crate::MiniserveConfig {
         index: args.index,
         overwrite_files: args.overwrite_files,
         file_upload: args.file_upload,
-        archives: !args.disable_archives,
+        tar_enabled: args.enable_tar,
+        zip_enabled: args.enable_zip,
     }
 }
 

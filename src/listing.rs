@@ -136,7 +136,8 @@ pub fn directory_listing<S>(
     random_route: Option<String>,
     default_color_scheme: ColorScheme,
     upload_route: String,
-    archives_enabled: bool,
+    tar_enabled: bool,
+    zip_enabled: bool,
 ) -> Result<HttpResponse, io::Error> {
     let serve_path = req.path();
 
@@ -250,7 +251,7 @@ pub fn directory_listing<S>(
     let color_scheme = query_params.theme.unwrap_or(default_color_scheme);
 
     if let Some(compression_method) = query_params.download {
-        if !archives_enabled {
+        if !compression_method.is_enabled(tar_enabled, zip_enabled) {
             return Ok(HttpResponse::Forbidden()
                 .content_type("text/html; charset=utf-8")
                 .body(
@@ -332,7 +333,8 @@ pub fn directory_listing<S>(
                     file_upload,
                     &upload_route,
                     &current_dir.display().to_string(),
-                    archives_enabled,
+                    tar_enabled,
+                    zip_enabled,
                 )
                 .into_string(),
             ))

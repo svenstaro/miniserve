@@ -22,7 +22,8 @@ pub fn page(
     file_upload: bool,
     upload_route: &str,
     current_dir: &str,
-    archives: bool,
+    tar_enabled: bool,
+    zip_enabled: bool,
 ) -> Markup {
     let upload_action = build_upload_action(
         upload_route,
@@ -50,10 +51,12 @@ pub fn page(
                     span#top { }
                     h1.title { "Index of " (serve_path) }
                     div.toolbar {
-                        @if archives {
+                        @if tar_enabled || zip_enabled {
                             div.download {
                                 @for compression_method in CompressionMethod::iter() {
-                                    (archive_button(compression_method, sort_method, sort_order, color_scheme, default_color_scheme))
+                                    @if compression_method.is_enabled(tar_enabled, zip_enabled) {
+                                        (archive_button(compression_method, sort_method, sort_order, color_scheme, default_color_scheme))
+                                    }
                                 }
                             }
                         }
