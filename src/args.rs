@@ -161,7 +161,7 @@ pub fn parse_args() -> crate::MiniserveConfig {
     };
 
     let random_route = if args.random_route {
-        Some(nanoid::custom(6, &ROUTE_ALPHABET))
+        Some(nanoid::nanoid!(6, &ROUTE_ALPHABET))
     } else {
         None
     };
