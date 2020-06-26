@@ -83,8 +83,8 @@ pub fn compare_hash<T: Digest>(password: &str, hash: &[u8]) -> bool {
 /// Get hash of a `text`
 pub fn get_hash<T: Digest>(text: &str) -> Vec<u8> {
     let mut hasher = T::new();
-    hasher.input(text);
-    hasher.result().to_vec()
+    hasher.update(text);
+    hasher.finalize().to_vec()
 }
 
 impl Middleware<crate::MiniserveConfig> for Auth {
