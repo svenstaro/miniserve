@@ -1,13 +1,13 @@
 use actix_web::http::ContentEncoding;
 use libflate::gzip::Encoder;
-use zip::{ZipWriter, write};
-use std::fs::File;
-use std::path::PathBuf;
 use serde::Deserialize;
+use std::fs::File;
+use std::io::{Cursor, Read, Write};
 use std::path::Path;
+use std::path::PathBuf;
 use strum_macros::{Display, EnumIter, EnumString};
 use tar::Builder;
-use std::io::{Cursor, Write, Read};
+use zip::{write, ZipWriter};
 
 use crate::errors::ContextualError;
 
@@ -53,7 +53,7 @@ impl CompressionMethod {
         }
     }
 
-    pub fn is_enabled(self, tar_enabled: bool, zip_enabled: bool,) -> bool {
+    pub fn is_enabled(self, tar_enabled: bool, zip_enabled: bool) -> bool {
         match self {
             CompressionMethod::TarGz => tar_enabled,
             CompressionMethod::Tar => tar_enabled,
@@ -202,9 +202,13 @@ where
 /// ├── f
 /// └── g
 /// ```
-fn create_zip_from_directory<W>(out: W, directory: &PathBuf, skip_symlinks: bool,) -> Result<(), ContextualError> 
-where 
-    W: std::io::Write + std::io::Seek
+fn create_zip_from_directory<W>(
+    out: W,
+    directory: &PathBuf,
+    skip_symlinks: bool,
+) -> Result<(), ContextualError>
+where
+    W: std::io::Write + std::io::Seek,
 {
     let options = write::FileOptions::default().compression_method(zip::CompressionMethod::Stored);
     let mut paths_queue: Vec<PathBuf> = vec![];
@@ -215,22 +219,28 @@ where
 
     let mut zip_writer = ZipWriter::new(out);
     let mut buffer = Vec::new();
-    while paths_queue.len() > 0 {
-        let next = paths_queue.pop().ok_or(ContextualError::CustomError("Could not get path from queue".to_string()))?;
-        let current_dir = next.as_path();
-        let directory_entry_iterator = std::fs::read_dir(current_dir).map_err(|e|{
-            ContextualError::IOError("Could not read directory".to_string(), e)
+    while !paths_queue.is_empty() {
+        let next = paths_queue.pop().ok_or_else(|| {
+            ContextualError::CustomError("Could not get path from queue".to_string())
         })?;
-        let zip_directory = Path::new(zip_root_folder_name)
-            .join(current_dir.strip_prefix(directory).map_err(|_|{
-                ContextualError::CustomError("Could not append base directory".to_string())
-            })?);
+        let current_dir = next.as_path();
+        let directory_entry_iterator = std::fs::read_dir(current_dir)
+            .map_err(|e| ContextualError::IOError("Could not read directory".to_string(), e))?;
+        let zip_directory =
+            Path::new(zip_root_folder_name).join(current_dir.strip_prefix(directory).map_err(
+                |_| ContextualError::CustomError("Could not append base directory".to_string()),
+            )?);
 
         for entry in directory_entry_iterator {
-            let entry_path = entry.ok().ok_or(
-                ContextualError::InvalidPathError("Directory name terminates in \"..\"".to_string())
-            )?.path();
-            let entry_metadata = std::fs::metadata(entry_path.clone()).map_err(|e|{
+            let entry_path = entry
+                .ok()
+                .ok_or_else(|| {
+                    ContextualError::InvalidPathError(
+                        "Directory name terminates in \"..\"".to_string(),
+                    )
+                })?
+                .path();
+            let entry_metadata = std::fs::metadata(entry_path.clone()).map_err(|e| {
                 ContextualError::IOError("Could not get file metadata".to_string(), e)
             })?;
 
@@ -241,25 +251,30 @@ where
                 ContextualError::InvalidPathError("Invalid file or direcotory name".to_string())
             })?;
             if entry_metadata.is_file() {
-                let mut f = File::open(&entry_path).map_err(|e| {
-                     ContextualError::IOError("Could not open file".to_string(), e)
-                })?;
+                let mut f = File::open(&entry_path)
+                    .map_err(|e| ContextualError::IOError("Could not open file".to_string(), e))?;
                 f.read_to_end(&mut buffer).map_err(|e| {
                     ContextualError::IOError("Could not read from file".to_string(), e)
                 })?;
                 let relative_path = zip_directory.join(current_entry_name);
-                zip_writer.start_file_from_path(Path::new(&relative_path), options).map_err(|_| {
-                    ContextualError::CustomError("Could not add file path to ZIP".to_string())
-                })?;
+                zip_writer
+                    .start_file_from_path(Path::new(&relative_path), options)
+                    .map_err(|_| {
+                        ContextualError::CustomError("Could not add file path to ZIP".to_string())
+                    })?;
                 zip_writer.write(buffer.as_ref()).map_err(|_| {
                     ContextualError::CustomError("Could not write file to ZIP".to_string())
                 })?;
                 buffer.clear();
             } else if entry_metadata.is_dir() {
                 let relative_path = zip_directory.join(current_entry_name);
-                zip_writer.add_directory_from_path(Path::new(&relative_path), options).map_err(|_| {
-                    ContextualError::CustomError("Could not add directory path to ZIP".to_string())
-                })?;
+                zip_writer
+                    .add_directory_from_path(Path::new(&relative_path), options)
+                    .map_err(|_| {
+                        ContextualError::CustomError(
+                            "Could not add directory path to ZIP".to_string(),
+                        )
+                    })?;
                 paths_queue.push(entry_path.clone());
             }
         }
@@ -274,23 +289,21 @@ where
 /// Writes a zip of `dir` in `out`.
 ///
 /// The content of `src_dir` will be saved in the archive as the  folder named .
-fn zip_data<W>(
-    src_dir: &Path,
-    skip_symlinks: bool,
-    mut out: W,
-) -> Result<(), ContextualError>
+fn zip_data<W>(src_dir: &Path, skip_symlinks: bool, mut out: W) -> Result<(), ContextualError>
 where
     W: std::io::Write,
 {
     let mut data = Vec::new();
     let memory_file = Cursor::new(&mut data);
     create_zip_from_directory(memory_file, &src_dir.to_path_buf(), skip_symlinks).map_err(|e| {
-        ContextualError::ArchiveCreationError("Failed to create the ZIP archive".to_string(), Box::new(e))
+        ContextualError::ArchiveCreationError(
+            "Failed to create the ZIP archive".to_string(),
+            Box::new(e),
+        )
     })?;
 
-    out.write_all(data.as_mut_slice()).map_err(|e| {
-        ContextualError::IOError("Failed to write the ZIP archive".to_string(), e)
-    })?;
+    out.write_all(data.as_mut_slice())
+        .map_err(|e| ContextualError::IOError("Failed to write the ZIP archive".to_string(), e))?;
 
     Ok(())
 }

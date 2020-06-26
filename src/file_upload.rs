@@ -173,7 +173,7 @@ pub fn upload_file(
     };
 
     // If the target path is under the app root directory, save the file.
-    let target_dir = match &app_root_dir.clone().join(upload_path).canonicalize() {
+    let target_dir = match &app_root_dir.join(upload_path).canonicalize() {
         Ok(path) if path.starts_with(&app_root_dir) => path.clone(),
         _ => {
             let err = ContextualError::InvalidHTTPRequestError(
