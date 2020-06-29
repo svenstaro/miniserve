@@ -9,6 +9,7 @@ use std::io;
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 use strum_macros::{Display, EnumString};
+use qrcodegen::{QrCode, QrCodeEcc};
 
 use crate::archive::CompressionMethod;
 use crate::errors::{self, ContextualError};
@@ -24,6 +25,7 @@ pub struct QueryParameters {
     pub sort: Option<SortingMethod>,
     pub order: Option<SortingOrder>,
     pub theme: Option<ColorScheme>,
+    qrcode: Option<String>,
     download: Option<CompressionMethod>,
 }
 
@@ -162,6 +164,19 @@ pub fn directory_listing<S>(
     };
 
     let query_params = extract_query_parameters(req);
+
+    // Get the QR code of the page
+    if let Some(url) = query_params.qrcode {
+        let qr = QrCode::encode_text(&url, QrCodeEcc::Medium).map_err(|err| {
+            log::error!("URL is too long: {:?}", err);
+            io::Error::new(io::ErrorKind::Other, "URL is too long")
+        })?;
+        return Ok(
+            HttpResponse::Ok()
+                .header("Content-Type", "image/svg+xml")
+                .body(qr.to_svg_string(2))
+        )
+    }
 
     let mut entries: Vec<Entry> = Vec::new();
 
@@ -348,6 +363,7 @@ pub fn extract_query_parameters<S>(req: &HttpRequest<S>) -> QueryParameters {
             order: query.order,
             download: query.download,
             theme: query.theme,
+            qrcode: query.qrcode.to_owned(),
             path: query.path.clone(),
         },
         Err(e) => {
@@ -358,6 +374,7 @@ pub fn extract_query_parameters<S>(req: &HttpRequest<S>) -> QueryParameters {
                 order: None,
                 download: None,
                 theme: None,
+                qrcode: None,
                 path: None,
             }
         }

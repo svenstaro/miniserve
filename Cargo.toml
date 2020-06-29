@@ -47,6 +47,7 @@ strum_macros = "0.18.0"
 sha2 = "0.9"
 hex = "0.4.2"
 zip = "0.5.5"
+qrcodegen = "1.6.0"
 
 [dev-dependencies]
 assert_cmd = "1.0"
