@@ -9,7 +9,7 @@ use select::node::Node;
 use std::process::{Command, Stdio};
 use std::thread::sleep;
 use std::time::Duration;
-use regex::{Regex};
+use regex::Regex;
 
 #[rstest]
 fn serves_requests_with_no_options(tmpdir: TempDir) -> Result<(), Error> {
@@ -87,10 +87,9 @@ fn serves_requests_with_randomly_assigned_port(tmpdir: TempDir) -> Result<(), Er
 
     let re = Regex::new(r"http://127.0.0.1:(\d+)").unwrap();
     let caps = re.captures(all_text.as_str()).unwrap();
-    let port_num = caps.get(1).unwrap().as_str().parse::<u32>().unwrap();
+    let port_num = caps.get(1).unwrap().as_str().parse::<u16>().unwrap();
 
     assert!(port_num > 0);
-    assert!(port_num <= 65535);
 
     Ok(())
 }
