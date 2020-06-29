@@ -344,7 +344,7 @@ fn entry_row(
             }
             td {
                 @if let Some(size) = entry.size {
-                    (size)
+                    (bytes_to_size(size))
                 }
             }
             td.date-cell {
@@ -363,6 +363,25 @@ fn entry_row(
             }
         }
     }
+}
+
+fn bytes_to_size(bytes: u64) -> String {
+    const UNITS: [&str; 7] = ["B", "KB", "MB", "GB", "TB", "PB", "EB"];
+    if bytes < 1024 {
+        return format!("{} B", bytes);
+    }
+    let bytes = bytes as f64;
+    let i = (bytes.ln() / 1024_f64.ln()) as i32;
+    format!("{:.2} {}", bytes / 1024_f64.powi(i), UNITS[i as usize])
+}
+
+#[test]
+fn test_bytes_to_size() {
+    assert_eq!(bytes_to_size(1), "1 B");
+    assert_eq!(bytes_to_size(1023), "1023 B");
+    assert_eq!(bytes_to_size(1024), "1.00 KB");
+    assert_eq!(bytes_to_size(1 * 1024 * 1024), "1.00 MB");
+    assert_eq!(bytes_to_size(u64::max_value()), "16.00 EB");
 }
 
 /// Partial: CSS

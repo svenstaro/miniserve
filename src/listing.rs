@@ -1,6 +1,5 @@
 use actix_web::http::StatusCode;
 use actix_web::{fs, Body, FromRequest, HttpRequest, HttpResponse, Query, Result};
-use bytesize::ByteSize;
 use futures::Stream;
 use htmlescape::encode_minimal as escape_html_entity;
 use percent_encoding::{utf8_percent_encode, AsciiSet, CONTROLS};
@@ -81,7 +80,7 @@ pub struct Entry {
     pub link: String,
 
     /// Size in byte of the entry. Only available for EntryType::File
-    pub size: Option<bytesize::ByteSize>,
+    pub size: Option<u64>,
 
     /// Last modification date
     pub last_modification_date: Option<SystemTime>,
@@ -92,7 +91,7 @@ impl Entry {
         name: String,
         entry_type: EntryType,
         link: String,
-        size: Option<bytesize::ByteSize>,
+        size: Option<u64>,
         last_modification_date: Option<SystemTime>,
     ) -> Self {
         Entry {
@@ -208,7 +207,7 @@ pub fn directory_listing<S>(
                         file_name,
                         EntryType::File,
                         file_url,
-                        Some(ByteSize::b(metadata.len())),
+                        Some(metadata.len()),
                         last_modification_date,
                     ));
                 }
@@ -226,8 +225,8 @@ pub fn directory_listing<S>(
                 // If we can't get the size of the entry (directory for instance)
                 // let's consider it's 0b
                 e2.size
-                    .unwrap_or_else(|| ByteSize::b(0))
-                    .cmp(&e1.size.unwrap_or_else(|| ByteSize::b(0)))
+                    .unwrap_or_else(|| 0)
+                    .cmp(&e1.size.unwrap_or_else(|| 0))
             }),
             SortingMethod::Date => entries.sort_by(|e1, e2| {
                 // If, for some reason, we can't get the last modification date of an entry
