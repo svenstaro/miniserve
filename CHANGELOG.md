@@ -1,3 +1,5 @@
+# 0.8.0 - TBA
+
 # 0.7.0 - 2020-05-14
 - Add zip archiving [#297](https://github.com/svenstaro/miniserve/pull/297) (thanks @marawan31)
 
