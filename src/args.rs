@@ -1,6 +1,7 @@
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::path::PathBuf;
 use structopt::StructOpt;
+use port_check::free_local_port;
 
 use crate::auth;
 use crate::errors::ContextualError;
@@ -170,10 +171,15 @@ pub fn parse_args() -> crate::MiniserveConfig {
 
     let path_explicitly_chosen = args.path.is_some();
 
+    let port = match args.port {
+        0 => free_local_port().expect("no free ports available"),
+        _ => args.port,
+    };
+
     crate::MiniserveConfig {
         verbose: args.verbose,
         path: args.path.unwrap_or_else(|| PathBuf::from(".")),
-        port: args.port,
+        port,
         interfaces,
         auth: args.auth,
         path_explicitly_chosen,

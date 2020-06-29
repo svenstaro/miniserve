@@ -9,6 +9,7 @@ use select::node::Node;
 use std::process::{Command, Stdio};
 use std::thread::sleep;
 use std::time::Duration;
+use regex::Regex;
 
 #[rstest]
 fn serves_requests_with_no_options(tmpdir: TempDir) -> Result<(), Error> {
@@ -65,6 +66,30 @@ fn serves_requests_with_non_default_port(tmpdir: TempDir, port: u16) -> Result<(
     }
 
     child.kill()?;
+
+    Ok(())
+}
+
+#[rstest]
+fn serves_requests_with_randomly_assigned_port(tmpdir: TempDir) -> Result<(), Error> {
+    let mut child = Command::cargo_bin("miniserve")?
+        .arg(tmpdir.path())
+        .arg("-p")
+        .arg("0".to_string())
+        .stdout(Stdio::piped())
+        .spawn()?;
+
+    sleep(Duration::from_secs(1));
+    child.kill()?;
+
+    let output = child.wait_with_output().expect("Failed to read stdout");
+    let all_text = String::from_utf8(output.stdout)?;
+
+    let re = Regex::new(r"http://127.0.0.1:(\d+)").unwrap();
+    let caps = re.captures(all_text.as_str()).unwrap();
+    let port_num = caps.get(1).unwrap().as_str().parse::<u16>().unwrap();
+
+    assert!(port_num > 0);
 
     Ok(())
 }
