@@ -19,6 +19,7 @@ pub fn page(
     sort_order: Option<SortingOrder>,
     default_color_scheme: ColorScheme,
     color_scheme: ColorScheme,
+    show_qrcode: bool,
     file_upload: bool,
     upload_route: &str,
     current_dir: &str,
@@ -46,7 +47,7 @@ pub fn page(
                         }
                     }
                 }
-                (color_scheme_selector(sort_method, sort_order, color_scheme, default_color_scheme, serve_path))
+                (color_scheme_selector(sort_method, sort_order, color_scheme, default_color_scheme, serve_path, show_qrcode))
                 div.container {
                     span#top { }
                     h1.title { "Index of " (serve_path) }
@@ -133,15 +134,18 @@ fn color_scheme_selector(
     active_color_scheme: ColorScheme,
     default_color_scheme: ColorScheme,
     serve_path: &str,
+    show_qrcode: bool,
 ) -> Markup {
     html! {
         nav {
-            div {
-                p onmouseover="document.querySelector('#qrcode').src = `/?qrcode=${encodeURIComponent(window.location.href)}`" {
-                    "QrCode"
-                }
-                div.qrcode {
-                    img#qrcode alt="QrCode" title="QR code of this page";
+            @if show_qrcode {
+                div {
+                    p onmouseover="document.querySelector('#qrcode').src = `/?qrcode=${encodeURIComponent(window.location.href)}`" {
+                        "QrCode"
+                    }
+                    div.qrcode {
+                        img#qrcode alt="QrCode" title="QR code of this page";
+                    }
                 }
             }
             div {

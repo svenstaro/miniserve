@@ -57,6 +57,9 @@ pub struct MiniserveConfig {
     /// However, if a directory contains this file, miniserve will serve that file instead.
     pub index: Option<std::path::PathBuf>,
 
+    /// Enable QR code display
+    pub show_qrcode: bool,
+
     /// Enable file upload
     pub file_upload: bool,
 
@@ -258,6 +261,7 @@ fn configure_app(app: App<MiniserveConfig>) -> App<MiniserveConfig> {
         let no_symlinks = app.state().no_symlinks;
         let random_route = app.state().random_route.clone();
         let default_color_scheme = app.state().default_color_scheme;
+        let show_qrcode = app.state().show_qrcode;
         let file_upload = app.state().file_upload;
         let tar_enabled = app.state().tar_enabled;
         let zip_enabled = app.state().zip_enabled;
@@ -288,6 +292,7 @@ fn configure_app(app: App<MiniserveConfig>) -> App<MiniserveConfig> {
                             file_upload,
                             random_route.clone(),
                             default_color_scheme,
+                            show_qrcode,
                             u_r.clone(),
                             tar_enabled,
                             zip_enabled,

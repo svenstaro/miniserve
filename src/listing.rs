@@ -137,6 +137,7 @@ pub fn directory_listing<S>(
     file_upload: bool,
     random_route: Option<String>,
     default_color_scheme: ColorScheme,
+    show_qrcode: bool,
     upload_route: String,
     tar_enabled: bool,
     zip_enabled: bool,
@@ -165,17 +166,21 @@ pub fn directory_listing<S>(
 
     let query_params = extract_query_parameters(req);
 
-    // Get the QR code of the page
+    // If the `qrcode` parameter is included in the url, then should respond to the QR code
     if let Some(url) = query_params.qrcode {
-        let qr = QrCode::encode_text(&url, QrCodeEcc::Medium).map_err(|err| {
-            log::error!("URL is too long: {:?}", err);
-            io::Error::new(io::ErrorKind::Other, "URL is too long")
-        })?;
-        return Ok(
-            HttpResponse::Ok()
-                .header("Content-Type", "image/svg+xml")
-                .body(qr.to_svg_string(2))
-        )
+        let res = match QrCode::encode_text(&url, QrCodeEcc::Medium) {
+            Ok(qr) => {
+                HttpResponse::Ok()
+                    .header("Content-Type", "image/svg+xml")
+                    .body(qr.to_svg_string(2))
+            },
+            Err(err) => {
+                log::error!("URL is too long: {:?}", err);
+                HttpResponse::UriTooLong()
+                    .body(Body::Empty)
+            }
+        };
+        return Ok(res)
     }
 
     let mut entries: Vec<Entry> = Vec::new();
@@ -345,6 +350,7 @@ pub fn directory_listing<S>(
                     query_params.order,
                     default_color_scheme,
                     color_scheme,
+                    show_qrcode,
                     file_upload,
                     &upload_route,
                     &current_dir.display().to_string(),
