@@ -7,6 +7,7 @@
 [![license](http://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/svenstaro/miniserve/blob/master/LICENSE)
 [![Stars](https://img.shields.io/github/stars/svenstaro/miniserve.svg)](https://github.com/svenstaro/miniserve/stargazers)
 [![Downloads](https://img.shields.io/github/downloads/svenstaro/miniserve/total.svg)](https://github.com/svenstaro/miniserve/releases)
+[![Lines of Code](https://tokei.rs/b1/github/svenstaro/miniserve)](https://github.com/svenstaro/miniserve).
 
 **For when you really just want to serve some files over HTTP right now!**
 
