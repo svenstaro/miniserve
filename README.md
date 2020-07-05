@@ -51,6 +51,7 @@ Sometimes this is just a more practical and quick way than doing things properly
 - Folder download (compressed on the fly as `.tar.gz` or `.zip`)
 - File uploading
 - Pretty themes
+- Scan QR code for quick access
 
 ## How to install
 

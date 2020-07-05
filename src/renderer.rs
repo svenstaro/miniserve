@@ -141,10 +141,10 @@ fn color_scheme_selector(
             @if show_qrcode {
                 div {
                     p onmouseover="document.querySelector('#qrcode').src = `/?qrcode=${encodeURIComponent(window.location.href)}`" {
-                        "QrCode"
+                        "QR code"
                     }
                     div.qrcode {
-                        img#qrcode alt="QrCode" title="QR code of this page";
+                        img#qrcode alt="QR code" title="QR code of this page";
                     }
                 }
             }
