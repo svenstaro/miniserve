@@ -19,6 +19,7 @@ pub fn page(
     sort_order: Option<SortingOrder>,
     default_color_scheme: ColorScheme,
     color_scheme: ColorScheme,
+    show_qrcode: bool,
     file_upload: bool,
     upload_route: &str,
     current_dir: &str,
@@ -46,7 +47,7 @@ pub fn page(
                         }
                     }
                 }
-                (color_scheme_selector(sort_method, sort_order, color_scheme, default_color_scheme, serve_path))
+                (color_scheme_selector(sort_method, sort_order, color_scheme, default_color_scheme, serve_path, show_qrcode))
                 div.container {
                     span#top { }
                     h1.title { "Index of " (serve_path) }
@@ -133,24 +134,33 @@ fn color_scheme_selector(
     active_color_scheme: ColorScheme,
     default_color_scheme: ColorScheme,
     serve_path: &str,
+    show_qrcode: bool,
 ) -> Markup {
     html! {
         nav {
-            ul {
-                li {
-                    a.change-theme href="#" title="Change theme" {
-                        "Change theme..."
+            @if show_qrcode {
+                div {
+                    p onmouseover="document.querySelector('#qrcode').src = `/?qrcode=${encodeURIComponent(window.location.href)}`" {
+                        "QR code"
                     }
-                    ul {
-                        @for color_scheme in ColorScheme::iter() {
-                            @if active_color_scheme == color_scheme {
-                                li.active {
-                                    (color_scheme_link(sort_method, sort_order, color_scheme, default_color_scheme, serve_path))
-                                }
-                            } @else {
-                                li {
-                                    (color_scheme_link(sort_method, sort_order, color_scheme, default_color_scheme, serve_path))
-                                }
+                    div.qrcode {
+                        img#qrcode alt="QR code" title="QR code of this page";
+                    }
+                }
+            }
+            div {
+                p {
+                    "Change theme..."
+                }
+                ul.theme {
+                    @for color_scheme in ColorScheme::iter() {
+                        @if active_color_scheme == color_scheme {
+                            li.active {
+                                (color_scheme_link(sort_method, sort_order, color_scheme, default_color_scheme, serve_path))
+                            }
+                        } @else {
+                            li {
+                                (color_scheme_link(sort_method, sort_order, color_scheme, default_color_scheme, serve_path))
                             }
                         }
                     }
@@ -429,64 +439,75 @@ fn css(color_scheme: ColorScheme) -> Markup {
     }}
     nav {{
         padding: 0 5rem;
+        display: flex;
+        justify-content: flex-end;
     }}
-    nav ul {{
-        text-align: right;
-        list-style: none;
-        margin: 0;
-        padding: 0;
-    }}
-    nav ul li {{
-        display: block;
-        transition-duration: 0.5s;
-        float: right;
+    nav > div {{
         position: relative;
+        margin-left: 0.5rem;  
+    }}
+    nav p {{
         padding: 0.5rem 1rem;
-        background: {switch_theme_background};
         width: 8rem;
         text-align: center;
+        background: {switch_theme_background};
+        color: {change_theme_link_color};
     }}
-    nav ul li:hover {{
-        cursor: pointer;
-        text-decoration: none;
-        color: {change_theme_link_color}
-    }}
-    nav ul li a:hover {{
-        text-decoration: none;
-        color: {change_theme_link_color_hover};
-    }}
-    nav ul li ul {{
-        visibility: hidden;
-        opacity: 0;
-        position: absolute;
-        transition: all 0.5s ease;
-        margin-top: 0.5rem;
-        left: 0;
+    nav p + * {{
         display: none;
-        text-align: center;
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 100%;
+        animation: show 0.5s ease;
     }}
-    nav ul li:hover > ul,
-    nav ul li ul:hover {{
-        visibility: visible;
-        opacity: 1;
+    @keyframes show {{
+        from {{
+            opacity: 0;
+        }}
+        to {{
+            opacity: 1;
+        }}
+    }}
+    nav > div::hover p {{
+        cursor: pointer;
+        color: {switch_theme_link_color};
+    }}
+    nav > div:hover p + * {{
         display: block;
-    }}
-    nav ul li ul li:first-of-type {{
         border-top: 1px solid {switch_theme_border};
     }}
-    nav ul li ul li {{
-        clear: both;
-        width: 8rem;
-        padding-top: 0.5rem;
-        padding-bottom: 0.5rem;
+    nav .qrcode {{
+        padding: 0.5rem;
+        background: {switch_theme_background};
     }}
-    nav ul li ul li a:hover {{
+    nav .qrcode img {{
+        display: block;
+    }}
+    nav .theme {{
+        margin: 0;
+        padding: 0;
+        list-style-type: none;
+    }}
+    nav .theme li {{
+        width: 100%;
+        background: {switch_theme_background};
+    }}
+    nav .theme li a {{
+        display: block;
+        width: 100%;
+        padding: 0.5rem 0;
+        text-align: center;
+        color: {switch_theme_link_color};
+    }}
+    nav .theme li a:visited {{
+        color: {switch_theme_link_color};
+    }}
+    nav .theme li a::hover {{
         text-decoration: underline;
+        color: {change_theme_link_color_hover};
     }}
-    nav ul li a, nav ul li ul li a, nav ul li a:visited, nav ul li ul li a:visited {{
-        color: {switch_theme_link_color}
-    }}
-    nav ul li ul li.active a {{
+    nav .theme li.active a {{
         font-weight: bold;
         color: {switch_theme_active};
     }}

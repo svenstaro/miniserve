@@ -77,6 +77,10 @@ struct CLIArgs {
     )]
     color_scheme: themes::ColorScheme,
 
+    /// Enable QR code display
+    #[structopt(short = "q", long = "qrcode")]
+    qrcode: bool,
+
     /// Enable file uploading
     #[structopt(short = "u", long = "upload-files")]
     file_upload: bool,
@@ -188,6 +192,7 @@ pub fn parse_args() -> crate::MiniserveConfig {
         default_color_scheme,
         index: args.index,
         overwrite_files: args.overwrite_files,
+        show_qrcode: args.qrcode,
         file_upload: args.file_upload,
         tar_enabled: args.enable_tar,
         zip_enabled: args.enable_zip,

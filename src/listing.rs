@@ -9,6 +9,7 @@ use std::io;
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 use strum_macros::{Display, EnumString};
+use qrcodegen::{QrCode, QrCodeEcc};
 
 use crate::archive::CompressionMethod;
 use crate::errors::{self, ContextualError};
@@ -24,6 +25,7 @@ pub struct QueryParameters {
     pub sort: Option<SortingMethod>,
     pub order: Option<SortingOrder>,
     pub theme: Option<ColorScheme>,
+    qrcode: Option<String>,
     download: Option<CompressionMethod>,
 }
 
@@ -135,6 +137,7 @@ pub fn directory_listing<S>(
     file_upload: bool,
     random_route: Option<String>,
     default_color_scheme: ColorScheme,
+    show_qrcode: bool,
     upload_route: String,
     tar_enabled: bool,
     zip_enabled: bool,
@@ -162,6 +165,23 @@ pub fn directory_listing<S>(
     };
 
     let query_params = extract_query_parameters(req);
+
+    // If the `qrcode` parameter is included in the url, then should respond to the QR code
+    if let Some(url) = query_params.qrcode {
+        let res = match QrCode::encode_text(&url, QrCodeEcc::Medium) {
+            Ok(qr) => {
+                HttpResponse::Ok()
+                    .header("Content-Type", "image/svg+xml")
+                    .body(qr.to_svg_string(2))
+            },
+            Err(err) => {
+                log::error!("URL is too long: {:?}", err);
+                HttpResponse::UriTooLong()
+                    .body(Body::Empty)
+            }
+        };
+        return Ok(res)
+    }
 
     let mut entries: Vec<Entry> = Vec::new();
 
@@ -330,6 +350,7 @@ pub fn directory_listing<S>(
                     query_params.order,
                     default_color_scheme,
                     color_scheme,
+                    show_qrcode,
                     file_upload,
                     &upload_route,
                     &current_dir.display().to_string(),
@@ -348,6 +369,7 @@ pub fn extract_query_parameters<S>(req: &HttpRequest<S>) -> QueryParameters {
             order: query.order,
             download: query.download,
             theme: query.theme,
+            qrcode: query.qrcode.to_owned(),
             path: query.path.clone(),
         },
         Err(e) => {
@@ -358,6 +380,7 @@ pub fn extract_query_parameters<S>(req: &HttpRequest<S>) -> QueryParameters {
                 order: None,
                 download: None,
                 theme: None,
+                qrcode: None,
                 path: None,
             }
         }
