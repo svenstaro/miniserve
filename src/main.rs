@@ -8,6 +8,7 @@ use std::thread;
 use std::time::Duration;
 use structopt::clap::crate_version;
 use yansi::{Color, Paint};
+use simplelog::{LevelFilter, TermLogger, ConfigBuilder, TerminalMode, SimpleLogger};
 
 mod archive;
 mod args;
@@ -89,19 +90,21 @@ fn run() -> Result<(), ContextualError> {
     let miniserve_config = args::parse_args();
 
     let log_level = if miniserve_config.verbose {
-        simplelog::LevelFilter::Info
+        LevelFilter::Info
     } else {
-        simplelog::LevelFilter::Error
+        LevelFilter::Error
     };
 
-    if simplelog::TermLogger::init(
+    let log_config = || ConfigBuilder::new().set_time_to_local(true).build();
+
+    if TermLogger::init(
         log_level,
-        simplelog::Config::default(),
-        simplelog::TerminalMode::Mixed,
+        log_config(),
+        TerminalMode::Mixed,
     )
     .is_err()
     {
-        simplelog::SimpleLogger::init(log_level, simplelog::Config::default())
+        SimpleLogger::init(log_level, log_config())
             .expect("Couldn't initialize logger")
     }
 
