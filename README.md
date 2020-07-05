@@ -54,6 +54,8 @@ Sometimes this is just a more practical and quick way than doing things properly
 
 ## How to install
 
+<a href="https://repology.org/project/miniserve/versions"><img align="right" src="https://repology.org/badge/vertical-allrepos/miniserve.svg" alt="Packaging status"></a>
+
 **On Linux**: Download `miniserve-linux` from [the releases page](https://github.com/svenstaro/miniserve/releases) and run
 
     chmod +x miniserve-linux
