@@ -1,4 +1,4 @@
-use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
+use std::net::IpAddr;
 use std::path::PathBuf;
 use structopt::StructOpt;
 use port_check::free_local_port;
@@ -46,7 +46,7 @@ struct CLIArgs {
         parse(try_from_str = parse_interface),
         number_of_values = 1,
     )]
-    interfaces: Vec<IpAddr>,
+    interfaces: Option<Vec<IpAddr>>,
 
     /// Set authentication. Currently supported formats:
     /// username:password, username:sha256:hash, username:sha512:hash
@@ -156,14 +156,7 @@ fn parse_auth(src: &str) -> Result<auth::RequiredAuth, ContextualError> {
 pub fn parse_args() -> crate::MiniserveConfig {
     let args = CLIArgs::from_args();
 
-    let interfaces = if !args.interfaces.is_empty() {
-        args.interfaces
-    } else {
-        vec![
-            IpAddr::V6(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0)),
-            IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)),
-        ]
-    };
+    let interfaces = args.interfaces;
 
     let random_route = if args.random_route {
         Some(nanoid::nanoid!(6, &ROUTE_ALPHABET))

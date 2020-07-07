@@ -3,11 +3,12 @@
 use actix_web::http::{Method, StatusCode};
 use actix_web::{fs, middleware, server, App, HttpRequest, HttpResponse};
 use std::io::{self, Write};
-use std::net::{IpAddr, Ipv4Addr, SocketAddr};
+use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr};
 use std::thread;
 use std::time::Duration;
 use structopt::clap::crate_version;
 use yansi::{Color, Paint};
+use qrcodegen::{QrCode, QrCodeEcc};
 
 mod archive;
 mod args;
@@ -34,7 +35,7 @@ pub struct MiniserveConfig {
     pub port: u16,
 
     /// IP address(es) on which miniserve will be available
-    pub interfaces: Vec<IpAddr>,
+    pub interfaces: Option<Vec<IpAddr>>,
 
     /// Enable HTTP basic authentication
     pub auth: Vec<auth::RequiredAuth>,
@@ -126,6 +127,11 @@ fn run() -> Result<(), ContextualError> {
 
     let interfaces = miniserve_config
         .interfaces
+        .clone()
+        .unwrap_or_else(|| vec![
+            IpAddr::V6(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0)),
+            IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)),
+        ])
         .iter()
         .map(|&interface| {
             if interface == IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)) {
@@ -246,6 +252,28 @@ fn run() -> Result<(), ContextualError> {
         addresses = addresses,
     );
 
+    // Print QR code
+    if miniserve_config.show_qrcode {
+        let random_route = miniserve_config.random_route.clone().unwrap_or_default();
+        let links = match &miniserve_config.interfaces {
+            Some(_) => socket_addresses
+                .iter()
+                .map(|addr| format!("http://{}/{}", addr, &random_route))
+                .collect(),
+            None => get_intranet_ip()
+                .map(|ip| {
+                    vec![format!(
+                        "http://{}:{}/{}",
+                        ip, miniserve_config.port, &random_route
+                    )]
+                })
+                .unwrap_or_default(),
+        };
+        for link in links {
+            print_qrcode(link);
+        }
+    }
+
     println!("\nQuit by pressing CTRL-C");
 
     let _ = sys.run();
@@ -354,4 +382,46 @@ fn error_404(req: &HttpRequest<crate::MiniserveConfig>) -> Result<HttpResponse, 
         )
         .into_string(),
     ))
+}
+
+// Print the QR code of the specified content in the terminal
+// For the width and height to be equal, two characters are used in each grid
+// Cannot control the line-height of the terminal, so it looks imperfect
+fn print_qrcode(content: String) {
+    let qr = QrCode::encode_text(&content, QrCodeEcc::Medium).unwrap();
+    let size = qr.size();
+    let margin = 1;
+    
+    let mut text = String::new();
+    let white = Paint::white("██").to_string();
+    let black = Paint::black("  ").to_string();
+
+    for x in -margin..size + margin {
+        for y in -margin..size + margin {
+            // margin
+            if x < 0 || x > size || y < 0 || y > size {
+                text.push_str(&white);
+                continue;
+            }
+            // QR code fill
+            if qr.get_module(x, y) {
+                text.push_str(&black);
+            } else {
+                text.push_str(&white);
+            }
+        }
+        text.push_str("\n");
+    }
+
+    print!("{}", text);
+}
+
+fn get_intranet_ip() -> Option<IpAddr> {
+    pnet_datalink::interfaces()
+        .into_iter()
+        .filter(|e| e.is_up() && !e.is_loopback() && e.ips.len() > 0)
+        .map(|e| e.ips)
+        .flatten()
+        .find(|ip| ip.is_ipv4())
+        .map(|e| e.ip())
 }
