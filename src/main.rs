@@ -1,7 +1,8 @@
 #![feature(proc_macro_hygiene)]
 
-use actix_web::http::{Method, StatusCode};
-use actix_web::{fs, middleware, server, App, HttpRequest, HttpResponse};
+use actix_web::http::StatusCode;
+use actix_web::web;
+use actix_web::{middleware, App, HttpRequest, HttpResponse};
 use std::io::{self, Write};
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use std::thread;
@@ -80,12 +81,12 @@ fn main() {
     }
 }
 
-fn run() -> Result<(), ContextualError> {
+#[actix_rt::main(miniserve)]
+async fn run() -> Result<(), ContextualError> {
     if cfg!(windows) && !Paint::enable_windows_ascii() {
         Paint::disable();
     }
 
-    let sys = actix::System::new("miniserve");
     let miniserve_config = args::parse_args();
 
     let log_level = if miniserve_config.verbose {
@@ -229,16 +230,18 @@ fn run() -> Result<(), ContextualError> {
         }
     };
 
-    server::new(move || {
-        App::with_state(inside_config.clone())
-            .middleware(auth::Auth)
-            .middleware(middleware::Logger::default())
-            .configure(configure_app)
+    let srv = actix_web::HttpServer::new(move || {
+        App::new()
+            .app_data(inside_config.clone())
+            .wrap(auth::Auth)
+            .wrap(middleware::Logger::default())
+            .configure(|c| configure_app(c, &inside_config))
+            .default_service(web::get().to(error_404))
     })
     .bind(socket_addresses.as_slice())
     .map_err(|e| ContextualError::IOError("Failed to bind server".to_string(), e))?
     .shutdown_timeout(0)
-    .start();
+    .run();
 
     println!(
         "Serving path {path} at {addresses}",
@@ -248,41 +251,41 @@ fn run() -> Result<(), ContextualError> {
 
     println!("\nQuit by pressing CTRL-C");
 
-    let _ = sys.run();
-
-    Ok(())
+    srv.await
+        .map_err(|e| ContextualError::IOError("".to_owned(), e))
 }
 
 /// Configures the Actix application
-fn configure_app(app: App<MiniserveConfig>) -> App<MiniserveConfig> {
+fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
+    let random_route = conf.random_route.clone().unwrap_or_default();
+    let uses_random_route = conf.random_route.clone().is_some();
+    let full_route = format!("/{}", random_route);
+
     let upload_route;
     let s = {
-        let path = &app.state().path;
-        let no_symlinks = app.state().no_symlinks;
-        let random_route = app.state().random_route.clone();
-        let default_color_scheme = app.state().default_color_scheme;
-        let show_qrcode = app.state().show_qrcode;
-        let file_upload = app.state().file_upload;
-        let tar_enabled = app.state().tar_enabled;
-        let zip_enabled = app.state().zip_enabled;
-        upload_route = if let Some(random_route) = app.state().random_route.clone() {
+        let path = &conf.path;
+        let no_symlinks = conf.no_symlinks;
+        let random_route = conf.random_route.clone();
+        let default_color_scheme = conf.default_color_scheme;
+        let show_qrcode = conf.show_qrcode;
+        let file_upload = conf.file_upload;
+        let tar_enabled = conf.tar_enabled;
+        let zip_enabled = conf.zip_enabled;
+        upload_route = if let Some(random_route) = conf.random_route.clone() {
             format!("/{}/upload", random_route)
         } else {
             "/upload".to_string()
         };
         if path.is_file() {
             None
-        } else if let Some(index_file) = &app.state().index {
+        } else if let Some(index_file) = &conf.index {
             Some(
-                fs::StaticFiles::new(path)
-                    .expect("Failed to setup static file handler")
-                    .index_file(index_file.to_string_lossy()),
+                actix_files::Files::new(&full_route, path).index_file(index_file.to_string_lossy()),
             )
         } else {
             let u_r = upload_route.clone();
             Some(
-                fs::StaticFiles::new(path)
-                    .expect("Failed to setup static file handler")
+                actix_files::Files::new(&full_route, path)
                     .show_files_listing()
                     .files_listing_renderer(move |dir, req| {
                         listing::directory_listing(
@@ -298,49 +301,43 @@ fn configure_app(app: App<MiniserveConfig>) -> App<MiniserveConfig> {
                             zip_enabled,
                         )
                     })
-                    .default_handler(error_404),
+                    .default_handler(web::to(error_404)),
             )
         }
     };
 
-    let random_route = app.state().random_route.clone().unwrap_or_default();
-    let uses_random_route = app.state().random_route.clone().is_some();
-    let full_route = format!("/{}", random_route);
-
     if let Some(s) = s {
-        if app.state().file_upload {
-            let default_color_scheme = app.state().default_color_scheme;
+        if conf.file_upload {
+            let default_color_scheme = conf.default_color_scheme;
             // Allow file upload
-            app.resource(&upload_route, move |r| {
-                r.method(Method::POST).f(move |file| {
-                    file_upload::upload_file(file, default_color_scheme, uses_random_route)
-                })
-            })
+            app.service(
+                web::resource(&upload_route).route(web::post().to(move |req, payload| {
+                    file_upload::upload_file(req, payload, default_color_scheme, uses_random_route)
+                })),
+            )
             // Handle directories
-            .handler(&full_route, s)
-            .default_resource(|r| r.method(Method::GET).f(error_404))
+            .service(s);
         } else {
             // Handle directories
-            app.handler(&full_route, s)
-                .default_resource(|r| r.method(Method::GET).f(error_404))
+            app.service(s);
         }
     } else {
         // Handle single files
-        app.resource(&full_route, |r| r.f(listing::file_handler))
-            .default_resource(|r| r.method(Method::GET).f(error_404))
+        app.service(web::resource(&full_route).route(web::to(listing::file_handler)));
     }
 }
 
-fn error_404(req: &HttpRequest<crate::MiniserveConfig>) -> Result<HttpResponse, io::Error> {
+async fn error_404(req: HttpRequest) -> HttpResponse {
     let err_404 = ContextualError::RouteNotFoundError(req.path().to_string());
-    let default_color_scheme = req.state().default_color_scheme;
-    let uses_random_route = req.state().random_route.is_some();
-    let query_params = listing::extract_query_parameters(req);
+    let conf = req.app_data::<MiniserveConfig>().unwrap();
+    let default_color_scheme = conf.default_color_scheme;
+    let uses_random_route = conf.random_route.is_some();
+    let query_params = listing::extract_query_parameters(&req);
     let color_scheme = query_params.theme.unwrap_or(default_color_scheme);
 
     errors::log_error_chain(err_404.to_string());
 
-    Ok(actix_web::HttpResponse::NotFound().body(
+    actix_web::HttpResponse::NotFound().body(
         renderer::render_error(
             &err_404.to_string(),
             StatusCode::NOT_FOUND,
@@ -353,5 +350,5 @@ fn error_404(req: &HttpRequest<crate::MiniserveConfig>) -> Result<HttpResponse, 
             !uses_random_route,
         )
         .into_string(),
-    ))
+    )
 }

@@ -12,7 +12,7 @@ pub enum ContextualError {
 
     /// MultipartError, which might occur during file upload, when processing the multipart request fails
     #[fail(display = "Failed to process multipart request\ncaused by: {}", _0)]
-    MultipartError(actix_web::error::MultipartError),
+    MultipartError(actix_multipart::MultipartError),
 
     /// This error might occur when decoding the HTTP authentication header.
     #[fail(
