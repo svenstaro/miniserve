@@ -4,12 +4,12 @@ use bytesize::ByteSize;
 use futures::Stream;
 use htmlescape::encode_minimal as escape_html_entity;
 use percent_encoding::{utf8_percent_encode, AsciiSet, CONTROLS};
+use qrcodegen::{QrCode, QrCodeEcc};
 use serde::Deserialize;
 use std::io;
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 use strum_macros::{Display, EnumString};
-use qrcodegen::{QrCode, QrCodeEcc};
 
 use crate::archive::CompressionMethod;
 use crate::errors::{self, ContextualError};
@@ -169,18 +169,15 @@ pub fn directory_listing<S>(
     // If the `qrcode` parameter is included in the url, then should respond to the QR code
     if let Some(url) = query_params.qrcode {
         let res = match QrCode::encode_text(&url, QrCodeEcc::Medium) {
-            Ok(qr) => {
-                HttpResponse::Ok()
-                    .header("Content-Type", "image/svg+xml")
-                    .body(qr.to_svg_string(2))
-            },
+            Ok(qr) => HttpResponse::Ok()
+                .header("Content-Type", "image/svg+xml")
+                .body(qr.to_svg_string(2)),
             Err(err) => {
                 log::error!("URL is too long: {:?}", err);
-                HttpResponse::UriTooLong()
-                    .body(Body::Empty)
+                HttpResponse::UriTooLong().body(Body::Empty)
             }
         };
-        return Ok(res)
+        return Ok(res);
     }
 
     let mut entries: Vec<Entry> = Vec::new();

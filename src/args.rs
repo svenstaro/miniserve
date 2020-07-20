@@ -1,7 +1,7 @@
+use port_check::free_local_port;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::path::PathBuf;
 use structopt::StructOpt;
-use port_check::free_local_port;
 
 use crate::auth;
 use crate::errors::ContextualError;

@@ -3,13 +3,13 @@ mod fixtures;
 use assert_cmd::prelude::*;
 use assert_fs::fixture::TempDir;
 use fixtures::{port, tmpdir, Error, DIRECTORIES, FILES};
+use regex::Regex;
 use rstest::rstest;
 use select::document::Document;
 use select::node::Node;
 use std::process::{Command, Stdio};
 use std::thread::sleep;
 use std::time::Duration;
-use regex::Regex;
 
 #[rstest]
 fn serves_requests_with_no_options(tmpdir: TempDir) -> Result<(), Error> {

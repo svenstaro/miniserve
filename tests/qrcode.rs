@@ -57,7 +57,6 @@ fn show_qrcode_element(tmpdir: TempDir, port: u16) -> Result<(), Error> {
 
 #[rstest]
 fn get_svg_qrcode(tmpdir: TempDir, port: u16) -> Result<(), Error> {
- 
     let mut child = Command::cargo_bin("miniserve")?
         .arg(tmpdir.path())
         .arg("-p")
@@ -69,7 +68,7 @@ fn get_svg_qrcode(tmpdir: TempDir, port: u16) -> Result<(), Error> {
 
     // Ok
     let resp = reqwest::blocking::get(format!("http://localhost:{}/?qrcode=test", port).as_str())?;
-  
+
     assert_eq!(resp.status(), StatusCode::OK);
     assert_eq!(resp.headers()["Content-Type"], "image/svg+xml");
     let body = resp.text()?;
@@ -78,8 +77,9 @@ fn get_svg_qrcode(tmpdir: TempDir, port: u16) -> Result<(), Error> {
 
     // Err
     let content: String = repeat_with(|| '0').take(8 * 1024).collect();
-    let resp = reqwest::blocking::get(format!("http://localhost:{}/?qrcode={}", port, content).as_str())?;
-  
+    let resp =
+        reqwest::blocking::get(format!("http://localhost:{}/?qrcode={}", port, content).as_str())?;
+
     assert_eq!(resp.status(), StatusCode::URI_TOO_LONG);
 
     child.kill()?;
