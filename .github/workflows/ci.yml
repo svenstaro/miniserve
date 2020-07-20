@@ -6,11 +6,10 @@ jobs:
   ci:
     name: CI with ${{ matrix.rust }} on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
-    continue-on-error: ${{ matrix.rust == 'stable' || matrix.rust == 'beta' }}
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        rust: [stable, beta, nightly]
+        rust: [nightly]
 
     steps:
       - name: Checkout code
