@@ -24,7 +24,6 @@ panic = 'abort'
 yansi = "0.5"
 actix-web = "2.0"
 simplelog = "0.8"
-base64 = "0.12"
 percent-encoding = "2.1"
 port_check = "0.1"
 htmlescape = "0.3.1"
@@ -50,6 +49,7 @@ qrcodegen = "1.6.0"
 actix-files = "0.2.2"
 actix-multipart = "0.2.0"
 actix-rt = "1.1.1"
+actix-web-httpauth = "0.4.2"
 
 [dev-dependencies]
 assert_cmd = "1.0"

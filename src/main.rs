@@ -3,6 +3,7 @@
 use actix_web::http::StatusCode;
 use actix_web::web;
 use actix_web::{middleware, App, HttpRequest, HttpResponse};
+use actix_web_httpauth::middleware::HttpAuthentication;
 use std::io::{self, Write};
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use std::thread;
@@ -233,7 +234,10 @@ async fn run() -> Result<(), ContextualError> {
     let srv = actix_web::HttpServer::new(move || {
         App::new()
             .app_data(inside_config.clone())
-            .wrap(auth::Auth)
+            .wrap(middleware::Condition::new(
+                !inside_config.auth.is_empty(),
+                HttpAuthentication::basic(auth::handle_auth),
+            ))
             .wrap(middleware::Logger::default())
             .configure(|c| configure_app(c, &inside_config))
             .default_service(web::get().to(error_404))
