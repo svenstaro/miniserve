@@ -321,19 +321,6 @@ pub fn directory_listing(
             }
         });
 
-        // `rx` is a receiver of bytes - it can act like a `Stream` of bytes, and that's exactly
-        // what actix-web wants to stream the response.
-        //
-        // But right now the error types do not match:
-        // `<rx as Stream>::Error == ()`, but we want `actix_web::error::Error`
-        //
-        // That being said, `rx` will never fail because the `Stream` implementation for `Receiver`
-        // never returns an error - it simply cannot fail.
-        //let rx = rx.map_err(|_| unreachable!("pipes never fail"));
-
-        // At this point, `rx` implements everything actix want for a streamed response,
-        // so we can just give a `Box::new(rx)` as streaming body.
-
         Ok(ServiceResponse::new(
             req.clone(),
             HttpResponse::Ok()

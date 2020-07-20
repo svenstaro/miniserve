@@ -9,8 +9,6 @@ use std::io::{Error, ErrorKind, Result, Write};
 ///
 /// It uses an intermediate buffer to transfer packets.
 pub struct Pipe {
-    // Wrapping the sender in `Wait` makes it blocking, so we can implement blocking-style
-    // io::Write over the async-style Sender.
     dest: Sender<std::result::Result<Bytes, ()>>,
     bytes: BytesMut,
 }
@@ -27,8 +25,6 @@ impl Pipe {
 
 impl Drop for Pipe {
     fn drop(&mut self) {
-        // This is the correct thing to do, but is not super important since the `Sink`
-        // implementation of `Sender` just returns `Ok` without doing anything else.
         let _ = block_on(self.dest.close());
     }
 }
