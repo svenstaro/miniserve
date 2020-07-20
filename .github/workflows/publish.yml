@@ -14,15 +14,15 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
         include:
           - os: ubuntu-latest
-            artifact_name: target/x86_64-unknown-linux-musl/release/proby
+            artifact_name: target/x86_64-unknown-linux-musl/release/miniserve
             release_name: linux-x86_64
             target: x86_64-unknown-linux-musl
           - os: windows-latest
-            artifact_name: target/x86_64-pc-windows-msvc/release/proby.exe
+            artifact_name: target/x86_64-pc-windows-msvc/release/miniserve.exe
             release_name: windows-x86_64.exe
             target: x86_64-pc-windows-msvc
           - os: macos-latest
-            artifact_name: target/x86_64-apple-darwin/release/proby
+            artifact_name: target/x86_64-apple-darwin/release/miniserve
             release_name: macos-x86_64
             target: x86_64-apple-darwin
 
