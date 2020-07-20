@@ -53,6 +53,73 @@ Sometimes this is just a more practical and quick way than doing things properly
 - Pretty themes
 - Scan QR code for quick access
 
+## Usage
+
+    miniserve 0.7.0
+    Sven-Hendrik Haase <svenstaro@gmail.com>, Boastful Squirrel <boastful.squirrel@gmail.com>
+    For when you really just want to serve some files over HTTP right now!
+
+    USAGE:
+        miniserve [FLAGS] [OPTIONS] [--] [PATH]
+
+    FLAGS:
+        -r, --enable-tar
+                Enable tar archive generation
+
+        -z, --enable-zip
+                Enable zip archive generation
+
+                WARNING: Zipping large directories can result in out-of-memory exception because zip generation is done in
+                memory and cannot be sent on the fly
+        -u, --upload-files
+                Enable file uploading
+
+        -h, --help
+                Prints help information
+
+        -P, --no-symlinks
+                Do not follow symbolic links
+
+        -o, --overwrite-files
+                Enable overriding existing files during file upload
+
+        -q, --qrcode
+                Enable QR code display
+
+            --random-route
+                Generate a random 6-hexdigit route
+
+        -V, --version
+                Prints version information
+
+        -v, --verbose
+                Be verbose, includes emitting access logs
+
+
+    OPTIONS:
+        -a, --auth <auth>...
+                Set authentication. Currently supported formats: username:password, username:sha256:hash,
+                username:sha512:hash (e.g. joe:123,
+                joe:sha256:a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3)
+        -c, --color-scheme <color-scheme>
+                Default color scheme [default: Squirrel]  [possible values: Archlinux, Zenburn,
+                Monokai, Squirrel]
+            --index <index_file>
+                The name of a directory index file to serve, like "index.html"
+
+                Normally, when miniserve serves a directory, it creates a listing for that directory. However, if a
+                directory contains this file, miniserve will serve that file instead.
+        -i, --interfaces <interfaces>...
+                Interface to listen on
+
+        -p, --port <port>
+                Port to use [default: 8080]
+
+
+    ARGS:
+        <PATH>
+                Which path to serve
+
 ## How to install
 
 <a href="https://repology.org/project/miniserve/versions"><img align="right" src="https://repology.org/badge/vertical-allrepos/miniserve.svg" alt="Packaging status"></a>
