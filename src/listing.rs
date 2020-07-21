@@ -1,7 +1,9 @@
+use actix_web::body::Body;
+use actix_web::dev::ServiceResponse;
 use actix_web::http::StatusCode;
-use actix_web::{fs, Body, FromRequest, HttpRequest, HttpResponse, Query, Result};
+use actix_web::web::Query;
+use actix_web::{HttpRequest, HttpResponse, Result};
 use bytesize::ByteSize;
-use futures::Stream;
 use htmlescape::encode_minimal as escape_html_entity;
 use percent_encoding::{utf8_percent_encode, AsciiSet, CONTROLS};
 use qrcodegen::{QrCode, QrCodeEcc};
@@ -122,17 +124,17 @@ impl Entry {
     }
 }
 
-pub fn file_handler(req: &HttpRequest<crate::MiniserveConfig>) -> Result<fs::NamedFile> {
-    let path = &req.state().path;
-    Ok(fs::NamedFile::open(path)?)
+pub async fn file_handler(req: HttpRequest) -> Result<actix_files::NamedFile> {
+    let path = &req.app_data::<crate::MiniserveConfig>().unwrap().path;
+    actix_files::NamedFile::open(path).map_err(Into::into)
 }
 
 /// List a directory and renders a HTML file accordingly
 /// Adapted from https://docs.rs/actix-web/0.7.13/src/actix_web/fs.rs.html#564
 #[allow(clippy::too_many_arguments)]
-pub fn directory_listing<S>(
-    dir: &fs::Directory,
-    req: &HttpRequest<S>,
+pub fn directory_listing(
+    dir: &actix_files::Directory,
+    req: &HttpRequest,
     skip_symlinks: bool,
     file_upload: bool,
     random_route: Option<String>,
@@ -141,7 +143,8 @@ pub fn directory_listing<S>(
     upload_route: String,
     tar_enabled: bool,
     zip_enabled: bool,
-) -> Result<HttpResponse, io::Error> {
+) -> Result<ServiceResponse, io::Error> {
+    use actix_web::dev::BodyEncoding;
     let serve_path = req.path();
 
     // In case the current path is a directory, we want to make sure that the current URL ends
@@ -151,9 +154,12 @@ pub fn directory_listing<S>(
             "" => String::new(),
             _ => format!("?{}", req.query_string()),
         };
-        return Ok(HttpResponse::MovedPermanenty()
-            .header("Location", format!("{}/{}", serve_path, query))
-            .body("301"));
+        return Ok(ServiceResponse::new(
+            req.clone(),
+            HttpResponse::MovedPermanently()
+                .header("Location", format!("{}/{}", serve_path, query))
+                .body("301"),
+        ));
     }
 
     let base = Path::new(serve_path);
@@ -177,7 +183,7 @@ pub fn directory_listing<S>(
                 HttpResponse::UriTooLong().body(Body::Empty)
             }
         };
-        return Ok(res);
+        return Ok(ServiceResponse::new(req.clone(), res));
     }
 
     let mut entries: Vec<Entry> = Vec::new();
@@ -269,22 +275,25 @@ pub fn directory_listing<S>(
 
     if let Some(compression_method) = query_params.download {
         if !compression_method.is_enabled(tar_enabled, zip_enabled) {
-            return Ok(HttpResponse::Forbidden()
-                .content_type("text/html; charset=utf-8")
-                .body(
-                    renderer::render_error(
-                        "Archive creation is disabled.",
-                        StatusCode::FORBIDDEN,
-                        "/",
-                        None,
-                        None,
-                        color_scheme,
-                        default_color_scheme,
-                        false,
-                        false,
-                    )
-                    .into_string(),
-                ));
+            return Ok(ServiceResponse::new(
+                req.clone(),
+                HttpResponse::Forbidden()
+                    .content_type("text/html; charset=utf-8")
+                    .body(
+                        renderer::render_error(
+                            "Archive creation is disabled.",
+                            StatusCode::FORBIDDEN,
+                            "/",
+                            None,
+                            None,
+                            color_scheme,
+                            default_color_scheme,
+                            false,
+                            false,
+                        )
+                        .into_string(),
+                    ),
+            ));
         }
         log::info!(
             "Creating an archive ({extension}) of {path}...",
@@ -301,7 +310,7 @@ pub fn directory_listing<S>(
         // We will create the archive in a separate thread, and stream the content using a pipe.
         // The pipe is made of a futures channel, and an adapter to implement the `Write` trait.
         // Include 10 messages of buffer for erratic connection speeds.
-        let (tx, rx) = futures::sync::mpsc::channel(10);
+        let (tx, rx) = futures::channel::mpsc::channel::<Result<actix_web::web::Bytes, ()>>(10);
         let pipe = crate::pipe::Pipe::new(tx);
 
         // Start the actual archive creation in a separate thread.
@@ -312,55 +321,47 @@ pub fn directory_listing<S>(
             }
         });
 
-        // `rx` is a receiver of bytes - it can act like a `Stream` of bytes, and that's exactly
-        // what actix-web wants to stream the response.
-        //
-        // But right now the error types do not match:
-        // `<rx as Stream>::Error == ()`, but we want `actix_web::error::Error`
-        //
-        // That being said, `rx` will never fail because the `Stream` implementation for `Receiver`
-        // never returns an error - it simply cannot fail.
-        let rx = rx.map_err(|_| unreachable!("pipes never fail"));
-
-        // At this point, `rx` implements everything actix want for a streamed response,
-        // so we can just give a `Box::new(rx)` as streaming body.
-
-        Ok(HttpResponse::Ok()
-            .content_type(compression_method.content_type())
-            .content_encoding(compression_method.content_encoding())
-            .header("Content-Transfer-Encoding", "binary")
-            .header(
-                "Content-Disposition",
-                format!("attachment; filename={:?}", filename),
-            )
-            .chunked()
-            .body(Body::Streaming(Box::new(rx))))
-    } else {
-        Ok(HttpResponse::Ok()
-            .content_type("text/html; charset=utf-8")
-            .body(
-                renderer::page(
-                    serve_path,
-                    entries,
-                    is_root,
-                    query_params.sort,
-                    query_params.order,
-                    default_color_scheme,
-                    color_scheme,
-                    show_qrcode,
-                    file_upload,
-                    &upload_route,
-                    &current_dir.display().to_string(),
-                    tar_enabled,
-                    zip_enabled,
+        Ok(ServiceResponse::new(
+            req.clone(),
+            HttpResponse::Ok()
+                .content_type(compression_method.content_type())
+                .encoding(compression_method.content_encoding())
+                .header("Content-Transfer-Encoding", "binary")
+                .header(
+                    "Content-Disposition",
+                    format!("attachment; filename={:?}", filename),
                 )
-                .into_string(),
-            ))
+                .body(actix_web::body::BodyStream::new(rx)),
+        ))
+    } else {
+        Ok(ServiceResponse::new(
+            req.clone(),
+            HttpResponse::Ok()
+                .content_type("text/html; charset=utf-8")
+                .body(
+                    renderer::page(
+                        serve_path,
+                        entries,
+                        is_root,
+                        query_params.sort,
+                        query_params.order,
+                        default_color_scheme,
+                        color_scheme,
+                        show_qrcode,
+                        file_upload,
+                        &upload_route,
+                        &current_dir.display().to_string(),
+                        tar_enabled,
+                        zip_enabled,
+                    )
+                    .into_string(),
+                ),
+        ))
     }
 }
 
-pub fn extract_query_parameters<S>(req: &HttpRequest<S>) -> QueryParameters {
-    match Query::<QueryParameters>::extract(req) {
+pub fn extract_query_parameters(req: &HttpRequest) -> QueryParameters {
+    match Query::<QueryParameters>::from_query(req.query_string()) {
         Ok(query) => QueryParameters {
             sort: query.sort,
             order: query.order,

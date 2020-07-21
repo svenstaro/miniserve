@@ -1,18 +1,26 @@
+use actix_web::dev::ServiceRequest;
 use actix_web::http::{header, StatusCode};
-use actix_web::middleware::{Middleware, Response};
 use actix_web::{HttpRequest, HttpResponse, Result};
+use actix_web_httpauth::extractors::basic::BasicAuth;
 use sha2::{Digest, Sha256, Sha512};
 
 use crate::errors::{self, ContextualError};
 use crate::renderer;
-
-pub struct Auth;
 
 #[derive(Clone, Debug)]
 /// HTTP Basic authentication parameters
 pub struct BasicAuthParams {
     pub username: String,
     pub password: String,
+}
+
+impl From<BasicAuth> for BasicAuthParams {
+    fn from(auth: BasicAuth) -> Self {
+        Self {
+            username: auth.user_id().to_string(),
+            password: auth.password().unwrap_or(&"".into()).to_string(),
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -28,29 +36,6 @@ pub enum RequiredAuthPassword {
 pub struct RequiredAuth {
     pub username: String,
     pub password: RequiredAuthPassword,
-}
-
-/// Decode a HTTP basic auth string into a tuple of username and password.
-pub fn parse_basic_auth(
-    authorization_header: &header::HeaderValue,
-) -> Result<BasicAuthParams, ContextualError> {
-    let basic_removed = authorization_header
-        .to_str()
-        .map_err(|e| {
-            ContextualError::ParseError("HTTP authentication header".to_string(), e.to_string())
-        })?
-        .replace("Basic ", "");
-    let decoded = base64::decode(&basic_removed).map_err(ContextualError::Base64DecodeError)?;
-    let decoded_str = String::from_utf8_lossy(&decoded);
-    let credentials: Vec<&str> = decoded_str.splitn(2, ':').collect();
-
-    // If argument parsing went fine, it means the HTTP credentials string is well formatted
-    // So we can safely unpack the username and the password
-
-    Ok(BasicAuthParams {
-        username: credentials[0].to_owned(),
-        password: credentials[1].to_owned(),
-    })
 }
 
 /// Return `true` if `basic_auth` is matches any of `required_auth`
@@ -87,47 +72,25 @@ pub fn get_hash<T: Digest>(text: &str) -> Vec<u8> {
     hasher.finalize().to_vec()
 }
 
-impl Middleware<crate::MiniserveConfig> for Auth {
-    fn response(
-        &self,
-        req: &HttpRequest<crate::MiniserveConfig>,
-        resp: HttpResponse,
-    ) -> Result<Response> {
-        let required_auth = &req.state().auth;
+pub async fn handle_auth(req: ServiceRequest, cred: BasicAuth) -> Result<ServiceRequest> {
+    let (req, pl) = req.into_parts();
+    let required_auth = &req.app_data::<crate::MiniserveConfig>().unwrap().auth;
 
-        if required_auth.is_empty() {
-            return Ok(Response::Done(resp));
-        }
-
-        if let Some(auth_headers) = req.headers().get(header::AUTHORIZATION) {
-            let auth_req = match parse_basic_auth(auth_headers) {
-                Ok(auth_req) => auth_req,
-                Err(err) => {
-                    let auth_err = ContextualError::HTTPAuthenticationError(Box::new(err));
-                    return Ok(Response::Done(HttpResponse::BadRequest().body(
-                        build_unauthorized_response(&req, auth_err, true, StatusCode::BAD_REQUEST),
-                    )));
-                }
-            };
-
-            if match_auth(auth_req, required_auth) {
-                return Ok(Response::Done(resp));
-            }
-        }
-
-        Ok(Response::Done(
-            HttpResponse::Unauthorized()
-                .header(
-                    header::WWW_AUTHENTICATE,
-                    header::HeaderValue::from_static("Basic realm=\"miniserve\""),
-                )
-                .body(build_unauthorized_response(
-                    &req,
-                    ContextualError::InvalidHTTPCredentials,
-                    true,
-                    StatusCode::UNAUTHORIZED,
-                )),
-        ))
+    if match_auth(cred.into(), required_auth) {
+        Ok(ServiceRequest::from_parts(req, pl).unwrap_or_else(|_| unreachable!()))
+    } else {
+        Err(HttpResponse::Unauthorized()
+            .header(
+                header::WWW_AUTHENTICATE,
+                header::HeaderValue::from_static("Basic realm=\"miniserve\""),
+            )
+            .body(build_unauthorized_response(
+                &req,
+                ContextualError::InvalidHTTPCredentials,
+                true,
+                StatusCode::UNAUTHORIZED,
+            ))
+            .into())
     }
 }
 
@@ -135,18 +98,19 @@ impl Middleware<crate::MiniserveConfig> for Auth {
 /// The reason why log_error_chain is optional is to handle cases where the auth pop-up appears and when the user clicks Cancel.
 /// In those case, we do not log the error to the terminal since it does not really matter.
 fn build_unauthorized_response(
-    req: &HttpRequest<crate::MiniserveConfig>,
+    req: &HttpRequest,
     error: ContextualError,
     log_error_chain: bool,
     error_code: StatusCode,
 ) -> String {
+    let state = req.app_data::<crate::MiniserveConfig>().unwrap();
     let error = ContextualError::HTTPAuthenticationError(Box::new(error));
 
     if log_error_chain {
         errors::log_error_chain(error.to_string());
     }
-    let return_path = match &req.state().random_route {
-        Some(random_route) => format!("/{}", random_route),
+    let return_path = match state.random_route {
+        Some(ref random_route) => format!("/{}", random_route),
         None => "/".to_string(),
     };
 
@@ -156,8 +120,8 @@ fn build_unauthorized_response(
         &return_path,
         None,
         None,
-        req.state().default_color_scheme,
-        req.state().default_color_scheme,
+        state.default_color_scheme,
+        state.default_color_scheme,
         false,
         false,
     )

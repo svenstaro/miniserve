@@ -12,14 +12,7 @@ pub enum ContextualError {
 
     /// MultipartError, which might occur during file upload, when processing the multipart request fails
     #[fail(display = "Failed to process multipart request\ncaused by: {}", _0)]
-    MultipartError(actix_web::error::MultipartError),
-
-    /// This error might occur when decoding the HTTP authentication header.
-    #[fail(
-        display = "Failed to decode HTTP authentication header\ncaused by: {}",
-        _0
-    )]
-    Base64DecodeError(base64::DecodeError),
+    MultipartError(actix_multipart::MultipartError),
 
     /// Any error related to an invalid path (failed to retrieve entry name, unexpected entry type, etc)
     #[fail(display = "Invalid path\ncaused by: {}", _0)]
