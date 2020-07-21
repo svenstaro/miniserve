@@ -39,7 +39,7 @@ maud = { version = "0.22.0", features = ["actix-web"] }
 serde = { version = "1.0.110", features = ["derive"] }
 tar = "0.4.27"
 bytes = "0.4.12"
-futures = "0.1.29"
+futures = "0.3.5"
 libflate = "1.0.2"
 failure = "0.1.8"
 log = "0.4.11"
