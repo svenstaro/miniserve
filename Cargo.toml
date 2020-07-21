@@ -23,7 +23,7 @@ panic = 'abort'
 [dependencies]
 yansi = "0.5"
 actix = "0.7"
-actix-web = "0.7"
+actix-web = "2.0"
 simplelog = "0.8"
 base64 = "0.12"
 percent-encoding = "2.1"
