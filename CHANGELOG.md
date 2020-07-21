@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+
+## [0.8.0] - 2020-07-22
 - Accept port 0 to find a random free port and use that [#327](https://github.com/svenstaro/miniserve/pull/327) (thanks @parrotmac)
 - Show QR code in interface [#330](https://github.com/svenstaro/miniserve/pull/330) (thanks @wyhaya)
 - Ported to actix-web 2 and futures 0.3 [#343](https://github.com/svenstaro/miniserve/pull/343) (thanks @equal-l2)
@@ -27,7 +29,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Some theme related bug fixes (thanks @boastful-squirrel)
 
 <!-- next-url -->
-[Unreleased]: https://github.com/svenstaro/miniserve/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/svenstaro/miniserve/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/svenstaro/miniserve/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/svenstaro/miniserve/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/svenstaro/miniserve/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/svenstaro/miniserve/compare/v0.4.0...v0.5.0

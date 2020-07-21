@@ -1304,7 +1304,7 @@ dependencies = [
 
 [[package]]
 name = "miniserve"
-version = "0.7.0"
+version = "0.8.0"
 dependencies = [
  "actix-files 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "actix-multipart 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
