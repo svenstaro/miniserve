@@ -49,7 +49,7 @@ jobs:
         uses: svenstaro/upx-action@v2
         with:
           file: ${{ matrix.artifact_name }}
-          args: --better --lzma
+          args: --lzma
 
       - name: Get tag name
         id: tag_name
