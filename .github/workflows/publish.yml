@@ -1,13 +1,10 @@
-name: Publish
+name: Test Cross Compilation
 
-on:
-  push:
-    tags:
-      - 'v*'
+on: [push, pull_request]
 
 jobs:
   publish:
-    name: Publish for ${{ matrix.os }}
+    name: Test on ${{ matrix.os }} for ${{ matrix.target }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -17,14 +14,32 @@ jobs:
             artifact_name: target/x86_64-unknown-linux-musl/release/miniserve
             release_name: linux-x86_64
             target: x86_64-unknown-linux-musl
+            cross: true
+          - os: ubuntu-latest
+            artifact_name: target/aarch64-unknown-linux-musl/release/miniserve
+            release_name: linux-aarch64
+            target: aarch64-unknown-linux-musl
+            cross: true
+          - os: ubuntu-latest
+            artifact_name: target/armv7-unknown-linux-musleabihf/release/miniserve
+            release_name: linux-armv7
+            target: armv7-unknown-linux-musleabihf
+            cross: true
+          - os: ubuntu-latest
+            artifact_name: target/arm-unknown-linux-musleabihf/release/miniserve
+            release_name: linux-arm
+            target: arm-unknown-linux-musleabihf
+            cross: true
           - os: windows-latest
             artifact_name: target/x86_64-pc-windows-msvc/release/miniserve.exe
             release_name: windows-x86_64.exe
             target: x86_64-pc-windows-msvc
+            cross: false
           - os: macos-latest
             artifact_name: target/x86_64-apple-darwin/release/miniserve
             release_name: macos-x86_64
             target: x86_64-apple-darwin
+            cross: false
 
     steps:
       - name: Checkout code
@@ -36,14 +51,19 @@ jobs:
           toolchain: nightly
           target: ${{ matrix.target }}
 
-      - run: sudo apt install musl-tools
-        if: matrix.os == 'ubuntu-latest'
-
       - name: cargo build
         uses: actions-rs/cargo@v1
         with:
           command: build
           args: --release --locked --target=${{ matrix.target }}
+          use-cross: ${{ matrix.cross }}
+
+      - name: cargo test
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --release --locked --target=${{ matrix.target }}
+          use-cross: ${{ matrix.cross }}
 
       - name: Compress binaries
         uses: svenstaro/upx-action@v2
@@ -51,24 +71,24 @@ jobs:
           file: ${{ matrix.artifact_name }}
           args: --lzma
 
-      - name: Get tag name
-        id: tag_name
-        run: |
-          echo ::set-output name=current_version::${GITHUB_REF#refs/tags/v}
-        shell: bash
-
-      - name: Get CHANGELOG.md entry
-        id: changelog_reader
-        uses: mindsers/changelog-reader-action@v1
-        with:
-          version: ${{ steps.tag.outputs.current_version }}
-          path: ./CHANGELOG.md
-
-      - name: Release
-        uses: svenstaro/upload-release-action@v2
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: ${{ matrix.artifact_name }}
-          tag: ${{ github.ref }}
-          asset_name: miniserve-$tag-${{ matrix.release_name }}
-          body: ${{ steps.changelog_reader.outputs.log_entry }}
+      # - name: Get tag name
+      #   id: tag_name
+      #   run: |
+      #     echo ::set-output name=current_version::${GITHUB_REF#refs/tags/v}
+      #   shell: bash
+      #
+      # - name: Get CHANGELOG.md entry
+      #   id: changelog_reader
+      #   uses: mindsers/changelog-reader-action@v1
+      #   with:
+      #     version: ${{ steps.tag.outputs.current_version }}
+      #     path: ./CHANGELOG.md
+      #
+      # - name: Release
+      #   uses: svenstaro/upload-release-action@v2
+      #   with:
+      #     repo_token: ${{ secrets.GITHUB_TOKEN }}
+      #     file: ${{ matrix.artifact_name }}
+      #     tag: ${{ github.ref }}
+      #     asset_name: miniserve-$tag-${{ matrix.release_name }}
+      #     body: ${{ steps.changelog_reader.outputs.log_entry }}
