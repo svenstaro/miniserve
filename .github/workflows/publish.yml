@@ -65,13 +65,6 @@ jobs:
           args: --release --locked --target=${{ matrix.target }}
           use-cross: ${{ matrix.cross }}
 
-      - name: cargo test
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --release --locked --target=${{ matrix.target }}
-          use-cross: ${{ matrix.cross }}
-
       - name: Compress binaries
         uses: svenstaro/upx-action@v2
         with:
