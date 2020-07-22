@@ -50,6 +50,7 @@ jobs:
         with:
           toolchain: nightly
           target: ${{ matrix.target }}
+          override: true
 
       - name: cargo build
         uses: actions-rs/cargo@v1
