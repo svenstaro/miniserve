@@ -70,6 +70,7 @@ jobs:
         with:
           file: ${{ matrix.artifact_name }}
           args: --lzma
+          strip: false
 
       # - name: Get tag name
       #   id: tag_name
