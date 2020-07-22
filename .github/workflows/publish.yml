@@ -9,6 +9,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
+        target: []
         include:
           - os: ubuntu-latest
             artifact_name: target/x86_64-unknown-linux-musl/release/miniserve
