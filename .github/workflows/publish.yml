@@ -7,24 +7,54 @@ on:
 
 jobs:
   publish:
-    name: Publish for ${{ matrix.os }}
+    name: Test on ${{ matrix.os }} for ${{ matrix.target }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        target:
+          - x86_64-unknown-linux-musl
+          - aarch64-unknown-linux-musl
+          - armv7-unknown-linux-musleabihf
+          - arm-unknown-linux-musleabihf
+          - x86_64-pc-windows-msvc
+          - x86_64-apple-darwin
         include:
           - os: ubuntu-latest
+            target: x86_64-unknown-linux-musl
             artifact_name: target/x86_64-unknown-linux-musl/release/miniserve
             release_name: linux-x86_64
-            target: x86_64-unknown-linux-musl
+            cross: true
+            strip: true
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-musl
+            artifact_name: target/aarch64-unknown-linux-musl/release/miniserve
+            release_name: linux-aarch64
+            cross: true
+            strip: false
+          - os: ubuntu-latest
+            target: armv7-unknown-linux-musleabihf
+            artifact_name: target/armv7-unknown-linux-musleabihf/release/miniserve
+            release_name: linux-armv7
+            cross: true
+            strip: false
+          - os: ubuntu-latest
+            target: arm-unknown-linux-musleabihf
+            artifact_name: target/arm-unknown-linux-musleabihf/release/miniserve
+            release_name: linux-arm
+            cross: true
+            strip: false
           - os: windows-latest
+            target: x86_64-pc-windows-msvc
             artifact_name: target/x86_64-pc-windows-msvc/release/miniserve.exe
             release_name: windows-x86_64.exe
-            target: x86_64-pc-windows-msvc
+            cross: false
+            strip: true
           - os: macos-latest
+            target: x86_64-apple-darwin
             artifact_name: target/x86_64-apple-darwin/release/miniserve
             release_name: macos-x86_64
-            target: x86_64-apple-darwin
+            cross: false
+            strip: true
 
     steps:
       - name: Checkout code
@@ -33,23 +63,23 @@ jobs:
       - name: Setup Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly
+          toolchain: nightly-2020-07-20
           target: ${{ matrix.target }}
-
-      - run: sudo apt install musl-tools
-        if: matrix.os == 'ubuntu-latest'
+          override: true
 
       - name: cargo build
         uses: actions-rs/cargo@v1
         with:
           command: build
           args: --release --locked --target=${{ matrix.target }}
+          use-cross: ${{ matrix.cross }}
 
       - name: Compress binaries
         uses: svenstaro/upx-action@v2
         with:
           file: ${{ matrix.artifact_name }}
           args: --lzma
+          strip: ${{ matrix.strip }}
 
       - name: Get tag name
         id: tag_name
