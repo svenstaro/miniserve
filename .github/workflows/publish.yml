@@ -91,7 +91,7 @@ jobs:
         id: changelog_reader
         uses: mindsers/changelog-reader-action@v1
         with:
-          version: ${{ steps.tag.outputs.current_version }}
+          version: ${{ steps.tag_name.outputs.current_version }}
           path: ./CHANGELOG.md
 
       - name: Release
