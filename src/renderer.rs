@@ -76,9 +76,9 @@ pub fn page(
                     }
                     table {
                         thead {
-                            th { (build_link("name", "Name", sort_method, sort_order, color_scheme, default_color_scheme)) }
-                            th { (build_link("size", "Size", sort_method, sort_order, color_scheme, default_color_scheme)) }
-                            th { (build_link("date", "Last modification", sort_method, sort_order, color_scheme, default_color_scheme)) }
+                            th.name { (build_link("name", "Name", sort_method, sort_order, color_scheme, default_color_scheme)) }
+                            th.size { (build_link("size", "Size", sort_method, sort_order, color_scheme, default_color_scheme)) }
+                            th.date { (build_link("date", "Last modification", sort_method, sort_order, color_scheme, default_color_scheme)) }
                         }
                         tbody {
                             @if !is_root {
@@ -353,7 +353,7 @@ fn entry_row(
                     }
                 }
             }
-            td {
+            td.size-cell {
                 @if let Some(size) = entry.size {
                     (size)
                 }
@@ -534,11 +534,16 @@ fn css(color_scheme: ColorScheme) -> Markup {
         color: {table_text_color};
         text-align: left;
         line-height: 1.125rem;
-        width: 33.333%;
     }}
     table thead tr th {{
         padding: 0.5rem 0.625rem 0.625rem;
         font-weight: bold;
+    }}
+    table thead th.size {{
+        width: 6em;
+    }}
+    table thead th.date {{
+        width: 15em;
     }}
     table tbody tr:nth-child(odd) {{
         background: {odd_row_background};
@@ -552,9 +557,11 @@ fn css(color_scheme: ColorScheme) -> Markup {
     table tbody tr:hover {{
         background: {active_row_color};
     }}
+    td.size-cell {{
+        text-align: right;
+    }}
     td.date-cell {{
         display: flex;
-        width: calc(100% - 1.25rem);
         justify-content: space-between;
     }}
     .at {{
