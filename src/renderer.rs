@@ -22,13 +22,14 @@ pub fn page(
     show_qrcode: bool,
     file_upload: bool,
     upload_route: &str,
-    current_dir: &str,
+    encoded_dir: &str,
+    display_dir: &str,
     tar_enabled: bool,
     zip_enabled: bool,
 ) -> Markup {
     let upload_action = build_upload_action(
         upload_route,
-        current_dir,
+        encoded_dir,
         sort_method,
         sort_order,
         color_scheme,
@@ -38,7 +39,7 @@ pub fn page(
     html! {
         (DOCTYPE)
         html {
-            (page_header(serve_path, color_scheme, file_upload, false))
+            (page_header(display_dir, color_scheme, file_upload, false))
             body#drop-container {
                 @if file_upload {
                     div.drag-form {
@@ -50,7 +51,7 @@ pub fn page(
                 (color_scheme_selector(sort_method, sort_order, color_scheme, default_color_scheme, serve_path, show_qrcode))
                 div.container {
                     span#top { }
-                    h1.title { "Index of " (serve_path) }
+                    h1.title { "Index of " (display_dir) }
                     div.toolbar {
                         @if tar_enabled || zip_enabled {
                             div.download {
@@ -107,13 +108,13 @@ pub fn page(
 /// Build the action of the upload form
 fn build_upload_action(
     upload_route: &str,
-    current_dir: &str,
+    encoded_dir: &str,
     sort_method: Option<SortingMethod>,
     sort_order: Option<SortingOrder>,
     color_scheme: ColorScheme,
     default_color_scheme: ColorScheme,
 ) -> String {
-    let mut upload_action = format!("{}?path={}", upload_route, current_dir);
+    let mut upload_action = format!("{}?path={}", upload_route, encoded_dir);
     if let Some(sorting_method) = sort_method {
         upload_action = format!("{}&sort={}", upload_action, &sorting_method);
     }

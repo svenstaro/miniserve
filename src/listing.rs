@@ -5,7 +5,7 @@ use actix_web::web::Query;
 use actix_web::{HttpRequest, HttpResponse, Result};
 use bytesize::ByteSize;
 use htmlescape::encode_minimal as escape_html_entity;
-use percent_encoding::{utf8_percent_encode, AsciiSet, CONTROLS};
+use percent_encoding::{utf8_percent_encode, percent_decode_str, AsciiSet, CONTROLS};
 use qrcodegen::{QrCode, QrCodeEcc};
 use serde::Deserialize;
 use std::io;
@@ -165,9 +165,17 @@ pub fn directory_listing(
     let base = Path::new(serve_path);
     let random_route = format!("/{}", random_route.unwrap_or_default());
     let is_root = base.parent().is_none() || Path::new(&req.path()) == Path::new(&random_route);
-    let current_dir = match base.strip_prefix(random_route) {
+    let encoded_dir = match base.strip_prefix(random_route) {
         Ok(c_d) => Path::new("/").join(c_d),
         Err(_) => base.to_path_buf(),
+    }.display().to_string();
+    let display_dir = {
+        let decoded = percent_decode_str(&encoded_dir).decode_utf8_lossy();
+        if is_root {
+            decoded.to_string()
+        } else {
+            format!("{}/", decoded)
+        }
     };
 
     let query_params = extract_query_parameters(req);
@@ -350,7 +358,8 @@ pub fn directory_listing(
                         show_qrcode,
                         file_upload,
                         &upload_route,
-                        &current_dir.display().to_string(),
+                        &encoded_dir,
+                        &display_dir,
                         tar_enabled,
                         zip_enabled,
                     )
