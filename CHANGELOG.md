@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - ReleaseDate
 - Added prebuilt binaries for AARCH64, ARMv7, and ARM [#350](https://github.com/svenstaro/miniserve/pull/350)
+- Remove percent-encoding in heading and title
+  Make name ordering case-insensitive
+  Give name column more space [#362](https://github.com/svenstaro/miniserve/pull/362) (thanks @ahti)
 
 ## [0.8.0] - 2020-07-22
 - Accept port 0 to find a random free port and use that [#327](https://github.com/svenstaro/miniserve/pull/327) (thanks @parrotmac)
