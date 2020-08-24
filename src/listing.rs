@@ -5,7 +5,7 @@ use actix_web::web::Query;
 use actix_web::{HttpRequest, HttpResponse, Result};
 use bytesize::ByteSize;
 use htmlescape::encode_minimal as escape_html_entity;
-use percent_encoding::{utf8_percent_encode, AsciiSet, CONTROLS};
+use percent_encoding::{percent_decode_str, utf8_percent_encode, AsciiSet, CONTROLS};
 use qrcodegen::{QrCode, QrCodeEcc};
 use serde::Deserialize;
 use std::io;
@@ -165,9 +165,21 @@ pub fn directory_listing(
     let base = Path::new(serve_path);
     let random_route = format!("/{}", random_route.unwrap_or_default());
     let is_root = base.parent().is_none() || Path::new(&req.path()) == Path::new(&random_route);
-    let current_dir = match base.strip_prefix(random_route) {
+
+    let encoded_dir = match base.strip_prefix(random_route) {
         Ok(c_d) => Path::new("/").join(c_d),
         Err(_) => base.to_path_buf(),
+    }
+    .display()
+    .to_string();
+
+    let display_dir = {
+        let decoded = percent_decode_str(&encoded_dir).decode_utf8_lossy();
+        if is_root {
+            decoded.to_string()
+        } else {
+            format!("{}/", decoded)
+        }
     };
 
     let query_params = extract_query_parameters(req);
@@ -241,29 +253,25 @@ pub fn directory_listing(
         }
     }
 
-    if let Some(sorting_method) = query_params.sort {
-        match sorting_method {
-            SortingMethod::Name => entries
-                .sort_by(|e1, e2| alphanumeric_sort::compare_str(e1.name.clone(), e2.name.clone())),
-            SortingMethod::Size => entries.sort_by(|e1, e2| {
-                // If we can't get the size of the entry (directory for instance)
-                // let's consider it's 0b
-                e2.size
-                    .unwrap_or_else(|| ByteSize::b(0))
-                    .cmp(&e1.size.unwrap_or_else(|| ByteSize::b(0)))
-            }),
-            SortingMethod::Date => entries.sort_by(|e1, e2| {
-                // If, for some reason, we can't get the last modification date of an entry
-                // let's consider it was modified on UNIX_EPOCH (01/01/19270 00:00:00)
-                e2.last_modification_date
-                    .unwrap_or(SystemTime::UNIX_EPOCH)
-                    .cmp(&e1.last_modification_date.unwrap_or(SystemTime::UNIX_EPOCH))
-            }),
-        };
-    } else {
-        // Sort in alphanumeric order by default
-        entries.sort_by(|e1, e2| alphanumeric_sort::compare_str(e1.name.clone(), e2.name.clone()))
-    }
+    match query_params.sort.unwrap_or(SortingMethod::Name) {
+        SortingMethod::Name => entries.sort_by(|e1, e2| {
+            alphanumeric_sort::compare_str(e1.name.to_lowercase(), e2.name.to_lowercase())
+        }),
+        SortingMethod::Size => entries.sort_by(|e1, e2| {
+            // If we can't get the size of the entry (directory for instance)
+            // let's consider it's 0b
+            e2.size
+                .unwrap_or_else(|| ByteSize::b(0))
+                .cmp(&e1.size.unwrap_or_else(|| ByteSize::b(0)))
+        }),
+        SortingMethod::Date => entries.sort_by(|e1, e2| {
+            // If, for some reason, we can't get the last modification date of an entry
+            // let's consider it was modified on UNIX_EPOCH (01/01/19270 00:00:00)
+            e2.last_modification_date
+                .unwrap_or(SystemTime::UNIX_EPOCH)
+                .cmp(&e1.last_modification_date.unwrap_or(SystemTime::UNIX_EPOCH))
+        }),
+    };
 
     if let Some(sorting_order) = query_params.order {
         if let SortingOrder::Descending = sorting_order {
@@ -350,7 +358,8 @@ pub fn directory_listing(
                         show_qrcode,
                         file_upload,
                         &upload_route,
-                        &current_dir.display().to_string(),
+                        &encoded_dir,
+                        &display_dir,
                         tar_enabled,
                         zip_enabled,
                     )
