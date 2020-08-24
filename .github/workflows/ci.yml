@@ -4,7 +4,7 @@ on: [push, pull_request]
 
 jobs:
   ci:
-    name: CI with ${{ matrix.rust }} on ${{ matrix.os }}
+    name: ${{ matrix.rust }} on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
