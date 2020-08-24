@@ -4,7 +4,6 @@ use actix_web::http::StatusCode;
 use actix_web::web::Query;
 use actix_web::{HttpRequest, HttpResponse, Result};
 use bytesize::ByteSize;
-use htmlescape::encode_minimal as escape_html_entity;
 use percent_encoding::{percent_decode_str, utf8_percent_encode, AsciiSet, CONTROLS};
 use qrcodegen::{QrCode, QrCodeEcc};
 use serde::Deserialize;
@@ -209,8 +208,7 @@ pub fn directory_listing(
             };
             // show file url as relative to static path
             let file_url = utf8_percent_encode(&p.to_string_lossy(), FRAGMENT).to_string();
-            // " -- &quot;  & -- &amp;  ' -- &#x27;  < -- &lt;  > -- &gt;
-            let file_name = escape_html_entity(&entry.file_name().to_string_lossy());
+            let file_name = entry.file_name().to_string_lossy().to_string();
 
             // if file is a directory, add '/' to the end of the name
             if let Ok(metadata) = entry.metadata() {
@@ -309,7 +307,7 @@ pub fn directory_listing(
             path = &dir.path.display().to_string()
         );
 
-        let filename = format!(
+        let file_name = format!(
             "{}.{}",
             dir.path.file_name().unwrap().to_str().unwrap(),
             compression_method.extension()
@@ -337,7 +335,7 @@ pub fn directory_listing(
                 .header("Content-Transfer-Encoding", "binary")
                 .header(
                     "Content-Disposition",
-                    format!("attachment; filename={:?}", filename),
+                    format!("attachment; filename={:?}", file_name),
                 )
                 .body(actix_web::body::BodyStream::new(rx)),
         ))

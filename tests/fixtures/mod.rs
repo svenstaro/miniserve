@@ -8,7 +8,7 @@ pub type Error = Box<dyn std::error::Error>;
 
 /// File names for testing purpose
 #[allow(dead_code)]
-pub static FILES: &[&str] = &["test.txt", "test.html", "test.mkv"];
+pub static FILES: &[&str] = &["test.txt", "test.html", "test.mkv", "test \" \' & < >.csv"];
 
 /// Directory names for testing purpose
 #[allow(dead_code)]

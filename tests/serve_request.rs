@@ -45,9 +45,16 @@ fn serves_requests_with_non_default_port(tmpdir: TempDir, port: u16) -> Result<(
     let body = reqwest::blocking::get(format!("http://localhost:{}", port).as_str())?
         .error_for_status()?;
     let parsed = Document::from_read(body)?;
+
     for &file in FILES {
-        assert!(parsed.find(|x: &Node| x.text() == file).next().is_some());
+        let f = parsed.find(|x: &Node| x.text() == file).next().unwrap();
+        dbg!(f.attr("href"));
+        assert_eq!(
+            format!("/{}", file),
+            percent_encoding::percent_decode_str(f.attr("href").unwrap()).decode_utf8_lossy(),
+        );
     }
+
     for &directory in DIRECTORIES {
         assert!(parsed
             .find(|x: &Node| x.text() == directory)

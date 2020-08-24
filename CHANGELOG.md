@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Remove percent-encoding in heading and title [#362](https://github.com/svenstaro/miniserve/pull/362) (thanks @ahti)
 - Make name ordering case-insensitive [#362](https://github.com/svenstaro/miniserve/pull/362) (thanks @ahti)
 - Give name column more space [#362](https://github.com/svenstaro/miniserve/pull/362) (thanks @ahti)
+- Fix double-escaping [#354](https://github.com/svenstaro/miniserve/issues/354)
 
 ## [0.8.0] - 2020-07-22
 - Accept port 0 to find a random free port and use that [#327](https://github.com/svenstaro/miniserve/pull/327) (thanks @parrotmac)
