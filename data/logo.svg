@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   sodipodi:docname="logo.svg"
+   inkscape:version="1.0 (4035a4fb49, 2020-05-01)"
+   id="svg8"
+   version="1.1"
+   viewBox="0 0 44.979167 39.687503"
+   height="150"
+   width="170">
+  <defs
+     id="defs2" />
+  <sodipodi:namedview
+     inkscape:window-maximized="0"
+     inkscape:window-y="28"
+     inkscape:window-x="0"
+     inkscape:window-height="2070"
+     inkscape:window-width="3832"
+     units="px"
+     showgrid="false"
+     inkscape:document-rotation="0"
+     inkscape:current-layer="layer1"
+     inkscape:document-units="px"
+     inkscape:cy="97.686183"
+     inkscape:cx="-19.020456"
+     inkscape:zoom="5.203904"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0.0"
+     borderopacity="1.0"
+     bordercolor="#666666"
+     pagecolor="#ffffff"
+     id="base">
+    <inkscape:grid
+       id="grid20"
+       type="xygrid" />
+  </sodipodi:namedview>
+  <metadata
+     id="metadata5">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     id="layer1"
+     inkscape:groupmode="layer"
+     inkscape:label="Layer 1">
+    <text
+       id="text12"
+       y="151.26358"
+       x="78.277985"
+       style="font-style:normal;font-weight:normal;font-size:10.5833px;line-height:1.25;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583"
+       xml:space="preserve"><tspan
+         style="stroke-width:0.264583"
+         y="151.26358"
+         x="78.277985"
+         id="tspan10"
+         sodipodi:role="line" /></text>
+    <g
+       transform="translate(-3.9292675,-0.38217061)"
+       id="g1023">
+      <text
+         xml:space="preserve"
+         style="font-style:normal;font-weight:normal;font-size:50.8987px;line-height:1.25;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.265098"
+         x="3.2595673"
+         y="27.561277"
+         id="text16"
+         transform="scale(1.0019446,0.99805917)"><tspan
+           sodipodi:role="line"
+           id="tspan14"
+           x="3.2595673"
+           y="27.561277"
+           style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:50.8987px;font-family:Cantarell;-inkscape-font-specification:'Cantarell Bold';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;stroke-width:0.265098">m</tspan></text>
+      <rect
+         style="fill:#030102;fill-opacity:1;stroke-width:0.373978"
+         y="29.763586"
+         x="6.9882221"
+         height="8.275629"
+         width="38.905598"
+         id="rect18-4" />
+      <rect
+         style="fill:#ffffff;fill-opacity:1;stroke-width:0.0922703"
+         y="30.939707"
+         x="23.644739"
+         height="6.0316482"
+         width="3.2494526"
+         id="rect18-4-2-4-0-0" />
+      <rect
+         id="rect18-4-2-4-0-0-0"
+         width="3.2494524"
+         height="6.0316482"
+         x="18.613972"
+         y="30.939707"
+         style="fill:#ffffff;fill-opacity:1;stroke-width:0.0922703" />
+      <rect
+         id="rect18-4-2-4-0-0-03"
+         width="3.2494524"
+         height="6.0316482"
+         x="13.583202"
+         y="30.939707"
+         style="fill:#ffffff;fill-opacity:1;stroke-width:0.0922703" />
+      <rect
+         id="rect18-4-2-4-0-0-4"
+         width="3.2494524"
+         height="6.0316482"
+         x="8.5524349"
+         y="30.939707"
+         style="fill:#ffffff;fill-opacity:1;stroke-width:0.0922703" />
+    </g>
+  </g>
+</svg>
