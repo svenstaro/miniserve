@@ -256,9 +256,9 @@ where
                 f.read_to_end(&mut buffer).map_err(|e| {
                     ContextualError::IOError("Could not read from file".to_string(), e)
                 })?;
-                let relative_path = zip_directory.join(current_entry_name);
+                let relative_path = zip_directory.join(current_entry_name).into_os_string();
                 zip_writer
-                    .start_file_from_path(Path::new(&relative_path), options)
+                    .start_file(relative_path.to_string_lossy(), options)
                     .map_err(|_| {
                         ContextualError::CustomError("Could not add file path to ZIP".to_string())
                     })?;
@@ -267,9 +267,9 @@ where
                 })?;
                 buffer.clear();
             } else if entry_metadata.is_dir() {
-                let relative_path = zip_directory.join(current_entry_name);
+                let relative_path = zip_directory.join(current_entry_name).into_os_string();
                 zip_writer
-                    .add_directory_from_path(Path::new(&relative_path), options)
+                    .add_directory(relative_path.to_string_lossy(), options)
                     .map_err(|_| {
                         ContextualError::CustomError(
                             "Could not add directory path to ZIP".to_string(),
