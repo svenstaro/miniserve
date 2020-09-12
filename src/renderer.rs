@@ -913,7 +913,13 @@ fn humanize_systemtime(src_time: Option<SystemTime>) -> Option<String> {
     src_time
         .and_then(|std_time| SystemTime::now().duration_since(std_time).ok())
         .and_then(|from_now| Duration::from_std(from_now).ok())
-        .map(|duration| HumanTime::from(duration).to_text_en(Accuracy::Rough, Tense::Past))
+        .map(|duration| {
+            if duration < Duration::seconds(11) {
+                format!("now")
+            } else {
+                HumanTime::from(duration).to_text_en(Accuracy::Rough, Tense::Past)
+            }
+        })
 }
 
 /// Renders an error on the webpage
