@@ -915,7 +915,7 @@ fn humanize_systemtime(src_time: Option<SystemTime>) -> Option<String> {
         .and_then(|from_now| Duration::from_std(from_now).ok())
         .map(|duration| {
             if duration < Duration::seconds(11) {
-                format!("now")
+                "now".to_string()
             } else {
                 HumanTime::from(duration).to_text_en(Accuracy::Rough, Tense::Past)
             }
