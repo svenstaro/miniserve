@@ -913,7 +913,7 @@ fn humanize_systemtime(src_time: Option<SystemTime>) -> Option<String> {
     src_time
         .and_then(|std_time| SystemTime::now().duration_since(std_time).ok())
         .and_then(|from_now| Duration::from_std(from_now).ok())
-        .map(|duration| { format!("{}", HumanTime::from(-duration))})
+        .map(|duration| format!("{}", HumanTime::from(-duration)))
 }
 
 /// Renders an error on the webpage
