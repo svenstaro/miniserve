@@ -1,6 +1,6 @@
 use actix_web::http::StatusCode;
 use chrono::{DateTime, Duration, Utc};
-use chrono_humanize::{Accuracy, HumanTime, Tense};
+use chrono_humanize::{HumanTime};
 use maud::{html, Markup, PreEscaped, DOCTYPE};
 use std::time::SystemTime;
 use strum::IntoEnumIterator;
@@ -913,13 +913,7 @@ fn humanize_systemtime(src_time: Option<SystemTime>) -> Option<String> {
     src_time
         .and_then(|std_time| SystemTime::now().duration_since(std_time).ok())
         .and_then(|from_now| Duration::from_std(from_now).ok())
-        .map(|duration| {
-            if duration < Duration::seconds(11) {
-                "now".to_string()
-            } else {
-                HumanTime::from(duration).to_text_en(Accuracy::Rough, Tense::Past)
-            }
-        })
+        .map(|duration| { format!("{}", HumanTime::from(-duration))})
 }
 
 /// Renders an error on the webpage
