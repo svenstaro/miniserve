@@ -1,6 +1,6 @@
 use actix_web::http::StatusCode;
 use chrono::{DateTime, Duration, Utc};
-use chrono_humanize::{HumanTime};
+use chrono_humanize::HumanTime;
 use maud::{html, Markup, PreEscaped, DOCTYPE};
 use std::time::SystemTime;
 use strum::IntoEnumIterator;
