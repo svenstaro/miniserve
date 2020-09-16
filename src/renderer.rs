@@ -1,6 +1,6 @@
 use actix_web::http::StatusCode;
-use chrono::{DateTime, Duration, Utc};
-use chrono_humanize::{Accuracy, HumanTime, Tense};
+use chrono::{DateTime, Utc};
+use chrono_humanize::Humanize;
 use maud::{html, Markup, PreEscaped, DOCTYPE};
 use std::time::SystemTime;
 use strum::IntoEnumIterator;
@@ -907,13 +907,9 @@ fn convert_to_utc(src_time: Option<SystemTime>) -> Option<(String, String)> {
 }
 
 /// Converts a SystemTime to a string readable by a human,
-/// i.e. calculates the duration between now() and the given SystemTime,
 /// and gives a rough approximation of the elapsed time since
-fn humanize_systemtime(src_time: Option<SystemTime>) -> Option<String> {
-    src_time
-        .and_then(|std_time| SystemTime::now().duration_since(std_time).ok())
-        .and_then(|from_now| Duration::from_std(from_now).ok())
-        .map(|duration| HumanTime::from(duration).to_text_en(Accuracy::Rough, Tense::Past))
+fn humanize_systemtime(time: Option<SystemTime>) -> Option<String> {
+    time.map(|time| time.humanize())
 }
 
 /// Renders an error on the webpage
