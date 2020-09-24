@@ -99,6 +99,10 @@ struct CLIArgs {
     /// because zip generation is done in memory and cannot be sent on the fly
     #[structopt(short = "z", long = "enable-zip")]
     enable_zip: bool,
+
+    /// Shown instead of host in page title and heading
+    #[structopt(short = "t", long = "title")]
+    title: Option<String>,
 }
 
 /// Checks wether an interface is valid, i.e. it can be parsed into an IP address
@@ -201,6 +205,7 @@ pub fn parse_args() -> crate::MiniserveConfig {
         file_upload: args.file_upload,
         tar_enabled: args.enable_tar,
         zip_enabled: args.enable_zip,
+        title: args.title,
     }
 }
 
