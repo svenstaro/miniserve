@@ -107,7 +107,7 @@ where
 ///
 /// For example, consider this directory structure:
 ///
-/// ```
+/// ```ignore
 /// a
 /// └── b
 ///     └── c
@@ -118,7 +118,7 @@ where
 ///
 /// Making a tarball out of `"a/b/c"` will result in this archive content:
 ///
-/// ```
+/// ```ignore
 /// c
 /// ├── e
 /// ├── f
@@ -185,7 +185,7 @@ where
 ///
 /// For example, consider this directory structure:
 ///
-/// ```
+/// ```ignore
 /// a
 /// └── b
 ///     └── c
@@ -196,7 +196,7 @@ where
 ///
 /// Making a zip out of `"a/b/c"` will result in this archive content:
 ///
-/// ```
+/// ```ignore
 /// c
 /// ├── e
 /// ├── f
