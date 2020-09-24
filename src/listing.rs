@@ -196,7 +196,7 @@ pub fn directory_listing(
 
         let mut res: Vec<Breadcrumb> = Vec::new();
         let mut link_accumulator =
-            "/".to_string() + &(random_route.map(|r| r + "/").unwrap_or_default());
+            format!("/{}", random_route.map(|r| r + "/").unwrap_or_default());
 
         let mut components = Path::new(&*decoded).components().peekable();
 
