@@ -266,7 +266,7 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
     let full_route = format!("/{}", random_route);
 
     let upload_route;
-    let s = {
+    let serve_path = {
         let path = &conf.path;
         let no_symlinks = conf.no_symlinks;
         let random_route = conf.random_route.clone();
@@ -310,7 +310,7 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
         }
     };
 
-    if let Some(s) = s {
+    if let Some(serve_path) = serve_path {
         if conf.file_upload {
             let default_color_scheme = conf.default_color_scheme;
             // Allow file upload
@@ -320,10 +320,10 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
                 })),
             )
             // Handle directories
-            .service(s);
+            .service(serve_path);
         } else {
             // Handle directories
-            app.service(s);
+            app.service(serve_path);
         }
     } else {
         // Handle single files
