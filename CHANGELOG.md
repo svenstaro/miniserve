@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - ReleaseDate
 - Add embedded favicon [#364](https://github.com/svenstaro/miniserve/issues/364)
+- Add `--title` option which can be used to set the page title [#378](https://github.com/svenstaro/miniserve/pull/378) (thanks @ahti)
+- Default title is now the same host received in the request [#378](https://github.com/svenstaro/miniserve/pull/378) (thanks @ahti)
 
 ## [0.9.0] - 2020-09-16
 - Added prebuilt binaries for AARCH64, ARMv7, and ARM [#350](https://github.com/svenstaro/miniserve/pull/350)
