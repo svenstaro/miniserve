@@ -245,7 +245,10 @@ async fn run() -> Result<(), ContextualError> {
                 HttpAuthentication::basic(auth::handle_auth),
             ))
             .wrap(middleware::Logger::default())
-            .route(&format!("/{}", inside_config.favicon_route), web::get().to(favicon))
+            .route(
+                &format!("/{}", inside_config.favicon_route),
+                web::get().to(favicon),
+            )
             .configure(|c| configure_app(c, &inside_config))
             .default_service(web::get().to(error_404))
     })
@@ -326,7 +329,13 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
             // Allow file upload
             app.service(
                 web::resource(&upload_route).route(web::post().to(move |req, payload| {
-                    file_upload::upload_file(req, payload, default_color_scheme, uses_random_route, favicon_route.clone())
+                    file_upload::upload_file(
+                        req,
+                        payload,
+                        default_color_scheme,
+                        uses_random_route,
+                        favicon_route.clone(),
+                    )
                 })),
             )
             // Handle directories
