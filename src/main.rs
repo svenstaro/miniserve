@@ -79,6 +79,9 @@ pub struct MiniserveConfig {
 
     /// If false, creation of zip archives is disabled
     pub zip_enabled: bool,
+
+    /// Shown instead of host in page title and heading
+    pub title: Option<String>,
 }
 
 fn main() {
@@ -286,6 +289,7 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
         let file_upload = conf.file_upload;
         let tar_enabled = conf.tar_enabled;
         let zip_enabled = conf.zip_enabled;
+        let title = conf.title.clone();
         upload_route = if let Some(random_route) = conf.random_route.clone() {
             format!("/{}/upload", random_route)
         } else {
@@ -315,6 +319,7 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
                             u_r.clone(),
                             tar_enabled,
                             zip_enabled,
+                            title.clone(),
                         )
                     })
                     .default_handler(web::to(error_404)),

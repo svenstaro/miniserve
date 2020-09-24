@@ -120,3 +120,63 @@ fn can_navigate_deep_into_dirs_and_back(tmpdir: TempDir, port: u16) -> Result<()
 
     Ok(())
 }
+
+#[rstest(use_custom_title, case(true), case(false))]
+/// We can use breadcrumbs to navigate.
+fn can_navigate_using_breadcrumbs(
+    tmpdir: TempDir,
+    port: u16,
+    use_custom_title: bool,
+) -> Result<(), Error> {
+    let mut command_base = Command::cargo_bin("miniserve")?;
+    let mut command = command_base.arg("-p").arg(port.to_string());
+
+    if use_custom_title {
+        command = command.arg("--title").arg("some title")
+    }
+
+    let mut child = command.arg(tmpdir.path()).stdout(Stdio::null()).spawn()?;
+
+    sleep(Duration::from_secs(1));
+
+    // Create a vector of directory names. We don't need to fetch the file and so we'll
+    // remove that part.
+    let dir: String = {
+        let mut comps = DEEPLY_NESTED_FILE
+            .split("/")
+            .map(|d| format!("{}/", d))
+            .collect::<Vec<String>>();
+        comps.pop();
+        comps.join("")
+    };
+
+    let base_url = Url::parse(&format!("http://localhost:{}/", port))?;
+    let nested_url = base_url.join(&dir)?;
+
+    let resp = reqwest::blocking::get(nested_url.as_str())?;
+    let body = resp.error_for_status()?;
+    let parsed = Document::from_read(body)?;
+
+    let title_name = if use_custom_title {
+        "some title".to_string()
+    } else {
+        format!("localhost:{}", port)
+    };
+
+    // can go back to root dir by clicking title
+    let title_link = get_link_from_text(&parsed, &title_name).expect("Root dir link not found.");
+    assert_eq!("/", title_link);
+
+    // can go to intermediate dir
+    let intermediate_dir_link =
+        get_link_from_text(&parsed, "very").expect("Intermediate dir link not found.");
+    assert_eq!("/very/", intermediate_dir_link);
+
+    // current dir is not linked
+    let current_dir_link = get_link_from_text(&parsed, "nested");
+    assert_eq!(None, current_dir_link);
+
+    child.kill()?;
+
+    Ok(())
+}

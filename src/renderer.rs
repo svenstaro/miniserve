@@ -6,7 +6,7 @@ use std::time::SystemTime;
 use strum::IntoEnumIterator;
 
 use crate::archive::CompressionMethod;
-use crate::listing::{Entry, SortingMethod, SortingOrder};
+use crate::listing::{Breadcrumb, Entry, SortingMethod, SortingOrder};
 use crate::themes::ColorScheme;
 
 /// Renders the file listing
@@ -24,7 +24,7 @@ pub fn page(
     upload_route: &str,
     favicon_route: &str,
     encoded_dir: &str,
-    display_dir: &str,
+    breadcrumbs: Vec<Breadcrumb>,
     tar_enabled: bool,
     zip_enabled: bool,
 ) -> Markup {
@@ -37,10 +37,16 @@ pub fn page(
         default_color_scheme,
     );
 
+    let title_path = breadcrumbs
+        .iter()
+        .map(|el| el.name.clone())
+        .collect::<Vec<_>>()
+        .join("/");
+
     html! {
         (DOCTYPE)
         html {
-            (page_header(display_dir, color_scheme, file_upload, favicon_route, false))
+            (page_header(&title_path, color_scheme, file_upload, favicon_route))
             body#drop-container {
                 @if file_upload {
                     div.drag-form {
@@ -52,7 +58,19 @@ pub fn page(
                 (color_scheme_selector(sort_method, sort_order, color_scheme, default_color_scheme, serve_path, show_qrcode))
                 div.container {
                     span#top { }
-                    h1.title { "Index of " (display_dir) }
+                    h1.title {
+                        @for el in breadcrumbs {
+                            @if el.link == "." {
+                                // wrapped in span so the text doesn't shift slightly when it turns into a link
+                                span { (el.name) }
+                            } @else {
+                                a.directory href=(parametrized_link(&el.link, sort_method, sort_order, color_scheme, default_color_scheme)) {
+                                    (el.name)
+                                }
+                            }
+                            "/"
+                        }
+                    }
                     div.toolbar {
                         @if tar_enabled || zip_enabled {
                             div.download {
@@ -446,7 +464,7 @@ fn css(color_scheme: ColorScheme) -> Markup {
     }}
     nav > div {{
         position: relative;
-        margin-left: 0.5rem;  
+        margin-left: 0.5rem;
     }}
     nav p {{
         padding: 0.5rem 1rem;
@@ -836,11 +854,10 @@ fn chevron_down() -> Markup {
 
 /// Partial: page header
 fn page_header(
-    serve_path: &str,
+    title: &str,
     color_scheme: ColorScheme,
     file_upload: bool,
     favicon_route: &str,
-    is_error: bool,
 ) -> Markup {
     html! {
         head {
@@ -848,11 +865,8 @@ fn page_header(
             meta http-equiv="X-UA-Compatible" content="IE=edge";
             meta name="viewport" content="width=device-width, initial-scale=1";
             link rel="icon" type="image/svg+xml" href={ "/" (favicon_route) };
-            @if is_error {
-                title { (serve_path) }
-            } @else {
-                title { "Index of " (serve_path) }
-            }
+            title { (title) }
+
             style { (css(color_scheme)) }
             @if file_upload {
                 (PreEscaped(r#"
@@ -944,7 +958,7 @@ pub fn render_error(
     html! {
         (DOCTYPE)
         html {
-            (page_header(&error_code.to_string(), color_scheme, false, favicon_route, true))
+            (page_header(&error_code.to_string(), color_scheme, false, favicon_route))
             body {
                 div.error {
                     p { (error_code.to_string()) }

@@ -8,7 +8,7 @@ use percent_encoding::{percent_decode_str, utf8_percent_encode, AsciiSet, CONTRO
 use qrcodegen::{QrCode, QrCodeEcc};
 use serde::Deserialize;
 use std::io;
-use std::path::{Path, PathBuf};
+use std::path::{Component, Path, PathBuf};
 use std::time::SystemTime;
 use strum_macros::{Display, EnumString};
 
@@ -123,6 +123,21 @@ impl Entry {
     }
 }
 
+/// One entry in the path to the listed directory
+pub struct Breadcrumb {
+    /// Name of directory
+    pub name: String,
+
+    /// Link to get to directory, relative to listed directory
+    pub link: String,
+}
+
+impl Breadcrumb {
+    fn new(name: String, link: String) -> Self {
+        Breadcrumb { name, link }
+    }
+}
+
 pub async fn file_handler(req: HttpRequest) -> Result<actix_files::NamedFile> {
     let path = &req.app_data::<crate::MiniserveConfig>().unwrap().path;
     actix_files::NamedFile::open(path).map_err(Into::into)
@@ -143,6 +158,7 @@ pub fn directory_listing(
     upload_route: String,
     tar_enabled: bool,
     zip_enabled: bool,
+    title: Option<String>,
 ) -> Result<ServiceResponse, io::Error> {
     use actix_web::dev::BodyEncoding;
     let serve_path = req.path();
@@ -163,23 +179,52 @@ pub fn directory_listing(
     }
 
     let base = Path::new(serve_path);
-    let random_route = format!("/{}", random_route.unwrap_or_default());
-    let is_root = base.parent().is_none() || Path::new(&req.path()) == Path::new(&random_route);
+    let random_route_abs = format!("/{}", random_route.clone().unwrap_or_default());
+    let is_root = base.parent().is_none() || Path::new(&req.path()) == Path::new(&random_route_abs);
 
-    let encoded_dir = match base.strip_prefix(random_route) {
+    let encoded_dir = match base.strip_prefix(random_route_abs) {
         Ok(c_d) => Path::new("/").join(c_d),
         Err(_) => base.to_path_buf(),
     }
     .display()
     .to_string();
 
-    let display_dir = {
+    let breadcrumbs = {
+        let title = title.unwrap_or_else(|| req.connection_info().host().into());
+
         let decoded = percent_decode_str(&encoded_dir).decode_utf8_lossy();
-        if is_root {
-            decoded.to_string()
-        } else {
-            format!("{}/", decoded)
+
+        let mut res: Vec<Breadcrumb> = Vec::new();
+        let mut link_accumulator =
+            format!("/{}", random_route.map(|r| r + "/").unwrap_or_default());
+
+        let mut components = Path::new(&*decoded).components().peekable();
+
+        while let Some(c) = components.next() {
+            let name;
+
+            match c {
+                Component::RootDir => {
+                    name = title.clone();
+                }
+                Component::Normal(s) => {
+                    name = s.to_string_lossy().to_string();
+                    link_accumulator
+                        .push_str(&(utf8_percent_encode(&name, FRAGMENT).to_string() + "/"));
+                }
+                _ => unreachable!(),
+            };
+
+            res.push(Breadcrumb::new(
+                name,
+                if components.peek().is_some() {
+                    link_accumulator.clone()
+                } else {
+                    ".".to_string()
+                },
+            ));
         }
+        res
     };
 
     let query_params = extract_query_parameters(req);
@@ -360,7 +405,7 @@ pub fn directory_listing(
                         &upload_route,
                         &favicon_route,
                         &encoded_dir,
-                        &display_dir,
+                        breadcrumbs,
                         tar_enabled,
                         zip_enabled,
                     )
