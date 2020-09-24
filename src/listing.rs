@@ -137,6 +137,7 @@ pub fn directory_listing(
     skip_symlinks: bool,
     file_upload: bool,
     random_route: Option<String>,
+    favicon_route: String,
     default_color_scheme: ColorScheme,
     show_qrcode: bool,
     upload_route: String,
@@ -296,6 +297,7 @@ pub fn directory_listing(
                             default_color_scheme,
                             false,
                             false,
+                            &favicon_route,
                         )
                         .into_string(),
                     ),
@@ -356,6 +358,7 @@ pub fn directory_listing(
                         show_qrcode,
                         file_upload,
                         &upload_route,
+                        &favicon_route,
                         &encoded_dir,
                         &display_dir,
                         tar_enabled,

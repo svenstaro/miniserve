@@ -124,6 +124,7 @@ fn build_unauthorized_response(
         state.default_color_scheme,
         false,
         false,
+        &state.favicon_route,
     )
     .into_string()
 }

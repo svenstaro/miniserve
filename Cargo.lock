@@ -1652,6 +1652,7 @@ dependencies = [
  "libflate",
  "log",
  "maud",
+ "mime",
  "nanoid",
  "percent-encoding",
  "port_check",

@@ -45,6 +45,7 @@ actix-files = "0.3.0"
 actix-multipart = "0.3.0"
 actix-rt = "1.1.1"
 actix-web-httpauth = "0.5.0"
+mime = "0.3"
 
 [dev-dependencies]
 assert_cmd = "1.0"

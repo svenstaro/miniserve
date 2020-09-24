@@ -1,7 +1,10 @@
 #![feature(proc_macro_hygiene)]
 
-use actix_web::http::StatusCode;
 use actix_web::web;
+use actix_web::{
+    http::{header::ContentType, StatusCode},
+    Responder,
+};
 use actix_web::{middleware, App, HttpRequest, HttpResponse};
 use actix_web_httpauth::middleware::HttpAuthentication;
 use std::io::{self, Write};
@@ -49,6 +52,9 @@ pub struct MiniserveConfig {
 
     /// Enable random route generation
     pub random_route: Option<String>,
+
+    /// Randomly generated favicon route
+    pub favicon_route: String,
 
     /// Default color scheme
     pub default_color_scheme: themes::ColorScheme,
@@ -239,6 +245,7 @@ async fn run() -> Result<(), ContextualError> {
                 HttpAuthentication::basic(auth::handle_auth),
             ))
             .wrap(middleware::Logger::default())
+            .route(&format!("/{}", inside_config.favicon_route), web::get().to(favicon))
             .configure(|c| configure_app(c, &inside_config))
             .default_service(web::get().to(error_404))
     })
@@ -270,6 +277,7 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
         let path = &conf.path;
         let no_symlinks = conf.no_symlinks;
         let random_route = conf.random_route.clone();
+        let favicon_route = conf.favicon_route.clone();
         let default_color_scheme = conf.default_color_scheme;
         let show_qrcode = conf.show_qrcode;
         let file_upload = conf.file_upload;
@@ -298,6 +306,7 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
                             no_symlinks,
                             file_upload,
                             random_route.clone(),
+                            favicon_route.clone(),
                             default_color_scheme,
                             show_qrcode,
                             u_r.clone(),
@@ -310,13 +319,14 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
         }
     };
 
+    let favicon_route = conf.favicon_route.clone();
     if let Some(serve_path) = serve_path {
         if conf.file_upload {
             let default_color_scheme = conf.default_color_scheme;
             // Allow file upload
             app.service(
                 web::resource(&upload_route).route(web::post().to(move |req, payload| {
-                    file_upload::upload_file(req, payload, default_color_scheme, uses_random_route)
+                    file_upload::upload_file(req, payload, default_color_scheme, uses_random_route, favicon_route.clone())
                 })),
             )
             // Handle directories
@@ -336,6 +346,7 @@ async fn error_404(req: HttpRequest) -> HttpResponse {
     let conf = req.app_data::<MiniserveConfig>().unwrap();
     let default_color_scheme = conf.default_color_scheme;
     let uses_random_route = conf.random_route.is_some();
+    let favicon_route = conf.favicon_route.clone();
     let query_params = listing::extract_query_parameters(&req);
     let color_scheme = query_params.theme.unwrap_or(default_color_scheme);
 
@@ -352,7 +363,15 @@ async fn error_404(req: HttpRequest) -> HttpResponse {
             default_color_scheme,
             false,
             !uses_random_route,
+            &favicon_route,
         )
         .into_string(),
     )
+}
+
+async fn favicon() -> impl Responder {
+    let logo = include_str!("../data/logo.svg");
+    web::HttpResponse::Ok()
+        .set(ContentType(mime::IMAGE_SVG))
+        .message_body(logo.into())
 }

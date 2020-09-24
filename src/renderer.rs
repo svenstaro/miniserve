@@ -22,6 +22,7 @@ pub fn page(
     show_qrcode: bool,
     file_upload: bool,
     upload_route: &str,
+    favicon_route: &str,
     encoded_dir: &str,
     display_dir: &str,
     tar_enabled: bool,
@@ -39,7 +40,7 @@ pub fn page(
     html! {
         (DOCTYPE)
         html {
-            (page_header(display_dir, color_scheme, file_upload, false))
+            (page_header(display_dir, color_scheme, file_upload, favicon_route, false))
             body#drop-container {
                 @if file_upload {
                     div.drag-form {
@@ -838,6 +839,7 @@ fn page_header(
     serve_path: &str,
     color_scheme: ColorScheme,
     file_upload: bool,
+    favicon_route: &str,
     is_error: bool,
 ) -> Markup {
     html! {
@@ -845,6 +847,7 @@ fn page_header(
             meta charset="utf-8";
             meta http-equiv="X-UA-Compatible" content="IE=edge";
             meta name="viewport" content="width=device-width, initial-scale=1";
+            link rel="icon" type="image/svg+xml" href={ "/" (favicon_route) };
             @if is_error {
                 title { (serve_path) }
             } @else {
@@ -924,6 +927,7 @@ pub fn render_error(
     default_color_scheme: ColorScheme,
     has_referer: bool,
     display_back_link: bool,
+    favicon_route: &str,
 ) -> Markup {
     let link = if has_referer {
         return_address.to_string()
@@ -940,7 +944,7 @@ pub fn render_error(
     html! {
         (DOCTYPE)
         html {
-            (page_header(&error_code.to_string(), color_scheme, false, true))
+            (page_header(&error_code.to_string(), color_scheme, false, favicon_route, true))
             body {
                 div.error {
                     p { (error_code.to_string()) }
