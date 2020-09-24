@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="data/logo.svg" alt="miniserve - a CLI tool to serve files and dirs over HTTP"><br>
+</p>
+
 # miniserve - a CLI tool to serve files and dirs over HTTP
 
 [![CI](https://github.com/svenstaro/miniserve/workflows/CI/badge.svg)](https://github.com/svenstaro/miniserve/actions)
