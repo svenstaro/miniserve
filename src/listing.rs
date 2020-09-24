@@ -179,41 +179,52 @@ pub fn directory_listing(
     }
 
     let base = Path::new(serve_path);
-    let random_route = format!("/{}", random_route.unwrap_or_default());
-    let is_root = base.parent().is_none() || Path::new(&req.path()) == Path::new(&random_route);
+    let random_route_abs = format!("/{}", random_route.clone().unwrap_or_default());
+    let is_root = base.parent().is_none() || Path::new(&req.path()) == Path::new(&random_route_abs);
 
-    let encoded_dir = match base.strip_prefix(random_route) {
+    let encoded_dir = match base.strip_prefix(random_route_abs) {
         Ok(c_d) => Path::new("/").join(c_d),
         Err(_) => base.to_path_buf(),
     }
     .display()
     .to_string();
 
-    let connection_info = actix_web::dev::ConnectionInfo::get(req.head(), req.app_config());
-    let title = title.unwrap_or_else(|| connection_info.host().into());
-
     let breadcrumbs = {
+        let title = title.unwrap_or_else(|| req.connection_info().host().into());
+
         let decoded = percent_decode_str(&encoded_dir).decode_utf8_lossy();
-        let components = Path::new(&*decoded).components();
-        components
-            .collect::<Vec<_>>()
-            .iter()
-            .rev()
-            .enumerate()
-            .rev()
-            .map(|(i, c)| {
-                let link = if i == 0 {
-                    ".".into()
-                } else {
-                    (0..i).map(|_| "..").collect::<Vec<_>>().join("/")
-                };
-                match c {
-                    Component::RootDir => Breadcrumb::new(title.clone(), link),
-                    Component::Normal(s) => Breadcrumb::new(s.to_string_lossy().into(), link),
-                    _ => panic!(""),
+
+        let mut res: Vec<Breadcrumb> = Vec::new();
+        let mut link_accumulator =
+            "/".to_string() + &(random_route.map(|r| r + "/").unwrap_or_default());
+
+        let mut components = Path::new(&*decoded).components().peekable();
+
+        while let Some(c) = components.next() {
+            let name;
+
+            match c {
+                Component::RootDir => {
+                    name = title.clone();
                 }
-            })
-            .collect()
+                Component::Normal(s) => {
+                    name = s.to_string_lossy().to_string();
+                    link_accumulator
+                        .push_str(&(utf8_percent_encode(&name, FRAGMENT).to_string() + "/"));
+                }
+                _ => panic!(),
+            };
+
+            res.push(Breadcrumb::new(
+                name,
+                if components.peek().is_some() {
+                    link_accumulator.clone()
+                } else {
+                    ".".to_string()
+                },
+            ));
+        }
+        res
     };
 
     let query_params = extract_query_parameters(req);
