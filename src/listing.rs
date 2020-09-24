@@ -212,7 +212,7 @@ pub fn directory_listing(
                     link_accumulator
                         .push_str(&(utf8_percent_encode(&name, FRAGMENT).to_string() + "/"));
                 }
-                _ => panic!(),
+                _ => unreachable!(),
             };
 
             res.push(Breadcrumb::new(
