@@ -3144,9 +3144,9 @@ checksum = "05e42f7c18b8f902290b009cde6d651262f956c98bc51bca4cd1d511c9cd85c7"
 
 [[package]]
 name = "v_escape"
-version = "0.12.1"
+version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7b2d5ca56f0412d5ad5e642202e5c8fb61b61ad39435a53ed501fbd45380e8d3"
+checksum = "05f4cff00d3dcfad00221a513085d5e1e4869b83257fef86ef50ff682838b525"
 dependencies = [
  "buf-min",
  "v_escape_derive",
@@ -3154,9 +3154,9 @@ dependencies = [
 
 [[package]]
 name = "v_escape_derive"
-version = "0.8.1"
+version = "0.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cae7cffca0b1f9af9b20610f6fdeee9ffcce61417b5ad186a5d482dc904e24cd"
+checksum = "23d6063660a51b72d258a710e72cdfa0962eb03061feba019199e547a9f79814"
 dependencies = [
  "nom",
  "proc-macro2",
@@ -3166,9 +3166,9 @@ dependencies = [
 
 [[package]]
 name = "v_htmlescape"
-version = "0.10.0"
+version = "0.10.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f5fd25529cb2f78527b5ee507bcfb357b26d057b5e480853c26d49a4ead5c629"
+checksum = "dc487b8434a86070f49299ff0be3a5b079c8c4d951ced6e0885ff54228dd5bd7"
 dependencies = [
  "cfg-if",
  "v_escape",
