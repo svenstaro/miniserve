@@ -120,8 +120,6 @@ fn build_unauthorized_response(
         &return_path,
         None,
         None,
-        state.default_color_scheme,
-        state.default_color_scheme,
         false,
         false,
         &state.favicon_route,

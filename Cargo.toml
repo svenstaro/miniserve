@@ -46,6 +46,8 @@ actix-multipart = "0.3.0"
 actix-rt = "1.1.1"
 actix-web-httpauth = "0.5.0"
 mime = "0.3"
+grass = "0.10.3"
+lazy_static = "1.4.0"
 
 [dev-dependencies]
 assert_cmd = "1.0"

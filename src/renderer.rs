@@ -12,13 +12,10 @@ use crate::themes::ColorScheme;
 /// Renders the file listing
 #[allow(clippy::too_many_arguments)]
 pub fn page(
-    serve_path: &str,
     entries: Vec<Entry>,
     is_root: bool,
     sort_method: Option<SortingMethod>,
     sort_order: Option<SortingOrder>,
-    default_color_scheme: ColorScheme,
-    color_scheme: ColorScheme,
     show_qrcode: bool,
     file_upload: bool,
     upload_route: &str,
@@ -28,14 +25,7 @@ pub fn page(
     tar_enabled: bool,
     zip_enabled: bool,
 ) -> Markup {
-    let upload_action = build_upload_action(
-        upload_route,
-        encoded_dir,
-        sort_method,
-        sort_order,
-        color_scheme,
-        default_color_scheme,
-    );
+    let upload_action = build_upload_action(upload_route, encoded_dir, sort_method, sort_order);
 
     let title_path = breadcrumbs
         .iter()
@@ -46,8 +36,25 @@ pub fn page(
     html! {
         (DOCTYPE)
         html {
-            (page_header(&title_path, color_scheme, file_upload, favicon_route))
+            (page_header(&title_path, file_upload, favicon_route))
             body#drop-container {
+                (PreEscaped(r#"
+                    <script>
+                        const body = document.body;
+                        var theme = localStorage.getItem('theme');
+
+                        if (theme != null) {
+                            body.classList.add('theme_' + theme);
+                        }
+
+                        function updateColorScheme(name) {
+                            body.classList.remove.apply(body.classList, Array.from(body.classList).filter(v=>v.startsWith("theme_")));
+                            body.classList.add('theme_' + name);
+                            localStorage.setItem('theme', name);
+                        }
+                    </script>
+                    "#))
+
                 @if file_upload {
                     div.drag-form {
                         div.drag-title {
@@ -55,7 +62,7 @@ pub fn page(
                         }
                     }
                 }
-                (color_scheme_selector(sort_method, sort_order, color_scheme, default_color_scheme, serve_path, show_qrcode))
+                (color_scheme_selector(show_qrcode))
                 div.container {
                     span#top { }
                     h1.title {
@@ -64,7 +71,7 @@ pub fn page(
                                 // wrapped in span so the text doesn't shift slightly when it turns into a link
                                 span { (el.name) }
                             } @else {
-                                a.directory href=(parametrized_link(&el.link, sort_method, sort_order, color_scheme, default_color_scheme)) {
+                                a.directory href=(parametrized_link(&el.link, sort_method, sort_order)) {
                                     (el.name)
                                 }
                             }
@@ -76,7 +83,7 @@ pub fn page(
                             div.download {
                                 @for compression_method in CompressionMethod::iter() {
                                     @if compression_method.is_enabled(tar_enabled, zip_enabled) {
-                                        (archive_button(compression_method, sort_method, sort_order, color_scheme, default_color_scheme))
+                                        (archive_button(compression_method, sort_method, sort_order))
                                     }
                                 }
                             }
@@ -95,23 +102,23 @@ pub fn page(
                     }
                     table {
                         thead {
-                            th.name { (build_link("name", "Name", sort_method, sort_order, color_scheme, default_color_scheme)) }
-                            th.size { (build_link("size", "Size", sort_method, sort_order, color_scheme, default_color_scheme)) }
-                            th.date { (build_link("date", "Last modification", sort_method, sort_order, color_scheme, default_color_scheme)) }
+                            th.name { (build_link("name", "Name", sort_method, sort_order)) }
+                            th.size { (build_link("size", "Size", sort_method, sort_order)) }
+                            th.date { (build_link("date", "Last modification", sort_method, sort_order)) }
                         }
                         tbody {
                             @if !is_root {
                                 tr {
                                     td colspan="3" {
                                         span.root-chevron { (chevron_left()) }
-                                        a.root href=(parametrized_link("../", sort_method, sort_order, color_scheme, default_color_scheme)) {
+                                        a.root href=(parametrized_link("../", sort_method, sort_order)) {
                                             "Parent directory"
                                         }
                                     }
                                 }
                             }
                             @for entry in entries {
-                                (entry_row(entry, sort_method, sort_order, color_scheme, default_color_scheme))
+                                (entry_row(entry, sort_method, sort_order))
                             }
                         }
                     }
@@ -130,8 +137,6 @@ fn build_upload_action(
     encoded_dir: &str,
     sort_method: Option<SortingMethod>,
     sort_order: Option<SortingOrder>,
-    color_scheme: ColorScheme,
-    default_color_scheme: ColorScheme,
 ) -> String {
     let mut upload_action = format!("{}?path={}", upload_route, encoded_dir);
     if let Some(sorting_method) = sort_method {
@@ -140,22 +145,12 @@ fn build_upload_action(
     if let Some(sorting_order) = sort_order {
         upload_action = format!("{}&order={}", upload_action, &sorting_order);
     }
-    if color_scheme != default_color_scheme {
-        upload_action = format!("{}&theme={}", upload_action, color_scheme.to_slug());
-    }
 
     upload_action
 }
 
 /// Partial: color scheme selector
-fn color_scheme_selector(
-    sort_method: Option<SortingMethod>,
-    sort_order: Option<SortingOrder>,
-    active_color_scheme: ColorScheme,
-    default_color_scheme: ColorScheme,
-    serve_path: &str,
-    show_qrcode: bool,
-) -> Markup {
+fn color_scheme_selector(show_qrcode: bool) -> Markup {
     html! {
         nav {
             @if show_qrcode {
@@ -174,14 +169,8 @@ fn color_scheme_selector(
                 }
                 ul.theme {
                     @for color_scheme in ColorScheme::iter() {
-                        @if active_color_scheme == color_scheme {
-                            li.active {
-                                (color_scheme_link(sort_method, sort_order, color_scheme, default_color_scheme, serve_path))
-                            }
-                        } @else {
-                            li {
-                                (color_scheme_link(sort_method, sort_order, color_scheme, default_color_scheme, serve_path))
-                            }
+                        li {
+                            (color_scheme_link(color_scheme))
                         }
                     }
                 }
@@ -190,25 +179,12 @@ fn color_scheme_selector(
     }
 }
 
-/// Partial: color scheme link
-fn color_scheme_link(
-    sort_method: Option<SortingMethod>,
-    sort_order: Option<SortingOrder>,
-    color_scheme: ColorScheme,
-    default_color_scheme: ColorScheme,
-    serve_path: &str,
-) -> Markup {
-    let link = parametrized_link(
-        serve_path,
-        sort_method,
-        sort_order,
-        color_scheme,
-        default_color_scheme,
-    );
+// /// Partial: color scheme link
+fn color_scheme_link(color_scheme: ColorScheme) -> Markup {
     let title = format!("Switch to {} theme", color_scheme);
 
     html! {
-        a href=(link) title=(title) {
+        a href=(format!("javascript:updateColorScheme(\"{}\")", color_scheme.to_slug())) title=(title) {
             (color_scheme)
             " "
             @if color_scheme.is_dark() {
@@ -225,25 +201,16 @@ fn archive_button(
     compress_method: CompressionMethod,
     sort_method: Option<SortingMethod>,
     sort_order: Option<SortingOrder>,
-    color_scheme: ColorScheme,
-    default_color_scheme: ColorScheme,
 ) -> Markup {
-    let link =
-        if sort_method.is_none() && sort_order.is_none() && color_scheme == default_color_scheme {
-            format!("?download={}", compress_method)
-        } else {
-            format!(
-                "{}&download={}",
-                parametrized_link(
-                    "",
-                    sort_method,
-                    sort_order,
-                    color_scheme,
-                    default_color_scheme
-                ),
-                compress_method
-            )
-        };
+    let link = if sort_method.is_none() && sort_order.is_none() {
+        format!("?download={}", compress_method)
+    } else {
+        format!(
+            "{}&download={}",
+            parametrized_link("", sort_method, sort_order,),
+            compress_method
+        )
+    };
 
     let text = format!("Download .{}", compress_method.extension());
 
@@ -268,8 +235,6 @@ fn parametrized_link(
     link: &str,
     sort_method: Option<SortingMethod>,
     sort_order: Option<SortingOrder>,
-    color_scheme: ColorScheme,
-    default_color_scheme: ColorScheme,
 ) -> String {
     if let Some(method) = sort_method {
         if let Some(order) = sort_order {
@@ -280,20 +245,8 @@ fn parametrized_link(
                 order
             );
 
-            if color_scheme != default_color_scheme {
-                return format!("{}&theme={}", parametrized_link, color_scheme.to_slug());
-            }
-
             return parametrized_link;
         }
-    }
-
-    if color_scheme != default_color_scheme {
-        return format!(
-            "{}?theme={}",
-            make_link_with_trailing_slash(&link),
-            color_scheme.to_slug()
-        );
     }
 
     make_link_with_trailing_slash(&link)
@@ -305,8 +258,6 @@ fn build_link(
     title: &str,
     sort_method: Option<SortingMethod>,
     sort_order: Option<SortingOrder>,
-    color_scheme: ColorScheme,
-    default_color_scheme: ColorScheme,
 ) -> Markup {
     let mut link = format!("?sort={}&order=asc", name);
     let mut help = format!("Sort by {} in ascending order", name);
@@ -326,10 +277,6 @@ fn build_link(
         }
     };
 
-    if color_scheme != default_color_scheme {
-        link = format!("{}&theme={}", &link, color_scheme.to_slug());
-    }
-
     html! {
         span class=(class) {
             span.chevron { (chevron) }
@@ -343,15 +290,13 @@ fn entry_row(
     entry: Entry,
     sort_method: Option<SortingMethod>,
     sort_order: Option<SortingOrder>,
-    color_scheme: ColorScheme,
-    default_color_scheme: ColorScheme,
 ) -> Markup {
     html! {
         tr {
             td {
                 p {
                     @if entry.is_dir() {
-                        a.directory href=(parametrized_link(&entry.link, sort_method, sort_order, color_scheme, default_color_scheme)) {
+                        a.directory href=(parametrized_link(&entry.link, sort_method, sort_order)) {
                             (entry.name) "/"
                         }
                     } @else if entry.is_file() {
@@ -366,7 +311,7 @@ fn entry_row(
                             }
                         }
                     } @else if entry.is_symlink() {
-                        a.symlink href=(parametrized_link(&entry.link, sort_method, sort_order, color_scheme, default_color_scheme)) {
+                        a.symlink href=(parametrized_link(&entry.link, sort_method, sort_order)) {
                            (entry.name)  span.symlink-symbol { "⇢" }
                         }
                     }
@@ -395,441 +340,12 @@ fn entry_row(
     }
 }
 
+lazy_static::lazy_static! {
+    static ref CSS_TEXT: String = grass::from_string(include_str!("../data/style.scss").to_string(), &grass::Options::default()).unwrap();
+}
 /// Partial: CSS
-fn css(color_scheme: ColorScheme) -> Markup {
-    let theme = color_scheme.get_theme();
-
-    let css = format!("
-     html {{
-        font-smoothing: antialiased;
-        text-rendering: optimizeLegibility;
-        width: 100%;
-        height: 100%;
-    }}
-    body {{
-        margin: 0;
-        font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto,\"Helvetica Neue\", Helvetica, Arial, sans-serif;
-        font-weight: 300;
-        color: {text_color};
-        background: {background};
-        position: relative;
-        min-height: 100%;
-    }}
-    .container {{
-        padding: 1.5rem 5rem;
-    }}
-    .title {{
-        word-break: break-word;
-    }}
-    a {{
-        text-decoration: none;
-    }}
-    a.root, a.root:visited, .root-chevron {{
-        font-weight: bold;
-        color: {root_link_color};
-    }}
-    a:hover {{
-        text-decoration: underline;
-    }}
-    a.directory, a.directory:visited {{
-        font-weight: bold;
-        color: {directory_link_color};
-    }}
-    a.file, a.file:visited, .error-back, .error-back:visited {{
-        color: {file_link_color};
-    }}
-    a.symlink, a.symlink:visited {{
-        color: {symlink_link_color};
-    }}
-    a.directory:hover {{
-        color: {directory_link_color};
-    }}
-    a.file:hover {{
-        color: {file_link_color};
-    }}
-    a.symlink:hover {{
-        color: {symlink_link_color};
-    }}
-    .symlink-symbol {{
-        display: inline-block;
-        border: 1px solid {symlink_link_color};
-        margin-left: 0.5rem;
-        border-radius: .2rem;
-        padding: 0 0.1rem;
-    }}
-    nav {{
-        padding: 0 5rem;
-        display: flex;
-        justify-content: flex-end;
-    }}
-    nav > div {{
-        position: relative;
-        margin-left: 0.5rem;
-    }}
-    nav p {{
-        padding: 0.5rem 1rem;
-        width: 8rem;
-        text-align: center;
-        background: {switch_theme_background};
-        color: {change_theme_link_color};
-    }}
-    nav p + * {{
-        display: none;
-        position: absolute;
-        left: 0;
-        right: 0;
-        top: 100%;
-        animation: show 0.5s ease;
-    }}
-    @keyframes show {{
-        from {{
-            opacity: 0;
-        }}
-        to {{
-            opacity: 1;
-        }}
-    }}
-    nav > div::hover p {{
-        cursor: pointer;
-        color: {switch_theme_link_color};
-    }}
-    nav > div:hover p + * {{
-        display: block;
-        border-top: 1px solid {switch_theme_border};
-    }}
-    nav .qrcode {{
-        padding: 0.5rem;
-        background: {switch_theme_background};
-    }}
-    nav .qrcode img {{
-        display: block;
-    }}
-    nav .theme {{
-        margin: 0;
-        padding: 0;
-        list-style-type: none;
-    }}
-    nav .theme li {{
-        width: 100%;
-        background: {switch_theme_background};
-    }}
-    nav .theme li a {{
-        display: block;
-        width: 100%;
-        padding: 0.5rem 0;
-        text-align: center;
-        color: {switch_theme_link_color};
-    }}
-    nav .theme li a:visited {{
-        color: {switch_theme_link_color};
-    }}
-    nav .theme li a::hover {{
-        text-decoration: underline;
-        color: {change_theme_link_color_hover};
-    }}
-    nav .theme li.active a {{
-        font-weight: bold;
-        color: {switch_theme_active};
-    }}
-    p {{
-        margin: 0;
-        padding: 0;
-    }}
-    h1 {{
-        margin-top: 0;
-        font-size: 1.5rem;
-    }}
-    table {{
-        margin-top: 2rem;
-        width: 100%;
-        border: 0;
-        table-layout: auto;
-        background: {table_background};
-    }}
-    table thead tr th,
-    table tbody tr td {{
-        padding: 0.5625rem 0.625rem;
-        font-size: 0.875rem;
-        color: {table_text_color};
-        text-align: left;
-        line-height: 1.125rem;
-    }}
-    table thead tr th {{
-        padding: 0.5rem 0.625rem 0.625rem;
-        font-weight: bold;
-    }}
-    table thead th.size {{
-        width: 6em;
-    }}
-    table thead th.date {{
-        width: 15em;
-    }}
-    table tbody tr:nth-child(odd) {{
-        background: {odd_row_background};
-    }}
-    table tbody tr:nth-child(even) {{
-        background: {even_row_background};
-    }}
-    table thead {{
-        background: {table_header_background};
-    }}
-    table tbody tr:hover {{
-        background: {active_row_color};
-    }}
-    td.size-cell {{
-        text-align: right;
-    }}
-    td.date-cell {{
-        display: flex;
-        justify-content: space-between;
-    }}
-    .at {{
-        color: {at_color};
-    }}
-    .history {{
-        color: {date_text_color};
-    }}
-    .file-entry {{
-        display: flex;
-        justify-content: space-between;
-    }}
-    span.size {{
-        border-radius: 1rem;
-        background: {size_background_color};
-        padding: 0 0.25rem;
-        font-size: 0.7rem;
-        color: {size_text_color}
-    }}
-    .mobile-info {{
-        display: none;
-    }}
-    th a, th a:visited, .chevron {{
-        color: {table_header_text_color};
-    }}
-    .chevron, .root-chevron {{
-        margin-right: .5rem;
-        font-size: 1.2em;
-        font-weight: bold;
-    }}
-    th span.active a, th span.active span {{
-        color: {table_header_active_color};
-    }}
-    .back {{
-        position: fixed;
-        width: 3.8rem;
-        height: 3.8rem;
-        align-items: center;
-        justify-content: center;
-        bottom: 3rem;
-        right: 3.75rem;
-        background: {back_button_background};
-        border-radius: 100%;
-        box-shadow: 0 0 8px -4px #888888;
-        color: {back_button_link_color};
-        display: none;
-    }}
-    .back:visited {{
-        color: {back_button_link_color};
-    }}
-    .back:hover {{
-        color: {back_button_link_color_hover};
-        font-weight: bold;
-        text-decoration: none;
-        background: {back_button_background_hover};
-    }}
-    .toolbar {{
-        display: flex;
-        justify-content: space-between;
-        flex-wrap: wrap;
-    }}
-    .download {{
-        margin-top: 1rem;
-        padding: 0.125rem;
-        display: flex;
-        flex-direction: row;
-        align-items: flex-start;
-        flex-wrap: wrap;
-    }}
-    .download a, .download a:visited {{
-        color: {download_button_link_color};
-    }}
-    .download a {{
-        background: {download_button_background};
-        padding: 0.5rem;
-        border-radius: 0.2rem;
-    }}
-    .download a:hover {{
-        background: {download_button_background_hover};
-        color: {download_button_link_color_hover};
-    }}
-    .download a:not(:last-of-type) {{
-        margin-right: 1rem;
-    }}
-    .upload {{
-        margin-top: 1rem;
-        display: flex;
-        justify-content: flex-end;
-    }}
-    .upload p {{
-        font-size: 0.8rem;
-        margin-bottom: 1rem;
-        color: {upload_text_color};
-    }}
-    .upload form {{
-        padding: 1rem;
-        border: 1px solid {upload_form_border_color};
-        background: {upload_form_background};
-    }}
-    .upload button {{
-        background: {upload_button_background};
-        padding: 0.5rem;
-        border-radius: 0.2rem;
-        color: {upload_button_text_color};
-        border: none;
-    }}
-    .upload div {{
-        display: flex;
-        align-items: baseline;
-        justify-content: space-between;
-    }}
-    .drag-form {{
-        display: none;
-        background: {drag_background};
-        position: absolute;
-        border: 0.5rem dashed {drag_border_color};
-        width: calc(100% - 1rem);
-        height: calc(100% - 1rem);
-        text-align: center;
-        z-index: 2;
-    }}
-    .drag-title {{
-        position: fixed;
-        color: {drag_text_color};
-        top: 50%;
-        width: 100%;
-        text-align: center;
-    }}
-    .error {{
-        margin: 2rem;
-    }}
-    .error p {{
-        margin: 1rem 0;
-        font-size: 0.9rem;
-        word-break: break-all;
-    }}
-    .error p:first-of-type {{
-        font-size: 1.25rem;
-        color: {error_color};
-        margin-bottom: 2rem;
-    }}
-    .error p:nth-of-type(2) {{
-        font-weight: bold;
-    }}
-    .error-nav {{
-        margin-top: 4rem;
-    }}
-    @media (max-width: 760px) {{
-        nav {{
-            padding: 0 2.5rem;
-        }}
-        .container {{
-            padding: 1.5rem 2.5rem;
-        }}
-        h1 {{
-            font-size: 1.4em;
-        }}
-        td:not(:nth-child(1)), th:not(:nth-child(1)){{
-            display: none;
-        }}
-        .mobile-info {{
-            display: block;
-        }}
-        table tbody tr td {{
-            padding-top: 0;
-            padding-bottom: 0;
-        }}
-        a.directory {{
-            display: block;
-            padding: 0.5625rem 0;
-        }}
-        .file-entry {{
-            align-items: center;
-        }}
-        a.root, a.file, a.symlink {{
-            display: inline-block;
-            flex: 1;
-            padding: 0.5625rem 0;
-        }}
-        a.symlink {{
-            width: 100%;
-        }}
-        .back {{
-            display: flex;
-        }}
-        .back {{
-            right: 1.5rem;
-        }}
-    }}
-    @media (max-width: 600px) {{
-        h1 {{
-            font-size: 1.375em;
-        }}
-    }}
-    @media (max-width: 400px) {{
-        nav {{
-            padding: 0 0.5rem;
-        }}
-        .container {{
-            padding: 0.5rem;
-        }}
-        h1 {{
-            font-size: 1.375em;
-        }}
-        .back {{
-            right: 1.5rem;
-        }}
-    }}", background = theme.background,
-        text_color = theme.text_color,
-        directory_link_color = theme.directory_link_color,
-        file_link_color = theme.file_link_color,
-        symlink_link_color = theme.symlink_link_color,
-        table_background = theme.table_background,
-        table_text_color = theme.table_text_color,
-        table_header_background = theme.table_header_background,
-        table_header_text_color = theme.table_header_text_color,
-        table_header_active_color = theme.table_header_active_color,
-        active_row_color = theme.active_row_color,
-        odd_row_background = theme.odd_row_background,
-        even_row_background = theme.even_row_background,
-        root_link_color = theme.root_link_color,
-        download_button_background = theme.download_button_background,
-        download_button_background_hover = theme.download_button_background_hover,
-        download_button_link_color = theme.download_button_link_color,
-        download_button_link_color_hover = theme.download_button_link_color_hover,
-        back_button_background = theme.back_button_background,
-        back_button_background_hover = theme.back_button_background_hover,
-        back_button_link_color = theme.back_button_link_color,
-        back_button_link_color_hover = theme.back_button_link_color_hover,
-        date_text_color = theme.date_text_color,
-        at_color = theme.at_color,
-        switch_theme_background = theme.switch_theme_background,
-        switch_theme_link_color = theme.switch_theme_link_color,
-        switch_theme_active = theme.switch_theme_active,
-        switch_theme_border = theme.switch_theme_border,
-        change_theme_link_color = theme.change_theme_link_color,
-        change_theme_link_color_hover = theme.change_theme_link_color_hover,
-        upload_text_color = theme.upload_text_color,
-        upload_form_border_color = theme.upload_form_border_color,
-        upload_form_background = theme.upload_form_background,
-        upload_button_background = theme.upload_button_background,
-        upload_button_text_color = theme.upload_button_text_color,
-        drag_background = theme.drag_background,
-        drag_border_color = theme.drag_border_color,
-        drag_text_color = theme.drag_text_color,
-        size_background_color = theme.size_background_color,
-        size_text_color = theme.size_text_color,
-        error_color = theme.error_color);
-    PreEscaped(css)
+fn css() -> Markup {
+    PreEscaped(CSS_TEXT.clone())
 }
 
 /// Partial: up arrow
@@ -853,12 +369,7 @@ fn chevron_down() -> Markup {
 }
 
 /// Partial: page header
-fn page_header(
-    title: &str,
-    color_scheme: ColorScheme,
-    file_upload: bool,
-    favicon_route: &str,
-) -> Markup {
+fn page_header(title: &str, file_upload: bool, favicon_route: &str) -> Markup {
     html! {
         head {
             meta charset="utf-8";
@@ -867,7 +378,8 @@ fn page_header(
             link rel="icon" type="image/svg+xml" href={ "/" (favicon_route) };
             title { (title) }
 
-            style { (css(color_scheme)) }
+            style { (css()) }
+
             @if file_upload {
                 (PreEscaped(r#"
                 <script>
@@ -937,8 +449,6 @@ pub fn render_error(
     return_address: &str,
     sort_method: Option<SortingMethod>,
     sort_order: Option<SortingOrder>,
-    color_scheme: ColorScheme,
-    default_color_scheme: ColorScheme,
     has_referer: bool,
     display_back_link: bool,
     favicon_route: &str,
@@ -946,19 +456,13 @@ pub fn render_error(
     let link = if has_referer {
         return_address.to_string()
     } else {
-        parametrized_link(
-            return_address,
-            sort_method,
-            sort_order,
-            color_scheme,
-            default_color_scheme,
-        )
+        parametrized_link(return_address, sort_method, sort_order)
     };
 
     html! {
         (DOCTYPE)
         html {
-            (page_header(&error_code.to_string(), color_scheme, false, favicon_route))
+            (page_header(&error_code.to_string(), false, favicon_route))
             body {
                 div.error {
                     p { (error_code.to_string()) }

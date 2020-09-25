@@ -15,7 +15,6 @@ use strum_macros::{Display, EnumString};
 use crate::archive::CompressionMethod;
 use crate::errors::{self, ContextualError};
 use crate::renderer;
-use crate::themes::ColorScheme;
 
 const FRAGMENT: &AsciiSet = &CONTROLS.add(b' ').add(b'"').add(b'<').add(b'>').add(b'`');
 
@@ -25,7 +24,6 @@ pub struct QueryParameters {
     pub path: Option<PathBuf>,
     pub sort: Option<SortingMethod>,
     pub order: Option<SortingOrder>,
-    pub theme: Option<ColorScheme>,
     qrcode: Option<String>,
     download: Option<CompressionMethod>,
 }
@@ -153,7 +151,6 @@ pub fn directory_listing(
     file_upload: bool,
     random_route: Option<String>,
     favicon_route: String,
-    default_color_scheme: ColorScheme,
     show_qrcode: bool,
     upload_route: String,
     tar_enabled: bool,
@@ -323,8 +320,6 @@ pub fn directory_listing(
         }
     }
 
-    let color_scheme = query_params.theme.unwrap_or(default_color_scheme);
-
     if let Some(compression_method) = query_params.download {
         if !compression_method.is_enabled(tar_enabled, zip_enabled) {
             return Ok(ServiceResponse::new(
@@ -338,8 +333,6 @@ pub fn directory_listing(
                             "/",
                             None,
                             None,
-                            color_scheme,
-                            default_color_scheme,
                             false,
                             false,
                             &favicon_route,
@@ -393,13 +386,10 @@ pub fn directory_listing(
                 .content_type("text/html; charset=utf-8")
                 .body(
                     renderer::page(
-                        serve_path,
                         entries,
                         is_root,
                         query_params.sort,
                         query_params.order,
-                        default_color_scheme,
-                        color_scheme,
                         show_qrcode,
                         file_upload,
                         &upload_route,
@@ -421,7 +411,6 @@ pub fn extract_query_parameters(req: &HttpRequest) -> QueryParameters {
             sort: query.sort,
             order: query.order,
             download: query.download,
-            theme: query.theme,
             qrcode: query.qrcode.to_owned(),
             path: query.path.clone(),
         },
@@ -432,7 +421,6 @@ pub fn extract_query_parameters(req: &HttpRequest) -> QueryParameters {
                 sort: None,
                 order: None,
                 download: None,
-                theme: None,
                 qrcode: None,
                 path: None,
             }

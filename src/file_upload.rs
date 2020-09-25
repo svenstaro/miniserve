@@ -12,7 +12,6 @@ use std::{
 use crate::errors::{self, ContextualError};
 use crate::listing::{self, SortingMethod, SortingOrder};
 use crate::renderer;
-use crate::themes::ColorScheme;
 
 /// Create future to save file.
 fn save_file(
@@ -109,7 +108,6 @@ fn handle_multipart(
 pub fn upload_file(
     req: HttpRequest,
     payload: actix_web::web::Payload,
-    default_color_scheme: ColorScheme,
     uses_random_route: bool,
     favicon_route: String,
 ) -> Pin<Box<dyn Future<Output = Result<HttpResponse, actix_web::Error>>>> {
@@ -121,7 +119,6 @@ pub fn upload_file(
     };
 
     let query_params = listing::extract_query_parameters(&req);
-    let color_scheme = query_params.theme.unwrap_or(default_color_scheme);
     let upload_path = match query_params.path.clone() {
         Some(path) => match path.strip_prefix(Component::RootDir) {
             Ok(stripped_path) => stripped_path.to_owned(),
@@ -137,8 +134,6 @@ pub fn upload_file(
                 &return_path,
                 query_params.sort,
                 query_params.order,
-                color_scheme,
-                default_color_scheme,
                 uses_random_route,
                 &favicon_route,
             ));
@@ -158,8 +153,6 @@ pub fn upload_file(
                 &return_path,
                 query_params.sort,
                 query_params.order,
-                color_scheme,
-                default_color_scheme,
                 uses_random_route,
                 &favicon_route,
             ));
@@ -179,8 +172,6 @@ pub fn upload_file(
                 &return_path,
                 query_params.sort,
                 query_params.order,
-                color_scheme,
-                default_color_scheme,
                 uses_random_route,
                 &favicon_route,
             ));
@@ -205,8 +196,6 @@ pub fn upload_file(
                     &return_path,
                     query_params.sort,
                     query_params.order,
-                    color_scheme,
-                    default_color_scheme,
                     uses_random_route,
                     &favicon_route,
                 ),
@@ -222,8 +211,6 @@ fn create_error_response(
     return_path: &str,
     sorting_method: Option<SortingMethod>,
     sorting_order: Option<SortingOrder>,
-    color_scheme: ColorScheme,
-    default_color_scheme: ColorScheme,
     uses_random_route: bool,
     favicon_route: &str,
 ) -> future::Ready<Result<HttpResponse, actix_web::Error>> {
@@ -238,8 +225,6 @@ fn create_error_response(
                     return_path,
                     sorting_method,
                     sorting_order,
-                    color_scheme,
-                    default_color_scheme,
                     true,
                     !uses_random_route,
                     &favicon_route,

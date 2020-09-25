@@ -284,7 +284,6 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
         let no_symlinks = conf.no_symlinks;
         let random_route = conf.random_route.clone();
         let favicon_route = conf.favicon_route.clone();
-        let default_color_scheme = conf.default_color_scheme;
         let show_qrcode = conf.show_qrcode;
         let file_upload = conf.file_upload;
         let tar_enabled = conf.tar_enabled;
@@ -314,7 +313,6 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
                             file_upload,
                             random_route.clone(),
                             favicon_route.clone(),
-                            default_color_scheme,
                             show_qrcode,
                             u_r.clone(),
                             tar_enabled,
@@ -330,17 +328,10 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
     let favicon_route = conf.favicon_route.clone();
     if let Some(serve_path) = serve_path {
         if conf.file_upload {
-            let default_color_scheme = conf.default_color_scheme;
             // Allow file upload
             app.service(
                 web::resource(&upload_route).route(web::post().to(move |req, payload| {
-                    file_upload::upload_file(
-                        req,
-                        payload,
-                        default_color_scheme,
-                        uses_random_route,
-                        favicon_route.clone(),
-                    )
+                    file_upload::upload_file(req, payload, uses_random_route, favicon_route.clone())
                 })),
             )
             // Handle directories
@@ -358,11 +349,9 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
 async fn error_404(req: HttpRequest) -> HttpResponse {
     let err_404 = ContextualError::RouteNotFoundError(req.path().to_string());
     let conf = req.app_data::<MiniserveConfig>().unwrap();
-    let default_color_scheme = conf.default_color_scheme;
     let uses_random_route = conf.random_route.is_some();
     let favicon_route = conf.favicon_route.clone();
     let query_params = listing::extract_query_parameters(&req);
-    let color_scheme = query_params.theme.unwrap_or(default_color_scheme);
 
     errors::log_error_chain(err_404.to_string());
 
@@ -373,8 +362,6 @@ async fn error_404(req: HttpRequest) -> HttpResponse {
             "/",
             query_params.sort,
             query_params.order,
-            color_scheme,
-            default_color_scheme,
             false,
             !uses_random_route,
             &favicon_route,
