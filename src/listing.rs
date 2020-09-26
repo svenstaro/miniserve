@@ -151,6 +151,7 @@ pub fn directory_listing(
     file_upload: bool,
     random_route: Option<String>,
     favicon_route: String,
+    css_route: String,
     show_qrcode: bool,
     upload_route: String,
     tar_enabled: bool,
@@ -336,6 +337,7 @@ pub fn directory_listing(
                             false,
                             false,
                             &favicon_route,
+                            &css_route,
                         )
                         .into_string(),
                     ),
@@ -394,6 +396,7 @@ pub fn directory_listing(
                         file_upload,
                         &upload_route,
                         &favicon_route,
+                        &css_route,
                         &encoded_dir,
                         breadcrumbs,
                         tar_enabled,

@@ -20,6 +20,7 @@ pub fn page(
     file_upload: bool,
     upload_route: &str,
     favicon_route: &str,
+    css_route: &str,
     encoded_dir: &str,
     breadcrumbs: Vec<Breadcrumb>,
     tar_enabled: bool,
@@ -36,7 +37,7 @@ pub fn page(
     html! {
         (DOCTYPE)
         html {
-            (page_header(&title_path, file_upload, favicon_route))
+            (page_header(&title_path, file_upload, favicon_route, css_route))
             body#drop-container {
                 (PreEscaped(r#"
                     <script>
@@ -340,14 +341,6 @@ fn entry_row(
     }
 }
 
-lazy_static::lazy_static! {
-    static ref CSS_TEXT: String = grass::from_string(include_str!("../data/style.scss").to_string(), &grass::Options::default()).unwrap();
-}
-/// Partial: CSS
-fn css() -> Markup {
-    PreEscaped(CSS_TEXT.clone())
-}
-
 /// Partial: up arrow
 fn arrow_up() -> Markup {
     PreEscaped("⇪".to_string())
@@ -369,16 +362,17 @@ fn chevron_down() -> Markup {
 }
 
 /// Partial: page header
-fn page_header(title: &str, file_upload: bool, favicon_route: &str) -> Markup {
+fn page_header(title: &str, file_upload: bool, favicon_route: &str, css_route: &str) -> Markup {
     html! {
         head {
             meta charset="utf-8";
             meta http-equiv="X-UA-Compatible" content="IE=edge";
             meta name="viewport" content="width=device-width, initial-scale=1";
-            link rel="icon" type="image/svg+xml" href={ "/" (favicon_route) };
-            title { (title) }
 
-            style { (css()) }
+            link rel="icon" type="image/svg+xml" href={ "/" (favicon_route) };
+            link rel="stylesheet" href={ "/" (css_route) };
+
+            title { (title) }
 
             @if file_upload {
                 (PreEscaped(r#"
@@ -452,6 +446,7 @@ pub fn render_error(
     has_referer: bool,
     display_back_link: bool,
     favicon_route: &str,
+    css_route: &str,
 ) -> Markup {
     let link = if has_referer {
         return_address.to_string()
@@ -462,7 +457,7 @@ pub fn render_error(
     html! {
         (DOCTYPE)
         html {
-            (page_header(&error_code.to_string(), false, favicon_route))
+            (page_header(&error_code.to_string(), false, favicon_route, css_route))
             body {
                 div.error {
                     p { (error_code.to_string()) }

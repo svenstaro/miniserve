@@ -175,9 +175,10 @@ pub fn parse_args() -> crate::MiniserveConfig {
         None
     };
 
-    // Generate some random route for the favicon so that it is very unlikely to conflict with a
-    // real file.
+    // Generate some random routes for the favicon and css so that they are very unlikely to conflict with
+    // real files.
     let favicon_route = nanoid::nanoid!(10, &ROUTE_ALPHABET);
+    let css_route = nanoid::nanoid!(10, &ROUTE_ALPHABET);
 
     let default_color_scheme = args.color_scheme;
 
@@ -198,6 +199,7 @@ pub fn parse_args() -> crate::MiniserveConfig {
         no_symlinks: args.no_symlinks,
         random_route,
         favicon_route,
+        css_route,
         default_color_scheme,
         index: args.index,
         overwrite_files: args.overwrite_files,

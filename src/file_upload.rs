@@ -110,6 +110,7 @@ pub fn upload_file(
     payload: actix_web::web::Payload,
     uses_random_route: bool,
     favicon_route: String,
+    css_route: String,
 ) -> Pin<Box<dyn Future<Output = Result<HttpResponse, actix_web::Error>>>> {
     let conf = req.app_data::<crate::MiniserveConfig>().unwrap();
     let return_path = if let Some(header) = req.headers().get(header::REFERER) {
@@ -136,6 +137,7 @@ pub fn upload_file(
                 query_params.order,
                 uses_random_route,
                 &favicon_route,
+                &css_route,
             ));
         }
     };
@@ -155,6 +157,7 @@ pub fn upload_file(
                 query_params.order,
                 uses_random_route,
                 &favicon_route,
+                &css_route,
             ));
         }
     };
@@ -174,6 +177,7 @@ pub fn upload_file(
                 query_params.order,
                 uses_random_route,
                 &favicon_route,
+                &css_route,
             ));
         }
     };
@@ -198,6 +202,7 @@ pub fn upload_file(
                     query_params.order,
                     uses_random_route,
                     &favicon_route,
+                    &css_route,
                 ),
             }),
     )
@@ -213,6 +218,7 @@ fn create_error_response(
     sorting_order: Option<SortingOrder>,
     uses_random_route: bool,
     favicon_route: &str,
+    css_route: &str,
 ) -> future::Ready<Result<HttpResponse, actix_web::Error>> {
     errors::log_error_chain(description.to_string());
     future::ok(
@@ -228,6 +234,7 @@ fn create_error_response(
                     true,
                     !uses_random_route,
                     &favicon_route,
+                    &css_route,
                 )
                 .into_string(),
             ),

@@ -123,6 +123,7 @@ fn build_unauthorized_response(
         false,
         false,
         &state.favicon_route,
+        &state.css_route,
     )
     .into_string()
 }
