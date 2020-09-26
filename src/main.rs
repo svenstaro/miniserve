@@ -251,10 +251,7 @@ async fn run() -> Result<(), ContextualError> {
                 &format!("/{}", inside_config.favicon_route),
                 web::get().to(favicon),
             )
-            .route(
-                &format!("/{}", inside_config.css_route),
-                web::get().to(css),
-            )
+            .route(&format!("/{}", inside_config.css_route), web::get().to(css))
             .configure(|c| configure_app(c, &inside_config))
             .default_service(web::get().to(error_404))
     })
@@ -337,7 +334,13 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
             // Allow file upload
             app.service(
                 web::resource(&upload_route).route(web::post().to(move |req, payload| {
-                    file_upload::upload_file(req, payload, uses_random_route, favicon_route.clone(), css_route.clone())
+                    file_upload::upload_file(
+                        req,
+                        payload,
+                        uses_random_route,
+                        favicon_route.clone(),
+                        css_route.clone(),
+                    )
                 })),
             )
             // Handle directories
