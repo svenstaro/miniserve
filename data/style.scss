@@ -160,7 +160,14 @@ nav .theme li a::hover {
     color: var(--change_theme_link_color_hover);
 }
 
-nav .theme li.active a {
+@each $theme in $themes {
+    body.theme_#{$theme} nav .theme li.theme_#{$theme} a {
+        font-weight: bold;
+        color: var(--switch_theme_active);
+    }
+}
+
+body:not([class^="theme_"]) nav .theme li.theme_default a {
     font-weight: bold;
     color: var(--switch_theme_active);
 }
