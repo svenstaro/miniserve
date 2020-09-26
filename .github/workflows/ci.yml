@@ -38,11 +38,6 @@ jobs:
         with:
           command: fmt
           args: --all -- --check
-      - name: css lint
-        uses: actions-hub/stylelint@master
-        env:
-          INDENT_SPACES: 4
-          PATTERN: "data/*.scss"
 
       - name: cargo clippy
         uses: actions-rs/cargo@v1
