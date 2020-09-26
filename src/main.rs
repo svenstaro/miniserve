@@ -22,7 +22,6 @@ mod file_upload;
 mod listing;
 mod pipe;
 mod renderer;
-mod themes;
 
 use crate::errors::ContextualError;
 
@@ -58,9 +57,6 @@ pub struct MiniserveConfig {
 
     /// Randomly generated css route
     pub css_route: String,
-
-    /// Default color scheme
-    pub default_color_scheme: themes::ColorScheme,
 
     /// The name of a directory index file to serve, like "index.html"
     ///

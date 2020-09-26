@@ -7,7 +7,6 @@ use strum::IntoEnumIterator;
 
 use crate::archive::CompressionMethod;
 use crate::listing::{Breadcrumb, Entry, SortingMethod, SortingOrder};
-use crate::themes::ColorScheme;
 
 /// Renders the file listing
 #[allow(clippy::too_many_arguments)]
@@ -44,13 +43,17 @@ pub fn page(
                         const body = document.body;
                         var theme = localStorage.getItem('theme');
 
-                        if (theme != null) {
+                        if (theme != null && theme != 'default') {
                             body.classList.add('theme_' + theme);
                         }
 
                         function updateColorScheme(name) {
                             body.classList.remove.apply(body.classList, Array.from(body.classList).filter(v=>v.startsWith("theme_")));
-                            body.classList.add('theme_' + name);
+
+                            if (name != "default") {
+                                body.classList.add('theme_' + name);
+                            }
+
                             localStorage.setItem('theme', name);
                         }
                     </script>
@@ -150,6 +153,14 @@ fn build_upload_action(
     upload_action
 }
 
+const THEMES: &[(&str, &str)] = &[
+    ("Default (light/dark)", "default"),
+    ("Squirrel (light)", "squirrel"),
+    ("Archlinux (dark)", "archlinux"),
+    ("Zenburn (dark)", "zenburn"),
+    ("Monokai (dark)", "monokai"),
+];
+
 /// Partial: color scheme selector
 fn color_scheme_selector(show_qrcode: bool) -> Markup {
     html! {
@@ -169,8 +180,8 @@ fn color_scheme_selector(show_qrcode: bool) -> Markup {
                     "Change theme..."
                 }
                 ul.theme {
-                    @for color_scheme in ColorScheme::iter() {
-                        li {
+                    @for color_scheme in THEMES {
+                        li.(format!("theme_{}", color_scheme.1)) {
                             (color_scheme_link(color_scheme))
                         }
                     }
@@ -181,18 +192,12 @@ fn color_scheme_selector(show_qrcode: bool) -> Markup {
 }
 
 // /// Partial: color scheme link
-fn color_scheme_link(color_scheme: ColorScheme) -> Markup {
-    let title = format!("Switch to {} theme", color_scheme);
+fn color_scheme_link(color_scheme: &(&str, &str)) -> Markup {
+    let title = format!("Switch to {} theme", color_scheme.0);
 
     html! {
-        a href=(format!("javascript:updateColorScheme(\"{}\")", color_scheme.to_slug())) title=(title) {
-            (color_scheme)
-            " "
-            @if color_scheme.is_dark() {
-                "(dark)"
-            } @else {
-                "(light)"
-            }
+        a href=(format!("javascript:updateColorScheme(\"{}\")", color_scheme.1)) title=(title) {
+            (color_scheme.0)
         }
     }
 }

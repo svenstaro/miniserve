@@ -1,4 +1,8 @@
-/* theme variables can be found at the bottom */
+/* theme colors can be found at the bottom */
+$themes: squirrel, archlinux, monokai, zenburn;
+
+$default_theme: squirrel;
+$default_theme_dark: archlinux;
 
 html {
     font-smoothing: antialiased;
@@ -656,12 +660,11 @@ th span.active a, th span.active span {
 }
 
 /* theme picked by user */
-body.theme_squirrel { @include theme_squirrel; }
-body.theme_archlinux { @include theme_archlinux; }
-body.theme_zenburn { @include theme_zenburn; }
-body.theme_monokai { @include theme_monokai; }
+@each $theme in $themes {
+    body.theme_#{$theme} { @include theme_#{$theme}; }
+}
 
 /* defaults */
-body { @include theme_squirrel; }
-@media (prefers-color-scheme: dark) { body { @include theme_archlinux; } }
+body { @include theme_#{$default_theme}; }
+@media (prefers-color-scheme: dark) { body { @include theme_#{$default_theme_dark}; } }
 

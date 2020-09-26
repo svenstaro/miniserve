@@ -5,7 +5,6 @@ use structopt::StructOpt;
 
 use crate::auth;
 use crate::errors::ContextualError;
-use crate::themes;
 
 /// Possible characters for random routes
 const ROUTE_ALPHABET: [char; 16] = [
@@ -66,16 +65,6 @@ struct CLIArgs {
     /// Do not follow symbolic links
     #[structopt(short = "P", long = "no-symlinks")]
     no_symlinks: bool,
-
-    /// Default color scheme
-    #[structopt(
-        short = "c",
-        long = "color-scheme",
-        default_value = "Squirrel",
-        possible_values = &themes::ColorScheme::variants(),
-        case_insensitive = true,
-    )]
-    color_scheme: themes::ColorScheme,
 
     /// Enable QR code display
     #[structopt(short = "q", long = "qrcode")]
@@ -180,8 +169,6 @@ pub fn parse_args() -> crate::MiniserveConfig {
     let favicon_route = nanoid::nanoid!(10, &ROUTE_ALPHABET);
     let css_route = nanoid::nanoid!(10, &ROUTE_ALPHABET);
 
-    let default_color_scheme = args.color_scheme;
-
     let path_explicitly_chosen = args.path.is_some();
 
     let port = match args.port {
@@ -200,7 +187,6 @@ pub fn parse_args() -> crate::MiniserveConfig {
         random_route,
         favicon_route,
         css_route,
-        default_color_scheme,
         index: args.index,
         overwrite_files: args.overwrite_files,
         show_qrcode: args.qrcode,
