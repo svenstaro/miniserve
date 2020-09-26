@@ -388,12 +388,9 @@ async fn favicon() -> impl Responder {
         .message_body(logo.into())
 }
 
-lazy_static::lazy_static! {
-    static ref CSS_TEXT: String = grass::from_string(include_str!("../data/style.scss").to_string(), &grass::Options::default()).unwrap();
-}
-
 async fn css() -> impl Responder {
+    let css = include_str!(concat!(env!("OUT_DIR"), "/style.css"));
     web::HttpResponse::Ok()
         .set(ContentType(mime::TEXT_CSS))
-        .body(&*CSS_TEXT)
+        .message_body(css.into())
 }
