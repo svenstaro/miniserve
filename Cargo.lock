@@ -1648,7 +1648,6 @@ version = "0.9.1-alpha.0"
 dependencies = [
  "actix-files",
  "actix-multipart",
- "actix-rt",
  "actix-web 3.0.2",
  "actix-web-httpauth",
  "alphanumeric-sort",

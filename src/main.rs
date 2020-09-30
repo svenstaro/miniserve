@@ -91,7 +91,7 @@ fn main() {
     }
 }
 
-#[actix_rt::main(miniserve)]
+#[actix_web::main(miniserve)]
 async fn run() -> Result<(), ContextualError> {
     if cfg!(windows) && !Paint::enable_windows_ascii() {
         Paint::disable();
