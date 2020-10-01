@@ -58,6 +58,12 @@ pub struct MiniserveConfig {
     /// Randomly generated css route
     pub css_route: String,
 
+    /// Default color scheme
+    pub default_color_scheme: String,
+
+    /// Default dark mode color scheme
+    pub default_color_scheme_dark: String,
+
     /// The name of a directory index file to serve, like "index.html"
     ///
     /// Normally, when miniserve serves a directory, it creates a listing for that directory.
@@ -285,6 +291,8 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
         let random_route = conf.random_route.clone();
         let favicon_route = conf.favicon_route.clone();
         let css_route = conf.css_route.clone();
+        let default_color_scheme = conf.default_color_scheme.clone();
+        let default_color_scheme_dark = conf.default_color_scheme_dark.clone();
         let show_qrcode = conf.show_qrcode;
         let file_upload = conf.file_upload;
         let tar_enabled = conf.tar_enabled;
@@ -315,6 +323,8 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
                             random_route.clone(),
                             favicon_route.clone(),
                             css_route.clone(),
+                            &default_color_scheme,
+                            &default_color_scheme_dark,
                             show_qrcode,
                             u_r.clone(),
                             tar_enabled,
@@ -329,6 +339,10 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
 
     let favicon_route = conf.favicon_route.clone();
     let css_route = conf.css_route.clone();
+
+    let default_color_scheme = conf.default_color_scheme.clone();
+    let default_color_scheme_dark = conf.default_color_scheme_dark.clone();
+
     if let Some(serve_path) = serve_path {
         if conf.file_upload {
             // Allow file upload
@@ -340,6 +354,8 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
                         uses_random_route,
                         favicon_route.clone(),
                         css_route.clone(),
+                        &default_color_scheme,
+                        &default_color_scheme_dark,
                     )
                 })),
             )
@@ -376,6 +392,8 @@ async fn error_404(req: HttpRequest) -> HttpResponse {
             !uses_random_route,
             &favicon_route,
             &css_route,
+            &conf.default_color_scheme,
+            &conf.default_color_scheme_dark,
         )
         .into_string(),
     )

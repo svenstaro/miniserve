@@ -20,6 +20,8 @@ pub fn page(
     upload_route: &str,
     favicon_route: &str,
     css_route: &str,
+    default_color_scheme: &str,
+    default_color_scheme_dark: &str,
     encoded_dir: &str,
     breadcrumbs: Vec<Breadcrumb>,
     tar_enabled: bool,
@@ -37,7 +39,7 @@ pub fn page(
         (DOCTYPE)
         html {
             (page_header(&title_path, file_upload, favicon_route, css_route))
-            body#drop-container {
+            body#drop-container.(format!("default_theme_{}", default_color_scheme)).(format!("default_theme_dark_{}", default_color_scheme_dark)) {
                 (PreEscaped(r#"
                     <script>
                         const body = document.body;
@@ -153,13 +155,15 @@ fn build_upload_action(
     upload_action
 }
 
-const THEMES: &[(&str, &str)] = &[
+const THEME_PICKER_CHOICES: &[(&str, &str)] = &[
     ("Default (light/dark)", "default"),
     ("Squirrel (light)", "squirrel"),
     ("Archlinux (dark)", "archlinux"),
     ("Zenburn (dark)", "zenburn"),
     ("Monokai (dark)", "monokai"),
 ];
+
+pub const THEME_SLUGS: &[&str] = &["squirrel", "archlinux", "zenburn", "monokai"];
 
 /// Partial: color scheme selector
 fn color_scheme_selector(show_qrcode: bool) -> Markup {
@@ -180,7 +184,7 @@ fn color_scheme_selector(show_qrcode: bool) -> Markup {
                     "Change theme..."
                 }
                 ul.theme {
-                    @for color_scheme in THEMES {
+                    @for color_scheme in THEME_PICKER_CHOICES {
                         li.(format!("theme_{}", color_scheme.1)) {
                             (color_scheme_link(color_scheme))
                         }
@@ -452,6 +456,8 @@ pub fn render_error(
     display_back_link: bool,
     favicon_route: &str,
     css_route: &str,
+    default_color_scheme: &str,
+    default_color_scheme_dark: &str,
 ) -> Markup {
     let link = if has_referer {
         return_address.to_string()
@@ -463,7 +469,7 @@ pub fn render_error(
         (DOCTYPE)
         html {
             (page_header(&error_code.to_string(), false, favicon_route, css_route))
-            body {
+            body.(format!("default_theme_{}", default_color_scheme)).(format!("default_theme_dark_{}", default_color_scheme_dark)) {
                 div.error {
                     p { (error_code.to_string()) }
                     @for error in error_description.lines() {

@@ -1,8 +1,17 @@
+@use "sass:selector";
+
 /* theme colors can be found at the bottom */
 $themes: squirrel, archlinux, monokai, zenburn;
 
-$default_theme: squirrel;
-$default_theme_dark: archlinux;
+@function body_not_themed() {
+    $s: unquote("body");
+    @each $t in $themes {
+        $s: selector.append($s, unquote(":not(.theme_#{$t})"));
+    }
+    @return $s;
+}
+
+
 
 html {
     font-smoothing: antialiased;
@@ -167,16 +176,19 @@ nav .theme li a:hover {
     color: var(--change_theme_link_color_hover);
 }
 
+%active_theme_link {
+    font-weight: bold;
+    color: var(--switch_theme_active);
+}
+
 @each $theme in $themes {
     body.theme_#{$theme} nav .theme li.theme_#{$theme} a {
-        font-weight: bold;
-        color: var(--switch_theme_active);
+        @extend %active_theme_link;
     }
 }
 
-body:not([class^="theme_"]) nav .theme li.theme_default a {
-    font-weight: bold;
-    color: var(--switch_theme_active);
+#{body_not_themed()} nav .theme li.theme_default a {
+    @extend %active_theme_link;
 }
 
 p {
@@ -681,12 +693,31 @@ th span.active span {
     --error_color: #d02929;
 }
 
-/* theme picked by user */
+
 @each $theme in $themes {
-    body.theme_#{$theme} { @include theme_#{$theme}; }
+    %theme_#{$theme} { @include theme_#{$theme}; }
+
+    body.theme_#{$theme} { @extend %theme_#{$theme}; }
+
+    #{body_not_themed()}.default_theme_#{$theme} {
+        @extend %theme_#{$theme};
+    }
 }
 
-/* defaults */
-body { @include theme_#{$default_theme}; }
-@media (prefers-color-scheme: dark) { body { @include theme_#{$default_theme_dark}; } }
+// this needs to be in a separate loop below the first,
+// because dark mode doesn't add to specificity, so
+// the dark defaults need to come after the light defaults
+// to override them
+@each $theme in $themes {
+    @media (prefers-color-scheme: dark) {
+        %theme_dark_#{$theme} { @include theme_#{$theme}; }
+    }
+
+    // this extension will still end up inside the media query,
+    // because that is where %theme_dark_* was defined
+    #{body_not_themed()}.default_theme_dark_#{$theme} {
+        @extend %theme_dark_#{$theme};
+    }
+}
+
 

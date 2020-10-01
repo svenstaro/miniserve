@@ -111,6 +111,8 @@ pub fn upload_file(
     uses_random_route: bool,
     favicon_route: String,
     css_route: String,
+    default_color_scheme: &str,
+    default_color_scheme_dark: &str,
 ) -> Pin<Box<dyn Future<Output = Result<HttpResponse, actix_web::Error>>>> {
     let conf = req.app_data::<crate::MiniserveConfig>().unwrap();
     let return_path = if let Some(header) = req.headers().get(header::REFERER) {
@@ -138,6 +140,8 @@ pub fn upload_file(
                 uses_random_route,
                 &favicon_route,
                 &css_route,
+                default_color_scheme,
+                default_color_scheme_dark,
             ));
         }
     };
@@ -158,6 +162,8 @@ pub fn upload_file(
                 uses_random_route,
                 &favicon_route,
                 &css_route,
+                default_color_scheme,
+                default_color_scheme_dark,
             ));
         }
     };
@@ -178,10 +184,15 @@ pub fn upload_file(
                 uses_random_route,
                 &favicon_route,
                 &css_route,
+                default_color_scheme,
+                default_color_scheme_dark,
             ));
         }
     };
     let overwrite_files = conf.overwrite_files;
+    let default_color_scheme = conf.default_color_scheme.clone();
+    let default_color_scheme_dark = conf.default_color_scheme_dark.clone();
+
     Box::pin(
         actix_multipart::Multipart::new(req.headers(), payload)
             .map_err(ContextualError::MultipartError)
@@ -203,6 +214,8 @@ pub fn upload_file(
                     uses_random_route,
                     &favicon_route,
                     &css_route,
+                    &default_color_scheme,
+                    &default_color_scheme_dark,
                 ),
             }),
     )
@@ -219,6 +232,8 @@ fn create_error_response(
     uses_random_route: bool,
     favicon_route: &str,
     css_route: &str,
+    default_color_scheme: &str,
+    default_color_scheme_dark: &str,
 ) -> future::Ready<Result<HttpResponse, actix_web::Error>> {
     errors::log_error_chain(description.to_string());
     future::ok(
@@ -235,6 +250,8 @@ fn create_error_response(
                     !uses_random_route,
                     &favicon_route,
                     &css_route,
+                    default_color_scheme,
+                    default_color_scheme_dark,
                 )
                 .into_string(),
             ),
