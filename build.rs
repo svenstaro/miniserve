@@ -14,5 +14,5 @@ fn main() {
         .unwrap(),
     )
     .unwrap();
-    println!("cargo:rerun-if-changed=data/style.css");
+    println!("cargo:rerun-if-changed=data/style.scss");
 }
