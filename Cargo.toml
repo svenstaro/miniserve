@@ -26,7 +26,7 @@ bytesize = "1.0.0"
 nanoid = "0.3"
 alphanumeric-sort = "1.4.0"
 structopt = "0.3"
-chrono = "0.4.18"
+chrono = "0.4.19"
 chrono-humanize = "0.1.1"
 maud = { version = "0.22.0", features = ["actix-web"] }
 serde = { version = "1.0.115", features = ["derive"] }
