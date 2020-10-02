@@ -18,7 +18,7 @@ panic = 'abort'
 
 [dependencies]
 yansi = "0.5"
-actix-web = "3.0"
+actix-web = "3.1"
 simplelog = "0.8"
 percent-encoding = "2.1"
 port_check = "0.1"
