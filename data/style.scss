@@ -1,8 +1,12 @@
 @use "sass:selector";
 
-/* theme colors can be found at the bottom */
+// theme colors can be found at the bottom
 $themes: squirrel, archlinux, monokai, zenburn;
 
+// This returns a selector that matches body when no theme class is set,
+// in which case the default light/dark mode themes should be used.
+// The result of this function can be used with #{...} interpolation
+// in a selector list.
 @function body_not_themed() {
     $s: unquote("body");
     @each $t in $themes {
@@ -517,6 +521,7 @@ th span.active span {
 }
 
 
+
 @mixin theme_squirrel {
     --background: #ffffff;
     --text_color: #323232;
@@ -694,6 +699,12 @@ th span.active span {
 }
 
 
+
+// For each of the themes, define a placeholder selector containing
+// the themes variables. Then add selectors for body when the theme:
+// - has explicitly been activated by .theme_*
+// - is set as default theme by .default_theme_* and no other theme is active
+// to the placeholder selector list by means of @extend.
 @each $theme in $themes {
     %theme_#{$theme} { @include theme_#{$theme}; }
 
@@ -704,10 +715,10 @@ th span.active span {
     }
 }
 
-// this needs to be in a separate loop below the first,
-// because dark mode doesn't add to specificity, so
-// the dark defaults need to come after the light defaults
-// to override them
+// Do the same thing again for the dark mode default.
+// Since the media query doesn't affect specificity, all dark mode
+// defaults need to come after all light mode defaults to override
+// them when dark mode is enabled.
 @each $theme in $themes {
     @media (prefers-color-scheme: dark) {
         %theme_dark_#{$theme} { @include theme_#{$theme}; }

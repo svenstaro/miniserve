@@ -39,7 +39,12 @@ pub fn page(
         (DOCTYPE)
         html {
             (page_header(&title_path, file_upload, favicon_route, css_route))
-            body#drop-container.(format!("default_theme_{}", default_color_scheme)).(format!("default_theme_dark_{}", default_color_scheme_dark)) {
+
+            body#drop-container
+                // Add classes to body selecting default light and dark theme
+                .(format!("default_theme_{}", default_color_scheme))
+                .(format!("default_theme_dark_{}", default_color_scheme_dark)) {
+
                 (PreEscaped(r#"
                     <script>
                         const body = document.body;
@@ -469,7 +474,11 @@ pub fn render_error(
         (DOCTYPE)
         html {
             (page_header(&error_code.to_string(), false, favicon_route, css_route))
-            body.(format!("default_theme_{}", default_color_scheme)).(format!("default_theme_dark_{}", default_color_scheme_dark)) {
+
+            // Add classes to body selecting default light and dark theme
+            body.(format!("default_theme_{}", default_color_scheme))
+                .(format!("default_theme_dark_{}", default_color_scheme_dark)) {
+
                 div.error {
                     p { (error_code.to_string()) }
                     @for error in error_description.lines() {
