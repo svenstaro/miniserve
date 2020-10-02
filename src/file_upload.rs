@@ -12,7 +12,6 @@ use std::{
 use crate::errors::{self, ContextualError};
 use crate::listing::{self, SortingMethod, SortingOrder};
 use crate::renderer;
-use crate::themes::ColorScheme;
 
 /// Create future to save file.
 fn save_file(
@@ -109,9 +108,11 @@ fn handle_multipart(
 pub fn upload_file(
     req: HttpRequest,
     payload: actix_web::web::Payload,
-    default_color_scheme: ColorScheme,
     uses_random_route: bool,
     favicon_route: String,
+    css_route: String,
+    default_color_scheme: &str,
+    default_color_scheme_dark: &str,
 ) -> Pin<Box<dyn Future<Output = Result<HttpResponse, actix_web::Error>>>> {
     let conf = req.app_data::<crate::MiniserveConfig>().unwrap();
     let return_path = if let Some(header) = req.headers().get(header::REFERER) {
@@ -121,7 +122,6 @@ pub fn upload_file(
     };
 
     let query_params = listing::extract_query_parameters(&req);
-    let color_scheme = query_params.theme.unwrap_or(default_color_scheme);
     let upload_path = match query_params.path.clone() {
         Some(path) => match path.strip_prefix(Component::RootDir) {
             Ok(stripped_path) => stripped_path.to_owned(),
@@ -137,10 +137,11 @@ pub fn upload_file(
                 &return_path,
                 query_params.sort,
                 query_params.order,
-                color_scheme,
-                default_color_scheme,
                 uses_random_route,
                 &favicon_route,
+                &css_route,
+                default_color_scheme,
+                default_color_scheme_dark,
             ));
         }
     };
@@ -158,10 +159,11 @@ pub fn upload_file(
                 &return_path,
                 query_params.sort,
                 query_params.order,
-                color_scheme,
-                default_color_scheme,
                 uses_random_route,
                 &favicon_route,
+                &css_route,
+                default_color_scheme,
+                default_color_scheme_dark,
             ));
         }
     };
@@ -179,14 +181,18 @@ pub fn upload_file(
                 &return_path,
                 query_params.sort,
                 query_params.order,
-                color_scheme,
-                default_color_scheme,
                 uses_random_route,
                 &favicon_route,
+                &css_route,
+                default_color_scheme,
+                default_color_scheme_dark,
             ));
         }
     };
     let overwrite_files = conf.overwrite_files;
+    let default_color_scheme = conf.default_color_scheme.clone();
+    let default_color_scheme_dark = conf.default_color_scheme_dark.clone();
+
     Box::pin(
         actix_multipart::Multipart::new(req.headers(), payload)
             .map_err(ContextualError::MultipartError)
@@ -205,10 +211,11 @@ pub fn upload_file(
                     &return_path,
                     query_params.sort,
                     query_params.order,
-                    color_scheme,
-                    default_color_scheme,
                     uses_random_route,
                     &favicon_route,
+                    &css_route,
+                    &default_color_scheme,
+                    &default_color_scheme_dark,
                 ),
             }),
     )
@@ -222,10 +229,11 @@ fn create_error_response(
     return_path: &str,
     sorting_method: Option<SortingMethod>,
     sorting_order: Option<SortingOrder>,
-    color_scheme: ColorScheme,
-    default_color_scheme: ColorScheme,
     uses_random_route: bool,
     favicon_route: &str,
+    css_route: &str,
+    default_color_scheme: &str,
+    default_color_scheme_dark: &str,
 ) -> future::Ready<Result<HttpResponse, actix_web::Error>> {
     errors::log_error_chain(description.to_string());
     future::ok(
@@ -238,11 +246,12 @@ fn create_error_response(
                     return_path,
                     sorting_method,
                     sorting_order,
-                    color_scheme,
-                    default_color_scheme,
                     true,
                     !uses_random_route,
                     &favicon_route,
+                    &css_route,
+                    default_color_scheme,
+                    default_color_scheme_dark,
                 )
                 .into_string(),
             ),

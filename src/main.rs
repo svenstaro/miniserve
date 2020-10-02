@@ -22,7 +22,6 @@ mod file_upload;
 mod listing;
 mod pipe;
 mod renderer;
-mod themes;
 
 use crate::errors::ContextualError;
 
@@ -56,8 +55,14 @@ pub struct MiniserveConfig {
     /// Randomly generated favicon route
     pub favicon_route: String,
 
+    /// Randomly generated css route
+    pub css_route: String,
+
     /// Default color scheme
-    pub default_color_scheme: themes::ColorScheme,
+    pub default_color_scheme: String,
+
+    /// Default dark mode color scheme
+    pub default_color_scheme_dark: String,
 
     /// The name of a directory index file to serve, like "index.html"
     ///
@@ -252,6 +257,7 @@ async fn run() -> Result<(), ContextualError> {
                 &format!("/{}", inside_config.favicon_route),
                 web::get().to(favicon),
             )
+            .route(&format!("/{}", inside_config.css_route), web::get().to(css))
             .configure(|c| configure_app(c, &inside_config))
             .default_service(web::get().to(error_404))
     })
@@ -284,7 +290,9 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
         let no_symlinks = conf.no_symlinks;
         let random_route = conf.random_route.clone();
         let favicon_route = conf.favicon_route.clone();
-        let default_color_scheme = conf.default_color_scheme;
+        let css_route = conf.css_route.clone();
+        let default_color_scheme = conf.default_color_scheme.clone();
+        let default_color_scheme_dark = conf.default_color_scheme_dark.clone();
         let show_qrcode = conf.show_qrcode;
         let file_upload = conf.file_upload;
         let tar_enabled = conf.tar_enabled;
@@ -314,7 +322,9 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
                             file_upload,
                             random_route.clone(),
                             favicon_route.clone(),
-                            default_color_scheme,
+                            css_route.clone(),
+                            &default_color_scheme,
+                            &default_color_scheme_dark,
                             show_qrcode,
                             u_r.clone(),
                             tar_enabled,
@@ -328,18 +338,24 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
     };
 
     let favicon_route = conf.favicon_route.clone();
+    let css_route = conf.css_route.clone();
+
+    let default_color_scheme = conf.default_color_scheme.clone();
+    let default_color_scheme_dark = conf.default_color_scheme_dark.clone();
+
     if let Some(serve_path) = serve_path {
         if conf.file_upload {
-            let default_color_scheme = conf.default_color_scheme;
             // Allow file upload
             app.service(
                 web::resource(&upload_route).route(web::post().to(move |req, payload| {
                     file_upload::upload_file(
                         req,
                         payload,
-                        default_color_scheme,
                         uses_random_route,
                         favicon_route.clone(),
+                        css_route.clone(),
+                        &default_color_scheme,
+                        &default_color_scheme_dark,
                     )
                 })),
             )
@@ -358,11 +374,10 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
 async fn error_404(req: HttpRequest) -> HttpResponse {
     let err_404 = ContextualError::RouteNotFoundError(req.path().to_string());
     let conf = req.app_data::<MiniserveConfig>().unwrap();
-    let default_color_scheme = conf.default_color_scheme;
     let uses_random_route = conf.random_route.is_some();
     let favicon_route = conf.favicon_route.clone();
+    let css_route = conf.css_route.clone();
     let query_params = listing::extract_query_parameters(&req);
-    let color_scheme = query_params.theme.unwrap_or(default_color_scheme);
 
     errors::log_error_chain(err_404.to_string());
 
@@ -373,11 +388,12 @@ async fn error_404(req: HttpRequest) -> HttpResponse {
             "/",
             query_params.sort,
             query_params.order,
-            color_scheme,
-            default_color_scheme,
             false,
             !uses_random_route,
             &favicon_route,
+            &css_route,
+            &conf.default_color_scheme,
+            &conf.default_color_scheme_dark,
         )
         .into_string(),
     )
@@ -388,4 +404,11 @@ async fn favicon() -> impl Responder {
     web::HttpResponse::Ok()
         .set(ContentType(mime::IMAGE_SVG))
         .message_body(logo.into())
+}
+
+async fn css() -> impl Responder {
+    let css = include_str!(concat!(env!("OUT_DIR"), "/style.css"));
+    web::HttpResponse::Ok()
+        .set(ContentType(mime::TEXT_CSS))
+        .message_body(css.into())
 }

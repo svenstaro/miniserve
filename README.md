@@ -106,8 +106,11 @@ Sometimes this is just a more practical and quick way than doing things properly
                 username:sha512:hash (e.g. joe:123,
                 joe:sha256:a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3)
         -c, --color-scheme <color-scheme>
-                Default color scheme [default: Squirrel]  [possible values: Archlinux, Zenburn,
-                Monokai, Squirrel]
+                Default color scheme [default: squirrel]  [possible values: squirrel, archlinux, zenburn, monokai]
+
+        -d, --color-scheme-dark <color-scheme-dark>
+                Default color scheme [default: archlinux]  [possible values: squirrel, archlinux, zenburn, monokai]
+
             --index <index_file>
                 The name of a directory index file to serve, like "index.html"
 

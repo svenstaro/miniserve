@@ -5,7 +5,7 @@ use structopt::StructOpt;
 
 use crate::auth;
 use crate::errors::ContextualError;
-use crate::themes;
+use crate::renderer;
 
 /// Possible characters for random routes
 const ROUTE_ALPHABET: [char; 16] = [
@@ -71,11 +71,21 @@ struct CLIArgs {
     #[structopt(
         short = "c",
         long = "color-scheme",
-        default_value = "Squirrel",
-        possible_values = &themes::ColorScheme::variants(),
+        default_value = "squirrel",
+        possible_values = &renderer::THEME_SLUGS,
         case_insensitive = true,
     )]
-    color_scheme: themes::ColorScheme,
+    color_scheme: String,
+
+    /// Default color scheme
+    #[structopt(
+        short = "d",
+        long = "color-scheme-dark",
+        default_value = "archlinux",
+        possible_values = &renderer::THEME_SLUGS,
+        case_insensitive = true,
+    )]
+    color_scheme_dark: String,
 
     /// Enable QR code display
     #[structopt(short = "q", long = "qrcode")]
@@ -175,11 +185,13 @@ pub fn parse_args() -> crate::MiniserveConfig {
         None
     };
 
-    // Generate some random route for the favicon so that it is very unlikely to conflict with a
-    // real file.
+    // Generate some random routes for the favicon and css so that they are very unlikely to conflict with
+    // real files.
     let favicon_route = nanoid::nanoid!(10, &ROUTE_ALPHABET);
+    let css_route = nanoid::nanoid!(10, &ROUTE_ALPHABET);
 
     let default_color_scheme = args.color_scheme;
+    let default_color_scheme_dark = args.color_scheme_dark;
 
     let path_explicitly_chosen = args.path.is_some();
 
@@ -198,7 +210,9 @@ pub fn parse_args() -> crate::MiniserveConfig {
         no_symlinks: args.no_symlinks,
         random_route,
         favicon_route,
+        css_route,
         default_color_scheme,
+        default_color_scheme_dark,
         index: args.index,
         overwrite_files: args.overwrite_files,
         show_qrcode: args.qrcode,
