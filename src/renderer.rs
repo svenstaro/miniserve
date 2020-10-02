@@ -41,12 +41,12 @@ pub fn page(
             (page_header(&title_path, file_upload, favicon_route, css_route))
 
             body#drop-container
-                // Add classes to body selecting default light and dark theme
                 .(format!("default_theme_{}", default_color_scheme))
                 .(format!("default_theme_dark_{}", default_color_scheme_dark)) {
 
                 (PreEscaped(r#"
                     <script>
+                        // read theme from local storage and apply it to body
                         const body = document.body;
                         var theme = localStorage.getItem('theme');
 
@@ -54,6 +54,8 @@ pub fn page(
                             body.classList.add('theme_' + theme);
                         }
 
+                        // updates the color scheme by replacing the appropriate class
+                        // on body and saving the new theme to local storage
                         function updateColorScheme(name) {
                             body.classList.remove.apply(body.classList, Array.from(body.classList).filter(v=>v.startsWith("theme_")));
 
@@ -475,7 +477,6 @@ pub fn render_error(
         html {
             (page_header(&error_code.to_string(), false, favicon_route, css_route))
 
-            // Add classes to body selecting default light and dark theme
             body.(format!("default_theme_{}", default_color_scheme))
                 .(format!("default_theme_dark_{}", default_color_scheme_dark)) {
 
