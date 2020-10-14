@@ -52,7 +52,7 @@ reqwest = { version = "0.10", features = ["blocking", "rustls-tls"], default-fea
 assert_fs = "1.0"
 select = "0.5"
 rstest = "0.6"
-regex = "1.4.0"
+regex = "1.4.1"
 pretty_assertions = "0.6"
 url = "2.1"
 
