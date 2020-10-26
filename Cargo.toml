@@ -31,7 +31,7 @@ chrono-humanize = "0.1.1"
 maud = { version = "0.22.0", features = ["actix-web"] }
 serde = { version = "1.0.117", features = ["derive"] }
 tar = "0.4.30"
-futures = "0.3.6"
+futures = "0.3.7"
 libflate = "1.0.3"
 failure = "0.1.8"
 log = "0.4.11"
