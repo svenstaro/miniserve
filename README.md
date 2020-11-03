@@ -36,6 +36,11 @@ Sometimes this is just a more practical and quick way than doing things properly
 
     miniserve --auth joe:123 unreleased-linux-distros/
 
+### Require username/password as hash:
+
+    pw=$(echo -n "123" | sha256sum | cut -f 1 -d ' ')
+    miniserve --auth joe:sha256:$pw unreleased-linux-distros/
+
 ### Generate random 6-hexdigit URL:
 
     miniserve -i 192.168.0.1 --random-route /tmp
