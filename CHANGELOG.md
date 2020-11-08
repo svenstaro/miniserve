@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+- Fix publish workflow
 
 ## [0.10.1] - 2020-11-09
 - Now compiles on stable! :D
