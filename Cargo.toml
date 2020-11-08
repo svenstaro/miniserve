@@ -28,7 +28,7 @@ alphanumeric-sort = "1.4.0"
 structopt = "0.3"
 chrono = "0.4.19"
 chrono-humanize = "0.1.1"
-maud = { version = "0.22.0", features = ["actix-web"] }
+maud = { version = "0.22.1", features = ["actix-web"] }
 serde = { version = "1.0.117", features = ["derive"] }
 tar = "0.4.30"
 futures = "0.3.7"
@@ -54,7 +54,7 @@ select = "0.5"
 rstest = "0.6"
 regex = "1.4.2"
 pretty_assertions = "0.6"
-url = "2.1"
+url = "2.2"
 
 [build-dependencies]
 grass = "0.10.3"

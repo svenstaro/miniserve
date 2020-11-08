@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+- Now compiles on stable! :D
 
 ## [0.10.0] - 2020-10-02
 - Add embedded favicon [#364](https://github.com/svenstaro/miniserve/issues/364)

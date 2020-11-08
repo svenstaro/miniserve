@@ -63,7 +63,6 @@ jobs:
       - name: Setup Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly-2020-09-22
           target: ${{ matrix.target }}
           override: true
 

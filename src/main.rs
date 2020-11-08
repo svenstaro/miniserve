@@ -1,5 +1,3 @@
-#![feature(proc_macro_hygiene)]
-
 use actix_web::web;
 use actix_web::{
     http::{header::ContentType, StatusCode},

@@ -158,7 +158,7 @@ Alternatively install with [Homebrew](https://brew.sh/).
 
     miniserve-win.exe
 
-**With Cargo**: You will need the _nightly_ version of Rust to compile the project. Then you can run
+**With Cargo**: Make sure you have a recent version of Rust. Then you can run
 
     cargo install miniserve
     miniserve

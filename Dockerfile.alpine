@@ -4,7 +4,6 @@ FROM rust as builder
 
 ENV APP_HOME /usr/src/app/
 
-RUN rustup default nightly-2020-09-22
 RUN rustup target add x86_64-unknown-linux-musl
 RUN apt update && apt-get install -y upx musl-tools
 
