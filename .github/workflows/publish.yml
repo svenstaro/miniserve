@@ -63,10 +63,8 @@ jobs:
       - name: Setup Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
-          profile: minimal
+          toolchain: stable
           target: ${{ matrix.target }}
-          toolchain: ${{ matrix.rust }}
-          override: true
 
       - name: cargo build
         uses: actions-rs/cargo@v1
