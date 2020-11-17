@@ -1076,9 +1076,9 @@ dependencies = [
 
 [[package]]
 name = "grass"
-version = "0.10.3"
+version = "0.10.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "de2cf11276bb4d38b76d9666f9d87423522d57a519aefb9df744c1f6cf574e4f"
+checksum = "f8209e6832a1f93e15adca845b43af12ead0cb8221fb2ef615ca84c75e54af1a"
 dependencies = [
  "beef",
  "clap",
@@ -1736,9 +1736,9 @@ checksum = "8d3b63360ec3cb337817c2dbd47ab4a0f170d285d8e5a2064600f3def1402397"
 
 [[package]]
 name = "once_cell"
-version = "1.4.1"
+version = "1.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "260e51e7efe62b592207e9e13a68e43692a7a279171d6ba57abd208bf23645ad"
+checksum = "13bd41f508810a131401606d54ac32a467c97172d74ba7662562ebba5ad07fa0"
 
 [[package]]
 name = "opaque-debug"
@@ -1783,9 +1783,9 @@ dependencies = [
 
 [[package]]
 name = "peekmore"
-version = "0.5.4"
+version = "0.5.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e029e89e27328ecf6a2e0820b5767ce6deb10872f2f18fb9e98d2e8ab7aef29f"
+checksum = "4089f831c514cbf080bd19bfce702f7a2de250492730d419204af6710ba19316"
 dependencies = [
  "smallvec",
 ]

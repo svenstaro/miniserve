@@ -57,4 +57,4 @@ pretty_assertions = "0.6"
 url = "2.2"
 
 [build-dependencies]
-grass = "0.10.3"
+grass = "0.10.4"
