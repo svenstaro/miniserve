@@ -251,9 +251,9 @@ dependencies = [
 
 [[package]]
 name = "actix-web"
-version = "3.2.0"
+version = "3.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "88344b7a5ef27e5e09e73565379f69273dd3e2d29e82afc381b84d170d0a5631"
+checksum = "3a89a7b133e734f6d1e555502d450408ae04105826aef7e3605019747d3ac732"
 dependencies = [
  "actix-codec",
  "actix-http",
@@ -281,7 +281,7 @@ dependencies = [
  "regex",
  "serde",
  "serde_json",
- "serde_urlencoded 0.6.1",
+ "serde_urlencoded 0.7.0",
  "socket2",
  "time 0.2.22",
  "tinyvec 1.0.1",
