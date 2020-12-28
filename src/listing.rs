@@ -317,10 +317,8 @@ pub fn directory_listing(
         }),
     };
 
-    if let Some(sorting_order) = query_params.order {
-        if let SortingOrder::Descending = sorting_order {
-            entries.reverse()
-        }
+    if let Some(SortingOrder::Descending) = query_params.order {
+        entries.reverse()
     }
 
     if let Some(compression_method) = query_params.download {
