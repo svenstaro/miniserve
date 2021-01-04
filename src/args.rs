@@ -110,6 +110,10 @@ struct CLIArgs {
     #[structopt(short = "z", long = "enable-zip")]
     enable_zip: bool,
 
+    /// List directories first
+    #[structopt(short = "D", long = "dirs-first")]
+    dirs_first: bool,
+
     /// Shown instead of host in page title and heading
     #[structopt(short = "t", long = "title")]
     title: Option<String>,
@@ -219,6 +223,7 @@ pub fn parse_args() -> crate::MiniserveConfig {
         file_upload: args.file_upload,
         tar_enabled: args.enable_tar,
         zip_enabled: args.enable_zip,
+	dirs_first: args.dirs_first,
         title: args.title,
     }
 }
