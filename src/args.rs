@@ -223,7 +223,7 @@ pub fn parse_args() -> crate::MiniserveConfig {
         file_upload: args.file_upload,
         tar_enabled: args.enable_tar,
         zip_enabled: args.enable_zip,
-	dirs_first: args.dirs_first,
+        dirs_first: args.dirs_first,
         title: args.title,
     }
 }
