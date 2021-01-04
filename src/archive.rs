@@ -204,7 +204,7 @@ where
 /// ```
 fn create_zip_from_directory<W>(
     out: W,
-    directory: &PathBuf,
+    directory: &Path,
     skip_symlinks: bool,
 ) -> Result<(), ContextualError>
 where
@@ -212,7 +212,7 @@ where
 {
     let options = write::FileOptions::default().compression_method(zip::CompressionMethod::Stored);
     let mut paths_queue: Vec<PathBuf> = vec![];
-    paths_queue.push(directory.clone());
+    paths_queue.push(directory.to_path_buf());
     let zip_root_folder_name = directory.file_name().ok_or_else(|| {
         ContextualError::InvalidPathError("Directory name terminates in \"..\"".to_string())
     })?;
