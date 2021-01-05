@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+
+## [0.10.4] - 2021-01-05
 - Add `--dirs-first`/`-D` option to list directories first [#423](https://github.com/svenstaro/miniserve/pull/423) (thanks @levaitamas)
 
 ## [0.10.3] - 2020-11-09
@@ -54,7 +56,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Some theme related bug fixes (thanks @boastful-squirrel)
 
 <!-- next-url -->
-[Unreleased]: https://github.com/svenstaro/miniserve/compare/v0.10.3...HEAD
+[Unreleased]: https://github.com/svenstaro/miniserve/compare/v0.10.4...HEAD
+[0.10.4]: https://github.com/svenstaro/miniserve/compare/v0.10.3...v0.10.4
 [0.10.3]: https://github.com/svenstaro/miniserve/compare/v0.10.2...v0.10.3
 [0.10.2]: https://github.com/svenstaro/miniserve/compare/v0.10.1...v0.10.2
 [0.10.1]: https://github.com/svenstaro/miniserve/compare/v0.10.0...v0.10.1
