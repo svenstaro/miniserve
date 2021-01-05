@@ -190,4 +190,4 @@ This is mostly a note for me on how to release this thing:
 - `cargo release <version>`
 - Releases will automatically be deployed by Github Actions.
 - Docker images will automatically be built by Docker Hub.
-- Update AUR package.
+- Update Arch package.
