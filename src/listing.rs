@@ -158,6 +158,7 @@ pub fn directory_listing(
     upload_route: String,
     tar_enabled: bool,
     zip_enabled: bool,
+    dirs_first: bool,
     title: Option<String>,
 ) -> Result<ServiceResponse, io::Error> {
     use actix_web::dev::BodyEncoding;
@@ -319,6 +320,11 @@ pub fn directory_listing(
 
     if let Some(SortingOrder::Descending) = query_params.order {
         entries.reverse()
+    }
+
+    // List directories first
+    if dirs_first {
+        entries.sort_by_key(|e| !e.is_dir());
     }
 
     if let Some(compression_method) = query_params.download {
