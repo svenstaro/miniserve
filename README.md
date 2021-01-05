@@ -6,7 +6,6 @@
 
 [![CI](https://github.com/svenstaro/miniserve/workflows/CI/badge.svg)](https://github.com/svenstaro/miniserve/actions)
 [![Docker Cloud Build Status](https://img.shields.io/docker/cloud/build/svenstaro/miniserve)](https://cloud.docker.com/repository/docker/svenstaro/miniserve/)
-[![AUR](https://img.shields.io/aur/version/miniserve.svg)](https://aur.archlinux.org/packages/miniserve/)
 [![Crates.io](https://img.shields.io/crates/v/miniserve.svg)](https://crates.io/crates/miniserve)
 [![license](http://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/svenstaro/miniserve/blob/master/LICENSE)
 [![Stars](https://img.shields.io/github/stars/svenstaro/miniserve.svg)](https://github.com/svenstaro/miniserve/stargazers)
@@ -143,6 +142,10 @@ Sometimes this is just a more practical and quick way than doing things properly
 
     chmod +x miniserve-linux
     ./miniserve-linux
+    
+Alternatively, if you are on Arch Linux, you can do
+
+    pacman -S miniserve
 
 **On OSX**: Download `miniserve-osx` from [the releases page](https://github.com/svenstaro/miniserve/releases) and run
 
