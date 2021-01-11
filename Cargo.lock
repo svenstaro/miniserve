@@ -1489,9 +1489,9 @@ checksum = "7ffc5c5338469d4d3ea17d269fa8ea3512ad247247c30bd2df69e68309ed0a08"
 
 [[package]]
 name = "maud"
-version = "0.22.1"
+version = "0.22.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6e36db0dfb7837b5d45f9377ebb876b9626c9f5c69b0967ff843b1cc663e1779"
+checksum = "da0784808b0c06f80365c1071048df9b6414a83fc56b8d4b305859e39f5162fa"
 dependencies = [
  "actix-web",
  "futures-util",
@@ -1507,9 +1507,9 @@ checksum = "d0fb85bccffc42302ad1e1ed8679f6a39d1317f775a37fbc3f79bdfbe054bfb7"
 
 [[package]]
 name = "maud_macros"
-version = "0.22.1"
+version = "0.22.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9c8a69150dcdec0789832ee54a70170866a4492ff3af571420dbc3a984970c07"
+checksum = "73a00158abd4671407a3d8bd2c8577e9c7dc8d0b8a8e5523bdaba7d486655b1e"
 dependencies = [
  "maud_htmlescape",
  "proc-macro-error",
