@@ -143,7 +143,7 @@ Sometimes this is just a more practical and quick way than doing things properly
     chmod +x miniserve-linux
     ./miniserve-linux
     
-Alternatively, if you are on Arch Linux, you can do
+Alternatively, if you are on **Arch Linux**, you can do
 
     pacman -S miniserve
 
