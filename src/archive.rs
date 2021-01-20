@@ -211,8 +211,7 @@ where
     W: std::io::Write + std::io::Seek,
 {
     let options = write::FileOptions::default().compression_method(zip::CompressionMethod::Stored);
-    let mut paths_queue: Vec<PathBuf> = vec![];
-    paths_queue.push(directory.to_path_buf());
+    let mut paths_queue: Vec<PathBuf> = vec![directory.to_path_buf()];
     let zip_root_folder_name = directory.file_name().ok_or_else(|| {
         ContextualError::InvalidPathError("Directory name terminates in \"..\"".to_string())
     })?;
