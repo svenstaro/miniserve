@@ -378,9 +378,9 @@ dependencies = [
 
 [[package]]
 name = "assert_fs"
-version = "1.0.0"
+version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "04dabd011e19821a348abb0dec7b7fda959cd6b3477c474395b958b291942b0e"
+checksum = "3203d5bb9979ac7210f01a150578ebafef6f08b55e79f6db32673c0977b94340"
 dependencies = [
  "doc-comment",
  "globwalk",
@@ -1068,10 +1068,11 @@ dependencies = [
 
 [[package]]
 name = "globwalk"
-version = "0.7.3"
+version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d9db17aec586697a93219b19726b5b68307eba92898c34b170857343fe67c99d"
+checksum = "93e3af942408868f6934a7b85134a3230832b9977cf66125df2f9edcfce4ddcc"
 dependencies = [
+ "bitflags",
  "ignore",
  "walkdir",
 ]
