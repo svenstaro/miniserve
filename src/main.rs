@@ -127,7 +127,7 @@ async fn run() -> Result<(), ContextualError> {
             .path
             .symlink_metadata()
             .map_err(|e| {
-                ContextualError::IOError("Failed to retrieve symlink's metadata".to_string(), e)
+                ContextualError::IoError("Failed to retrieve symlink's metadata".to_string(), e)
             })?
             .file_type()
             .is_symlink();
@@ -159,7 +159,7 @@ async fn run() -> Result<(), ContextualError> {
         .collect::<Vec<String>>();
 
     let canon_path = miniserve_config.path.canonicalize().map_err(|e| {
-        ContextualError::IOError("Failed to resolve path to be served".to_string(), e)
+        ContextualError::IoError("Failed to resolve path to be served".to_string(), e)
     })?;
 
     if let Some(index_path) = &miniserve_config.index {
@@ -186,12 +186,12 @@ async fn run() -> Result<(), ContextualError> {
         print!("Starting server in ");
         io::stdout()
             .flush()
-            .map_err(|e| ContextualError::IOError("Failed to write data".to_string(), e))?;
+            .map_err(|e| ContextualError::IoError("Failed to write data".to_string(), e))?;
         for c in "3… 2… 1… \n".chars() {
             print!("{}", c);
             io::stdout()
                 .flush()
-                .map_err(|e| ContextualError::IOError("Failed to write data".to_string(), e))?;
+                .map_err(|e| ContextualError::IoError("Failed to write data".to_string(), e))?;
             thread::sleep(Duration::from_millis(500));
         }
     }
@@ -263,7 +263,7 @@ async fn run() -> Result<(), ContextualError> {
             .default_service(web::get().to(error_404))
     })
     .bind(socket_addresses.as_slice())
-    .map_err(|e| ContextualError::IOError("Failed to bind server".to_string(), e))?
+    .map_err(|e| ContextualError::IoError("Failed to bind server".to_string(), e))?
     .shutdown_timeout(0)
     .run();
 
@@ -276,7 +276,7 @@ async fn run() -> Result<(), ContextualError> {
     println!("\nQuit by pressing CTRL-C");
 
     srv.await
-        .map_err(|e| ContextualError::IOError("".to_owned(), e))
+        .map_err(|e| ContextualError::IoError("".to_owned(), e))
 }
 
 /// Configures the Actix application

@@ -19,7 +19,7 @@ const ROUTE_ALPHABET: [char; 16] = [
     about,
     global_settings = &[structopt::clap::AppSettings::ColoredHelp],
 )]
-struct CLIArgs {
+struct CliArgs {
     /// Be verbose, includes emitting access logs
     #[structopt(short = "v", long = "verbose")]
     verbose: bool,
@@ -172,7 +172,7 @@ fn parse_auth(src: &str) -> Result<auth::RequiredAuth, ContextualError> {
 
 /// Parses the command line arguments
 pub fn parse_args() -> crate::MiniserveConfig {
-    let args = CLIArgs::from_args();
+    let args = CliArgs::from_args();
 
     let interfaces = if !args.interfaces.is_empty() {
         args.interfaces

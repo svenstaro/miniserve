@@ -90,13 +90,13 @@ fn tar_gz<W>(dir: &Path, skip_symlinks: bool, out: W) -> Result<(), ContextualEr
 where
     W: std::io::Write,
 {
-    let mut out = Encoder::new(out).map_err(|e| ContextualError::IOError("GZIP".to_string(), e))?;
+    let mut out = Encoder::new(out).map_err(|e| ContextualError::IoError("GZIP".to_string(), e))?;
 
     tar_dir(dir, skip_symlinks, &mut out)?;
 
     out.finish()
         .into_result()
-        .map_err(|e| ContextualError::IOError("GZIP finish".to_string(), e))?;
+        .map_err(|e| ContextualError::IoError("GZIP finish".to_string(), e))?;
 
     Ok(())
 }
@@ -162,7 +162,7 @@ where
     tar_builder
         .append_dir_all(inner_folder, src_dir)
         .map_err(|e| {
-            ContextualError::IOError(
+            ContextualError::IoError(
                 format!(
                     "Failed to append the content of {} to the TAR archive",
                     src_dir.to_str().unwrap_or("file")
@@ -173,7 +173,7 @@ where
 
     // Finish the archive
     tar_builder.into_inner().map_err(|e| {
-        ContextualError::IOError("Failed to finish writing the TAR archive".to_string(), e)
+        ContextualError::IoError("Failed to finish writing the TAR archive".to_string(), e)
     })?;
 
     Ok(())
@@ -224,7 +224,7 @@ where
         })?;
         let current_dir = next.as_path();
         let directory_entry_iterator = std::fs::read_dir(current_dir)
-            .map_err(|e| ContextualError::IOError("Could not read directory".to_string(), e))?;
+            .map_err(|e| ContextualError::IoError("Could not read directory".to_string(), e))?;
         let zip_directory =
             Path::new(zip_root_folder_name).join(current_dir.strip_prefix(directory).map_err(
                 |_| ContextualError::CustomError("Could not append base directory".to_string()),
@@ -240,7 +240,7 @@ where
                 })?
                 .path();
             let entry_metadata = std::fs::metadata(entry_path.clone()).map_err(|e| {
-                ContextualError::IOError("Could not get file metadata".to_string(), e)
+                ContextualError::IoError("Could not get file metadata".to_string(), e)
             })?;
 
             if entry_metadata.file_type().is_symlink() && skip_symlinks {
@@ -251,9 +251,9 @@ where
             })?;
             if entry_metadata.is_file() {
                 let mut f = File::open(&entry_path)
-                    .map_err(|e| ContextualError::IOError("Could not open file".to_string(), e))?;
+                    .map_err(|e| ContextualError::IoError("Could not open file".to_string(), e))?;
                 f.read_to_end(&mut buffer).map_err(|e| {
-                    ContextualError::IOError("Could not read from file".to_string(), e)
+                    ContextualError::IoError("Could not read from file".to_string(), e)
                 })?;
                 let relative_path = zip_directory.join(current_entry_name).into_os_string();
                 zip_writer
@@ -302,7 +302,7 @@ where
     })?;
 
     out.write_all(data.as_mut_slice())
-        .map_err(|e| ContextualError::IOError("Failed to write the ZIP archive".to_string(), e))?;
+        .map_err(|e| ContextualError::IoError("Failed to write the ZIP archive".to_string(), e))?;
 
     Ok(())
 }

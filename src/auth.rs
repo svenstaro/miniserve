@@ -86,7 +86,7 @@ pub async fn handle_auth(req: ServiceRequest, cred: BasicAuth) -> Result<Service
             )
             .body(build_unauthorized_response(
                 &req,
-                ContextualError::InvalidHTTPCredentials,
+                ContextualError::InvalidHttpCredentials,
                 true,
                 StatusCode::UNAUTHORIZED,
             ))
@@ -104,7 +104,7 @@ fn build_unauthorized_response(
     error_code: StatusCode,
 ) -> String {
     let state = req.app_data::<crate::MiniserveConfig>().unwrap();
-    let error = ContextualError::HTTPAuthenticationError(Box::new(error));
+    let error = ContextualError::HttpAuthenticationError(Box::new(error));
 
     if log_error_chain {
         errors::log_error_chain(error.to_string());

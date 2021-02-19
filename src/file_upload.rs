@@ -28,7 +28,7 @@ fn save_file(
     let mut file = match std::fs::File::create(&file_path) {
         Ok(file) => file,
         Err(e) => {
-            return Box::pin(future::err(ContextualError::IOError(
+            return Box::pin(future::err(ContextualError::IoError(
                 format!("Failed to create {}", file_path.display()),
                 e,
             )));
@@ -42,7 +42,7 @@ fn save_file(
                     .write_all(bytes.as_ref())
                     .map(|_| acc + bytes.len() as i64)
                     .map_err(|e| {
-                        ContextualError::IOError("Failed to write to file".to_string(), e)
+                        ContextualError::IoError("Failed to write to file".to_string(), e)
                     });
                 future::ready(rt)
             }),
@@ -128,7 +128,7 @@ pub fn upload_file(
             Err(_) => path.clone(),
         },
         None => {
-            let err = ContextualError::InvalidHTTPRequestError(
+            let err = ContextualError::InvalidHttpRequestError(
                 "Missing query parameter 'path'".to_string(),
             );
             return Box::pin(create_error_response(
@@ -149,7 +149,7 @@ pub fn upload_file(
     let app_root_dir = match conf.path.canonicalize() {
         Ok(dir) => dir,
         Err(e) => {
-            let err = ContextualError::IOError(
+            let err = ContextualError::IoError(
                 "Failed to resolve path served by miniserve".to_string(),
                 e,
             );
@@ -172,7 +172,7 @@ pub fn upload_file(
     let target_dir = match &app_root_dir.join(upload_path).canonicalize() {
         Ok(path) if path.starts_with(&app_root_dir) => path.clone(),
         _ => {
-            let err = ContextualError::InvalidHTTPRequestError(
+            let err = ContextualError::InvalidHttpRequestError(
                 "Invalid value for 'path' parameter".to_string(),
             );
             return Box::pin(create_error_response(

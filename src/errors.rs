@@ -8,7 +8,7 @@ pub enum ContextualError {
 
     /// Any kind of IO errors
     #[fail(display = "{}\ncaused by: {}", _0, _1)]
-    IOError(String, std::io::Error),
+    IoError(String, std::io::Error),
 
     /// MultipartError, which might occur during file upload, when processing the multipart request fails
     #[fail(display = "Failed to process multipart request\ncaused by: {}", _0)]
@@ -59,15 +59,15 @@ pub enum ContextualError {
         display = "An error occured during HTTP authentication\ncaused by: {}",
         _0
     )]
-    HTTPAuthenticationError(Box<ContextualError>),
+    HttpAuthenticationError(Box<ContextualError>),
 
     /// This error might occur when the HTTP credentials are not correct
     #[fail(display = "Invalid credentials for HTTP authentication")]
-    InvalidHTTPCredentials,
+    InvalidHttpCredentials,
 
     /// This error might occur when an HTTP request is invalid
     #[fail(display = "Invalid HTTP request\ncaused by: {}", _0)]
-    InvalidHTTPRequestError(String),
+    InvalidHttpRequestError(String),
 
     /// This error might occur when trying to access a page that does not exist
     #[fail(display = "Route {} could not be found", _0)]
