@@ -117,6 +117,10 @@ struct CliArgs {
     /// Shown instead of host in page title and heading
     #[structopt(short = "t", long = "title")]
     title: Option<String>,
+
+    /// Custom header from user
+    #[structopt(long = "header")]
+    header: Option<String>,
 }
 
 /// Checks wether an interface is valid, i.e. it can be parsed into an IP address
@@ -225,6 +229,7 @@ pub fn parse_args() -> crate::MiniserveConfig {
         zip_enabled: args.enable_zip,
         dirs_first: args.dirs_first,
         title: args.title,
+        header: args.header,
     }
 }
 

@@ -88,6 +88,9 @@ pub struct MiniserveConfig {
 
     /// Shown instead of host in page title and heading
     pub title: Option<String>,
+
+    /// If specified, header will be added
+    pub header: Option<String>,
 }
 
 fn main() {
@@ -248,6 +251,7 @@ async fn run() -> Result<(), ContextualError> {
 
     let srv = actix_web::HttpServer::new(move || {
         App::new()
+            .wrap(configure_header(&inside_config.clone()))
             .app_data(inside_config.clone())
             .wrap(middleware::Condition::new(
                 !inside_config.auth.is_empty(),
@@ -277,6 +281,30 @@ async fn run() -> Result<(), ContextualError> {
 
     srv.await
         .map_err(|e| ContextualError::IoError("".to_owned(), e))
+}
+
+fn configure_header(conf: &MiniserveConfig) -> middleware::DefaultHeaders {
+    let mut headers = [httparse::EMPTY_HEADER; 16];
+
+    match conf.clone().header {
+        Some(mut header) => {
+            // parse_headers need header newline ends
+            header.push('\n');
+            httparse::parse_headers(header.as_bytes(), &mut headers).expect("Bad header");
+
+            let mut header_middleware = middleware::DefaultHeaders::new();
+
+            for h in headers.iter() {
+                if h.name != httparse::EMPTY_HEADER.name {
+                    println!("h={:?}", h);
+                    header_middleware = header_middleware.header(h.name, h.value);
+                }
+            }
+
+            header_middleware
+        }
+        None => middleware::DefaultHeaders::new(),
+    }
 }
 
 /// Configures the Actix application
