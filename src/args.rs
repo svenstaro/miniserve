@@ -119,8 +119,8 @@ struct CliArgs {
     title: Option<String>,
 
     /// Custom header from user
-    #[structopt(long = "header")]
-    header: Option<String>,
+    #[structopt(long = "header", parse(try_from_str = parse_header))]
+    header: Option<Header>,
 }
 
 /// Checks wether an interface is valid, i.e. it can be parsed into an IP address
@@ -172,6 +172,39 @@ fn parse_auth(src: &str) -> Result<auth::RequiredAuth, ContextualError> {
         username: username.to_owned(),
         password,
     })
+}
+
+/// A own header modified from [httparse](https://docs.rs/httparse/1.3.5/src/httparse/lib.rs.html#415-425)
+#[derive(Clone, Eq, PartialEq, Debug)]
+pub struct Header {
+    /// The name portion of a header.
+    ///
+    /// A header name must be valid ASCII-US, so it's safe to store as a `String`.
+    pub name: String,
+    /// The value portion of a header.
+    ///
+    /// While headers **should** be ASCII-US, the specification allows for
+    /// values that may not be, and so the value is stored as bytes.
+    pub value: Vec<u8>,
+}
+
+impl Header {
+    fn new(header: &httparse::Header) -> Self {
+        Header {
+            name: header.name.to_string(),
+            value: header.value.to_vec(),
+        }
+    }
+}
+
+fn parse_header(src: &str) -> Result<Header, httparse::Error> {
+    let mut headers = [httparse::EMPTY_HEADER; 1];
+    let mut header = src.to_string();
+    header.push('\n');
+    httparse::parse_headers(header.as_bytes(), &mut headers)?;
+
+    let header = Header::new(&headers[0]);
+    Ok(header)
 }
 
 /// Parses the command line arguments
