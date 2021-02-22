@@ -1,3 +1,5 @@
+use bytes::Bytes;
+use http::header::{HeaderMap, HeaderName, HeaderValue};
 use port_check::free_local_port;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::path::PathBuf;
@@ -120,7 +122,7 @@ struct CliArgs {
 
     /// Custom header from user
     #[structopt(long = "header", parse(try_from_str = parse_header))]
-    header: Option<Header>,
+    header: Option<HeaderMap>,
 }
 
 /// Checks wether an interface is valid, i.e. it can be parsed into an IP address
@@ -174,37 +176,26 @@ fn parse_auth(src: &str) -> Result<auth::RequiredAuth, ContextualError> {
     })
 }
 
-/// A own header modified from [httparse](https://docs.rs/httparse/1.3.5/src/httparse/lib.rs.html#415-425)
-#[derive(Clone, Eq, PartialEq, Debug)]
-pub struct Header {
-    /// The name portion of a header.
-    ///
-    /// A header name must be valid ASCII-US, so it's safe to store as a `String`.
-    pub name: String,
-    /// The value portion of a header.
-    ///
-    /// While headers **should** be ASCII-US, the specification allows for
-    /// values that may not be, and so the value is stored as bytes.
-    pub value: Vec<u8>,
-}
-
-impl Header {
-    fn new(header: &httparse::Header) -> Self {
-        Header {
-            name: header.name.to_string(),
-            value: header.value.to_vec(),
-        }
-    }
-}
-
-fn parse_header(src: &str) -> Result<Header, httparse::Error> {
-    let mut headers = [httparse::EMPTY_HEADER; 1];
+/// Custom header parser (allow multiple headers input)
+pub fn parse_header(src: &str) -> Result<HeaderMap, httparse::Error> {
+    // Max customized header is limitted to 16
+    let mut headers = [httparse::EMPTY_HEADER; 16];
     let mut header = src.to_string();
     header.push('\n');
     httparse::parse_headers(header.as_bytes(), &mut headers)?;
 
-    let header = Header::new(&headers[0]);
-    Ok(header)
+    let mut header_map = HeaderMap::new();
+
+    for h in headers.iter() {
+        if h.name != httparse::EMPTY_HEADER.name {
+            header_map.insert(
+                HeaderName::from_bytes(&Bytes::copy_from_slice(h.name.as_bytes())).unwrap(),
+                HeaderValue::from_bytes(h.value).unwrap(),
+            );
+        }
+    }
+
+    Ok(header_map)
 }
 
 /// Parses the command line arguments

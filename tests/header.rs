@@ -8,18 +8,17 @@ use std::process::{Command, Stdio};
 use std::thread::sleep;
 use std::time::Duration;
 
-#[rstest]
-fn custom_header_set(tmpdir: TempDir, port: u16) -> Result<(), Error> {
-    let header_name = "x-info";
-    let header_value = "123";
-    let header_str = format!("{}: {}", header_name, header_value);
-
-    let _ = Command::cargo_bin("miniserve")?
+#[rstest(header,
+    case("x-info: 123".to_string()),
+    case("x-info1: 123\r\nx-info2: 345".to_string())
+)]
+fn custom_header_set(tmpdir: TempDir, port: u16, header: String) -> Result<(), Error> {
+    let mut child = Command::cargo_bin("miniserve")?
         .arg(tmpdir.path())
         .arg("-p")
         .arg(port.to_string())
         .arg("--header")
-        .arg(header_str)
+        .arg(header.clone())
         .stdout(Stdio::null())
         .spawn()?;
 
@@ -27,7 +26,18 @@ fn custom_header_set(tmpdir: TempDir, port: u16) -> Result<(), Error> {
 
     let resp = reqwest::blocking::get(format!("http://localhost:{}", port).as_str())?;
 
-    assert_eq!(resp.headers().get(header_name).unwrap(), header_value);
+    let mut headers = [httparse::EMPTY_HEADER; 4];
+    let mut header = header.clone();
+    header.push('\n');
+    httparse::parse_headers(header.as_bytes(), &mut headers)?;
+
+    for h in headers.iter() {
+        if h.name != httparse::EMPTY_HEADER.name {
+            assert_eq!(resp.headers().get(h.name).unwrap(), h.value);
+        }
+    }
+
+    child.kill()?;
 
     Ok(())
 }

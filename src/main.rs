@@ -5,7 +5,7 @@ use actix_web::{
 };
 use actix_web::{middleware, App, HttpRequest, HttpResponse};
 use actix_web_httpauth::middleware::HttpAuthentication;
-use args::Header;
+use http::header::HeaderMap;
 use std::io::{self, Write};
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use std::thread;
@@ -91,7 +91,7 @@ pub struct MiniserveConfig {
     pub title: Option<String>,
 
     /// If specified, header will be added
-    pub header: Option<Header>,
+    pub header: Option<HeaderMap>,
 }
 
 fn main() {
@@ -285,11 +285,17 @@ async fn run() -> Result<(), ContextualError> {
 }
 
 fn configure_header(conf: &MiniserveConfig) -> middleware::DefaultHeaders {
-    let header = conf.clone().header;
+    let headers = conf.clone().header;
 
-    match header {
-        Some(header) if header.name != httparse::EMPTY_HEADER.name => {
-            middleware::DefaultHeaders::new().header(&header.name, header.value)
+    match headers {
+        Some(headers) => {
+            let mut default_headers = middleware::DefaultHeaders::new();
+            for (header_name, header_value) in headers.into_iter() {
+                if let Some(header_name) = header_name {
+                    default_headers = default_headers.header(&header_name, header_value);
+                }
+            }
+            default_headers
         }
         _ => middleware::DefaultHeaders::new(),
     }
