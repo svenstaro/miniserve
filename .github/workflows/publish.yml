@@ -16,43 +16,72 @@ jobs:
           - aarch64-unknown-linux-musl
           - armv7-unknown-linux-musleabihf
           - arm-unknown-linux-musleabihf
+          - mips-unknown-linux-musl
+          - mipsel-unknown-linux-musl
+          - mips64-unknown-linux-gnuabi64
+          - mips64el-unknown-linux-gnuabi64
+          - riscv64gc-unknown-linux-gnu
           - x86_64-pc-windows-msvc
           - x86_64-apple-darwin
         include:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-musl
             artifact_name: target/x86_64-unknown-linux-musl/release/miniserve
-            release_name: linux-x86_64
+            release_name: x86_64-unknown-linux-musl
             cross: true
             strip: true
           - os: ubuntu-latest
             target: aarch64-unknown-linux-musl
             artifact_name: target/aarch64-unknown-linux-musl/release/miniserve
-            release_name: linux-aarch64
+            release_name: aarch64-unknown-linux-musl
             cross: true
             strip: false
           - os: ubuntu-latest
             target: armv7-unknown-linux-musleabihf
             artifact_name: target/armv7-unknown-linux-musleabihf/release/miniserve
-            release_name: linux-armv7
+            release_name: armv7-unknown-linux-musleabihf
             cross: true
             strip: false
           - os: ubuntu-latest
             target: arm-unknown-linux-musleabihf
             artifact_name: target/arm-unknown-linux-musleabihf/release/miniserve
-            release_name: linux-arm
+            release_name: arm-unknown-linux-musleabihf
+            cross: true
+            strip: false
+          - os: ubuntu-latest
+            target: mips-unknown-linux-musl
+            artifact_name: target/mips-unknown-linux-musl/release/miniserve
+            release_name: mips-unknown-linux-musl
+            cross: true
+            strip: false
+          - os: ubuntu-latest
+            target: mipsel-unknown-linux-musl
+            artifact_name: target/mipsel-unknown-linux-musl/release/miniserve
+            release_name: mipsel-unknown-linux-musl
+            cross: true
+            strip: false
+          - os: ubuntu-latest
+            target: mips64-unknown-linux-gnuabi64
+            artifact_name: target/mips64-unknown-linux-gnuabi64/release/miniserve
+            release_name: mips64-unknown-linux-gnuabi64
+            cross: true
+            strip: false
+          - os: ubuntu-latest
+            target: mips64el-unknown-linux-gnuabi64
+            artifact_name: target/mips64el-unknown-linux-gnuabi64/release/miniserve
+            release_name: mips64el-unknown-linux-gnuabi64
             cross: true
             strip: false
           - os: windows-latest
             target: x86_64-pc-windows-msvc
             artifact_name: target/x86_64-pc-windows-msvc/release/miniserve.exe
-            release_name: windows-x86_64.exe
+            release_name: x86_64-pc-windows-msvc.exe
             cross: false
             strip: true
           - os: macos-latest
             target: x86_64-apple-darwin
             artifact_name: target/x86_64-apple-darwin/release/miniserve
-            release_name: macos-x86_64
+            release_name: x86_64-apple-darwin
             cross: false
             strip: true
 
