@@ -123,7 +123,7 @@ fn auth_rejects(
     Ok(())
 }
 
-/// Helper functions that register multiple accounts
+/// Helper function that registers multiple accounts
 #[cfg(test)]
 fn register_accounts<'a>(command: &'a mut Command) -> &'a mut Command {
     command
