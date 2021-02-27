@@ -5,6 +5,7 @@ use actix_web::{
 };
 use actix_web::{middleware, App, HttpRequest, HttpResponse};
 use actix_web_httpauth::middleware::HttpAuthentication;
+use http::header::HeaderMap;
 use std::io::{self, Write};
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use std::thread;
@@ -88,6 +89,9 @@ pub struct MiniserveConfig {
 
     /// Shown instead of host in page title and heading
     pub title: Option<String>,
+
+    /// If specified, header will be added
+    pub header: Option<HeaderMap>,
 }
 
 fn main() {
@@ -248,6 +252,7 @@ async fn run() -> Result<(), ContextualError> {
 
     let srv = actix_web::HttpServer::new(move || {
         App::new()
+            .wrap(configure_header(&inside_config.clone()))
             .app_data(inside_config.clone())
             .wrap(middleware::Condition::new(
                 !inside_config.auth.is_empty(),
@@ -277,6 +282,23 @@ async fn run() -> Result<(), ContextualError> {
 
     srv.await
         .map_err(|e| ContextualError::IoError("".to_owned(), e))
+}
+
+fn configure_header(conf: &MiniserveConfig) -> middleware::DefaultHeaders {
+    let headers = conf.clone().header;
+
+    match headers {
+        Some(headers) => {
+            let mut default_headers = middleware::DefaultHeaders::new();
+            for (header_name, header_value) in headers.into_iter() {
+                if let Some(header_name) = header_name {
+                    default_headers = default_headers.header(&header_name, header_value);
+                }
+            }
+            default_headers
+        }
+        _ => middleware::DefaultHeaders::new(),
+    }
 }
 
 /// Configures the Actix application

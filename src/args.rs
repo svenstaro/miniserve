@@ -1,3 +1,5 @@
+use bytes::Bytes;
+use http::header::{HeaderMap, HeaderName, HeaderValue};
 use port_check::free_local_port;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::path::PathBuf;
@@ -117,6 +119,10 @@ struct CliArgs {
     /// Shown instead of host in page title and heading
     #[structopt(short = "t", long = "title")]
     title: Option<String>,
+
+    /// Custom header from user
+    #[structopt(long = "header", parse(try_from_str = parse_header))]
+    header: Option<HeaderMap>,
 }
 
 /// Checks wether an interface is valid, i.e. it can be parsed into an IP address
@@ -168,6 +174,28 @@ fn parse_auth(src: &str) -> Result<auth::RequiredAuth, ContextualError> {
         username: username.to_owned(),
         password,
     })
+}
+
+/// Custom header parser (allow multiple headers input)
+pub fn parse_header(src: &str) -> Result<HeaderMap, httparse::Error> {
+    // Max customized header is limitted to 16
+    let mut headers = [httparse::EMPTY_HEADER; 16];
+    let mut header = src.to_string();
+    header.push('\n');
+    httparse::parse_headers(header.as_bytes(), &mut headers)?;
+
+    let mut header_map = HeaderMap::new();
+
+    for h in headers.iter() {
+        if h.name != httparse::EMPTY_HEADER.name {
+            header_map.insert(
+                HeaderName::from_bytes(&Bytes::copy_from_slice(h.name.as_bytes())).unwrap(),
+                HeaderValue::from_bytes(h.value).unwrap(),
+            );
+        }
+    }
+
+    Ok(header_map)
 }
 
 /// Parses the command line arguments
@@ -225,6 +253,7 @@ pub fn parse_args() -> crate::MiniserveConfig {
         zip_enabled: args.enable_zip,
         dirs_first: args.dirs_first,
         title: args.title,
+        header: args.header,
     }
 }
 
