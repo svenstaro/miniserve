@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Add binaries for more architectures
 - Upgrade lockfile which fixes some security issues
 - Allow multiple file upload [#434](https://github.com/svenstaro/miniserve/pull/434) (thanks @mhuesch)
+- Allow for setting custom headers via `--header` [#452](https://github.com/svenstaro/miniserve/pull/452) (thanks @deantvv)
 
 ## [0.10.4] - 2021-01-05
 - Add `--dirs-first`/`-D` option to list directories first [#423](https://github.com/svenstaro/miniserve/pull/423) (thanks @levaitamas)
