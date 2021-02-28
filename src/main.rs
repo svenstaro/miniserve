@@ -91,7 +91,7 @@ pub struct MiniserveConfig {
     pub title: Option<String>,
 
     /// If specified, header will be added
-    pub header: Option<HeaderMap>,
+    pub header: Vec<HeaderMap>,
 }
 
 fn main() {
@@ -287,18 +287,15 @@ async fn run() -> Result<(), ContextualError> {
 fn configure_header(conf: &MiniserveConfig) -> middleware::DefaultHeaders {
     let headers = conf.clone().header;
 
-    match headers {
-        Some(headers) => {
-            let mut default_headers = middleware::DefaultHeaders::new();
-            for (header_name, header_value) in headers.into_iter() {
-                if let Some(header_name) = header_name {
-                    default_headers = default_headers.header(&header_name, header_value);
-                }
+    let mut default_headers = middleware::DefaultHeaders::new();
+    for header in headers {
+        for (header_name, header_value) in header.into_iter() {
+            if let Some(header_name) = header_name {
+                default_headers = default_headers.header(&header_name, header_value);
             }
-            default_headers
         }
-        _ => middleware::DefaultHeaders::new(),
     }
+    default_headers
 }
 
 /// Configures the Actix application

@@ -118,6 +118,8 @@ Sometimes this is just a more practical and quick way than doing things properly
         -d, --color-scheme-dark <color-scheme-dark>
                 Default color scheme [default: archlinux]  [possible values: squirrel, archlinux,
                 zenburn, monokai]
+            --header <header>...
+                Set custom header for responses
             --index <index_file>
                 The name of a directory index file to serve, like "index.html"
 

@@ -120,9 +120,9 @@ struct CliArgs {
     #[structopt(short = "t", long = "title")]
     title: Option<String>,
 
-    /// Custom header from user
-    #[structopt(long = "header", parse(try_from_str = parse_header))]
-    header: Option<HeaderMap>,
+    /// Set custom header for responses
+    #[structopt(long = "header", parse(try_from_str = parse_header), number_of_values = 1)]
+    header: Vec<HeaderMap>,
 }
 
 /// Checks wether an interface is valid, i.e. it can be parsed into an IP address
@@ -178,15 +178,13 @@ fn parse_auth(src: &str) -> Result<auth::RequiredAuth, ContextualError> {
 
 /// Custom header parser (allow multiple headers input)
 pub fn parse_header(src: &str) -> Result<HeaderMap, httparse::Error> {
-    // Max customized header is limitted to 16
-    let mut headers = [httparse::EMPTY_HEADER; 16];
+    let mut headers = [httparse::EMPTY_HEADER; 1];
     let mut header = src.to_string();
     header.push('\n');
     httparse::parse_headers(header.as_bytes(), &mut headers)?;
 
     let mut header_map = HeaderMap::new();
-
-    for h in headers.iter() {
+    if let Some(h) = headers.first() {
         if h.name != httparse::EMPTY_HEADER.name {
             header_map.insert(
                 HeaderName::from_bytes(&Bytes::copy_from_slice(h.name.as_bytes())).unwrap(),
