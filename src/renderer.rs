@@ -139,9 +139,9 @@ pub fn page(
                     a.back href="#top" {
                         (arrow_up())
                     }
-            @if !hide_version_footer {
-                (version_footer())
-            }
+                    @if !hide_version_footer {
+                        (version_footer())
+                    }
                 }
             }
         }
@@ -517,9 +517,9 @@ pub fn render_error(
                             }
                         }
                     }
-            @if !hide_version_footer {
-                (version_footer())
-            }
+                    @if !hide_version_footer {
+                        (version_footer())
+                    }
                 }
             }
         }
