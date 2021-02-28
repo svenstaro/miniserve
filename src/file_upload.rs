@@ -113,6 +113,7 @@ pub fn upload_file(
     css_route: String,
     default_color_scheme: &str,
     default_color_scheme_dark: &str,
+    hide_version_footer: bool,
 ) -> Pin<Box<dyn Future<Output = Result<HttpResponse, actix_web::Error>>>> {
     let conf = req.app_data::<crate::MiniserveConfig>().unwrap();
     let return_path = if let Some(header) = req.headers().get(header::REFERER) {
@@ -142,6 +143,7 @@ pub fn upload_file(
                 &css_route,
                 default_color_scheme,
                 default_color_scheme_dark,
+                hide_version_footer,
             ));
         }
     };
@@ -164,6 +166,7 @@ pub fn upload_file(
                 &css_route,
                 default_color_scheme,
                 default_color_scheme_dark,
+                hide_version_footer,
             ));
         }
     };
@@ -186,6 +189,7 @@ pub fn upload_file(
                 &css_route,
                 default_color_scheme,
                 default_color_scheme_dark,
+                hide_version_footer,
             ));
         }
     };
@@ -216,6 +220,7 @@ pub fn upload_file(
                     &css_route,
                     &default_color_scheme,
                     &default_color_scheme_dark,
+                    hide_version_footer,
                 ),
             }),
     )
@@ -234,6 +239,7 @@ fn create_error_response(
     css_route: &str,
     default_color_scheme: &str,
     default_color_scheme_dark: &str,
+    hide_version_footer: bool,
 ) -> future::Ready<Result<HttpResponse, actix_web::Error>> {
     errors::log_error_chain(description.to_string());
     future::ok(
@@ -252,6 +258,7 @@ fn create_error_response(
                     &css_route,
                     default_color_scheme,
                     default_color_scheme_dark,
+                    hide_version_footer,
                 )
                 .into_string(),
             ),

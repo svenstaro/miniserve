@@ -92,6 +92,9 @@ pub struct MiniserveConfig {
 
     /// If specified, header will be added
     pub header: Vec<HeaderMap>,
+
+    /// If enabled, version footer is hidden
+    pub hide_version_footer: bool,
 }
 
 fn main() {
@@ -318,6 +321,7 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
         let tar_enabled = conf.tar_enabled;
         let zip_enabled = conf.zip_enabled;
         let dirs_first = conf.dirs_first;
+        let hide_version_footer = conf.hide_version_footer;
         let title = conf.title.clone();
         upload_route = if let Some(random_route) = conf.random_route.clone() {
             format!("/{}/upload", random_route)
@@ -351,6 +355,7 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
                             tar_enabled,
                             zip_enabled,
                             dirs_first,
+                            hide_version_footer,
                             title.clone(),
                         )
                     })
@@ -364,6 +369,7 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
 
     let default_color_scheme = conf.default_color_scheme.clone();
     let default_color_scheme_dark = conf.default_color_scheme_dark.clone();
+    let hide_version_footer = conf.hide_version_footer;
 
     if let Some(serve_path) = serve_path {
         if conf.file_upload {
@@ -378,6 +384,7 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
                         css_route.clone(),
                         &default_color_scheme,
                         &default_color_scheme_dark,
+                        hide_version_footer,
                     )
                 })),
             )
@@ -416,6 +423,7 @@ async fn error_404(req: HttpRequest) -> HttpResponse {
             &css_route,
             &conf.default_color_scheme,
             &conf.default_color_scheme_dark,
+            conf.hide_version_footer,
         )
         .into_string(),
     )

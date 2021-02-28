@@ -126,6 +126,7 @@ fn build_unauthorized_response(
         &state.css_route,
         &state.default_color_scheme,
         &state.default_color_scheme_dark,
+        state.hide_version_footer,
     )
     .into_string()
 }

@@ -123,6 +123,10 @@ struct CliArgs {
     /// Set custom header for responses
     #[structopt(long = "header", parse(try_from_str = parse_header), number_of_values = 1)]
     header: Vec<HeaderMap>,
+
+    /// Hide version footer
+    #[structopt(short = "F", long = "hide-version-footer")]
+    hide_version_footer: bool,
 }
 
 /// Checks wether an interface is valid, i.e. it can be parsed into an IP address
@@ -252,6 +256,7 @@ pub fn parse_args() -> crate::MiniserveConfig {
         dirs_first: args.dirs_first,
         title: args.title,
         header: args.header,
+        hide_version_footer: args.hide_version_footer,
     }
 }
 

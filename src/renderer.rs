@@ -26,6 +26,7 @@ pub fn page(
     breadcrumbs: Vec<Breadcrumb>,
     tar_enabled: bool,
     zip_enabled: bool,
+    hide_version_footer: bool,
 ) -> Markup {
     let upload_action = build_upload_action(upload_route, encoded_dir, sort_method, sort_order);
 
@@ -138,8 +139,31 @@ pub fn page(
                     a.back href="#top" {
                         (arrow_up())
                     }
+            @if !hide_version_footer {
+                (version_footer())
+            }
                 }
             }
+        }
+    }
+}
+
+// Get version info
+fn get_version_info() -> String {
+    const PROG_NAME: Option<&'static str> = option_env!("CARGO_PKG_NAME");
+    const VERSION: Option<&'static str> = option_env!("CARGO_PKG_VERSION");
+    format!(
+        "{}/{}",
+        PROG_NAME.unwrap_or("miniserve"),
+        VERSION.unwrap_or("unknown")
+    )
+}
+
+// Partial: version footer
+fn version_footer() -> Markup {
+    html! {
+        p style="text-align:center;padding-top:1em" {
+            (get_version_info())
         }
     }
 }
@@ -465,6 +489,7 @@ pub fn render_error(
     css_route: &str,
     default_color_scheme: &str,
     default_color_scheme_dark: &str,
+    hide_version_footer: bool,
 ) -> Markup {
     let link = if has_referer {
         return_address.to_string()
@@ -492,6 +517,9 @@ pub fn render_error(
                             }
                         }
                     }
+            @if !hide_version_footer {
+                (version_footer())
+            }
                 }
             }
         }

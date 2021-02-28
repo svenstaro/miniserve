@@ -159,6 +159,7 @@ pub fn directory_listing(
     tar_enabled: bool,
     zip_enabled: bool,
     dirs_first: bool,
+    hide_version_footer: bool,
     title: Option<String>,
 ) -> Result<ServiceResponse, io::Error> {
     use actix_web::dev::BodyEncoding;
@@ -346,6 +347,7 @@ pub fn directory_listing(
                             &css_route,
                             default_color_scheme,
                             default_color_scheme_dark,
+                            hide_version_footer,
                         )
                         .into_string(),
                     ),
@@ -411,6 +413,7 @@ pub fn directory_listing(
                         breadcrumbs,
                         tar_enabled,
                         zip_enabled,
+                        hide_version_footer,
                     )
                     .into_string(),
                 ),
