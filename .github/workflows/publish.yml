@@ -72,6 +72,12 @@ jobs:
             release_name: mips64el-unknown-linux-gnuabi64
             cross: true
             strip: false
+          - os: ubuntu-latest
+            target: riscv64gc-unknown-linux-gnu
+            artifact_name: target/riscv64gc-unknown-linux-gnu/release/miniserve
+            release_name: riscv64gc-unknown-linux-gnu
+            cross: true
+            strip: false
           - os: windows-latest
             target: x86_64-pc-windows-msvc
             artifact_name: target/x86_64-pc-windows-msvc/release/miniserve.exe
