@@ -18,7 +18,8 @@ fn custom_header_set(tmpdir: TempDir, port: u16, headers: Vec<String>) -> Result
         .arg("-p")
         .arg(port.to_string())
         .args(headers.iter().flat_map(|h| vec!["--header", h]))
-        .stdout(Stdio::null()).spawn()?;
+        .stdout(Stdio::null())
+        .spawn()?;
 
     sleep(Duration::from_secs(1));
 
