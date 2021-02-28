@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+
+## [0.11.0] - 2021-02-28
 - Add binaries for more architectures
 - Upgrade lockfile which fixes some security issues
 - Allow multiple file upload [#434](https://github.com/svenstaro/miniserve/pull/434) (thanks @mhuesch)
@@ -60,7 +62,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Some theme related bug fixes (thanks @boastful-squirrel)
 
 <!-- next-url -->
-[Unreleased]: https://github.com/svenstaro/miniserve/compare/v0.10.4...HEAD
+[Unreleased]: https://github.com/svenstaro/miniserve/compare/v0.11.0...HEAD
+[0.11.0]: https://github.com/svenstaro/miniserve/compare/v0.10.4...v0.11.0
 [0.10.4]: https://github.com/svenstaro/miniserve/compare/v0.10.3...v0.10.4
 [0.10.3]: https://github.com/svenstaro/miniserve/compare/v0.10.2...v0.10.3
 [0.10.2]: https://github.com/svenstaro/miniserve/compare/v0.10.1...v0.10.2
