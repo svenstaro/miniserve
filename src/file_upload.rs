@@ -105,6 +105,7 @@ fn handle_multipart(
 /// server root directory. Any path which will go outside of this directory is considered
 /// invalid.
 /// This method returns future.
+#[allow(clippy::too_many_arguments)]
 pub fn upload_file(
     req: HttpRequest,
     payload: actix_web::web::Payload,
