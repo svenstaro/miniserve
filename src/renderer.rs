@@ -152,7 +152,7 @@ pub fn page(
 // Partial: version footer
 fn version_footer() -> Markup {
     html! {
-        p style="text-align:center;padding-top:1em" {
+        p.footer {
             (format!("{}/{}", crate_name!(), crate_version!()))
         }
     }
