@@ -42,6 +42,13 @@ body {
     word-break: break-word;
 }
 
+.footer {
+    text-align: center;
+    padding-top: 1.5rem;
+    font-size: 0.7em;
+    color: var(--footer_color);
+}
+
 a {
     text-decoration: none;
 }
@@ -564,6 +571,7 @@ th span.active span {
     --size_background_color: #323232;
     --size_text_color: #ffffff;
     --error_color: #d02424;
+    --footer_color: #898989;
 }
 
 @mixin theme_archlinux {
@@ -608,6 +616,7 @@ th span.active span {
     --size_background_color: #5294e2;
     --size_text_color: #fefefe;
     --error_color: #e44b4b;
+    --footer_color: #8eabcc;
 }
 
 @mixin theme_zenburn {
@@ -652,6 +661,7 @@ th span.active span {
     --size_background_color: #7f9f7f;
     --size_text_color: #efefef;
     --error_color: #d06565;
+    --footer_color: #bfaf9f;
 }
 
 @mixin theme_monokai {
@@ -696,6 +706,7 @@ th span.active span {
     --size_background_color: #75715e;
     --size_text_color: #f8f8f2;
     --error_color: #d02929;
+    --footer_color: #56c9df;
 }
 
 
@@ -730,5 +741,3 @@ th span.active span {
         @extend %theme_dark_#{$theme};
     }
 }
-
-

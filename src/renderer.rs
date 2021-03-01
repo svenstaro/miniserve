@@ -3,6 +3,7 @@ use chrono::{DateTime, Utc};
 use chrono_humanize::Humanize;
 use maud::{html, Markup, PreEscaped, DOCTYPE};
 use std::time::SystemTime;
+use structopt::clap::{crate_name, crate_version};
 use strum::IntoEnumIterator;
 
 use crate::archive::CompressionMethod;
@@ -26,6 +27,7 @@ pub fn page(
     breadcrumbs: Vec<Breadcrumb>,
     tar_enabled: bool,
     zip_enabled: bool,
+    hide_version_footer: bool,
 ) -> Markup {
     let upload_action = build_upload_action(upload_route, encoded_dir, sort_method, sort_order);
 
@@ -138,8 +140,20 @@ pub fn page(
                     a.back href="#top" {
                         (arrow_up())
                     }
+                    @if !hide_version_footer {
+                        (version_footer())
+                    }
                 }
             }
+        }
+    }
+}
+
+// Partial: version footer
+fn version_footer() -> Markup {
+    html! {
+        p.footer {
+            (format!("{}/{}", crate_name!(), crate_version!()))
         }
     }
 }
@@ -465,6 +479,7 @@ pub fn render_error(
     css_route: &str,
     default_color_scheme: &str,
     default_color_scheme_dark: &str,
+    hide_version_footer: bool,
 ) -> Markup {
     let link = if has_referer {
         return_address.to_string()
@@ -491,6 +506,9 @@ pub fn render_error(
                                 "Go back to file listing"
                             }
                         }
+                    }
+                    @if !hide_version_footer {
+                        (version_footer())
                     }
                 }
             }
