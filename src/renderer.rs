@@ -3,8 +3,9 @@ use chrono::{DateTime, Utc};
 use chrono_humanize::Humanize;
 use maud::{html, Markup, PreEscaped, DOCTYPE};
 use std::time::SystemTime;
-use strum::IntoEnumIterator;
 use structopt::clap::{crate_name, crate_version};
+use strum::IntoEnumIterator;
+
 use crate::archive::CompressionMethod;
 use crate::listing::{Breadcrumb, Entry, SortingMethod, SortingOrder};
 
