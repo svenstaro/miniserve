@@ -4,7 +4,7 @@ use chrono_humanize::Humanize;
 use maud::{html, Markup, PreEscaped, DOCTYPE};
 use std::time::SystemTime;
 use strum::IntoEnumIterator;
-
+use structopt::clap::{crate_name, crate_version};
 use crate::archive::CompressionMethod;
 use crate::listing::{Breadcrumb, Entry, SortingMethod, SortingOrder};
 
@@ -148,22 +148,11 @@ pub fn page(
     }
 }
 
-// Get version info
-fn get_version_info() -> String {
-    const PROG_NAME: Option<&'static str> = option_env!("CARGO_PKG_NAME");
-    const VERSION: Option<&'static str> = option_env!("CARGO_PKG_VERSION");
-    format!(
-        "{}/{}",
-        PROG_NAME.unwrap_or("miniserve"),
-        VERSION.unwrap_or("unknown")
-    )
-}
-
 // Partial: version footer
 fn version_footer() -> Markup {
     html! {
         p style="text-align:center;padding-top:1em" {
-            (get_version_info())
+            (format!("{}/{}", crate_name!(), crate_version!()))
         }
     }
 }
