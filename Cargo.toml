@@ -18,21 +18,21 @@ panic = 'abort'
 
 [dependencies]
 yansi = "0.5"
-actix-web = "3.3"
+actix-web = "3"
 simplelog = "0.9"
-percent-encoding = "2.1"
+percent-encoding = "2"
 port_check = "0.1"
 bytesize = "1.0.0"
 nanoid = "0.3"
-alphanumeric-sort = "1.4.0"
+alphanumeric-sort = "1"
 structopt = "0.3"
 chrono = "0.4.19"
 chrono-humanize = "0.1.2"
 maud = { version = "0.22.2", features = ["actix-web"] }
-serde = { version = "1.0.123", features = ["derive"] }
+serde = { version = "1", features = ["derive"] }
 tar = "0.4.33"
 futures = "0.3.13"
-libflate = "1.0.3"
+libflate = "1"
 failure = "0.1.8"
 log = "0.4.14"
 strum = "0.20.0"
@@ -40,7 +40,7 @@ strum_macros = "0.20.1"
 sha2 = "0.9"
 hex = "0.4.3"
 zip = "0.5.11"
-qrcodegen = "1.6.0"
+qrcodegen = "1"
 actix-files = "0.5"
 actix-multipart = "0.3.0"
 actix-web-httpauth = "0.5.0"
@@ -50,14 +50,14 @@ http = "0.2.3"
 bytes = "1"
 
 [dev-dependencies]
-assert_cmd = "1.0"
+assert_cmd = "1"
 reqwest = { version = "0.11", features = ["blocking", "multipart", "rustls-tls"], default-features = false }
-assert_fs = "1.0"
+assert_fs = "1"
 select = "0.5"
 rstest = "0.6"
-regex = "1.4.3"
+regex = "1"
 pretty_assertions = "0.6"
-url = "2.2"
+url = "2"
 
 [build-dependencies]
 grass = "0.10.4"
