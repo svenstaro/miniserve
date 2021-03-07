@@ -36,6 +36,36 @@ fn index_gets_trailing_slash(tmpdir: TempDir, port: u16) -> Result<(), Error> {
 }
 
 #[rstest]
+/// Can't navigate up the root.
+fn cant_navigate_up_the_root(tmpdir: TempDir, port: u16) -> Result<(), Error> {
+    let mut child = Command::cargo_bin("miniserve")?
+        .arg("-p")
+        .arg(port.to_string())
+        .arg(tmpdir.path())
+        .stdout(Stdio::null())
+        .spawn()?;
+
+    sleep(Duration::from_secs(1));
+
+    // We're using curl for this as it has the option `--path-as-is` which doesn't normalize
+    // invalid urls. A useful feature in this particular case.
+    let base_url = Url::parse(&format!("http://localhost:{}", port))?;
+    let curl_successful = Command::new("curl")
+        .arg("-s")
+        .arg("--fail")
+        .arg("--path-as-is")
+        .arg(format!("{}/../", base_url))
+        .stdout(Stdio::null())
+        .status()?
+        .success();
+    assert!(curl_successful);
+
+    child.kill()?;
+
+    Ok(())
+}
+
+#[rstest]
 /// We can navigate into directories and back using shown links.
 fn can_navigate_into_dirs_and_back(tmpdir: TempDir, port: u16) -> Result<(), Error> {
     let mut child = Command::cargo_bin("miniserve")?

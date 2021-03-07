@@ -214,7 +214,7 @@ pub fn directory_listing(
                     link_accumulator
                         .push_str(&(utf8_percent_encode(&name, FRAGMENT).to_string() + "/"));
                 }
-                _ => unreachable!(),
+                _ => name = "".to_string(),
             };
 
             res.push(Breadcrumb::new(
