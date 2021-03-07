@@ -227,7 +227,7 @@ pub fn parse_args() -> crate::MiniserveConfig {
     let default_color_scheme = args.color_scheme;
     let default_color_scheme_dark = args.color_scheme_dark;
 
-    let path_explicitly_chosen = args.path.is_some();
+    let path_explicitly_chosen = args.path.is_some() || args.index.is_some();
 
     let port = match args.port {
         0 => free_local_port().expect("no free ports available"),
