@@ -2,7 +2,7 @@ mod fixtures;
 
 use assert_cmd::prelude::*;
 use assert_fs::fixture::TempDir;
-use fixtures::{port, tmpdir, Error, DIRECTORIES, FILES};
+use fixtures::{port, tmpdir, Error, DIRECTORIES, FILES, HIDDEN_DIRECTORIES, HIDDEN_FILES};
 use regex::Regex;
 use rstest::rstest;
 use select::document::Document;
@@ -64,6 +64,57 @@ fn serves_requests_with_non_default_port(tmpdir: TempDir, port: u16) -> Result<(
                 .error_for_status()?;
         let dir_body_parsed = Document::from_read(dir_body)?;
         for &file in FILES {
+            assert!(dir_body_parsed
+                .find(|x: &Node| x.text() == file)
+                .next()
+                .is_some());
+        }
+    }
+
+    child.kill()?;
+
+    Ok(())
+}
+
+#[rstest]
+fn serves_requests_hidden_files(tmpdir: TempDir, port: u16) -> Result<(), Error> {
+    let mut child = Command::cargo_bin("miniserve")?
+        .arg(tmpdir.path())
+        .arg("-p")
+        .arg(port.to_string())
+        .arg("--hidden")
+        .stdout(Stdio::null())
+        .spawn()?;
+
+    sleep(Duration::from_secs(1));
+
+    let paths = std::fs::read_dir(tmpdir.path()).unwrap();
+
+    for path in paths {
+        println!("Name: {}", path.unwrap().path().display())
+    }
+
+    let body = reqwest::blocking::get("http://localhost:8080")?.error_for_status()?;
+    let parsed = Document::from_read(body)?;
+
+    for &file in FILES.into_iter().chain(HIDDEN_FILES) {
+        let f = parsed.find(|x: &Node| x.text() == file).next().unwrap();
+        assert_eq!(
+            format!("/{}", file),
+            percent_encoding::percent_decode_str(f.attr("href").unwrap()).decode_utf8_lossy(),
+        );
+    }
+
+    for &directory in DIRECTORIES.into_iter().chain(HIDDEN_DIRECTORIES) {
+        assert!(parsed
+            .find(|x: &Node| x.text() == directory)
+            .next()
+            .is_some());
+        let dir_body =
+            reqwest::blocking::get(format!("http://localhost:{}/{}", port, directory).as_str())?
+                .error_for_status()?;
+        let dir_body_parsed = Document::from_read(dir_body)?;
+        for &file in FILES.into_iter().chain(HIDDEN_FILES) {
             assert!(dir_body_parsed
                 .find(|x: &Node| x.text() == file)
                 .next()

@@ -148,6 +148,7 @@ pub fn directory_listing(
     dir: &actix_files::Directory,
     req: &HttpRequest,
     skip_symlinks: bool,
+    show_hidden: bool,
     file_upload: bool,
     random_route: Option<String>,
     favicon_route: String,
@@ -248,7 +249,7 @@ pub fn directory_listing(
     let mut entries: Vec<Entry> = Vec::new();
 
     for entry in dir.path.read_dir()? {
-        if dir.is_visible(&entry) {
+        if dir.is_visible(&entry) || show_hidden {
             let entry = entry?;
             let p = match entry.path().strip_prefix(&dir.path) {
                 Ok(p) => base.join(p),
