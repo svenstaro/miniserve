@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+- Fix DoS issue when deliberately sending unconforming URL paths
 - Add footer [#456](https://github.com/svenstaro/miniserve/pull/456) (thanks @levaitamas)
 
 ## [0.11.0] - 2021-02-28
