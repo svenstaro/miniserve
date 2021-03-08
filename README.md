@@ -49,6 +49,15 @@ Sometimes this is just a more practical and quick way than doing things properly
 
     miniserve -i 192.168.0.1 -i 10.13.37.10 -i ::1 /tmp/myshare
 
+### Upload a file using `curl`:
+
+    # in one terminal
+    miniserve -u .
+    # in another terminal
+    curl -F "path=@$FILE" http://localhost:8080/upload\?path\=/
+
+(where `$FILE` is the path to the file. This uses miniserve's default port of 8080)
+
 ## Features
 
 - Easy to use
