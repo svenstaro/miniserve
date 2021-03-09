@@ -56,7 +56,7 @@ assert_fs = "1"
 select = "0.5"
 rstest = "0.6"
 regex = "1"
-pretty_assertions = "0.6"
+pretty_assertions = "0.7"
 url = "2"
 
 [build-dependencies]
