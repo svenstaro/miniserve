@@ -3,6 +3,7 @@ mod fixtures;
 use assert_cmd::prelude::*;
 use assert_fs::fixture::TempDir;
 use fixtures::{port, tmpdir, Error, DIRECTORIES, FILES, HIDDEN_DIRECTORIES, HIDDEN_FILES};
+use http::StatusCode;
 use regex::Regex;
 use rstest::rstest;
 use select::document::Document;
@@ -115,6 +116,36 @@ fn serves_requests_hidden_files(tmpdir: TempDir, port: u16) -> Result<(), Error>
                 .next()
                 .is_some());
         }
+    }
+
+    child.kill()?;
+
+    Ok(())
+}
+
+#[rstest]
+fn serves_requests_no_hidden_files_without_flag(tmpdir: TempDir, port: u16) -> Result<(), Error> {
+    let mut child = Command::cargo_bin("miniserve")?
+        .arg(tmpdir.path())
+        .arg("-p")
+        .arg(port.to_string())
+        .stdout(Stdio::null())
+        .spawn()?;
+
+    sleep(Duration::from_secs(1));
+
+    let body = reqwest::blocking::get(format!("http://localhost:{}", port).as_str())?
+        .error_for_status()?;
+    let parsed = Document::from_read(body)?;
+
+    for &hidden_item in HIDDEN_FILES.into_iter().chain(HIDDEN_DIRECTORIES) {
+        assert!(parsed
+            .find(|x: &Node| x.text() == hidden_item)
+            .next()
+            .is_none());
+        let resp =
+            reqwest::blocking::get(format!("http://localhost:{}/{}", port, hidden_item).as_str())?;
+        assert_eq!(resp.status(), StatusCode::BAD_REQUEST);
     }
 
     child.kill()?;
