@@ -28,7 +28,7 @@ pub static DIRECTORIES: &[&str] = &["dira/", "dirb/", "dirc/"];
 
 /// Hidden directories for testing purpose
 #[allow(dead_code)]
-pub static HIDDEN_DIRECTORIES: &[&str] = &[".hidden_dir1", ".hidden_dir2"];
+pub static HIDDEN_DIRECTORIES: &[&str] = &[".hidden_dir1/", ".hidden_dir2/"];
 
 /// Name of a deeply nested file
 #[allow(dead_code)]
