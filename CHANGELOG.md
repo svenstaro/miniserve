@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+
+## [0.12.0] - 2021-03-20
 - Add option `-H`/`--hidden` to show hidden files
 - Start instantly in case an explicit index is chosen
 - Fix DoS issue when deliberately sending unconforming URL paths
@@ -67,7 +69,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Some theme related bug fixes (thanks @boastful-squirrel)
 
 <!-- next-url -->
-[Unreleased]: https://github.com/svenstaro/miniserve/compare/v0.11.0...HEAD
+[Unreleased]: https://github.com/svenstaro/miniserve/compare/v0.12.0...HEAD
+[0.12.0]: https://github.com/svenstaro/miniserve/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/svenstaro/miniserve/compare/v0.10.4...v0.11.0
 [0.10.4]: https://github.com/svenstaro/miniserve/compare/v0.10.3...v0.10.4
 [0.10.3]: https://github.com/svenstaro/miniserve/compare/v0.10.2...v0.10.3
