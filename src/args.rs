@@ -69,6 +69,10 @@ struct CliArgs {
     #[structopt(short = "P", long = "no-symlinks")]
     no_symlinks: bool,
 
+    /// Show hidden files
+    #[structopt(short = "H", long = "hidden")]
+    hidden: bool,
+
     /// Default color scheme
     #[structopt(
         short = "c",
@@ -242,6 +246,7 @@ pub fn parse_args() -> crate::MiniserveConfig {
         auth: args.auth,
         path_explicitly_chosen,
         no_symlinks: args.no_symlinks,
+        show_hidden: args.hidden,
         random_route,
         favicon_route,
         css_route,

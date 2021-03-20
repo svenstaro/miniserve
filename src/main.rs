@@ -48,6 +48,9 @@ pub struct MiniserveConfig {
     /// Enable symlink resolution
     pub no_symlinks: bool,
 
+    /// Show hidden files
+    pub show_hidden: bool,
+
     /// Enable random route generation
     pub random_route: Option<String>,
 
@@ -311,6 +314,7 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
     let serve_path = {
         let path = &conf.path;
         let no_symlinks = conf.no_symlinks;
+        let show_hidden = conf.show_hidden;
         let random_route = conf.random_route.clone();
         let favicon_route = conf.favicon_route.clone();
         let css_route = conf.css_route.clone();
@@ -336,31 +340,39 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
             )
         } else {
             let u_r = upload_route.clone();
-            Some(
-                actix_files::Files::new(&full_route, path)
+            let files;
+            if show_hidden {
+                files = actix_files::Files::new(&full_route, path)
                     .show_files_listing()
-                    .files_listing_renderer(move |dir, req| {
-                        listing::directory_listing(
-                            dir,
-                            req,
-                            no_symlinks,
-                            file_upload,
-                            random_route.clone(),
-                            favicon_route.clone(),
-                            css_route.clone(),
-                            &default_color_scheme,
-                            &default_color_scheme_dark,
-                            show_qrcode,
-                            u_r.clone(),
-                            tar_enabled,
-                            zip_enabled,
-                            dirs_first,
-                            hide_version_footer,
-                            title.clone(),
-                        )
-                    })
-                    .default_handler(web::to(error_404)),
-            )
+                    .use_hidden_files();
+            } else {
+                files = actix_files::Files::new(&full_route, path).show_files_listing();
+            }
+
+            let files = files
+                .files_listing_renderer(move |dir, req| {
+                    listing::directory_listing(
+                        dir,
+                        req,
+                        no_symlinks,
+                        show_hidden,
+                        file_upload,
+                        random_route.clone(),
+                        favicon_route.clone(),
+                        css_route.clone(),
+                        &default_color_scheme,
+                        &default_color_scheme_dark,
+                        show_qrcode,
+                        u_r.clone(),
+                        tar_enabled,
+                        zip_enabled,
+                        dirs_first,
+                        hide_version_footer,
+                        title.clone(),
+                    )
+                })
+                .default_handler(web::to(error_404));
+            Some(files)
         }
     };
 
