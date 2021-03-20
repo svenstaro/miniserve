@@ -62,6 +62,7 @@ fn get_svg_qrcode(tmpdir: TempDir, port: u16) -> Result<(), Error> {
         .arg("-p")
         .arg(port.to_string())
         .stdout(Stdio::null())
+        .stderr(Stdio::null())
         .spawn()?;
 
     sleep(Duration::from_secs(1));
