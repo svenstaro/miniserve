@@ -33,7 +33,7 @@ serde = { version = "1", features = ["derive"] }
 tar = "0.4.33"
 futures = "0.3.13"
 libflate = "1"
-failure = "0.1.8"
+thiserror = "1"
 log = "0.4.14"
 strum = "0.20.0"
 strum_macros = "0.20.1"
