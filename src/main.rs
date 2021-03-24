@@ -340,14 +340,14 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
             )
         } else {
             let u_r = upload_route.clone();
-            let files;
-            if show_hidden {
-                files = actix_files::Files::new(&full_route, path)
-                    .show_files_listing()
-                    .use_hidden_files();
+            let files = actix_files::Files::new(&full_route, path)
+                .show_files_listing()
+                .disable_content_disposition();
+            let files = if show_hidden {
+                files.use_hidden_files()
             } else {
-                files = actix_files::Files::new(&full_route, path).show_files_listing();
-            }
+                files
+            };
 
             let files = files
                 .files_listing_renderer(move |dir, req| {
