@@ -69,7 +69,7 @@ dependencies = [
  "actix-service",
  "actix-threadpool",
  "actix-utils",
- "base64 0.13.0",
+ "base64",
  "bitflags",
  "brotli2",
  "bytes 0.5.6",
@@ -303,14 +303,12 @@ dependencies = [
 
 [[package]]
 name = "actix-web-httpauth"
-version = "0.5.0"
+version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "536a75d767c5c2b3e64d3f569621f38ed7609359a0c82d149c88290a6ba41b22"
+checksum = "0c3b11a07a3df3f7970fd8bd38cc66998b5549f507c54cc64c6e843bc82d6358"
 dependencies = [
- "actix-service",
  "actix-web",
- "base64 0.12.3",
- "bytes 0.5.6",
+ "base64",
  "futures-util",
 ]
 
@@ -431,7 +429,7 @@ dependencies = [
  "actix-http",
  "actix-rt",
  "actix-service",
- "base64 0.13.0",
+ "base64",
  "bytes 0.5.6",
  "cfg-if 1.0.0",
  "derive_more",
@@ -450,12 +448,6 @@ name = "base-x"
 version = "0.2.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a4521f3e3d031370679b3b140beb36dfe4801b09ac77e30c61941f97df3ef28b"
-
-[[package]]
-name = "base64"
-version = "0.12.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3441f0f7b02788e948e47f457ca01f1d7e6d92c693bc132c22b087d3141c03ff"
 
 [[package]]
 name = "base64"
@@ -2304,7 +2296,7 @@ version = "0.11.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bf12057f289428dbf5c591c74bf10392e4a8003f993405a902f20117019022d4"
 dependencies = [
- "base64 0.13.0",
+ "base64",
  "bytes 1.0.1",
  "encoding_rs",
  "futures-core",
@@ -2402,7 +2394,7 @@ version = "0.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "064fd21ff87c6e87ed4506e68beb42459caa4a0e2eb144932e6776768556980b"
 dependencies = [
- "base64 0.13.0",
+ "base64",
  "log",
  "ring",
  "sct",
