@@ -21,7 +21,7 @@ const ROUTE_ALPHABET: [char; 16] = [
     about,
     global_settings = &[structopt::clap::AppSettings::ColoredHelp],
 )]
-struct CliArgs {
+pub struct CliArgs {
     /// Be verbose, includes emitting access logs
     #[structopt(short = "v", long = "verbose")]
     verbose: bool,
@@ -131,6 +131,10 @@ struct CliArgs {
     /// Hide version footer
     #[structopt(short = "F", long = "hide-version-footer")]
     hide_version_footer: bool,
+
+    /// Generate completion file for a shell
+    #[structopt(long = "print-completions", value_name = "shell")]
+    pub print_completions: Option<structopt::clap::Shell>,
 }
 
 /// Checks wether an interface is valid, i.e. it can be parsed into an IP address
@@ -205,9 +209,7 @@ pub fn parse_header(src: &str) -> Result<HeaderMap, httparse::Error> {
 }
 
 /// Parses the command line arguments
-pub fn parse_args() -> crate::MiniserveConfig {
-    let args = CliArgs::from_args();
-
+pub fn parse_args(args: CliArgs) -> crate::MiniserveConfig {
     let interfaces = if !args.interfaces.is_empty() {
         args.interfaces
     } else {
