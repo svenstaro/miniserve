@@ -192,7 +192,7 @@ fn color_scheme_selector(show_qrcode: bool) -> Markup {
         nav {
             @if show_qrcode {
                 div {
-                    p onmouseover="document.querySelector('#qrcode').src = `/?qrcode=${encodeURIComponent(window.location.href)}`" {
+                    p onmouseover="document.querySelector('#qrcode').src = `?qrcode=${encodeURIComponent(window.location.href)}`" {
                         "QR code"
                     }
                     div.qrcode {
