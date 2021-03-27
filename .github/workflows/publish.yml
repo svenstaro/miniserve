@@ -1,6 +1,9 @@
 name: Publish
 
-on: [push, pull_request]
+on:
+  push:
+    tags:
+      - 'v*'
 
 jobs:
   publish:
@@ -131,3 +134,25 @@ jobs:
           args: --lzma
           strip: ${{ matrix.strip }}
         if: ${{ matrix.compress }}
+
+      - name: Get tag name
+        id: tag_name
+        run: |
+          echo ::set-output name=current_version::${GITHUB_REF#refs/tags/v}
+        shell: bash
+
+      - name: Get CHANGELOG.md entry
+        id: changelog_reader
+        uses: mindsers/changelog-reader-action@v1
+        with:
+          version: ${{ steps.tag_name.outputs.current_version }}
+          path: ./CHANGELOG.md
+
+      - name: Release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: ${{ matrix.artifact_name }}
+          tag: ${{ github.ref }}
+          asset_name: miniserve-$tag-${{ matrix.release_name }}
+          body: ${{ steps.changelog_reader.outputs.log_entry }}
