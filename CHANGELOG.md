@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+
+## [0.12.1] - 2021-03-27
 - Fix QR code not showing when using both `--random-route` and `--qrcode` [#480](https://github.com/svenstaro/miniserve/pull/480) (thanks @rouge8)
 - Add FreeBSD binaries
 
@@ -71,7 +73,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Some theme related bug fixes (thanks @boastful-squirrel)
 
 <!-- next-url -->
-[Unreleased]: https://github.com/svenstaro/miniserve/compare/v0.12.0...HEAD
+[Unreleased]: https://github.com/svenstaro/miniserve/compare/v0.12.1...HEAD
+[0.12.1]: https://github.com/svenstaro/miniserve/compare/v0.12.0...v0.12.1
 [0.12.0]: https://github.com/svenstaro/miniserve/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/svenstaro/miniserve/compare/v0.10.4...v0.11.0
 [0.10.4]: https://github.com/svenstaro/miniserve/compare/v0.10.3...v0.10.4
