@@ -75,6 +75,9 @@ pub struct Entry {
     /// Type of the entry
     pub entry_type: EntryType,
 
+    /// Entry is symlink. Not mutually exclusive with entry_type
+    pub is_symlink: bool,
+
     /// URL of the entry
     pub link: String,
 
@@ -89,6 +92,7 @@ impl Entry {
     fn new(
         name: String,
         entry_type: EntryType,
+        is_symlink: bool,
         link: String,
         size: Option<bytesize::ByteSize>,
         last_modification_date: Option<SystemTime>,
@@ -96,6 +100,7 @@ impl Entry {
         Entry {
             name,
             entry_type,
+            is_symlink,
             link,
             size,
             last_modification_date,
@@ -250,6 +255,10 @@ pub fn directory_listing(
             // show file url as relative to static path
             let file_url = utf8_percent_encode(&p.to_string_lossy(), FRAGMENT).to_string();
             let file_name = entry.file_name().to_string_lossy().to_string();
+            let is_symlink = match entry.metadata() {
+                Ok(metadata) => metadata.file_type().is_symlink(),
+                Err(_) => continue,
+            };
 
             // if file is a directory, add '/' to the end of the name
             if let Ok(metadata) = std::fs::metadata(entry.path()) {
@@ -265,6 +274,7 @@ pub fn directory_listing(
                     entries.push(Entry::new(
                         file_name,
                         EntryType::Directory,
+                        is_symlink,
                         file_url,
                         None,
                         last_modification_date,
@@ -273,6 +283,7 @@ pub fn directory_listing(
                     entries.push(Entry::new(
                         file_name,
                         EntryType::File,
+                        is_symlink,
                         file_url,
                         Some(ByteSize::b(metadata.len())),
                         last_modification_date,
