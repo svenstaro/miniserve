@@ -104,8 +104,8 @@ jobs:
             artifact_name: target/x86_64-unknown-freebsd/release/miniserve
             release_name: x86_64-unknown-freebsd
             cross: true
-            strip: true
-            compress: true
+            strip: false
+            compress: false
 
     steps:
       - name: Checkout code
