@@ -420,6 +420,7 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
         let dirs_first = conf.dirs_first;
         let hide_version_footer = conf.hide_version_footer;
         let title = conf.title.clone();
+        let index = conf.index.clone();
         upload_route = if let Some(random_route) = conf.random_route.clone() {
             format!("/{}/upload", random_route)
         } else {
@@ -427,10 +428,6 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
         };
         if path.is_file() {
             None
-        } else if let Some(index_file) = &conf.index {
-            Some(
-                actix_files::Files::new(&full_route, path).index_file(index_file.to_string_lossy()),
-            )
         } else {
             let u_r = upload_route.clone();
             let files;
@@ -463,6 +460,7 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
                         dirs_first,
                         hide_version_footer,
                         title.clone(),
+                        index.clone(),
                     )
                 })
                 .prefer_utf8(true)
