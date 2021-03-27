@@ -65,9 +65,6 @@ pub enum EntryType {
 
     /// Entry is a file
     File,
-
-    /// Entry is a symlink
-    Symlink,
 }
 
 /// Entry
@@ -113,11 +110,6 @@ impl Entry {
     /// Returns wether the entry is a file
     pub fn is_file(&self) -> bool {
         self.entry_type == EntryType::File
-    }
-
-    /// Returns wether the entry is a symlink
-    pub fn is_symlink(&self) -> bool {
-        self.entry_type == EntryType::Symlink
     }
 }
 
@@ -260,7 +252,7 @@ pub fn directory_listing(
             let file_name = entry.file_name().to_string_lossy().to_string();
 
             // if file is a directory, add '/' to the end of the name
-            if let Ok(metadata) = entry.metadata() {
+            if let Ok(metadata) = std::fs::metadata(entry.path()) {
                 if skip_symlinks && metadata.file_type().is_symlink() {
                     continue;
                 }
@@ -269,15 +261,7 @@ pub fn directory_listing(
                     Err(_) => None,
                 };
 
-                if metadata.file_type().is_symlink() {
-                    entries.push(Entry::new(
-                        file_name,
-                        EntryType::Symlink,
-                        file_url,
-                        None,
-                        last_modification_date,
-                    ));
-                } else if metadata.is_dir() {
+                if metadata.is_dir() {
                     entries.push(Entry::new(
                         file_name,
                         EntryType::Directory,
@@ -285,7 +269,7 @@ pub fn directory_listing(
                         None,
                         last_modification_date,
                     ));
-                } else {
+                } else if metadata.is_file() {
                     entries.push(Entry::new(
                         file_name,
                         EntryType::File,

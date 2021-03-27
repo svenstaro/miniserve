@@ -341,10 +341,6 @@ fn entry_row(
                                 }
                             }
                         }
-                    } @else if entry.is_symlink() {
-                        a.symlink href=(parametrized_link(&entry.link, sort_method, sort_order)) {
-                           (entry.name)  span.symlink-symbol { "⇢" }
-                        }
                     }
                 }
             }
