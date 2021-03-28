@@ -19,7 +19,7 @@ panic = 'abort'
 [dependencies]
 yansi = "0.5"
 actix-web = "3"
-simplelog = "0.9"
+simplelog = "0.10"
 percent-encoding = "2"
 port_check = "0.1"
 bytesize = "1.0.0"

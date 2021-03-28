@@ -202,6 +202,7 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
         log_level,
         simplelog::Config::default(),
         simplelog::TerminalMode::Mixed,
+        simplelog::ColorChoice::Auto,
     )
     .is_err()
     {
