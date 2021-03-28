@@ -127,7 +127,7 @@ pub struct CliArgs {
     pub hide_version_footer: bool,
 
     /// Generate completion file for a shell
-    #[structopt(long = "print-completions", value_name = "shell")]
+    #[structopt(long = "print-completions", value_name = "shell", possible_values = &structopt::clap::Shell::variants())]
     pub print_completions: Option<structopt::clap::Shell>,
 }
 
