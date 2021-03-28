@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+- Add `--print-completions` to print shell completions for various supported shells [#482](https://github.com/svenstaro/miniserve/pull/482) (thanks @rouge8)
 
 ## [0.12.1] - 2021-03-27
 - Fix QR code not showing when using both `--random-route` and `--qrcode` [#480](https://github.com/svenstaro/miniserve/pull/480) (thanks @rouge8)
