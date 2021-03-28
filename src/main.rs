@@ -12,6 +12,7 @@ use actix_web::{
 use actix_web::{middleware, App, HttpRequest, HttpResponse};
 use actix_web_httpauth::middleware::HttpAuthentication;
 use http::header::HeaderMap;
+use log::error;
 use structopt::clap::crate_version;
 use structopt::StructOpt;
 use yansi::{Color, Paint};
@@ -251,9 +252,9 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
     if let Some(index_path) = &miniserve_config.index {
         let has_index: std::path::PathBuf = [&canon_path, index_path].iter().collect();
         if !has_index.exists() {
-            println!(
-                "{warning} The provided index file could not be found.",
-                warning = Color::RGB(255, 192, 0).paint("Notice:").bold()
+            error!(
+                "The file '{}' provided for option --index could not be found.",
+                index_path.to_string_lossy()
             );
         }
     }
