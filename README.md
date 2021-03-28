@@ -189,6 +189,19 @@ Alternatively install with [Homebrew](https://brew.sh/).
 
     docker run -v /tmp:/tmp -p 8080:8080 --rm -it svenstaro/miniserve /tmp
 
+## Shell completions
+
+If you'd like to make use of the built-in shell completion support, you need to run `miniserve
+--print-completions <your-shell>` and put the completions in the correct place for your shell. A
+few examples with common paths are provided below:
+
+    # For bash
+    miniserve --print-completions bash > ~/.local/share/bash-completion/miniserve
+    # For zsh
+    miniserve --print-completions zsh > /usr/local/share/zsh/site-functions/_miniserve
+    # For fish
+    miniserve --print-completions fish > ~/.config/fish/completions/miniserve.fish
+
 ## Binding behavior
 
 For convenience reasons, miniserve will try to bind on all interfaces by default (if no `-i` is provided).
