@@ -140,6 +140,9 @@ Sometimes this is just a more practical and quick way than doing things properly
         -p, --port <port>
                 Port to use [default: 8080]
 
+            --print-completions <shell>
+                Generate completion file for a shell [possible values: zsh, bash, fish,
+                powershell, elvish]
         -t, --title <title>
                 Shown instead of host in page title and heading
 
