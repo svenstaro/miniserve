@@ -12,7 +12,7 @@ use actix_web::{
 use actix_web::{middleware, App, HttpRequest, HttpResponse};
 use actix_web_httpauth::middleware::HttpAuthentication;
 use http::header::HeaderMap;
-use log::error;
+use log::{error, warn};
 use structopt::clap::crate_version;
 use structopt::StructOpt;
 use yansi::{Color, Paint};
@@ -266,9 +266,9 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
         version = crate_version!()
     );
     if !miniserve_config.path_explicitly_chosen {
-        println!("{warning} miniserve has been invoked without an explicit path so it will serve the current directory.", warning=Color::RGB(255, 192, 0).paint("Notice:").bold());
-        println!(
-            "      Invoke with -h|--help to see options or invoke as `miniserve .` to hide this advice."
+        warn!("miniserve has been invoked without an explicit path so it will serve the current directory after a short delay.");
+        warn!(
+            "Invoke with -h|--help to see options or invoke as `miniserve .` to hide this advice."
         );
         print!("Starting server in ");
         io::stdout()
