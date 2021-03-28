@@ -220,8 +220,8 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
             .is_symlink();
 
         if is_symlink {
-            return Err(ContextualError::from(
-                "The no-symlinks option cannot be used with a symlink path".to_string(),
+            return Err(ContextualError::NoSymlinksOptionWithSymlinkServePath(
+                miniserve_config.path.to_string_lossy().to_string(),
             ));
         }
     }
@@ -266,6 +266,14 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
         version = crate_version!()
     );
     if !miniserve_config.path_explicitly_chosen {
+        // If the path to serve has NOT been explicitly chosen and if this is NOT an interactive
+        // terminal, we should refuse to start for security reasons. This would be the case when
+        // running miniserve as a service but forgetting to set the path. This could be pretty
+        // dangerous if given with an undesired context path (for instance /root or /).
+        if !atty::is(atty::Stream::Stdout) {
+            return Err(ContextualError::NoExplicitPathAndNoTerminal);
+        }
+
         warn!("miniserve has been invoked without an explicit path so it will serve the current directory after a short delay.");
         warn!(
             "Invoke with -h|--help to see options or invoke as `miniserve .` to hide this advice."
@@ -361,7 +369,9 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
         addresses = addresses,
     );
 
-    println!("\nQuit by pressing CTRL-C");
+    if atty::is(atty::Stream::Stdout) {
+        println!("\nQuit by pressing CTRL-C");
+    }
 
     srv.await
         .map_err(|e| ContextualError::IoError("".to_owned(), e))

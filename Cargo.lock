@@ -1522,6 +1522,7 @@ dependencies = [
  "alphanumeric-sort",
  "assert_cmd",
  "assert_fs",
+ "atty",
  "bytes 1.0.1",
  "bytesize",
  "chrono",

@@ -220,15 +220,18 @@ where
     let mut buffer = Vec::new();
     while !paths_queue.is_empty() {
         let next = paths_queue.pop().ok_or_else(|| {
-            ContextualError::CustomError("Could not get path from queue".to_string())
+            ContextualError::ArchiveCreationDetailError("Could not get path from queue".to_string())
         })?;
         let current_dir = next.as_path();
         let directory_entry_iterator = std::fs::read_dir(current_dir)
             .map_err(|e| ContextualError::IoError("Could not read directory".to_string(), e))?;
-        let zip_directory =
-            Path::new(zip_root_folder_name).join(current_dir.strip_prefix(directory).map_err(
-                |_| ContextualError::CustomError("Could not append base directory".to_string()),
-            )?);
+        let zip_directory = Path::new(zip_root_folder_name).join(
+            current_dir.strip_prefix(directory).map_err(|_| {
+                ContextualError::ArchiveCreationDetailError(
+                    "Could not append base directory".to_string(),
+                )
+            })?,
+        );
 
         for entry in directory_entry_iterator {
             let entry_path = entry
@@ -259,10 +262,14 @@ where
                 zip_writer
                     .start_file(relative_path.to_string_lossy(), options)
                     .map_err(|_| {
-                        ContextualError::CustomError("Could not add file path to ZIP".to_string())
+                        ContextualError::ArchiveCreationDetailError(
+                            "Could not add file path to ZIP".to_string(),
+                        )
                     })?;
                 zip_writer.write(buffer.as_ref()).map_err(|_| {
-                    ContextualError::CustomError("Could not write file to ZIP".to_string())
+                    ContextualError::ArchiveCreationDetailError(
+                        "Could not write file to ZIP".to_string(),
+                    )
                 })?;
                 buffer.clear();
             } else if entry_metadata.is_dir() {
@@ -270,7 +277,7 @@ where
                 zip_writer
                     .add_directory(relative_path.to_string_lossy(), options)
                     .map_err(|_| {
-                        ContextualError::CustomError(
+                        ContextualError::ArchiveCreationDetailError(
                             "Could not add directory path to ZIP".to_string(),
                         )
                     })?;
@@ -280,7 +287,9 @@ where
     }
 
     zip_writer.finish().map_err(|_| {
-        ContextualError::CustomError("Could not finish writing ZIP archive".to_string())
+        ContextualError::ArchiveCreationDetailError(
+            "Could not finish writing ZIP archive".to_string(),
+        )
     })?;
     Ok(())
 }
