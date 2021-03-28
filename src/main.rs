@@ -1,3 +1,9 @@
+use std::io;
+use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr};
+use std::thread;
+use std::time::Duration;
+use std::{io::Write, path::PathBuf};
+
 use actix_web::web;
 use actix_web::{
     http::{header::ContentType, StatusCode},
@@ -6,10 +12,6 @@ use actix_web::{
 use actix_web::{middleware, App, HttpRequest, HttpResponse};
 use actix_web_httpauth::middleware::HttpAuthentication;
 use http::header::HeaderMap;
-use std::io::{self, Write};
-use std::net::{IpAddr, Ipv4Addr, SocketAddr};
-use std::thread;
-use std::time::Duration;
 use structopt::clap::crate_version;
 use structopt::StructOpt;
 use yansi::{Color, Paint};
@@ -24,6 +26,11 @@ mod pipe;
 mod renderer;
 
 use crate::errors::ContextualError;
+
+/// Possible characters for random routes
+const ROUTE_ALPHABET: [char; 16] = [
+    '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', 'a', 'b', 'c', 'd', 'e', 'f',
+];
 
 #[derive(Clone)]
 /// Configuration of the Miniserve application
@@ -101,6 +108,67 @@ pub struct MiniserveConfig {
     pub hide_version_footer: bool,
 }
 
+impl MiniserveConfig {
+    /// Parses the command line arguments
+    fn from_args(args: args::CliArgs) -> Self {
+        let interfaces = if !args.interfaces.is_empty() {
+            args.interfaces
+        } else {
+            vec![
+                IpAddr::V6(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0)),
+                IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)),
+            ]
+        };
+
+        let random_route = if args.random_route {
+            Some(nanoid::nanoid!(6, &ROUTE_ALPHABET))
+        } else {
+            None
+        };
+
+        // Generate some random routes for the favicon and css so that they are very unlikely to conflict with
+        // real files.
+        let favicon_route = nanoid::nanoid!(10, &ROUTE_ALPHABET);
+        let css_route = nanoid::nanoid!(10, &ROUTE_ALPHABET);
+
+        let default_color_scheme = args.color_scheme;
+        let default_color_scheme_dark = args.color_scheme_dark;
+
+        let path_explicitly_chosen = args.path.is_some() || args.index.is_some();
+
+        let port = match args.port {
+            0 => port_check::free_local_port().expect("no free ports available"),
+            _ => args.port,
+        };
+
+        crate::MiniserveConfig {
+            verbose: args.verbose,
+            path: args.path.unwrap_or_else(|| PathBuf::from(".")),
+            port,
+            interfaces,
+            auth: args.auth,
+            path_explicitly_chosen,
+            no_symlinks: args.no_symlinks,
+            show_hidden: args.hidden,
+            random_route,
+            favicon_route,
+            css_route,
+            default_color_scheme,
+            default_color_scheme_dark,
+            index: args.index,
+            overwrite_files: args.overwrite_files,
+            show_qrcode: args.qrcode,
+            file_upload: args.file_upload,
+            tar_enabled: args.enable_tar,
+            zip_enabled: args.enable_zip,
+            dirs_first: args.dirs_first,
+            title: args.title,
+            header: args.header,
+            hide_version_footer: args.hide_version_footer,
+        }
+    }
+}
+
 fn main() {
     let args = args::CliArgs::from_args();
 
@@ -109,7 +177,7 @@ fn main() {
         return;
     }
 
-    let miniserve_config = args::parse_args(args);
+    let miniserve_config = MiniserveConfig::from_args(args);
 
     match run(miniserve_config) {
         Ok(()) => (),

@@ -1,18 +1,12 @@
 use bytes::Bytes;
 use http::header::{HeaderMap, HeaderName, HeaderValue};
-use port_check::free_local_port;
-use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
+use std::net::IpAddr;
 use std::path::PathBuf;
 use structopt::StructOpt;
 
 use crate::auth;
 use crate::errors::ContextualError;
 use crate::renderer;
-
-/// Possible characters for random routes
-const ROUTE_ALPHABET: [char; 16] = [
-    '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', 'a', 'b', 'c', 'd', 'e', 'f',
-];
 
 #[derive(StructOpt)]
 #[structopt(
@@ -24,22 +18,22 @@ const ROUTE_ALPHABET: [char; 16] = [
 pub struct CliArgs {
     /// Be verbose, includes emitting access logs
     #[structopt(short = "v", long = "verbose")]
-    verbose: bool,
+    pub verbose: bool,
 
     /// Which path to serve
     #[structopt(name = "PATH", parse(from_os_str))]
-    path: Option<PathBuf>,
+    pub path: Option<PathBuf>,
 
     /// The name of a directory index file to serve, like "index.html"
     ///
     /// Normally, when miniserve serves a directory, it creates a listing for that directory.
     /// However, if a directory contains this file, miniserve will serve that file instead.
     #[structopt(long, parse(from_os_str), name = "index_file")]
-    index: Option<PathBuf>,
+    pub index: Option<PathBuf>,
 
     /// Port to use
     #[structopt(short = "p", long = "port", default_value = "8080")]
-    port: u16,
+    pub port: u16,
 
     /// Interface to listen on
     #[structopt(
@@ -48,7 +42,7 @@ pub struct CliArgs {
         parse(try_from_str = parse_interface),
         number_of_values = 1,
     )]
-    interfaces: Vec<IpAddr>,
+    pub interfaces: Vec<IpAddr>,
 
     /// Set authentication. Currently supported formats:
     /// username:password, username:sha256:hash, username:sha512:hash
@@ -59,19 +53,19 @@ pub struct CliArgs {
         parse(try_from_str = parse_auth),
         number_of_values = 1,
     )]
-    auth: Vec<auth::RequiredAuth>,
+    pub auth: Vec<auth::RequiredAuth>,
 
     /// Generate a random 6-hexdigit route
     #[structopt(long = "random-route")]
-    random_route: bool,
+    pub random_route: bool,
 
     /// Do not follow symbolic links
     #[structopt(short = "P", long = "no-symlinks")]
-    no_symlinks: bool,
+    pub no_symlinks: bool,
 
     /// Show hidden files
     #[structopt(short = "H", long = "hidden")]
-    hidden: bool,
+    pub hidden: bool,
 
     /// Default color scheme
     #[structopt(
@@ -81,7 +75,7 @@ pub struct CliArgs {
         possible_values = &renderer::THEME_SLUGS,
         case_insensitive = true,
     )]
-    color_scheme: String,
+    pub color_scheme: String,
 
     /// Default color scheme
     #[structopt(
@@ -91,46 +85,46 @@ pub struct CliArgs {
         possible_values = &renderer::THEME_SLUGS,
         case_insensitive = true,
     )]
-    color_scheme_dark: String,
+    pub color_scheme_dark: String,
 
     /// Enable QR code display
     #[structopt(short = "q", long = "qrcode")]
-    qrcode: bool,
+    pub qrcode: bool,
 
     /// Enable file uploading
     #[structopt(short = "u", long = "upload-files")]
-    file_upload: bool,
+    pub file_upload: bool,
 
     /// Enable overriding existing files during file upload
     #[structopt(short = "o", long = "overwrite-files")]
-    overwrite_files: bool,
+    pub overwrite_files: bool,
 
     /// Enable tar archive generation
     #[structopt(short = "r", long = "enable-tar")]
-    enable_tar: bool,
+    pub enable_tar: bool,
 
     /// Enable zip archive generation
     ///
     /// WARNING: Zipping large directories can result in out-of-memory exception
     /// because zip generation is done in memory and cannot be sent on the fly
     #[structopt(short = "z", long = "enable-zip")]
-    enable_zip: bool,
+    pub enable_zip: bool,
 
     /// List directories first
     #[structopt(short = "D", long = "dirs-first")]
-    dirs_first: bool,
+    pub dirs_first: bool,
 
     /// Shown instead of host in page title and heading
     #[structopt(short = "t", long = "title")]
-    title: Option<String>,
+    pub title: Option<String>,
 
     /// Set custom header for responses
     #[structopt(long = "header", parse(try_from_str = parse_header), number_of_values = 1)]
-    header: Vec<HeaderMap>,
+    pub header: Vec<HeaderMap>,
 
     /// Hide version footer
     #[structopt(short = "F", long = "hide-version-footer")]
-    hide_version_footer: bool,
+    pub hide_version_footer: bool,
 
     /// Generate completion file for a shell
     #[structopt(long = "print-completions", value_name = "shell")]
@@ -206,65 +200,6 @@ pub fn parse_header(src: &str) -> Result<HeaderMap, httparse::Error> {
     }
 
     Ok(header_map)
-}
-
-/// Parses the command line arguments
-pub fn parse_args(args: CliArgs) -> crate::MiniserveConfig {
-    let interfaces = if !args.interfaces.is_empty() {
-        args.interfaces
-    } else {
-        vec![
-            IpAddr::V6(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0)),
-            IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)),
-        ]
-    };
-
-    let random_route = if args.random_route {
-        Some(nanoid::nanoid!(6, &ROUTE_ALPHABET))
-    } else {
-        None
-    };
-
-    // Generate some random routes for the favicon and css so that they are very unlikely to conflict with
-    // real files.
-    let favicon_route = nanoid::nanoid!(10, &ROUTE_ALPHABET);
-    let css_route = nanoid::nanoid!(10, &ROUTE_ALPHABET);
-
-    let default_color_scheme = args.color_scheme;
-    let default_color_scheme_dark = args.color_scheme_dark;
-
-    let path_explicitly_chosen = args.path.is_some() || args.index.is_some();
-
-    let port = match args.port {
-        0 => free_local_port().expect("no free ports available"),
-        _ => args.port,
-    };
-
-    crate::MiniserveConfig {
-        verbose: args.verbose,
-        path: args.path.unwrap_or_else(|| PathBuf::from(".")),
-        port,
-        interfaces,
-        auth: args.auth,
-        path_explicitly_chosen,
-        no_symlinks: args.no_symlinks,
-        show_hidden: args.hidden,
-        random_route,
-        favicon_route,
-        css_route,
-        default_color_scheme,
-        default_color_scheme_dark,
-        index: args.index,
-        overwrite_files: args.overwrite_files,
-        show_qrcode: args.qrcode,
-        file_upload: args.file_upload,
-        tar_enabled: args.enable_tar,
-        zip_enabled: args.enable_zip,
-        dirs_first: args.dirs_first,
-        title: args.title,
-        header: args.header,
-        hide_version_footer: args.hide_version_footer,
-    }
 }
 
 #[rustfmt::skip]
