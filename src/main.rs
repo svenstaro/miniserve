@@ -11,6 +11,7 @@ use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use std::thread;
 use std::time::Duration;
 use structopt::clap::crate_version;
+use structopt::StructOpt;
 use yansi::{Color, Paint};
 
 mod archive;
@@ -101,19 +102,26 @@ pub struct MiniserveConfig {
 }
 
 fn main() {
-    match run() {
+    let args = args::CliArgs::from_args();
+
+    if let Some(shell) = args.print_completions {
+        args::CliArgs::clap().gen_completions_to("miniserve", shell, &mut std::io::stdout());
+        return;
+    }
+
+    let miniserve_config = args::parse_args(args);
+
+    match run(miniserve_config) {
         Ok(()) => (),
         Err(e) => errors::log_error_chain(e.to_string()),
     }
 }
 
 #[actix_web::main(miniserve)]
-async fn run() -> Result<(), ContextualError> {
+async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
     if cfg!(windows) && !Paint::enable_windows_ascii() {
         Paint::disable();
     }
-
-    let miniserve_config = args::parse_args();
 
     let log_level = if miniserve_config.verbose {
         simplelog::LevelFilter::Info
