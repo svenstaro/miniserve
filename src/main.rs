@@ -195,7 +195,7 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
     let log_level = if miniserve_config.verbose {
         simplelog::LevelFilter::Info
     } else {
-        simplelog::LevelFilter::Error
+        simplelog::LevelFilter::Warn
     };
 
     if simplelog::TermLogger::init(
