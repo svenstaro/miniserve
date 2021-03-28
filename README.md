@@ -67,8 +67,10 @@ Sometimes this is just a more practical and quick way than doing things properly
 - Mega fast and highly parallel (thanks to [Rust](https://www.rust-lang.org/) and [Actix](https://actix.rs/))
 - Folder download (compressed on the fly as `.tar.gz` or `.zip`)
 - File uploading
-- Pretty themes
+- Pretty themes (with light and dark theme support)
 - Scan QR code for quick access
+- Shell completions
+- Sane and secure defaults
 
 ## Usage
 
