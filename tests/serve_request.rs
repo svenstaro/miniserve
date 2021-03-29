@@ -8,9 +8,15 @@ use regex::Regex;
 use rstest::rstest;
 use select::document::Document;
 use select::node::Node;
+use std::path::Path;
 use std::process::{Command, Stdio};
 use std::thread::sleep;
 use std::time::Duration;
+
+#[cfg(unix)]
+use std::os::unix::fs::{symlink as symlink_dir, symlink as symlink_file};
+#[cfg(windows)]
+use std::os::windows::fs::{symlink_dir, symlink_file};
 
 #[rstest]
 fn serves_requests_with_no_options(tmpdir: TempDir) -> Result<(), Error> {
@@ -146,6 +152,64 @@ fn serves_requests_no_hidden_files_without_flag(tmpdir: TempDir, port: u16) -> R
         let resp =
             reqwest::blocking::get(format!("http://localhost:{}/{}", port, hidden_item).as_str())?;
         assert_eq!(resp.status(), StatusCode::BAD_REQUEST);
+    }
+
+    child.kill()?;
+
+    Ok(())
+}
+
+#[rstest]
+fn serves_requests_symlinks(tmpdir: TempDir, port: u16) -> Result<(), Error> {
+    let mut child = Command::cargo_bin("miniserve")?
+        .arg(tmpdir.path())
+        .arg("-p")
+        .arg(port.to_string())
+        .stdout(Stdio::null())
+        .spawn()?;
+
+    sleep(Duration::from_secs(1));
+
+    let files = &["symlink-file.html"];
+    let dirs = &["symlink-dir/"];
+    let broken = &["symlink broken"];
+
+    for &directory in dirs {
+        let orig = Path::new(DIRECTORIES[0].strip_suffix("/").unwrap());
+        let link = tmpdir
+            .path()
+            .join(Path::new(directory.strip_suffix("/").unwrap()));
+        symlink_dir(orig, link).expect("Couldn't create symlink");
+    }
+    for &file in files {
+        let orig = Path::new(FILES[0]);
+        let link = tmpdir.path().join(Path::new(file));
+        symlink_file(orig, link).expect("Couldn't create symlink");
+    }
+    for &file in broken {
+        let orig = Path::new("should-not-exist.xxx");
+        let link = tmpdir.path().join(Path::new(file));
+        symlink_file(orig, link).expect("Couldn't create symlink");
+    }
+
+    let body = reqwest::blocking::get(format!("http://localhost:{}", port).as_str())?
+        .error_for_status()?;
+    let parsed = Document::from_read(body)?;
+
+    for &entry in files.into_iter().chain(dirs) {
+        let node = parsed
+            .find(|x: &Node| x.name().unwrap_or_default() == "a" && x.text() == entry)
+            .next()
+            .unwrap();
+        assert_eq!(node.attr("href").unwrap().strip_prefix("/").unwrap(), entry);
+        if entry.ends_with("/") {
+            assert_eq!(node.attr("class").unwrap(), "directory");
+        } else {
+            assert_eq!(node.attr("class").unwrap(), "file");
+        }
+    }
+    for &entry in broken {
+        assert!(parsed.find(|x: &Node| x.text() == entry).next().is_none());
     }
 
     child.kill()?;
