@@ -94,7 +94,8 @@ a.symlink:hover {
     color: var(--symlink_link_color);
 }
 
-.symlink-symbol {
+.symlink-symbol::after {
+    content: "⇢";
     display: inline-block;
     border: 1px solid var(--symlink_link_color);
     margin-left: 0.5rem;

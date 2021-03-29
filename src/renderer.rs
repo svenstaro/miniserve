@@ -330,7 +330,7 @@ fn entry_row(
                         a.directory href=(parametrized_link(&entry.link, sort_method, sort_order)) {
                             (entry.name) "/"
                             @if entry.is_symlink {
-                                span.symlink-symbol { "⇢" }
+                                span.symlink-symbol { }
                             }
                         }
                     } @else if entry.is_file() {
@@ -338,7 +338,7 @@ fn entry_row(
                             a.file href=(&entry.link) {
                                 (entry.name)
                                 @if entry.is_symlink {
-                                    span.symlink-symbol { "⇢" }
+                                    span.symlink-symbol { }
                                 }
                             }
                             @if let Some(size) = entry.size {
