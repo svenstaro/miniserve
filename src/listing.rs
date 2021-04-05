@@ -255,13 +255,16 @@ pub fn directory_listing(
             // show file url as relative to static path
             let file_url = utf8_percent_encode(&p.to_string_lossy(), FRAGMENT).to_string();
             let file_name = entry.file_name().to_string_lossy().to_string();
-            let is_symlink = match entry.metadata() {
-                Ok(metadata) => metadata.file_type().is_symlink(),
-                Err(_) => continue,
+            let (is_symlink, metadata) = match entry.metadata() {
+                Ok(metadata) if metadata.file_type().is_symlink() => {
+                    // for symlinks, get the metadata of the original file
+                    (true, std::fs::metadata(entry.path()))
+                }
+                res => (false, res),
             };
 
             // if file is a directory, add '/' to the end of the name
-            if let Ok(metadata) = std::fs::metadata(entry.path()) {
+            if let Ok(metadata) = metadata {
                 if skip_symlinks && is_symlink {
                     continue;
                 }
