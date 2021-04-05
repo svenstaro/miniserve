@@ -262,7 +262,7 @@ pub fn directory_listing(
 
             // if file is a directory, add '/' to the end of the name
             if let Ok(metadata) = std::fs::metadata(entry.path()) {
-                if skip_symlinks && metadata.file_type().is_symlink() {
+                if skip_symlinks && is_symlink {
                     continue;
                 }
                 let last_modification_date = match metadata.modified() {
