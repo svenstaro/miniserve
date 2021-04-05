@@ -25,6 +25,11 @@ fn serves_requests_with_no_options(tmpdir: TempDir) -> Result<(), Error> {
     let parsed = Document::from_read(body)?;
     for &file in FILES {
         assert!(parsed.find(|x: &Node| x.text() == file).next().is_some());
+        let resp = reqwest::blocking::get(format!("http://localhost:8080/{}", file))?
+            .error_for_status()?;
+
+        // `content-disposition` header is bogus for symlinks. Disable for now!
+        assert!(resp.headers().get("content-disposition").is_none());
     }
 
     child.kill()?;
