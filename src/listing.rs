@@ -15,7 +15,7 @@ use strum_macros::{Display, EnumString};
 use crate::archive::CompressionMethod;
 use crate::errors::{self, ContextualError};
 use crate::renderer;
-use percent_encode_sets::{PATH, PATH_SEGMENT};
+use percent_encode_sets::PATH_SEGMENT;
 
 /// "percent-encode sets" as defined by WHATWG specs:
 /// https://url.spec.whatwg.org/#percent-encoded-bytes
@@ -260,13 +260,12 @@ pub fn directory_listing(
     for entry in dir.path.read_dir()? {
         if dir.is_visible(&entry) || show_hidden {
             let entry = entry?;
-            let p = match entry.path().strip_prefix(&dir.path) {
-                Ok(p) => base.join(p),
-                Err(_) => continue,
-            };
             // show file url as relative to static path
-            let file_url = utf8_percent_encode(&p.to_string_lossy(), PATH).to_string();
             let file_name = entry.file_name().to_string_lossy().to_string();
+            let file_url = base
+                .join(&utf8_percent_encode(&file_name, PATH_SEGMENT).to_string())
+                .to_string_lossy()
+                .to_string();
 
             // if file is a directory, add '/' to the end of the name
             if let Ok(metadata) = entry.metadata() {
