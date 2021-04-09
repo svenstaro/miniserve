@@ -86,7 +86,7 @@ pub fn page(
                                 // wrapped in span so the text doesn't shift slightly when it turns into a link
                                 span { bdi { (el.name) } }
                             } @else {
-                                a.directory href=(parametrized_link(&el.link, sort_method, sort_order)) {
+                                a href=(parametrized_link(&el.link, sort_method, sort_order)) {
                                     bdi { (el.name) }
                                 }
                             }
