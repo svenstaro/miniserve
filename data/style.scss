@@ -77,21 +77,12 @@ a.file:visited,
     color: var(--file_link_color);
 }
 
-a.symlink,
-a.symlink:visited {
-    color: var(--symlink_link_color);
-}
-
 a.directory:hover {
     color: var(--directory_link_color);
 }
 
 a.file:hover {
     color: var(--file_link_color);
-}
-
-a.symlink:hover {
-    color: var(--symlink_link_color);
 }
 
 .symlink-symbol::after {
@@ -484,15 +475,10 @@ th span.active span {
     }
 
     a.root,
-    a.file,
-    a.symlink {
+    a.file {
         display: inline-block;
         flex: 1;
         padding: 0.5625rem 0;
-    }
-
-    a.symlink {
-        width: 100%;
     }
 
     .back {
