@@ -99,9 +99,13 @@ pub struct CliArgs {
     #[structopt(short = "o", long = "overwrite-files")]
     pub overwrite_files: bool,
 
-    /// Enable tar archive generation
+    /// Enable tar generation
     #[structopt(short = "r", long = "enable-tar")]
     pub enable_tar: bool,
+
+    /// Enable tar archive generation
+    #[structopt(short = "g", long = "enable-tar-archive")]
+    pub enable_tar_archive: bool,
 
     /// Enable zip archive generation
     ///
