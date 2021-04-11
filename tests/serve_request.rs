@@ -159,15 +159,18 @@ fn serves_requests_no_hidden_files_without_flag(tmpdir: TempDir, port: u16) -> R
     Ok(())
 }
 
-#[rstest]
-fn serves_requests_symlinks(tmpdir: TempDir, port: u16) -> Result<(), Error> {
-    let mut child = Command::cargo_bin("miniserve")?
-        .arg(tmpdir.path())
+#[rstest(no_symlinks, case(true), case(false))]
+fn serves_requests_symlinks(tmpdir: TempDir, port: u16, no_symlinks: bool) -> Result<(), Error> {
+    let mut comm = Command::cargo_bin("miniserve")?;
+    comm.arg(tmpdir.path())
         .arg("-p")
         .arg(port.to_string())
-        .stdout(Stdio::null())
-        .spawn()?;
+        .stdout(Stdio::null());
+    if no_symlinks {
+        comm.arg("--no-symlinks");
+    }
 
+    let mut child = comm.spawn()?;
     sleep(Duration::from_secs(1));
 
     let files = &["symlink-file.html"];
@@ -199,9 +202,16 @@ fn serves_requests_symlinks(tmpdir: TempDir, port: u16) -> Result<(), Error> {
     for &entry in files.into_iter().chain(dirs) {
         let node = parsed
             .find(|x: &Node| x.name().unwrap_or_default() == "a" && x.text() == entry)
-            .next()
-            .unwrap();
+            .next();
+        assert_eq!(node.is_none(), no_symlinks);
+        if no_symlinks {
+            continue;
+        }
+
+        let node = node.unwrap();
         assert_eq!(node.attr("href").unwrap().strip_prefix("/").unwrap(), entry);
+        reqwest::blocking::get(format!("http://localhost:{}/{}", port, entry))?
+            .error_for_status()?;
         if entry.ends_with("/") {
             assert_eq!(node.attr("class").unwrap(), "directory");
         } else {
