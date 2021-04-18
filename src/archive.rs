@@ -53,9 +53,9 @@ impl CompressionMethod {
         }
     }
 
-    pub fn is_enabled(self, tar_enabled: bool, zip_enabled: bool) -> bool {
+    pub fn is_enabled(self, tar_enabled: bool, tar_gz_enabled: bool, zip_enabled: bool) -> bool {
         match self {
-            CompressionMethod::TarGz => tar_enabled,
+            CompressionMethod::TarGz => tar_gz_enabled,
             CompressionMethod::Tar => tar_enabled,
             CompressionMethod::Zip => zip_enabled,
         }

@@ -26,6 +26,7 @@ pub fn page(
     encoded_dir: &str,
     breadcrumbs: Vec<Breadcrumb>,
     tar_enabled: bool,
+    tar_gz_enabled: bool,
     zip_enabled: bool,
     hide_version_footer: bool,
 ) -> Markup {
@@ -94,10 +95,10 @@ pub fn page(
                         }
                     }
                     div.toolbar {
-                        @if tar_enabled || zip_enabled {
+                        @if tar_enabled || tar_gz_enabled || zip_enabled {
                             div.download {
                                 @for compression_method in CompressionMethod::iter() {
-                                    @if compression_method.is_enabled(tar_enabled, zip_enabled) {
+                                    @if compression_method.is_enabled(tar_enabled, tar_gz_enabled, zip_enabled) {
                                         (archive_button(compression_method, sort_method, sort_order))
                                     }
                                 }
