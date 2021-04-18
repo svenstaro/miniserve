@@ -158,7 +158,7 @@ pub fn directory_listing(
     show_qrcode: bool,
     upload_route: String,
     tar_enabled: bool,
-    tar_archive_enabled: bool,
+    tar_gz_enabled: bool,
     zip_enabled: bool,
     dirs_first: bool,
     hide_version_footer: bool,
@@ -331,7 +331,7 @@ pub fn directory_listing(
     }
 
     if let Some(compression_method) = query_params.download {
-        if !compression_method.is_enabled(tar_enabled, tar_archive_enabled, zip_enabled) {
+        if !compression_method.is_enabled(tar_enabled, tar_gz_enabled, zip_enabled) {
             return Ok(ServiceResponse::new(
                 req.clone(),
                 HttpResponse::Forbidden()
@@ -414,7 +414,7 @@ pub fn directory_listing(
                         &encoded_dir,
                         breadcrumbs,
                         tar_enabled,
-                        tar_archive_enabled,
+                        tar_gz_enabled,
                         zip_enabled,
                         hide_version_footer,
                     )
