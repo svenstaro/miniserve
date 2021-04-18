@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+- Add hardened systemd template unit file to `packaging/miniserve@.service`
 
 ## [0.14.0] - 2021-04-18
 - Fix breadcrumbs for right-to-left languages [#489](https://github.com/svenstaro/miniserve/pull/489) (thanks @aliemjay)
