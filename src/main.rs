@@ -465,6 +465,7 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
                         title.clone(),
                     )
                 })
+                .prefer_utf8(true)
                 .default_handler(web::to(error_404));
             Some(files)
         }
