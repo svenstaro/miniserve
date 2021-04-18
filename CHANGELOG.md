@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+
+## [0.14.0] - 2021-04-18
 - Fix breadcrumbs for right-to-left languages [#489](https://github.com/svenstaro/miniserve/pull/489) (thanks @aliemjay)
 - Fix URL percent encoding for special characters [#485](https://github.com/svenstaro/miniserve/pull/485) (thanks @aliemjay)
 - Wrap breadcrumbs at any char [#496](https://github.com/svenstaro/miniserve/pull/496) (thanks @aliemjay)
@@ -91,7 +93,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Some theme related bug fixes (thanks @boastful-squirrel)
 
 <!-- next-url -->
-[Unreleased]: https://github.com/svenstaro/miniserve/compare/v0.13.0...HEAD
+[Unreleased]: https://github.com/svenstaro/miniserve/compare/v0.14.0...HEAD
+[0.14.0]: https://github.com/svenstaro/miniserve/compare/v0.13.0...v0.14.0
 [0.13.0]: https://github.com/svenstaro/miniserve/compare/v0.12.1...v0.13.0
 [0.12.1]: https://github.com/svenstaro/miniserve/compare/v0.12.0...v0.12.1
 [0.12.0]: https://github.com/svenstaro/miniserve/compare/v0.11.0...v0.12.0
