@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Wrap breadcrumbs at any char [#496](https://github.com/svenstaro/miniserve/pull/496) (thanks @aliemjay)
 - Add separate flags for compressed and uncompressed tar archives [#492](https://github.com/svenstaro/miniserve/pull/492) (thanks @deantvv)
 - Bump deps
+- Fix Firefox becoming confused when opening a `.gz` file directly [#160](https://github.com/svenstaro/miniserve/issues/160)
 
 ## [0.13.0] - 2021-03-28
 - Change default log level to `Warn`
