@@ -330,21 +330,23 @@ fn entry_row(
                     @if entry.is_dir() {
                         a.directory href=(parametrized_link(&entry.link, sort_method, sort_order)) {
                             (entry.name) "/"
+                            @if entry.is_symlink {
+                                span.symlink-symbol { }
+                            }
                         }
                     } @else if entry.is_file() {
                         div.file-entry {
                             a.file href=(&entry.link) {
                                 (entry.name)
+                                @if entry.is_symlink {
+                                    span.symlink-symbol { }
+                                }
                             }
                             @if let Some(size) = entry.size {
                                 span.mobile-info.size {
                                     (size)
                                 }
                             }
-                        }
-                    } @else if entry.is_symlink() {
-                        a.symlink href=(parametrized_link(&entry.link, sort_method, sort_order)) {
-                           (entry.name)  span.symlink-symbol { "⇢" }
                         }
                     }
                 }

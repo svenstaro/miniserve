@@ -74,9 +74,6 @@ pub enum EntryType {
 
     /// Entry is a file
     File,
-
-    /// Entry is a symlink
-    Symlink,
 }
 
 /// Entry
@@ -86,6 +83,9 @@ pub struct Entry {
 
     /// Type of the entry
     pub entry_type: EntryType,
+
+    /// Entry is symlink. Not mutually exclusive with entry_type
+    pub is_symlink: bool,
 
     /// URL of the entry
     pub link: String,
@@ -101,6 +101,7 @@ impl Entry {
     fn new(
         name: String,
         entry_type: EntryType,
+        is_symlink: bool,
         link: String,
         size: Option<bytesize::ByteSize>,
         last_modification_date: Option<SystemTime>,
@@ -108,6 +109,7 @@ impl Entry {
         Entry {
             name,
             entry_type,
+            is_symlink,
             link,
             size,
             last_modification_date,
@@ -122,11 +124,6 @@ impl Entry {
     /// Returns wether the entry is a file
     pub fn is_file(&self) -> bool {
         self.entry_type == EntryType::File
-    }
-
-    /// Returns wether the entry is a symlink
-    pub fn is_symlink(&self) -> bool {
-        self.entry_type == EntryType::Symlink
     }
 }
 
@@ -263,14 +260,21 @@ pub fn directory_listing(
             let entry = entry?;
             // show file url as relative to static path
             let file_name = entry.file_name().to_string_lossy().to_string();
+            let (is_symlink, metadata) = match entry.metadata() {
+                Ok(metadata) if metadata.file_type().is_symlink() => {
+                    // for symlinks, get the metadata of the original file
+                    (true, std::fs::metadata(entry.path()))
+                }
+                res => (false, res),
+            };
             let file_url = base
                 .join(&utf8_percent_encode(&file_name, PATH_SEGMENT).to_string())
                 .to_string_lossy()
                 .to_string();
 
             // if file is a directory, add '/' to the end of the name
-            if let Ok(metadata) = entry.metadata() {
-                if skip_symlinks && metadata.file_type().is_symlink() {
+            if let Ok(metadata) = metadata {
+                if skip_symlinks && is_symlink {
                     continue;
                 }
                 let last_modification_date = match metadata.modified() {
@@ -278,26 +282,20 @@ pub fn directory_listing(
                     Err(_) => None,
                 };
 
-                if metadata.file_type().is_symlink() {
-                    entries.push(Entry::new(
-                        file_name,
-                        EntryType::Symlink,
-                        file_url,
-                        None,
-                        last_modification_date,
-                    ));
-                } else if metadata.is_dir() {
+                if metadata.is_dir() {
                     entries.push(Entry::new(
                         file_name,
                         EntryType::Directory,
+                        is_symlink,
                         file_url,
                         None,
                         last_modification_date,
                     ));
-                } else {
+                } else if metadata.is_file() {
                     entries.push(Entry::new(
                         file_name,
                         EntryType::File,
+                        is_symlink,
                         file_url,
                         Some(ByteSize::b(metadata.len())),
                         last_modification_date,
