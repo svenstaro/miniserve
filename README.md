@@ -222,7 +222,7 @@ In case you want to customize the particular flags that miniserve launches with,
 and set the `[Service]` part in the resulting `override.conf` file. For instance:
 
     [Service]
-    ExecStart=/usr/bin/miniserve --enable-tar --enable-zip --no-symlinks --verbose -i ::1 -p 1234 --title Saugeland --color-scheme monokai --color-scheme-dark monokai -- %I
+    ExecStart=/usr/bin/miniserve --enable-tar --enable-zip --no-symlinks --verbose -i ::1 -p 1234 --title hello --color-scheme monokai --color-scheme-dark monokai -- %I
 
 Make sure to leave the `%I` at the very end in place or the wrong path might be served. You
 might additionally have to override `IPAddressAllow` and `IPAddressDeny` if you plan on making
