@@ -4,7 +4,7 @@ use actix_web::http::StatusCode;
 use actix_web::web::Query;
 use actix_web::{HttpRequest, HttpResponse, Result};
 use bytesize::ByteSize;
-use percent_encoding::{percent_decode_str, utf8_percent_encode, AsciiSet, CONTROLS};
+use percent_encoding::{percent_decode_str, utf8_percent_encode};
 use qrcodegen::{QrCode, QrCodeEcc};
 use serde::Deserialize;
 use std::io;
@@ -15,8 +15,17 @@ use strum_macros::{Display, EnumString};
 use crate::archive::CompressionMethod;
 use crate::errors::{self, ContextualError};
 use crate::renderer;
+use percent_encode_sets::PATH_SEGMENT;
 
-const FRAGMENT: &AsciiSet = &CONTROLS.add(b' ').add(b'"').add(b'<').add(b'>').add(b'`');
+/// "percent-encode sets" as defined by WHATWG specs:
+/// https://url.spec.whatwg.org/#percent-encoded-bytes
+mod percent_encode_sets {
+    use percent_encoding::{AsciiSet, CONTROLS};
+    const BASE: &AsciiSet = &CONTROLS.add(b'%');
+    pub const QUERY: &AsciiSet = &BASE.add(b' ').add(b'"').add(b'#').add(b'<').add(b'>');
+    pub const PATH: &AsciiSet = &QUERY.add(b'?').add(b'`').add(b'{').add(b'}');
+    pub const PATH_SEGMENT: &AsciiSet = &PATH.add(b'/');
+}
 
 /// Query parameters
 #[derive(Deserialize)]
@@ -213,7 +222,7 @@ pub fn directory_listing(
                 Component::Normal(s) => {
                     name = s.to_string_lossy().to_string();
                     link_accumulator
-                        .push_str(&(utf8_percent_encode(&name, FRAGMENT).to_string() + "/"));
+                        .push_str(&(utf8_percent_encode(&name, PATH_SEGMENT).to_string() + "/"));
                 }
                 _ => name = "".to_string(),
             };
@@ -251,13 +260,12 @@ pub fn directory_listing(
     for entry in dir.path.read_dir()? {
         if dir.is_visible(&entry) || show_hidden {
             let entry = entry?;
-            let p = match entry.path().strip_prefix(&dir.path) {
-                Ok(p) => base.join(p),
-                Err(_) => continue,
-            };
             // show file url as relative to static path
-            let file_url = utf8_percent_encode(&p.to_string_lossy(), FRAGMENT).to_string();
             let file_name = entry.file_name().to_string_lossy().to_string();
+            let file_url = base
+                .join(&utf8_percent_encode(&file_name, PATH_SEGMENT).to_string())
+                .to_string_lossy()
+                .to_string();
 
             // if file is a directory, add '/' to the end of the name
             if let Ok(metadata) = entry.metadata() {
