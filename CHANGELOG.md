@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Bump deps
 - Fix Firefox becoming confused when opening a `.gz` file directly [#160](https://github.com/svenstaro/miniserve/issues/160)
 - Prefer UTF8 for text responses [#263](https://github.com/svenstaro/miniserve/issues/263)
+- Resolve symlinks on directory listing [#479](https://github.com/svenstaro/miniserve/pull/479) (thanks @aliemjay)
 
 ## [0.13.0] - 2021-03-28
 - Change default log level to `Warn`
