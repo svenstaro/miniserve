@@ -17,8 +17,12 @@ codegen-units = 1
 panic = 'abort'
 
 [dependencies]
-yansi = "0.5"
 actix-web = "3"
+actix-files = "0.5"
+actix-multipart = "0.3"
+actix-web-httpauth = "0.5"
+maud = { version = "0.22", features = ["actix-web"] }
+yansi = "0.5"
 simplelog = "0.10"
 percent-encoding = "2"
 port_check = "0.1"
@@ -28,7 +32,6 @@ alphanumeric-sort = "1"
 structopt = "0.3"
 chrono = "0.4"
 chrono-humanize = "0.1"
-maud = { version = "0.22", features = ["actix-web"] }
 serde = { version = "1", features = ["derive"] }
 tar = "0.4"
 futures = "0.3"
@@ -41,9 +44,6 @@ sha2 = "0.9"
 hex = "0.4"
 zip = "0.5.11"
 qrcodegen = "1"
-actix-files = "0.5"
-actix-multipart = "0.3"
-actix-web-httpauth = "0.5"
 mime = "0.3"
 httparse = "1"
 http = "0.2"
