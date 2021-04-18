@@ -240,25 +240,20 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
             .default_service(web::get().to(error_404))
     });
 
-    #[cfg(feature = "tls")]
-    let srv = if let Some(tls_config) = miniserve_config.tls_rustls_config {
-        srv.bind_rustls(socket_addresses.as_slice(), tls_config)
-            .map_err(|e| ContextualError::IoError("Failed to bind server".to_string(), e))?
-            .shutdown_timeout(0)
-            .run()
-    } else {
-        srv.bind(socket_addresses.as_slice())
-            .map_err(|e| ContextualError::IoError("Failed to bind server".to_string(), e))?
-            .shutdown_timeout(0)
-            .run()
-    };
+    let srv = socket_addresses.iter().try_fold(srv, |srv, addr| {
+        #[cfg(feature = "tls")]
+        let srv = match &miniserve_config.tls_rustls_config {
+            Some(tls_config) => srv.bind_rustls(addr, tls_config.clone()),
+            None => srv.bind(addr),
+        };
 
-    #[cfg(not(feature = "tls"))]
-    let srv = srv
-        .bind(socket_addresses.as_slice())
-        .map_err(|e| ContextualError::IoError("Failed to bind server".to_string(), e))?
-        .shutdown_timeout(0)
-        .run();
+        #[cfg(not(feature = "tls"))]
+        let srv = srv.bind(addr);
+
+        srv.map_err(|e| ContextualError::IoError(format!("Failed to bind server to {}", addr), e))
+    })?;
+
+    let srv = srv.shutdown_timeout(0).run();
 
     println!(
         "Serving path {path} at {addresses}",
