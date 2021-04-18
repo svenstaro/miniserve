@@ -86,7 +86,10 @@ Sometimes this is just a more practical and quick way than doing things properly
                 List directories first
 
         -r, --enable-tar
-                Enable tar archive generation
+                Enable uncompressed tar archive generation
+
+        -g, --enable-tar-gz
+                Enable gz-compressed tar archive generation
 
         -z, --enable-zip
                 Enable zip archive generation
