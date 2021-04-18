@@ -80,14 +80,14 @@ pub fn page(
                 (color_scheme_selector(show_qrcode))
                 div.container {
                     span#top { }
-                    h1.title {
+                    h1.title dir="ltr" {
                         @for el in breadcrumbs {
                             @if el.link == "." {
                                 // wrapped in span so the text doesn't shift slightly when it turns into a link
-                                span { (el.name) }
+                                span { bdi { (el.name) } }
                             } @else {
-                                a.directory href=(parametrized_link(&el.link, sort_method, sort_order)) {
-                                    (el.name)
+                                a href=(parametrized_link(&el.link, sort_method, sort_order)) {
+                                    bdi { (el.name) }
                                 }
                             }
                             "/"

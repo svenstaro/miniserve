@@ -42,6 +42,11 @@ body {
     word-break: break-word;
 }
 
+.title a {
+    font-weight: bold;
+    color: var(--directory_link_color);
+}
+
 .footer {
     text-align: center;
     padding-top: 1.5rem;
