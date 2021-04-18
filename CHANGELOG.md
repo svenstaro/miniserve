@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Fix URL percent encoding for special characters [#485](https://github.com/svenstaro/miniserve/pull/485) (thanks @aliemjay)
 - Wrap breadcrumbs at any char [#496](https://github.com/svenstaro/miniserve/pull/496) (thanks @aliemjay)
 - Add separate flags for compressed and uncompressed tar archives [#492](https://github.com/svenstaro/miniserve/pull/492) (thanks @deantvv)
+- Bump deps
 
 ## [0.13.0] - 2021-03-28
 - Change default log level to `Warn`
