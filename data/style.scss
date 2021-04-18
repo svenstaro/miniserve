@@ -39,7 +39,12 @@ body {
 }
 
 .title {
-    word-break: break-word;
+    word-break: break-all;
+}
+
+.title a {
+    font-weight: bold;
+    color: var(--directory_link_color);
 }
 
 .footer {

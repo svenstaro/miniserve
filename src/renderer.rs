@@ -26,6 +26,7 @@ pub fn page(
     encoded_dir: &str,
     breadcrumbs: Vec<Breadcrumb>,
     tar_enabled: bool,
+    tar_gz_enabled: bool,
     zip_enabled: bool,
     hide_version_footer: bool,
 ) -> Markup {
@@ -80,24 +81,24 @@ pub fn page(
                 (color_scheme_selector(show_qrcode))
                 div.container {
                     span#top { }
-                    h1.title {
+                    h1.title dir="ltr" {
                         @for el in breadcrumbs {
                             @if el.link == "." {
                                 // wrapped in span so the text doesn't shift slightly when it turns into a link
-                                span { (el.name) }
+                                span { bdi { (el.name) } }
                             } @else {
-                                a.directory href=(parametrized_link(&el.link, sort_method, sort_order)) {
-                                    (el.name)
+                                a href=(parametrized_link(&el.link, sort_method, sort_order)) {
+                                    bdi { (el.name) }
                                 }
                             }
                             "/"
                         }
                     }
                     div.toolbar {
-                        @if tar_enabled || zip_enabled {
+                        @if tar_enabled || tar_gz_enabled || zip_enabled {
                             div.download {
                                 @for compression_method in CompressionMethod::iter() {
-                                    @if compression_method.is_enabled(tar_enabled, zip_enabled) {
+                                    @if compression_method.is_enabled(tar_enabled, tar_gz_enabled, zip_enabled) {
                                         (archive_button(compression_method, sort_method, sort_order))
                                     }
                                 }

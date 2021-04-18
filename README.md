@@ -67,12 +67,14 @@ Sometimes this is just a more practical and quick way than doing things properly
 - Mega fast and highly parallel (thanks to [Rust](https://www.rust-lang.org/) and [Actix](https://actix.rs/))
 - Folder download (compressed on the fly as `.tar.gz` or `.zip`)
 - File uploading
-- Pretty themes
+- Pretty themes (with light and dark theme support)
 - Scan QR code for quick access
+- Shell completions
+- Sane and secure defaults
 
 ## Usage
 
-    miniserve 0.12.1
+    miniserve 0.13.0
     Sven-Hendrik Haase <svenstaro@gmail.com>, Boastful Squirrel <boastful.squirrel@gmail.com>
     For when you really just want to serve some files over HTTP right now!
 
@@ -84,7 +86,10 @@ Sometimes this is just a more practical and quick way than doing things properly
                 List directories first
 
         -r, --enable-tar
-                Enable tar archive generation
+                Enable uncompressed tar archive generation
+
+        -g, --enable-tar-gz
+                Enable gz-compressed tar archive generation
 
         -z, --enable-zip
                 Enable zip archive generation
@@ -140,6 +145,9 @@ Sometimes this is just a more practical and quick way than doing things properly
         -p, --port <port>
                 Port to use [default: 8080]
 
+            --print-completions <shell>
+                Generate completion file for a shell [possible values: zsh, bash, fish,
+                powershell, elvish]
         -t, --title <title>
                 Shown instead of host in page title and heading
 
@@ -183,6 +191,19 @@ Alternatively install with [Homebrew](https://brew.sh/).
 **With Docker:** If you prefer using Docker for this, run
 
     docker run -v /tmp:/tmp -p 8080:8080 --rm -it svenstaro/miniserve /tmp
+
+## Shell completions
+
+If you'd like to make use of the built-in shell completion support, you need to run `miniserve
+--print-completions <your-shell>` and put the completions in the correct place for your shell. A
+few examples with common paths are provided below:
+
+    # For bash
+    miniserve --print-completions bash > ~/.local/share/bash-completion/miniserve
+    # For zsh
+    miniserve --print-completions zsh > /usr/local/share/zsh/site-functions/_miniserve
+    # For fish
+    miniserve --print-completions fish > ~/.config/fish/completions/miniserve.fish
 
 ## Binding behavior
 

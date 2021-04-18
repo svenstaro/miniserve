@@ -20,9 +20,7 @@ fn save_file(
     overwrite_files: bool,
 ) -> Pin<Box<dyn Future<Output = Result<i64, ContextualError>>>> {
     if !overwrite_files && file_path.exists() {
-        return Box::pin(future::err(ContextualError::CustomError(
-            "File already exists, and the overwrite_files option has not been set".to_string(),
-        )));
+        return Box::pin(future::err(ContextualError::DuplicateFileError));
     }
 
     let mut file = match std::fs::File::create(&file_path) {

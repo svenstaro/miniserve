@@ -1,3 +1,9 @@
+use std::io;
+use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr};
+use std::thread;
+use std::time::Duration;
+use std::{io::Write, path::PathBuf};
+
 use actix_web::web;
 use actix_web::{
     http::{header::ContentType, StatusCode},
@@ -6,11 +12,9 @@ use actix_web::{
 use actix_web::{middleware, App, HttpRequest, HttpResponse};
 use actix_web_httpauth::middleware::HttpAuthentication;
 use http::header::HeaderMap;
-use std::io::{self, Write};
-use std::net::{IpAddr, Ipv4Addr, SocketAddr};
-use std::thread;
-use std::time::Duration;
+use log::{error, warn};
 use structopt::clap::crate_version;
+use structopt::StructOpt;
 use yansi::{Color, Paint};
 
 mod archive;
@@ -23,6 +27,11 @@ mod pipe;
 mod renderer;
 
 use crate::errors::ContextualError;
+
+/// Possible characters for random routes
+const ROUTE_ALPHABET: [char; 16] = [
+    '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', 'a', 'b', 'c', 'd', 'e', 'f',
+];
 
 #[derive(Clone)]
 /// Configuration of the Miniserve application
@@ -81,8 +90,11 @@ pub struct MiniserveConfig {
     /// Enable upload to override existing files
     pub overwrite_files: bool,
 
-    /// If false, creation of tar archives is disabled
+    /// If false, creation of uncompressed tar archives is disabled
     pub tar_enabled: bool,
+
+    /// If false, creation of gz-compressed tar archives is disabled
+    pub tar_gz_enabled: bool,
 
     /// If false, creation of zip archives is disabled
     pub zip_enabled: bool,
@@ -100,31 +112,101 @@ pub struct MiniserveConfig {
     pub hide_version_footer: bool,
 }
 
+impl MiniserveConfig {
+    /// Parses the command line arguments
+    fn from_args(args: args::CliArgs) -> Self {
+        let interfaces = if !args.interfaces.is_empty() {
+            args.interfaces
+        } else {
+            vec![
+                IpAddr::V6(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0)),
+                IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)),
+            ]
+        };
+
+        let random_route = if args.random_route {
+            Some(nanoid::nanoid!(6, &ROUTE_ALPHABET))
+        } else {
+            None
+        };
+
+        // Generate some random routes for the favicon and css so that they are very unlikely to conflict with
+        // real files.
+        let favicon_route = nanoid::nanoid!(10, &ROUTE_ALPHABET);
+        let css_route = nanoid::nanoid!(10, &ROUTE_ALPHABET);
+
+        let default_color_scheme = args.color_scheme;
+        let default_color_scheme_dark = args.color_scheme_dark;
+
+        let path_explicitly_chosen = args.path.is_some() || args.index.is_some();
+
+        let port = match args.port {
+            0 => port_check::free_local_port().expect("no free ports available"),
+            _ => args.port,
+        };
+
+        crate::MiniserveConfig {
+            verbose: args.verbose,
+            path: args.path.unwrap_or_else(|| PathBuf::from(".")),
+            port,
+            interfaces,
+            auth: args.auth,
+            path_explicitly_chosen,
+            no_symlinks: args.no_symlinks,
+            show_hidden: args.hidden,
+            random_route,
+            favicon_route,
+            css_route,
+            default_color_scheme,
+            default_color_scheme_dark,
+            index: args.index,
+            overwrite_files: args.overwrite_files,
+            show_qrcode: args.qrcode,
+            file_upload: args.file_upload,
+            tar_enabled: args.enable_tar,
+            tar_gz_enabled: args.enable_tar_gz,
+            zip_enabled: args.enable_zip,
+            dirs_first: args.dirs_first,
+            title: args.title,
+            header: args.header,
+            hide_version_footer: args.hide_version_footer,
+        }
+    }
+}
+
 fn main() {
-    match run() {
+    let args = args::CliArgs::from_args();
+
+    if let Some(shell) = args.print_completions {
+        args::CliArgs::clap().gen_completions_to("miniserve", shell, &mut std::io::stdout());
+        return;
+    }
+
+    let miniserve_config = MiniserveConfig::from_args(args);
+
+    match run(miniserve_config) {
         Ok(()) => (),
         Err(e) => errors::log_error_chain(e.to_string()),
     }
 }
 
 #[actix_web::main(miniserve)]
-async fn run() -> Result<(), ContextualError> {
+async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
     if cfg!(windows) && !Paint::enable_windows_ascii() {
         Paint::disable();
     }
 
-    let miniserve_config = args::parse_args();
-
     let log_level = if miniserve_config.verbose {
         simplelog::LevelFilter::Info
     } else {
-        simplelog::LevelFilter::Error
+        simplelog::LevelFilter::Warn
     };
 
     if simplelog::TermLogger::init(
         log_level,
         simplelog::Config::default(),
         simplelog::TerminalMode::Mixed,
+        simplelog::ColorChoice::Auto,
     )
     .is_err()
     {
@@ -143,8 +225,8 @@ async fn run() -> Result<(), ContextualError> {
             .is_symlink();
 
         if is_symlink {
-            return Err(ContextualError::from(
-                "The no-symlinks option cannot be used with a symlink path".to_string(),
+            return Err(ContextualError::NoSymlinksOptionWithSymlinkServePath(
+                miniserve_config.path.to_string_lossy().to_string(),
             ));
         }
     }
@@ -175,9 +257,9 @@ async fn run() -> Result<(), ContextualError> {
     if let Some(index_path) = &miniserve_config.index {
         let has_index: std::path::PathBuf = [&canon_path, index_path].iter().collect();
         if !has_index.exists() {
-            println!(
-                "{warning} The provided index file could not be found.",
-                warning = Color::RGB(255, 192, 0).paint("Notice:").bold()
+            error!(
+                "The file '{}' provided for option --index could not be found.",
+                index_path.to_string_lossy()
             );
         }
     }
@@ -189,9 +271,17 @@ async fn run() -> Result<(), ContextualError> {
         version = crate_version!()
     );
     if !miniserve_config.path_explicitly_chosen {
-        println!("{warning} miniserve has been invoked without an explicit path so it will serve the current directory.", warning=Color::RGB(255, 192, 0).paint("Notice:").bold());
-        println!(
-            "      Invoke with -h|--help to see options or invoke as `miniserve .` to hide this advice."
+        // If the path to serve has NOT been explicitly chosen and if this is NOT an interactive
+        // terminal, we should refuse to start for security reasons. This would be the case when
+        // running miniserve as a service but forgetting to set the path. This could be pretty
+        // dangerous if given with an undesired context path (for instance /root or /).
+        if !atty::is(atty::Stream::Stdout) {
+            return Err(ContextualError::NoExplicitPathAndNoTerminal);
+        }
+
+        warn!("miniserve has been invoked without an explicit path so it will serve the current directory after a short delay.");
+        warn!(
+            "Invoke with -h|--help to see options or invoke as `miniserve .` to hide this advice."
         );
         print!("Starting server in ");
         io::stdout()
@@ -284,7 +374,9 @@ async fn run() -> Result<(), ContextualError> {
         addresses = addresses,
     );
 
-    println!("\nQuit by pressing CTRL-C");
+    if atty::is(atty::Stream::Stdout) {
+        println!("\nQuit by pressing CTRL-C");
+    }
 
     srv.await
         .map_err(|e| ContextualError::IoError("".to_owned(), e))
@@ -323,6 +415,7 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
         let show_qrcode = conf.show_qrcode;
         let file_upload = conf.file_upload;
         let tar_enabled = conf.tar_enabled;
+        let tar_gz_enabled = conf.tar_gz_enabled;
         let zip_enabled = conf.zip_enabled;
         let dirs_first = conf.dirs_first;
         let hide_version_footer = conf.hide_version_footer;
@@ -365,6 +458,7 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
                         show_qrcode,
                         u_r.clone(),
                         tar_enabled,
+                        tar_gz_enabled,
                         zip_enabled,
                         dirs_first,
                         hide_version_footer,

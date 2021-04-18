@@ -55,6 +55,12 @@ fn serves_requests_with_non_default_port(tmpdir: TempDir, port: u16) -> Result<(
 
     for &file in FILES {
         let f = parsed.find(|x: &Node| x.text() == file).next().unwrap();
+        reqwest::blocking::get(format!(
+            "http://localhost:{}/{}",
+            port,
+            f.attr("href").unwrap()
+        ))?
+        .error_for_status()?;
         assert_eq!(
             format!("/{}", file),
             percent_encoding::percent_decode_str(f.attr("href").unwrap()).decode_utf8_lossy(),
@@ -259,17 +265,18 @@ fn serves_requests_custom_index_notice(tmpdir: TempDir, port: u16) -> Result<(),
         .arg(port.to_string())
         .arg(tmpdir.path())
         .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
         .spawn()?;
 
     sleep(Duration::from_secs(1));
 
     child.kill()?;
     let output = child.wait_with_output().expect("Failed to read stdout");
-    let all_text = String::from_utf8(output.stdout);
+    let all_text = String::from_utf8(output.stderr);
 
     assert!(all_text
         .unwrap()
-        .contains("The provided index file could not be found"));
+        .contains("The file 'not.html' provided for option --index could not be found."));
 
     Ok(())
 }

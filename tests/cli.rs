@@ -3,7 +3,7 @@ mod fixtures;
 use assert_cmd::prelude::*;
 use fixtures::Error;
 use std::process::Command;
-use structopt::clap::{crate_name, crate_version};
+use structopt::clap::{crate_name, crate_version, Shell};
 
 #[test]
 /// Show help and exit.
@@ -24,6 +24,32 @@ fn version_shows() -> Result<(), Error> {
         .assert()
         .success()
         .stdout(format!("{} {}\n", crate_name!(), crate_version!()));
+
+    Ok(())
+}
+
+#[test]
+/// Print completions and exit.
+fn print_completions() -> Result<(), Error> {
+    for shell in &Shell::variants() {
+        Command::cargo_bin("miniserve")?
+            .arg("--print-completions")
+            .arg(&shell)
+            .assert()
+            .success();
+    }
+
+    Ok(())
+}
+
+#[test]
+/// Print completions rejects invalid shells.
+fn print_completions_invalid_shell() -> Result<(), Error> {
+    Command::cargo_bin("miniserve")?
+        .arg("--print-completions")
+        .arg("fakeshell")
+        .assert()
+        .failure();
 
     Ok(())
 }
