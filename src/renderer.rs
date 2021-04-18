@@ -6,7 +6,7 @@ use std::time::SystemTime;
 use structopt::clap::{crate_name, crate_version};
 use strum::IntoEnumIterator;
 
-use crate::archive::CompressionMethod;
+use crate::archive::ArchiveMethod;
 use crate::listing::{Breadcrumb, Entry, SortingMethod, SortingOrder};
 
 /// Renders the file listing
@@ -97,9 +97,9 @@ pub fn page(
                     div.toolbar {
                         @if tar_enabled || tar_gz_enabled || zip_enabled {
                             div.download {
-                                @for compression_method in CompressionMethod::iter() {
-                                    @if compression_method.is_enabled(tar_enabled, tar_gz_enabled, zip_enabled) {
-                                        (archive_button(compression_method, sort_method, sort_order))
+                                @for archive_method in ArchiveMethod::iter() {
+                                    @if archive_method.is_enabled(tar_enabled, tar_gz_enabled, zip_enabled) {
+                                        (archive_button(archive_method, sort_method, sort_order))
                                     }
                                 }
                             }
@@ -230,21 +230,21 @@ fn color_scheme_link(color_scheme: &(&str, &str)) -> Markup {
 
 /// Partial: archive button
 fn archive_button(
-    compress_method: CompressionMethod,
+    archive_method: ArchiveMethod,
     sort_method: Option<SortingMethod>,
     sort_order: Option<SortingOrder>,
 ) -> Markup {
     let link = if sort_method.is_none() && sort_order.is_none() {
-        format!("?download={}", compress_method)
+        format!("?download={}", archive_method)
     } else {
         format!(
             "{}&download={}",
             parametrized_link("", sort_method, sort_order,),
-            compress_method
+            archive_method
         )
     };
 
-    let text = format!("Download .{}", compress_method.extension());
+    let text = format!("Download .{}", archive_method.extension());
 
     html! {
         a href=(link) {

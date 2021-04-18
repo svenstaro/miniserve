@@ -12,7 +12,7 @@ use std::path::{Component, Path, PathBuf};
 use std::time::SystemTime;
 use strum_macros::{Display, EnumString};
 
-use crate::archive::CompressionMethod;
+use crate::archive::ArchiveMethod;
 use crate::errors::{self, ContextualError};
 use crate::renderer;
 use percent_encode_sets::PATH_SEGMENT;
@@ -34,7 +34,7 @@ pub struct QueryParameters {
     pub sort: Option<SortingMethod>,
     pub order: Option<SortingOrder>,
     qrcode: Option<String>,
-    download: Option<CompressionMethod>,
+    download: Option<ArchiveMethod>,
 }
 
 /// Available sorting methods
@@ -338,8 +338,8 @@ pub fn directory_listing(
         entries.sort_by_key(|e| !e.is_dir());
     }
 
-    if let Some(compression_method) = query_params.download {
-        if !compression_method.is_enabled(tar_enabled, tar_gz_enabled, zip_enabled) {
+    if let Some(archive_method) = query_params.download {
+        if !archive_method.is_enabled(tar_enabled, tar_gz_enabled, zip_enabled) {
             return Ok(ServiceResponse::new(
                 req.clone(),
                 HttpResponse::Forbidden()
@@ -365,14 +365,14 @@ pub fn directory_listing(
         }
         log::info!(
             "Creating an archive ({extension}) of {path}...",
-            extension = compression_method.extension(),
+            extension = archive_method.extension(),
             path = &dir.path.display().to_string()
         );
 
         let file_name = format!(
             "{}.{}",
             dir.path.file_name().unwrap().to_str().unwrap(),
-            compression_method.extension()
+            archive_method.extension()
         );
 
         // We will create the archive in a separate thread, and stream the content using a pipe.
@@ -384,7 +384,7 @@ pub fn directory_listing(
         // Start the actual archive creation in a separate thread.
         let dir = dir.path.to_path_buf();
         std::thread::spawn(move || {
-            if let Err(err) = compression_method.create_archive(dir, skip_symlinks, pipe) {
+            if let Err(err) = archive_method.create_archive(dir, skip_symlinks, pipe) {
                 log::error!("Error during archive creation: {:?}", err);
             }
         });
@@ -392,8 +392,8 @@ pub fn directory_listing(
         Ok(ServiceResponse::new(
             req.clone(),
             HttpResponse::Ok()
-                .content_type(compression_method.content_type())
-                .encoding(compression_method.content_encoding())
+                .content_type(archive_method.content_type())
+                .encoding(archive_method.content_encoding())
                 .header("Content-Transfer-Encoding", "binary")
                 .header(
                     "Content-Disposition",
