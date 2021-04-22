@@ -341,9 +341,9 @@ dependencies = [
 
 [[package]]
 name = "alphanumeric-sort"
-version = "1.4.1"
+version = "1.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "54fe890cd3b940a643e2c1c57902bfa7b22fc99f0f0e5137f0edf71ec42c0782"
+checksum = "20e59b2ccb4c1ffbbf45af6f493e16ac65a66981c85664f1587816c0b08cd698"
 
 [[package]]
 name = "ansi_term"
