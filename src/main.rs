@@ -87,6 +87,9 @@ pub struct MiniserveConfig {
     /// Enable file upload
     pub file_upload: bool,
 
+    /// Enable create directory
+    pub mkdir: bool,
+
     /// Enable upload to override existing files
     pub overwrite_files: bool,
 
@@ -163,6 +166,7 @@ impl MiniserveConfig {
             overwrite_files: args.overwrite_files,
             show_qrcode: args.qrcode,
             file_upload: args.file_upload,
+            mkdir: args.mkdir,
             tar_enabled: args.enable_tar,
             tar_gz_enabled: args.enable_tar_gz,
             zip_enabled: args.enable_zip,
@@ -403,6 +407,7 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
     let full_route = format!("/{}", random_route);
 
     let upload_route;
+    let mkdir_route;
     let serve_path = {
         let path = &conf.path;
         let no_symlinks = conf.no_symlinks;
@@ -424,6 +429,11 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
             format!("/{}/upload", random_route)
         } else {
             "/upload".to_string()
+        };
+        mkdir_route = if let Some(random_route) = conf.random_route.clone() {
+            format!("/{}/mkdir", random_route)
+        } else {
+            "/mkdir".to_string()
         };
         if path.is_file() {
             None
@@ -456,6 +466,7 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
                         &default_color_scheme,
                         &default_color_scheme_dark,
                         show_qrcode,
+                        // TODO: mkdir path
                         u_r.clone(),
                         tar_enabled,
                         tar_gz_enabled,
@@ -471,15 +482,13 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
         }
     };
 
-    let favicon_route = conf.favicon_route.clone();
-    let css_route = conf.css_route.clone();
-
-    let default_color_scheme = conf.default_color_scheme.clone();
-    let default_color_scheme_dark = conf.default_color_scheme_dark.clone();
-    let hide_version_footer = conf.hide_version_footer;
-
     if let Some(serve_path) = serve_path {
         if conf.file_upload {
+            let default_color_scheme = conf.default_color_scheme.clone();
+            let default_color_scheme_dark = conf.default_color_scheme_dark.clone();
+            let hide_version_footer = conf.hide_version_footer;
+            let favicon_route = conf.favicon_route.clone();
+            let css_route = conf.css_route.clone();
             // Allow file upload
             app.service(
                 web::resource(&upload_route).route(web::post().to(move |req, payload| {
@@ -494,13 +503,32 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
                         hide_version_footer,
                     )
                 })),
-            )
-            // Handle directories
-            .service(serve_path);
-        } else {
-            // Handle directories
-            app.service(serve_path);
+            );
         }
+        if conf.mkdir {
+            let default_color_scheme = conf.default_color_scheme.clone();
+            let default_color_scheme_dark = conf.default_color_scheme_dark.clone();
+            let hide_version_footer = conf.hide_version_footer;
+            let favicon_route = conf.favicon_route.clone();
+            let css_route = conf.css_route.clone();
+            // Allow create directory
+            app.service(
+                web::resource(&mkdir_route).route(web::post().to(move |req, payload| {
+                    file_upload::create_dir(
+                        req,
+                        payload,
+                        uses_random_route,
+                        favicon_route.clone(),
+                        css_route.clone(),
+                        &default_color_scheme,
+                        &default_color_scheme_dark,
+                        hide_version_footer,
+                    )
+                })),
+            );
+        }
+        // Handle directories
+        app.service(serve_path);
     } else {
         // Handle single files
         app.service(web::resource(&full_route).route(web::to(listing::file_handler)));

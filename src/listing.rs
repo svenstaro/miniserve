@@ -33,6 +33,7 @@ pub struct QueryParameters {
     pub path: Option<PathBuf>,
     pub sort: Option<SortingMethod>,
     pub order: Option<SortingOrder>,
+    pub mkdir_name: Option<PathBuf>,
     qrcode: Option<String>,
     download: Option<ArchiveMethod>,
 }
@@ -438,6 +439,7 @@ pub fn extract_query_parameters(req: &HttpRequest) -> QueryParameters {
             download: query.download,
             qrcode: query.qrcode.to_owned(),
             path: query.path.clone(),
+            mkdir_name: query.mkdir_name.clone(),
         },
         Err(e) => {
             let err = ContextualError::ParseError("query parameters".to_string(), e.to_string());
@@ -448,6 +450,7 @@ pub fn extract_query_parameters(req: &HttpRequest) -> QueryParameters {
                 download: None,
                 qrcode: None,
                 path: None,
+                mkdir_name: None,
             }
         }
     }

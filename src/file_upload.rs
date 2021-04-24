@@ -98,6 +98,50 @@ fn handle_multipart(
     }
 }
 
+/// Create new future to handle create directory.
+fn handle_create_dir(
+    mut target_dir: PathBuf,
+    dir_name: PathBuf,
+) -> Pin<Box<dyn Stream<Item = Result<(), ContextualError>>>> {
+    let err = |e: ContextualError| Box::pin(future::err(e).into_stream());
+    match std::fs::metadata(&target_dir) {
+        Ok(metadata) => {
+            if !metadata.is_dir() {
+                return err(ContextualError::InvalidPathError(format!(
+                    "cannot upload file to {}, since it's not a directory",
+                    &target_dir.display()
+                )));
+            } else if metadata.permissions().readonly() {
+                return err(ContextualError::InsufficientPermissionsError(
+                    target_dir.display().to_string(),
+                ));
+            }
+        }
+        Err(_) => {
+            return err(ContextualError::InsufficientPermissionsError(
+                target_dir.display().to_string(),
+            ));
+        }
+    }
+
+    target_dir = target_dir.join(dir_name);
+    if target_dir.exists() {
+        return err(ContextualError::DuplicateFileError);
+    }
+
+    match std::fs::create_dir(&target_dir) {
+        Err(e) => {
+            return err(ContextualError::IoError(
+                format!("Failed to create {}", target_dir.display()),
+                e,
+            ));
+        }
+        _ => (),
+    }
+
+    Box::pin(future::ok(()).into_stream())
+}
+
 /// Handle incoming request to upload file.
 /// Target file path is expected as path parameter in URI and is interpreted as relative from
 /// server root directory. Any path which will go outside of this directory is considered
@@ -200,6 +244,153 @@ pub fn upload_file(
         actix_multipart::Multipart::new(req.headers(), payload)
             .map_err(ContextualError::MultipartError)
             .map_ok(move |item| handle_multipart(item, target_dir.clone(), overwrite_files))
+            .try_flatten()
+            .try_collect::<Vec<_>>()
+            .then(move |e| match e {
+                Ok(_) => future::ok(
+                    HttpResponse::SeeOther()
+                        .header(header::LOCATION, return_path)
+                        .finish(),
+                ),
+                Err(e) => create_error_response(
+                    &e.to_string(),
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    &return_path,
+                    query_params.sort,
+                    query_params.order,
+                    uses_random_route,
+                    &favicon_route,
+                    &css_route,
+                    &default_color_scheme,
+                    &default_color_scheme_dark,
+                    hide_version_footer,
+                ),
+            }),
+    )
+}
+///
+/// Handle incoming request to create directory.
+/// Target directory path is expected as path parameter in URI and is interpreted as relative from
+/// server root directory. Any path which will go outside of this directory is considered
+/// invalid.
+/// This method returns future.
+#[allow(clippy::too_many_arguments)]
+pub fn create_dir(
+    req: HttpRequest,
+    payload: actix_web::web::Payload,
+    uses_random_route: bool,
+    favicon_route: String,
+    css_route: String,
+    default_color_scheme: &str,
+    default_color_scheme_dark: &str,
+    hide_version_footer: bool,
+) -> Pin<Box<dyn Future<Output = Result<HttpResponse, actix_web::Error>>>> {
+    let conf = req.app_data::<crate::MiniserveConfig>().unwrap();
+    let return_path = if let Some(header) = req.headers().get(header::REFERER) {
+        header.to_str().unwrap_or("/").to_owned()
+    } else {
+        "/".to_string()
+    };
+
+    let query_params = listing::extract_query_parameters(&req);
+    let mkdir_path = match query_params.path.clone() {
+        Some(path) => match path.strip_prefix(Component::RootDir) {
+            Ok(stripped_path) => stripped_path.to_owned(),
+            Err(_) => path.clone(),
+        },
+        None => {
+            let err = ContextualError::InvalidHttpRequestError(
+                "Missing query parameter 'path'".to_string(),
+            );
+            return Box::pin(create_error_response(
+                &err.to_string(),
+                StatusCode::BAD_REQUEST,
+                &return_path,
+                query_params.sort,
+                query_params.order,
+                uses_random_route,
+                &favicon_route,
+                &css_route,
+                default_color_scheme,
+                default_color_scheme_dark,
+                hide_version_footer,
+            ));
+        }
+    };
+    let mkdir_name = match query_params.mkdir_name.clone() {
+        Some(name) => name,
+        None => {
+            let err = ContextualError::InvalidHttpRequestError(
+                "Missing query parameter 'mkdir_name'".to_string(),
+            );
+            return Box::pin(create_error_response(
+                &err.to_string(),
+                StatusCode::BAD_REQUEST,
+                &return_path,
+                query_params.sort,
+                query_params.order,
+                uses_random_route,
+                &favicon_route,
+                &css_route,
+                default_color_scheme,
+                default_color_scheme_dark,
+                hide_version_footer,
+            ));
+        }
+    };
+
+    let app_root_dir = match conf.path.canonicalize() {
+        Ok(dir) => dir,
+        Err(e) => {
+            let err = ContextualError::IoError(
+                "Failed to resolve path served by miniserve".to_string(),
+                e,
+            );
+            return Box::pin(create_error_response(
+                &err.to_string(),
+                StatusCode::INTERNAL_SERVER_ERROR,
+                &return_path,
+                query_params.sort,
+                query_params.order,
+                uses_random_route,
+                &favicon_route,
+                &css_route,
+                default_color_scheme,
+                default_color_scheme_dark,
+                hide_version_footer,
+            ));
+        }
+    };
+
+    // If the target path is under the app root directory, save the file.
+    let target_dir = match app_root_dir.join(&mkdir_path).canonicalize() {
+        Ok(path) if path.starts_with(&app_root_dir) => path.clone(),
+        _ => {
+            let err = ContextualError::InvalidHttpRequestError(
+                "Invalid value for 'path' parameter".to_string(),
+            );
+            return Box::pin(create_error_response(
+                &err.to_string(),
+                StatusCode::BAD_REQUEST,
+                &return_path,
+                query_params.sort,
+                query_params.order,
+                uses_random_route,
+                &favicon_route,
+                &css_route,
+                default_color_scheme,
+                default_color_scheme_dark,
+                hide_version_footer,
+            ));
+        }
+    };
+    let default_color_scheme = conf.default_color_scheme.clone();
+    let default_color_scheme_dark = conf.default_color_scheme_dark.clone();
+
+    Box::pin(
+        actix_multipart::Multipart::new(req.headers(), payload)
+            .map_err(ContextualError::MultipartError)
+            .map_ok(move |_| handle_create_dir(target_dir.clone(), mkdir_name.clone()))
             .try_flatten()
             .try_collect::<Vec<_>>()
             .then(move |e| match e {
