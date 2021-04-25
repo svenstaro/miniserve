@@ -12,6 +12,7 @@ use std::time::SystemTime;
 use strum_macros::{Display, EnumString};
 
 use crate::archive::ArchiveMethod;
+use crate::auth::CurrentUser;
 use crate::errors::{self, ContextualError};
 use crate::renderer;
 use percent_encode_sets::PATH_SEGMENT;
@@ -32,6 +33,7 @@ pub struct QueryParameters {
     pub path: Option<PathBuf>,
     pub sort: Option<SortingMethod>,
     pub order: Option<SortingOrder>,
+    pub raw: Option<bool>,
     qrcode: Option<String>,
     download: Option<ArchiveMethod>,
 }
@@ -152,6 +154,9 @@ pub fn directory_listing(
     dir: &actix_files::Directory,
     req: &HttpRequest,
 ) -> io::Result<ServiceResponse> {
+    let extensions = req.extensions();
+    let current_user: Option<&CurrentUser> = extensions.get::<CurrentUser>();
+
     use actix_web::dev::BodyEncoding;
     let conf = req.app_data::<crate::MiniserveConfig>().unwrap();
     let serve_path = req.path();
@@ -387,6 +392,7 @@ pub fn extract_query_parameters(req: &HttpRequest) -> QueryParameters {
             sort: query.sort,
             order: query.order,
             download: query.download,
+            raw: query.raw,
             qrcode: query.qrcode.to_owned(),
             path: query.path.clone(),
         },
@@ -397,6 +403,7 @@ pub fn extract_query_parameters(req: &HttpRequest) -> QueryParameters {
                 sort: None,
                 order: None,
                 download: None,
+                raw: None,
                 qrcode: None,
                 path: None,
             }
