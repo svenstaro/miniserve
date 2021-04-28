@@ -33,9 +33,14 @@ pub struct QueryParameters {
     pub path: Option<PathBuf>,
     pub sort: Option<SortingMethod>,
     pub order: Option<SortingOrder>,
-    pub mkdir_name: Option<PathBuf>,
     qrcode: Option<String>,
     download: Option<ArchiveMethod>,
+}
+
+/// Form parameters
+#[derive(Deserialize)]
+pub struct FormParameters {
+    pub mkdir_name: Option<PathBuf>,
 }
 
 /// Available sorting methods
@@ -157,6 +162,7 @@ pub fn directory_listing(
     skip_symlinks: bool,
     show_hidden: bool,
     file_upload: bool,
+    mkdir: bool,
     random_route: Option<String>,
     favicon_route: String,
     css_route: String,
@@ -164,6 +170,7 @@ pub fn directory_listing(
     default_color_scheme_dark: &str,
     show_qrcode: bool,
     upload_route: String,
+    mkdir_route: String,
     tar_enabled: bool,
     tar_gz_enabled: bool,
     zip_enabled: bool,
@@ -413,7 +420,9 @@ pub fn directory_listing(
                         query_params.order,
                         show_qrcode,
                         file_upload,
+                        mkdir,
                         &upload_route,
+                        &mkdir_route,
                         &favicon_route,
                         &css_route,
                         default_color_scheme,
@@ -439,7 +448,6 @@ pub fn extract_query_parameters(req: &HttpRequest) -> QueryParameters {
             download: query.download,
             qrcode: query.qrcode.to_owned(),
             path: query.path.clone(),
-            mkdir_name: query.mkdir_name.clone(),
         },
         Err(e) => {
             let err = ContextualError::ParseError("query parameters".to_string(), e.to_string());
@@ -450,7 +458,6 @@ pub fn extract_query_parameters(req: &HttpRequest) -> QueryParameters {
                 download: None,
                 qrcode: None,
                 path: None,
-                mkdir_name: None,
             }
         }
     }

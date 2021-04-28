@@ -5,13 +5,29 @@ use actix_web::{
 use futures::{future, Future, FutureExt, Stream, TryStreamExt};
 use std::{
     io::Write,
-    path::{Component, PathBuf},
+    path::{Component, Path, PathBuf},
     pin::Pin,
 };
 
 use crate::errors::{self, ContextualError};
-use crate::listing::{self, SortingMethod, SortingOrder};
+use crate::listing::{self, FormParameters, SortingMethod, SortingOrder};
 use crate::renderer;
+
+/// forbid any `..` or `/` in path component
+fn check_dir_name(dir_name: &Path) -> Result<(), ContextualError> {
+    for component in dir_name.components() {
+        match component {
+            Component::CurDir | Component::Normal(_) => {}
+            _ => {
+                return Err(ContextualError::InvalidPathError(format!(
+                    "illegal directory name {}",
+                    &dir_name.display()
+                )))
+            }
+        }
+    }
+    Ok(())
+}
 
 /// Create future to save file.
 fn save_file(
@@ -47,6 +63,31 @@ fn save_file(
     )
 }
 
+/// Check if the target path is a directory and readable.
+fn check_target_dir(target_dir: &Path, message: &str) -> Result<(), ContextualError> {
+    match std::fs::metadata(&target_dir) {
+        Ok(metadata) => {
+            if !metadata.is_dir() {
+                return Err(ContextualError::InvalidPathError(format!(
+                    "cannot {} to {}, since it's not a directory",
+                    message,
+                    &target_dir.display()
+                )));
+            } else if metadata.permissions().readonly() {
+                return Err(ContextualError::InsufficientPermissionsError(
+                    target_dir.display().to_string(),
+                ));
+            }
+        }
+        Err(_) => {
+            return Err(ContextualError::InsufficientPermissionsError(
+                target_dir.display().to_string(),
+            ));
+        }
+    }
+    Ok(())
+}
+
 /// Create new future to handle file as multipart data.
 fn handle_multipart(
     field: actix_multipart::Field,
@@ -69,24 +110,8 @@ fn handle_multipart(
     let err = |e: ContextualError| Box::pin(future::err(e).into_stream());
     match filename {
         Ok(f) => {
-            match std::fs::metadata(&file_path) {
-                Ok(metadata) => {
-                    if !metadata.is_dir() {
-                        return err(ContextualError::InvalidPathError(format!(
-                            "cannot upload file to {}, since it's not a directory",
-                            &file_path.display()
-                        )));
-                    } else if metadata.permissions().readonly() {
-                        return err(ContextualError::InsufficientPermissionsError(
-                            file_path.display().to_string(),
-                        ));
-                    }
-                }
-                Err(_) => {
-                    return err(ContextualError::InsufficientPermissionsError(
-                        file_path.display().to_string(),
-                    ));
-                }
+            if let Err(e) = check_target_dir(&file_path, "upload file") {
+                return err(e);
             }
             file_path = file_path.join(f);
             Box::pin(save_file(field, file_path, overwrite_files).into_stream())
@@ -99,39 +124,18 @@ fn handle_multipart(
 }
 
 /// Create new future to handle create directory.
-fn handle_create_dir(
-    mut target_dir: PathBuf,
-    dir_name: PathBuf,
-) -> Pin<Box<dyn Stream<Item = Result<(), ContextualError>>>> {
-    let err = |e: ContextualError| Box::pin(future::err(e).into_stream());
-    match std::fs::metadata(&target_dir) {
-        Ok(metadata) => {
-            if !metadata.is_dir() {
-                return err(ContextualError::InvalidPathError(format!(
-                    "cannot upload file to {}, since it's not a directory",
-                    &target_dir.display()
-                )));
-            } else if metadata.permissions().readonly() {
-                return err(ContextualError::InsufficientPermissionsError(
-                    target_dir.display().to_string(),
-                ));
-            }
-        }
-        Err(_) => {
-            return err(ContextualError::InsufficientPermissionsError(
-                target_dir.display().to_string(),
-            ));
-        }
-    }
+fn handle_create_dir(target_dir: PathBuf, dir_name: PathBuf) -> Result<(), ContextualError> {
+    check_target_dir(&target_dir, "create directory")?;
+    check_dir_name(&dir_name)?;
 
-    target_dir = target_dir.join(dir_name);
+    let target_dir = target_dir.join(dir_name);
     if target_dir.exists() {
-        return err(ContextualError::DuplicateFileError);
+        return Err(ContextualError::ConflictMkdirError);
     }
 
     match std::fs::create_dir(&target_dir) {
         Err(e) => {
-            return err(ContextualError::IoError(
+            return Err(ContextualError::IoError(
                 format!("Failed to create {}", target_dir.display()),
                 e,
             ));
@@ -139,7 +143,7 @@ fn handle_create_dir(
         _ => (),
     }
 
-    Box::pin(future::ok(()).into_stream())
+    Ok(())
 }
 
 /// Handle incoming request to upload file.
@@ -268,16 +272,17 @@ pub fn upload_file(
             }),
     )
 }
-///
+
 /// Handle incoming request to create directory.
-/// Target directory path is expected as path parameter in URI and is interpreted as relative from
+/// Target parent path is expected as path parameter in URI and is interpreted as relative from
 /// server root directory. Any path which will go outside of this directory is considered
 /// invalid.
+/// Target directory name is expected to be as mkdir_name parameter in form data.
 /// This method returns future.
 #[allow(clippy::too_many_arguments)]
 pub fn create_dir(
     req: HttpRequest,
-    payload: actix_web::web::Payload,
+    payload: actix_web::web::Form<FormParameters>,
     uses_random_route: bool,
     favicon_route: String,
     css_route: String,
@@ -317,7 +322,7 @@ pub fn create_dir(
             ));
         }
     };
-    let mkdir_name = match query_params.mkdir_name.clone() {
+    let mkdir_name = match payload.mkdir_name.clone() {
         Some(name) => name,
         None => {
             let err = ContextualError::InvalidHttpRequestError(
@@ -387,33 +392,27 @@ pub fn create_dir(
     let default_color_scheme = conf.default_color_scheme.clone();
     let default_color_scheme_dark = conf.default_color_scheme_dark.clone();
 
-    Box::pin(
-        actix_multipart::Multipart::new(req.headers(), payload)
-            .map_err(ContextualError::MultipartError)
-            .map_ok(move |_| handle_create_dir(target_dir.clone(), mkdir_name.clone()))
-            .try_flatten()
-            .try_collect::<Vec<_>>()
-            .then(move |e| match e {
-                Ok(_) => future::ok(
-                    HttpResponse::SeeOther()
-                        .header(header::LOCATION, return_path)
-                        .finish(),
-                ),
-                Err(e) => create_error_response(
-                    &e.to_string(),
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    &return_path,
-                    query_params.sort,
-                    query_params.order,
-                    uses_random_route,
-                    &favicon_route,
-                    &css_route,
-                    &default_color_scheme,
-                    &default_color_scheme_dark,
-                    hide_version_footer,
-                ),
-            }),
-    )
+    let rt = match handle_create_dir(target_dir, mkdir_name) {
+        Ok(()) => future::ok(
+            HttpResponse::SeeOther()
+                .header(header::LOCATION, return_path)
+                .finish(),
+        ),
+        Err(e) => create_error_response(
+            &e.to_string(),
+            StatusCode::INTERNAL_SERVER_ERROR,
+            &return_path,
+            query_params.sort,
+            query_params.order,
+            uses_random_route,
+            &favicon_route,
+            &css_route,
+            &default_color_scheme,
+            &default_color_scheme_dark,
+            hide_version_footer,
+        ),
+    };
+    Box::pin(rt)
 }
 
 /// Convenience method for creating response errors, if file upload fails.

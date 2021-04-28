@@ -419,6 +419,7 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
         let default_color_scheme_dark = conf.default_color_scheme_dark.clone();
         let show_qrcode = conf.show_qrcode;
         let file_upload = conf.file_upload;
+        let mkdir = conf.mkdir;
         let tar_enabled = conf.tar_enabled;
         let tar_gz_enabled = conf.tar_gz_enabled;
         let zip_enabled = conf.zip_enabled;
@@ -443,6 +444,7 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
             )
         } else {
             let u_r = upload_route.clone();
+            let m_r = mkdir_route.clone();
             let files;
             if show_hidden {
                 files = actix_files::Files::new(&full_route, path)
@@ -460,14 +462,15 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
                         no_symlinks,
                         show_hidden,
                         file_upload,
+                        mkdir,
                         random_route.clone(),
                         favicon_route.clone(),
                         css_route.clone(),
                         &default_color_scheme,
                         &default_color_scheme_dark,
                         show_qrcode,
-                        // TODO: mkdir path
                         u_r.clone(),
+                        m_r.clone(),
                         tar_enabled,
                         tar_gz_enabled,
                         zip_enabled,
