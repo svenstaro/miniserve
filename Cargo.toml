@@ -31,7 +31,7 @@ nanoid = "0.4"
 alphanumeric-sort = "1"
 structopt = "0.3"
 chrono = "0.4"
-chrono-humanize = "0.1"
+chrono-humanize = "0.2"
 serde = { version = "1", features = ["derive"] }
 tar = "0.4"
 futures = "0.3"
