@@ -95,7 +95,7 @@ pub struct CliArgs {
     #[structopt(short = "u", long = "upload-files")]
     pub file_upload: bool,
 
-    /// Enable create directory
+    /// Enable creating directory
     #[structopt(short = "m", long = "mkdir")]
     pub mkdir: bool,
 
