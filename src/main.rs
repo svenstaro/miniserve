@@ -1,6 +1,7 @@
 use std::io;
 use std::io::Write;
 use std::net::{IpAddr, SocketAddr, TcpListener};
+use std::path::PathBuf;
 use std::thread;
 use std::time::Duration;
 
@@ -105,15 +106,9 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
         ContextualError::IoError("Failed to resolve path to be served".to_string(), e)
     })?;
 
-    if let Some(index_path) = &miniserve_config.index {
-        let has_index: std::path::PathBuf = [&canon_path, index_path].iter().collect();
-        if !has_index.exists() {
-            error!(
-                "The file '{}' provided for option --index could not be found.",
-                index_path.to_string_lossy()
-            );
-        }
-    }
+    check_file_exists(&canon_path, &miniserve_config.index, "index");
+    check_file_exists(&canon_path, &miniserve_config.spa_index, "spa-index");
+
     let path_string = canon_path.to_string_lossy();
 
     println!(
@@ -279,6 +274,19 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
         .map_err(|e| ContextualError::IoError("".to_owned(), e))
 }
 
+fn check_file_exists(canon_path: &PathBuf, file_option: &Option<PathBuf>, option_name: &str) {
+    if let Some(file_path) = file_option {
+        let has_file: std::path::PathBuf = [&canon_path, file_path].iter().collect();
+        if !has_file.exists() {
+            error!(
+                "The file '{}' provided for option --{} could not be found.",
+                file_path.to_string_lossy(),
+                option_name,
+            );
+        }
+    }
+}
+
 /// Allows us to set low-level socket options
 ///
 /// This mainly used to set `set_only_v6` socket option
@@ -311,6 +319,26 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
             Some(index_file) => files.index_file(index_file.to_string_lossy()),
             None => files,
         };
+        let files = match &conf.spa_index {
+            Some(spa_index_file) => {
+                let spa_index_full = &conf.path.join(spa_index_file);
+                let spa_index_string: String = spa_index_full.to_string_lossy().into();
+
+                files.default_handler(move |req: actix_web::dev::ServiceRequest| {
+                    let (request, _payload) = req.into_parts();
+                    let spa_index_string = spa_index_string.clone();
+
+                    async move {
+                        let response = actix_files::NamedFile::open(
+                            &spa_index_string
+                        )?
+                            .into_response(&request);
+                        Ok(actix_web::dev::ServiceResponse::new(request, response))
+                    }
+                })
+            },
+            None => files.default_handler(web::to(error_404)),
+        };
         let files = match conf.show_hidden {
             true => files.use_hidden_files(),
             false => files,
@@ -320,7 +348,6 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
             .files_listing_renderer(listing::directory_listing)
             .prefer_utf8(true)
             .redirect_to_slash_directory()
-            .default_handler(web::to(error_404))
     };
 
     if !conf.path.is_file() {
