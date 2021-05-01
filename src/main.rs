@@ -355,6 +355,7 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
                 HttpAuthentication::basic(auth::handle_auth),
             ))
             .wrap(middleware::Logger::default())
+            .wrap(middleware::Compress::default())
             .route(
                 &format!("/{}", inside_config.favicon_route),
                 web::get().to(favicon),
