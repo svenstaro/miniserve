@@ -114,7 +114,7 @@ pub struct MiniserveConfig {
 
 impl MiniserveConfig {
     /// Parses the command line arguments
-    fn from_args(args: args::CliArgs) -> Self {
+    fn from_args(args: args::CliArgs) -> Result<Self, ContextualError> {
         let interfaces = if !args.interfaces.is_empty() {
             args.interfaces
         } else {
@@ -145,7 +145,7 @@ impl MiniserveConfig {
             _ => args.port,
         };
 
-        crate::MiniserveConfig {
+        Ok(crate::MiniserveConfig {
             verbose: args.verbose,
             path: args.path.unwrap_or_else(|| PathBuf::from(".")),
             port,
@@ -170,33 +170,14 @@ impl MiniserveConfig {
             title: args.title,
             header: args.header,
             hide_version_footer: args.hide_version_footer,
-        }
+        })
     }
 }
 
 fn main() {
     let args = args::CliArgs::from_args();
 
-    if let Some(shell) = args.print_completions {
-        args::CliArgs::clap().gen_completions_to("miniserve", shell, &mut std::io::stdout());
-        return;
-    }
-
-    let miniserve_config = MiniserveConfig::from_args(args);
-
-    match run(miniserve_config) {
-        Ok(()) => (),
-        Err(e) => errors::log_error_chain(e.to_string()),
-    }
-}
-
-#[actix_web::main(miniserve)]
-async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
-    if cfg!(windows) && !Paint::enable_windows_ascii() {
-        Paint::disable();
-    }
-
-    let log_level = if miniserve_config.verbose {
+    let log_level = if args.verbose {
         simplelog::LevelFilter::Info
     } else {
         simplelog::LevelFilter::Warn
@@ -212,6 +193,23 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
     {
         simplelog::SimpleLogger::init(log_level, simplelog::Config::default())
             .expect("Couldn't initialize logger")
+    }
+
+    if let Some(shell) = args.print_completions {
+        args::CliArgs::clap().gen_completions_to("miniserve", shell, &mut std::io::stdout());
+        return;
+    }
+
+    match MiniserveConfig::from_args(args).and_then(run) {
+        Ok(()) => (),
+        Err(e) => errors::log_error_chain(e.to_string()),
+    }
+}
+
+#[actix_web::main(miniserve)]
+async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
+    if cfg!(windows) && !Paint::enable_windows_ascii() {
+        Paint::disable();
     }
 
     if miniserve_config.no_symlinks {
