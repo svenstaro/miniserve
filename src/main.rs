@@ -2,7 +2,10 @@ use std::io;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr};
 use std::thread;
 use std::time::Duration;
-use std::{io::Write, path::PathBuf};
+use std::{
+    io::Write,
+    path::{Component, PathBuf},
+};
 
 use actix_web::web;
 use actix_web::{
@@ -138,7 +141,30 @@ impl MiniserveConfig {
         let default_color_scheme = args.color_scheme;
         let default_color_scheme_dark = args.color_scheme_dark;
 
-        let path_explicitly_chosen = args.path.is_some() || args.index.is_some();
+        let (path, index) = match (args.path, args.index) {
+            (None, None) => (None, None),
+            (None, Some(index)) => match (index.parent(), index.file_name()) {
+                (Some(parent), Some(file_name)) if parent.components().count() == 0 => {
+                    Ok((Some(PathBuf::from(".")), Some(PathBuf::from(file_name))))
+                }
+                (Some(parent), Some(file_name)) => {
+                    Ok((Some(parent.to_path_buf()), Some(PathBuf::from(file_name))))
+                }
+                _ => Err(ContextualError::ConfigError(
+                    "Cannot infer path to serve from option --index".to_string(),
+                )),
+            }?,
+            (Some(path), None) => (Some(path), None),
+            (Some(path), Some(index)) => match index.components().enumerate().last() {
+                // Make sure that index is a single file name
+                Some((0, Component::Normal(_))) => Ok((Some(path), Some(index))),
+                _ => Err(ContextualError::ConfigError(
+                    "When path is specified, index option expects a single file name".to_string(),
+                )),
+            }?,
+        };
+
+        let path_explicitly_chosen = path.is_some();
 
         let port = match args.port {
             0 => port_check::free_local_port().expect("no free ports available"),
@@ -147,7 +173,7 @@ impl MiniserveConfig {
 
         Ok(crate::MiniserveConfig {
             verbose: args.verbose,
-            path: args.path.unwrap_or_else(|| PathBuf::from(".")),
+            path: path.unwrap_or_else(|| PathBuf::from(".")),
             port,
             interfaces,
             auth: args.auth,
@@ -159,7 +185,7 @@ impl MiniserveConfig {
             css_route,
             default_color_scheme,
             default_color_scheme_dark,
-            index: args.index,
+            index,
             overwrite_files: args.overwrite_files,
             show_qrcode: args.qrcode,
             file_upload: args.file_upload,
