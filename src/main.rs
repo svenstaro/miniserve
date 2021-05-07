@@ -52,10 +52,11 @@ fn main() -> Result<()> {
 
     let miniserve_config = MiniserveConfig::try_from_args(args)?;
 
-    match run(miniserve_config) {
-        Ok(()) => (),
-        Err(e) => errors::log_error_chain(e.to_string()),
-    }
+    run(miniserve_config).map_err(|e| {
+        errors::log_error_chain(e.to_string());
+        e
+    })?;
+
     Ok(())
 }
 
