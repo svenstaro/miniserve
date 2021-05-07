@@ -53,6 +53,7 @@ http = "0.2"
 bytes = "1"
 atty = "0.2"
 rustls = { version = "0.19", optional = true }
+socket2 = "0.4"
 
 [features]
 default = ["tls"]

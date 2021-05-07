@@ -1,6 +1,6 @@
 use std::io;
 use std::io::Write;
-use std::net::{IpAddr, Ipv4Addr, SocketAddr};
+use std::net::{IpAddr, Ipv4Addr, SocketAddr, TcpListener};
 use std::thread;
 use std::time::Duration;
 
@@ -200,7 +200,7 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
         .interfaces
         .iter()
         .map(|&interface| SocketAddr::new(interface, miniserve_config.port))
-        .collect::<Vec<SocketAddr>>();
+        .collect::<Vec<_>>();
 
     let srv = actix_web::HttpServer::new(move || {
         App::new()
@@ -222,14 +222,18 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
     });
 
     let srv = socket_addresses.iter().try_fold(srv, |srv, addr| {
+        let listener = create_tcp_listener(*addr).map_err(|e| {
+            ContextualError::IoError(format!("Failed to bind server to {}", addr), e)
+        })?;
+
         #[cfg(feature = "tls")]
         let srv = match &miniserve_config.tls_rustls_config {
-            Some(tls_config) => srv.bind_rustls(addr, tls_config.clone()),
-            None => srv.bind(addr),
+            Some(tls_config) => srv.listen_rustls(listener, tls_config.clone()),
+            None => srv.listen(listener),
         };
 
         #[cfg(not(feature = "tls"))]
-        let srv = srv.bind(addr);
+        let srv = srv.listen(listener);
 
         srv.map_err(|e| ContextualError::IoError(format!("Failed to bind server to {}", addr), e))
     })?;
@@ -248,6 +252,19 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
 
     srv.await
         .map_err(|e| ContextualError::IoError("".to_owned(), e))
+}
+
+/// Allows us to set low-level socket options
+fn create_tcp_listener(addr: SocketAddr) -> io::Result<TcpListener> {
+    use socket2::{Domain, Protocol, Socket, Type};
+    let socket = Socket::new(Domain::for_address(addr), Type::STREAM, Some(Protocol::TCP))?;
+    if addr.is_ipv6() {
+        socket.set_only_v6(true)?;
+    }
+    socket.set_reuse_address(true)?;
+    socket.bind(&addr.into())?;
+    socket.listen(1024 /* Default backlog */)?;
+    Ok(TcpListener::from(socket))
 }
 
 fn configure_header(conf: &MiniserveConfig) -> middleware::DefaultHeaders {
