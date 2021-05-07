@@ -26,15 +26,16 @@ async fn save_file(
         ContextualError::IoError(format!("Failed to create {}", file_path.display()), e)
     })?;
 
-    let (_, acc) = field
+    let (_, written_len) = field
         .map_err(ContextualError::MultipartError)
-        .try_fold((file, 0i64), |(mut file, acc), bytes| async move {
+        .try_fold((file, 0i64), |(mut file, written_len), bytes| async move {
             file.write_all(bytes.as_ref())
-                .map(|_| (file, acc + bytes.len() as i64))
-                .map_err(|e| ContextualError::IoError("Failed to write to file".to_string(), e))
+                .map_err(|e| ContextualError::IoError("Failed to write to file".to_string(), e))?;
+            Ok((file, written_len + bytes.len() as i64))
         })
         .await?;
-    Ok(acc)
+
+    Ok(written_len)
 }
 
 /// Create new future to handle file as multipart data.
