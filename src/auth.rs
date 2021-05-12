@@ -1,12 +1,10 @@
 use actix_web::dev::{Service, ServiceRequest, ServiceResponse};
-use actix_web::http::{header, StatusCode};
-use actix_web::{HttpRequest, HttpResponse};
+use actix_web::{HttpRequest, ResponseError};
 use futures::future::Either;
 use sha2::{Digest, Sha256, Sha512};
 use std::future::{ready, Future};
 
-use crate::errors::{self, ContextualError};
-use crate::renderer;
+use crate::errors::ContextualError;
 
 #[derive(Clone, Debug)]
 /// HTTP Basic authentication parameters
@@ -77,86 +75,38 @@ pub fn get_hash<T: Digest>(text: &str) -> Vec<u8> {
     hasher.finalize().to_vec()
 }
 
-/// When authentication succedes, return the request to be passed to downstream services.
-/// Otherwise, return an error response
-fn handle_auth(req: ServiceRequest) -> Result<ServiceRequest, ServiceResponse> {
-    let (req, pl) = req.into_parts();
+fn handle_auth(req: &HttpRequest) -> Result<(), ContextualError> {
     let required_auth = &req.app_data::<crate::MiniserveConfig>().unwrap().auth;
 
     if required_auth.is_empty() {
         // auth is disabled by configuration
-        return Ok(ServiceRequest::from_parts(req, pl));
-    } else if let Ok(cred) = BasicAuthParams::try_from_request(&req) {
-        if match_auth(cred, required_auth) {
-            return Ok(ServiceRequest::from_parts(req, pl));
-        }
+        return Ok(());
     }
 
-    // auth failed; render and return the error response
-    let resp = HttpResponse::Unauthorized()
-        .append_header((
-            header::WWW_AUTHENTICATE,
-            header::HeaderValue::from_static("Basic realm=\"miniserve\""),
-        ))
-        .body(build_unauthorized_response(
-            &req,
-            ContextualError::InvalidHttpCredentials,
-            true,
-            StatusCode::UNAUTHORIZED,
-        ));
-
-    Err(ServiceResponse::new(req, resp))
+    match BasicAuthParams::try_from_request(req) {
+        Ok(cred) => match match_auth(cred, required_auth) {
+            true => Ok(()),
+            false => Err(ContextualError::InvalidHttpCredentials),
+        },
+        Err(_) => Err(ContextualError::RequireHttpCredentials),
+    }
 }
 
 pub fn auth_middleware<S>(
-    req: ServiceRequest,
+    mut req: ServiceRequest,
     srv: &S,
 ) -> impl Future<Output = actix_web::Result<ServiceResponse>> + 'static
 where
     S: Service<ServiceRequest, Response = ServiceResponse, Error = actix_web::Error>,
     S::Future: 'static,
 {
-    match handle_auth(req) {
-        Ok(req) => Either::Left(srv.call(req)),
-        Err(resp) => Either::Right(ready(Ok(resp))),
+    match handle_auth(req.parts_mut().0) {
+        Ok(_) => Either::Left(srv.call(req)),
+        Err(err) => {
+            let resp = req.into_response(err.error_response());
+            Either::Right(ready(Ok(resp)))
+        }
     }
-}
-
-/// Builds the unauthorized response body
-/// The reason why log_error_chain is optional is to handle cases where the auth pop-up appears and when the user clicks Cancel.
-/// In those case, we do not log the error to the terminal since it does not really matter.
-fn build_unauthorized_response(
-    req: &HttpRequest,
-    error: ContextualError,
-    log_error_chain: bool,
-    error_code: StatusCode,
-) -> String {
-    let state = req.app_data::<crate::MiniserveConfig>().unwrap();
-    let error = ContextualError::HttpAuthenticationError(Box::new(error));
-
-    if log_error_chain {
-        errors::log_error_chain(error.to_string());
-    }
-    let return_path = match state.random_route {
-        Some(ref random_route) => format!("/{}", random_route),
-        None => "/".to_string(),
-    };
-
-    renderer::render_error(
-        &error.to_string(),
-        error_code,
-        &return_path,
-        None,
-        None,
-        false,
-        false,
-        &state.favicon_route,
-        &state.css_route,
-        &state.default_color_scheme,
-        &state.default_color_scheme_dark,
-        state.hide_version_footer,
-    )
-    .into_string()
 }
 
 #[rustfmt::skip]

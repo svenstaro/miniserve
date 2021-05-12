@@ -5,10 +5,7 @@ use std::thread;
 use std::time::Duration;
 
 use actix_web::web;
-use actix_web::{
-    http::{header::ContentType, StatusCode},
-    Responder,
-};
+use actix_web::{http::header::ContentType, Responder};
 use actix_web::{middleware, App, HttpRequest, HttpResponse};
 use anyhow::{bail, Result};
 use clap::{crate_version, Clap, IntoApp};
@@ -210,6 +207,7 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
             // see: https://github.com/actix/actix-extras/issues/127
             // TODO replace this when fixed upstream
             .wrap_fn(auth::auth_middleware)
+            .wrap_fn(errors::error_page_middleware)
             .wrap(middleware::Logger::default())
             .route(
                 &format!("/{}", inside_config.favicon_route),
@@ -289,8 +287,8 @@ fn configure_header(conf: &MiniserveConfig) -> middleware::DefaultHeaders {
 
 /// Configures the Actix application
 fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
+    let path = &conf.path;
     let random_route = conf.random_route.clone().unwrap_or_default();
-    let uses_random_route = conf.random_route.clone().is_some();
     let full_route = format!("/{}", random_route);
 
     let upload_route = if let Some(random_route) = conf.random_route.clone() {
@@ -300,64 +298,22 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
     };
 
     let serve_path = {
-        let path = &conf.path;
-        let no_symlinks = conf.no_symlinks;
-        let show_hidden = conf.show_hidden;
-        let random_route = conf.random_route.clone();
-        let favicon_route = conf.favicon_route.clone();
-        let css_route = conf.css_route.clone();
-        let default_color_scheme = conf.default_color_scheme.clone();
-        let default_color_scheme_dark = conf.default_color_scheme_dark.clone();
-        let show_qrcode = conf.show_qrcode;
-        let file_upload = conf.file_upload;
-        let tar_enabled = conf.tar_enabled;
-        let tar_gz_enabled = conf.tar_gz_enabled;
-        let zip_enabled = conf.zip_enabled;
-        let dirs_first = conf.dirs_first;
-        let hide_version_footer = conf.hide_version_footer;
-        let cmd_enable_symlink_dest = conf.show_symlink_info;
-        let title = conf.title.clone();
-
         if path.is_file() {
             None
         } else {
-            let u_r = upload_route.clone();
-
             // build `Files` service using configuraion parameters
             let files = actix_files::Files::new(&full_route, path);
             let files = match &conf.index {
                 Some(index_file) => files.index_file(index_file.to_string_lossy()),
                 None => files,
             };
-            let files = match show_hidden {
+            let files = match conf.show_hidden {
                 true => files.use_hidden_files(),
                 false => files,
             };
             let files = files
                 .show_files_listing()
-                .files_listing_renderer(move |dir, req| {
-                    listing::directory_listing(
-                        dir,
-                        req,
-                        no_symlinks,
-                        show_hidden,
-                        file_upload,
-                        random_route.clone(),
-                        favicon_route.clone(),
-                        css_route.clone(),
-                        &default_color_scheme,
-                        &default_color_scheme_dark,
-                        show_qrcode,
-                        u_r.clone(),
-                        tar_enabled,
-                        tar_gz_enabled,
-                        zip_enabled,
-                        dirs_first,
-                        hide_version_footer,
-                        cmd_enable_symlink_dest,
-                        title.clone(),
-                    )
-                })
+                .files_listing_renderer(listing::directory_listing)
                 .prefer_utf8(true)
                 .redirect_to_slash_directory()
                 .default_handler(web::to(error_404));
@@ -365,29 +321,11 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
         }
     };
 
-    let favicon_route = conf.favicon_route.clone();
-    let css_route = conf.css_route.clone();
-
-    let default_color_scheme = conf.default_color_scheme.clone();
-    let default_color_scheme_dark = conf.default_color_scheme_dark.clone();
-    let hide_version_footer = conf.hide_version_footer;
-
     if let Some(serve_path) = serve_path {
         if conf.file_upload {
             // Allow file upload
             app.service(
-                web::resource(&upload_route).route(web::post().to(move |req, payload| {
-                    file_upload::upload_file(
-                        req,
-                        payload,
-                        uses_random_route,
-                        favicon_route.clone(),
-                        css_route.clone(),
-                        default_color_scheme.clone(),
-                        default_color_scheme_dark.clone(),
-                        hide_version_footer,
-                    )
-                })),
+                web::resource(&upload_route).route(web::post().to(file_upload::upload_file)),
             )
             // Handle directories
             .service(serve_path);
@@ -401,33 +339,8 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
     }
 }
 
-async fn error_404(req: HttpRequest) -> HttpResponse {
-    let err_404 = ContextualError::RouteNotFoundError(req.path().to_string());
-    let conf = req.app_data::<MiniserveConfig>().unwrap();
-    let uses_random_route = conf.random_route.is_some();
-    let favicon_route = conf.favicon_route.clone();
-    let css_route = conf.css_route.clone();
-    let query_params = listing::extract_query_parameters(&req);
-
-    errors::log_error_chain(err_404.to_string());
-
-    actix_web::HttpResponse::NotFound().body(
-        renderer::render_error(
-            &err_404.to_string(),
-            StatusCode::NOT_FOUND,
-            "/",
-            query_params.sort,
-            query_params.order,
-            false,
-            !uses_random_route,
-            &favicon_route,
-            &css_route,
-            &conf.default_color_scheme,
-            &conf.default_color_scheme_dark,
-            conf.hide_version_footer,
-        )
-        .into_string(),
-    )
+async fn error_404(req: HttpRequest) -> Result<HttpResponse, ContextualError> {
+    Err(ContextualError::RouteNotFoundError(req.path().to_string()))
 }
 
 async fn favicon() -> impl Responder {
