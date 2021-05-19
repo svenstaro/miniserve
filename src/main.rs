@@ -358,7 +358,10 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
                 web::get().to(favicon),
             )
             .route(&format!("/{}", inside_config.css_route), web::get().to(css))
-            .configure(|c| configure_app(c, &inside_config))
+            .service(
+                web::scope(inside_config.random_route.as_deref().unwrap_or(""))
+                    .configure(|c| configure_app(c, &inside_config)),
+            )
             .default_service(web::get().to(error_404))
     })
     .bind(socket_addresses.as_slice())
@@ -389,56 +392,33 @@ fn configure_header(conf: &MiniserveConfig) -> middleware::DefaultHeaders {
 
 /// Configures the Actix application
 fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
-    let path = &conf.path;
-    let random_route = conf.random_route.clone().unwrap_or_default();
-    let full_route = format!("/{}", random_route);
-
-    let upload_route;
-    let serve_path = {
-        upload_route = if let Some(random_route) = conf.random_route.clone() {
-            format!("/{}/upload", random_route)
-        } else {
-            "/upload".to_string()
-        };
-        if path.is_file() {
-            None
-        } else if let Some(index_file) = &conf.index {
-            Some(
-                actix_files::Files::new(&full_route, path).index_file(index_file.to_string_lossy()),
-            )
-        } else {
-            let files;
-            if conf.show_hidden {
-                files = actix_files::Files::new(&full_route, path)
-                    .show_files_listing()
-                    .use_hidden_files();
-            } else {
-                files = actix_files::Files::new(&full_route, path).show_files_listing();
-            }
-
-            let files = files
-                .files_listing_renderer(listing::directory_listing)
-                .prefer_utf8(true)
-                .default_handler(web::to(error_404));
-            Some(files)
+    let static_files_service = || {
+        let mut files = actix_files::Files::new("", &conf.path);
+        if let Some(ref index_file) = conf.index {
+            files = files.index_file(index_file.to_string_lossy());
         }
+        if conf.show_hidden {
+            files = files.use_hidden_files();
+        }
+        files
+            .show_files_listing()
+            .files_listing_renderer(listing::directory_listing)
+            .prefer_utf8(true)
+            .default_handler(web::to(error_404))
     };
+    let file_upload_service =
+        || web::resource("/upload").route(web::post().to(file_upload::upload_file));
 
-    if let Some(serve_path) = serve_path {
+    if conf.path.is_dir() {
         if conf.file_upload {
             // Allow file upload
-            app.service(
-                web::resource(&upload_route).route(web::post().to(file_upload::upload_file)),
-            )
-            // Handle directories
-            .service(serve_path);
-        } else {
-            // Handle directories
-            app.service(serve_path);
+            app.service(file_upload_service());
         }
+        // Handle directories
+        app.service(static_files_service());
     } else {
         // Handle single files
-        app.service(web::resource(&full_route).route(web::to(listing::file_handler)));
+        app.service(web::resource("").route(web::to(listing::file_handler)));
     }
 }
 
