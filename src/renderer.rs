@@ -18,10 +18,7 @@ pub fn page(
     encoded_dir: &str,
     conf: &MiniserveConfig,
 ) -> Markup {
-    let upload_route = match conf.random_route {
-        Some(ref random_route) => format!("/{}/upload", random_route),
-        None => "/upload".to_string(),
-    };
+    let upload_route = format!("{}/upload", &conf.route_prefix);
     let (sort_method, sort_order) = (query_params.sort, query_params.order);
     let upload_action = build_upload_action(&upload_route, encoded_dir, sort_method, sort_order);
 
@@ -481,8 +478,8 @@ pub fn render_error(
                     @for error in error_description.lines() {
                         p { (error) }
                     }
-                    // WARN don't expose random route!
-                    @if !conf.random_route.is_some() {
+                    // WARN don't expose route prefix!
+                    @if conf.route_prefix.is_empty() {
                         div.error-nav {
                             a.error-back href=(return_address) {
                                 "Go back to file listing"

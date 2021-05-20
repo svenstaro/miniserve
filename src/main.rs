@@ -57,8 +57,8 @@ pub struct MiniserveConfig {
     /// Show hidden files
     pub show_hidden: bool,
 
-    /// Enable random route generation
-    pub random_route: Option<String>,
+    /// Route prefix; Either empty (default) or contains a route with a leading slash
+    pub route_prefix: String,
 
     /// Randomly generated favicon route
     pub favicon_route: String,
@@ -121,10 +121,11 @@ impl MiniserveConfig {
             ]
         };
 
-        let random_route = if args.random_route {
-            Some(nanoid::nanoid!(6, &ROUTE_ALPHABET))
-        } else {
-            None
+        let route_prefix = match (args.route_prefix, args.random_route_prefix) {
+            (Some(prefix), _) if prefix.starts_with('/') => prefix,
+            (Some(prefix), _) => format!("/{}", prefix),
+            (_, true) => format!("/{}", nanoid::nanoid!(6, &ROUTE_ALPHABET)),
+            _ => "".to_owned(),
         };
 
         // Generate some random routes for the favicon and css so that they are very unlikely to conflict with
@@ -151,7 +152,7 @@ impl MiniserveConfig {
             path_explicitly_chosen,
             no_symlinks: args.no_symlinks,
             show_hidden: args.hidden,
-            random_route,
+            route_prefix,
             favicon_route,
             css_route,
             default_color_scheme,
@@ -301,21 +302,13 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
             "{}",
             Color::Green
                 .paint(format!(
-                    "http://{interface}:{port}",
+                    "http://{interface}:{port}{prefix}",
                     interface = &interface,
-                    port = miniserve_config.port
+                    port = miniserve_config.port,
+                    prefix = miniserve_config.route_prefix,
                 ))
                 .bold()
         ));
-
-        if let Some(random_route) = miniserve_config.clone().random_route {
-            addresses.push_str(&format!(
-                "{}",
-                Color::Green
-                    .paint(format!("/{random_route}", random_route = random_route,))
-                    .bold()
-            ));
-        }
     }
 
     let socket_addresses = interfaces
@@ -359,7 +352,7 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
             )
             .route(&format!("/{}", inside_config.css_route), web::get().to(css))
             .service(
-                web::scope(inside_config.random_route.as_deref().unwrap_or(""))
+                web::scope(&inside_config.route_prefix)
                     .configure(|c| configure_app(c, &inside_config)),
             )
             .default_service(web::get().to(error_404))
