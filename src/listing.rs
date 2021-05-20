@@ -27,7 +27,7 @@ mod percent_encode_sets {
 }
 
 /// Query parameters
-#[derive(Deserialize)]
+#[derive(Deserialize, Default)]
 pub struct QueryParameters {
     pub path: Option<PathBuf>,
     pub sort: Option<SortingMethod>,
@@ -383,23 +383,11 @@ pub fn directory_listing(
 
 pub fn extract_query_parameters(req: &HttpRequest) -> QueryParameters {
     match Query::<QueryParameters>::from_query(req.query_string()) {
-        Ok(query) => QueryParameters {
-            sort: query.sort,
-            order: query.order,
-            download: query.download,
-            qrcode: query.qrcode.to_owned(),
-            path: query.path.clone(),
-        },
+        Ok(Query(query_params)) => query_params,
         Err(e) => {
             let err = ContextualError::ParseError("query parameters".to_string(), e.to_string());
             errors::log_error_chain(err.to_string());
-            QueryParameters {
-                sort: None,
-                order: None,
-                download: None,
-                qrcode: None,
-                path: None,
-            }
+            QueryParameters::default()
         }
     }
 }
