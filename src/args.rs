@@ -135,6 +135,10 @@ pub struct CliArgs {
     )]
     pub header: Vec<HeaderMap>,
 
+    /// Show symlink info
+    #[clap(short = 'l', long = "show-symlink-info")]
+    pub show_symlink_info: bool,
+
     /// Hide version footer
     #[clap(short = 'F', long = "hide-version-footer")]
     pub hide_version_footer: bool,

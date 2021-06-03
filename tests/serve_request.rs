@@ -123,10 +123,12 @@ fn serves_requests_no_hidden_files_without_flag(server: TestServer) -> Result<()
 }
 
 #[rstest]
-#[case(true, server(&["--no-symlinks"]))]
-#[case(false, server(None::<&str>))]
+#[case(true, false, server(&["--no-symlinks"]))]
+#[case(true, true, server(&["--no-symlinks", "--show-symlink-info"]))]
+#[case(false, false, server(None::<&str>))]
 fn serves_requests_symlinks(
     #[case] no_symlinks: bool,
+    #[case] show_symlink_info: bool,
     #[case] server: TestServer,
 ) -> Result<(), Error> {
     let files = &["symlink-file.html"];
@@ -154,6 +156,9 @@ fn serves_requests_symlinks(
             .find(|x: &Node| x.name().unwrap_or_default() == "a" && x.text() == entry)
             .next();
         assert_eq!(node.is_none(), no_symlinks);
+        if node.is_some() && show_symlink_info {
+            assert_eq!(node.unwrap().attr("class").unwrap(), "symlink");
+        }
         if no_symlinks {
             continue;
         }
@@ -162,9 +167,15 @@ fn serves_requests_symlinks(
         assert_eq!(node.attr("href").unwrap().strip_prefix("/").unwrap(), entry);
         reqwest::blocking::get(server.url().join(&entry)?)?.error_for_status()?;
         if entry.ends_with("/") {
-            assert_eq!(node.attr("class").unwrap(), "directory");
+            let node = parsed
+                .find(|x: &Node| x.name().unwrap_or_default() == "a" && x.text() == DIRECTORIES[0])
+                .next();
+            assert_eq!(node.unwrap().attr("class").unwrap(), "directory");
         } else {
-            assert_eq!(node.attr("class").unwrap(), "file");
+            let node = parsed
+                .find(|x: &Node| x.name().unwrap_or_default() == "a" && x.text() == FILES[0])
+                .next();
+            assert_eq!(node.unwrap().attr("class").unwrap(), "file");
         }
     }
     for &entry in broken {

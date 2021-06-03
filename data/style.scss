@@ -95,11 +95,18 @@ a.file:hover {
     color: var(--file_link_color);
 }
 
+a.symlink,
+a.symlink:visited {
+    font-weight: bold;
+    color: var(--symlink_color);
+}
+
 .symlink-symbol::after {
     content: "⇢";
     display: inline-block;
     border: 1px solid;
     margin-left: 0.5rem;
+    margin-right: 0.5rem;
     border-radius: 0.2rem;
     padding: 0 0.1rem;
 }
@@ -274,11 +281,6 @@ td.date-cell {
 
 .history {
     color: var(--date_text_color);
-}
-
-.file-entry {
-    display: flex;
-    justify-content: space-between;
 }
 
 span.size {
@@ -532,6 +534,7 @@ th span.active span {
     --directory_link_color_visited: #9b1985;
     --file_link_color: #0086b3;
     --file_link_color_visited: #974ec2;
+    --symlink_color: #ADD8E6;
     --table_background: #ffffff;
     --table_text_color: #323232;
     --table_header_background: #323232;
@@ -578,6 +581,7 @@ th span.active span {
     --directory_link_color_visited: #0388f4;
     --file_link_color: #ea95ff;
     --file_link_color_visited: #a595ff;
+    --symlink_color: #66d9ef;
     --table_background: #353946;
     --table_text_color: #eeeeee;
     --table_header_background: #5294e2;
@@ -624,6 +628,7 @@ th span.active span {
     --directory_link_color_visited: #ebc390;
     --file_link_color: #87d6d5;
     --file_link_color_visited: #a7b9ec;
+    --symlink_color: #11a8cd;
     --table_background: #4a4949;
     --table_text_color: #efefef;
     --table_header_background: #7f9f7f;
@@ -670,6 +675,7 @@ th span.active span {
     --directory_link_color_visited: #bc39a7;
     --file_link_color: #a6e22e;
     --file_link_color_visited: #4cb936;
+    --symlink_color: #29b8db;
     --table_background: #3b3a32;
     --table_text_color: #f8f8f0;
     --table_header_background: #75715e;

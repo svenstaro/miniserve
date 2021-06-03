@@ -315,6 +315,7 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
         let zip_enabled = conf.zip_enabled;
         let dirs_first = conf.dirs_first;
         let hide_version_footer = conf.hide_version_footer;
+        let cmd_enable_symlink_dest = conf.show_symlink_info;
         let title = conf.title.clone();
 
         if path.is_file() {
@@ -353,6 +354,7 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
                         zip_enabled,
                         dirs_first,
                         hide_version_footer,
+                        cmd_enable_symlink_dest,
                         title.clone(),
                     )
                 })
