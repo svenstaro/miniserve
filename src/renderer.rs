@@ -272,7 +272,7 @@ fn parametrized_link(
         if let Some(order) = sort_order {
             let parametrized_link = format!(
                 "{}?sort={}&order={}",
-                make_link_with_trailing_slash(&link),
+                make_link_with_trailing_slash(link),
                 method,
                 order
             );
@@ -281,7 +281,7 @@ fn parametrized_link(
         }
     }
 
-    make_link_with_trailing_slash(&link)
+    make_link_with_trailing_slash(link)
 }
 
 /// Partial: table header link
