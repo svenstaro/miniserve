@@ -122,16 +122,26 @@ impl MiniserveConfig {
         };
 
         let route_prefix = match (args.route_prefix, args.random_route_prefix) {
-            (Some(prefix), _) if prefix.starts_with('/') => prefix,
-            (Some(prefix), _) => format!("/{}", prefix),
+            (Some(mut prefix), _) => match (prefix.starts_with("/"), prefix.ends_with("/")) {
+                (true, true) => {
+                    prefix.pop();
+                    prefix
+                }
+                (true, false) => prefix,
+                (false, true) => {
+                    prefix.pop();
+                    format!("/{}", prefix)
+                }
+                (false, false) => format!("/{}", prefix),
+            },
             (_, true) => format!("/{}", nanoid::nanoid!(6, &ROUTE_ALPHABET)),
             _ => "".to_owned(),
         };
 
         // Generate some random routes for the favicon and css so that they are very unlikely to conflict with
         // real files.
-        let favicon_route = nanoid::nanoid!(10, &ROUTE_ALPHABET);
-        let css_route = nanoid::nanoid!(10, &ROUTE_ALPHABET);
+        let favicon_route = format!("{}/{}", route_prefix, nanoid::nanoid!(10, &ROUTE_ALPHABET));
+        let css_route = format!("{}/{}", route_prefix, nanoid::nanoid!(10, &ROUTE_ALPHABET));
 
         let default_color_scheme = args.color_scheme;
         let default_color_scheme_dark = args.color_scheme_dark;
@@ -346,11 +356,8 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
                 HttpAuthentication::basic(auth::handle_auth),
             ))
             .wrap(middleware::Logger::default())
-            .route(
-                &format!("/{}", inside_config.favicon_route),
-                web::get().to(favicon),
-            )
-            .route(&format!("/{}", inside_config.css_route), web::get().to(css))
+            .route(&inside_config.favicon_route, web::get().to(favicon))
+            .route(&inside_config.css_route, web::get().to(css))
             .service(
                 web::scope(&inside_config.route_prefix)
                     .configure(|c| configure_app(c, &inside_config)),
