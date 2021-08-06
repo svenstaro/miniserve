@@ -51,6 +51,7 @@ fn save_file(
 fn handle_multipart(
     field: actix_multipart::Field,
     mut file_path: PathBuf,
+    app_root_dir: PathBuf,
     overwrite_files: bool,
 ) -> Pin<Box<dyn Stream<Item = Result<i64, ContextualError>>>> {
     let filename = field
@@ -69,6 +70,17 @@ fn handle_multipart(
     let err = |e: ContextualError| Box::pin(future::err(e).into_stream());
     match filename {
         Ok(f) => {
+            // Without this check, attackers can mount an attack via path traversal by
+            // manipulating the filename attribute in the multipart request in the
+            // ways enumerated on this page: https://cwe.mitre.org/data/definitions/22.html
+            match &app_root_dir.join(&f).canonicalize() {
+                Ok(path) if path.starts_with(&app_root_dir) => (),
+                _ => {
+                    return err(ContextualError::InvalidPathError(
+                        "invalid path".to_string(),
+                    ));
+                }
+            }
             match std::fs::metadata(&file_path) {
                 Ok(metadata) => {
                     if !metadata.is_dir() {
@@ -199,7 +211,14 @@ pub fn upload_file(
     Box::pin(
         actix_multipart::Multipart::new(req.headers(), payload)
             .map_err(ContextualError::MultipartError)
-            .map_ok(move |item| handle_multipart(item, target_dir.clone(), overwrite_files))
+            .map_ok(move |item| {
+                handle_multipart(
+                    item,
+                    target_dir.clone(),
+                    app_root_dir.clone(),
+                    overwrite_files,
+                )
+            })
             .try_flatten()
             .try_collect::<Vec<_>>()
             .then(move |e| match e {
