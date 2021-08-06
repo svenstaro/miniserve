@@ -262,7 +262,7 @@ fn parametrized_link(
         if let Some(order) = sort_order {
             let parametrized_link = format!(
                 "{}?sort={}&order={}",
-                make_link_with_trailing_slash(&link),
+                make_link_with_trailing_slash(link),
                 method,
                 order
             );
@@ -271,7 +271,7 @@ fn parametrized_link(
         }
     }
 
-    make_link_with_trailing_slash(&link)
+    make_link_with_trailing_slash(link)
 }
 
 /// Partial: table header link
@@ -392,8 +392,8 @@ fn page_header(title: &str, file_upload: bool, favicon_route: &str, css_route: &
             meta http-equiv="X-UA-Compatible" content="IE=edge";
             meta name="viewport" content="width=device-width, initial-scale=1";
 
-            link rel="icon" type="image/svg+xml" href={ "/" (favicon_route) };
-            link rel="stylesheet" href={ "/" (css_route) };
+            link rel="icon" type="image/svg+xml" href={ (favicon_route) };
+            link rel="stylesheet" href={ (css_route) };
 
             title { (title) }
 
