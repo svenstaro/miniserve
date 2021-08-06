@@ -210,14 +210,7 @@ pub fn upload_file(
     Box::pin(
         actix_multipart::Multipart::new(req.headers(), payload)
             .map_err(ContextualError::MultipartError)
-            .map_ok(move |item| {
-                handle_multipart(
-                    item,
-                    target_dir.clone(),
-                    app_root_dir.clone(),
-                    overwrite_files,
-                )
-            })
+            .map_ok(move |item| handle_multipart(item, target_dir.clone(), overwrite_files))
             .try_flatten()
             .try_collect::<Vec<_>>()
             .then(move |e| match e {
