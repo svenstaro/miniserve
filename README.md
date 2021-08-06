@@ -169,6 +169,10 @@ Alternatively, if you are on **Arch Linux**, you can do
 
     pacman -S miniserve
 
+On [Termux](https://termux.com/)
+
+    pkg install miniserve
+
 **On OSX**: Download `miniserve-osx` from [the releases page](https://github.com/svenstaro/miniserve/releases) and run
 
     chmod +x miniserve-osx
