@@ -169,6 +169,10 @@ Alternatively, if you are on **Arch Linux**, you can do
 
     pacman -S miniserve
 
+On [Termux](https://termux.com/)
+
+    pkg install miniserve
+
 **On OSX**: Download `miniserve-osx` from [the releases page](https://github.com/svenstaro/miniserve/releases) and run
 
     chmod +x miniserve-osx
@@ -199,7 +203,7 @@ If you'd like to make use of the built-in shell completion support, you need to 
 few examples with common paths are provided below:
 
     # For bash
-    miniserve --print-completions bash > ~/.local/share/bash-completion/miniserve
+    miniserve --print-completions bash > ~/.local/share/bash-completion/completions/miniserve
     # For zsh
     miniserve --print-completions zsh > /usr/local/share/zsh/site-functions/_miniserve
     # For fish
