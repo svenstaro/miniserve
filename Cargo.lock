@@ -2021,9 +2021,9 @@ dependencies = [
 
 [[package]]
 name = "qrcodegen"
-version = "1.6.0"
+version = "1.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d24ea38b2345f15533e6668104bec0136883404287e095f15f9ea2522e2b4b6c"
+checksum = "135e6754eed8ca897dd70584d895e72e36860b3e163b6bcedce48571cbaef343"
 
 [[package]]
 name = "quick-error"
