@@ -107,14 +107,14 @@ fn can_navigate_deep_into_dirs_and_back(server: TestServer) -> Result<(), Error>
     Ok(())
 }
 
-#[rstest(use_custom_title, case(true), case(false))]
+#[rstest]
+#[case(server(&["--title", "some title"]), true)]
+#[case(server(None::<&str>), false)]
 /// We can use breadcrumbs to navigate.
-fn can_navigate_using_breadcrumbs(use_custom_title: bool) -> Result<(), Error> {
-    let server = server(if use_custom_title {
-        &["--title", "some title"]
-    } else {
-        &[] as &[&str]
-    });
+fn can_navigate_using_breadcrumbs(
+    #[case] server: TestServer,
+    #[case] use_custom_title: bool,
+) -> Result<(), Error> {
     // Create a vector of directory names. We don't need to fetch the file and so we'll
     // remove that part.
     let dir: String = {

@@ -6,7 +6,7 @@ use reqwest::Url;
 use rstest::fixture;
 use std::process::{Child, Command, Stdio};
 use std::thread::sleep;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 /// Error type used by tests
 pub type Error = Box<dyn std::error::Error>;
@@ -84,11 +84,12 @@ pub fn port() -> u16 {
 
 /// Run miniserve as a server; Start with a temporary directory, a free port and some
 /// optional arguments then wait for a while for the server setup to complete.
-#[fixture(args=&[] as &[&str])]
+#[fixture]
 #[allow(dead_code)]
-pub fn server<S>(args: impl IntoIterator<Item = S>) -> TestServer
+pub fn server<I>(#[default(&[] as &[&str])] args: I) -> TestServer
 where
-    S: AsRef<std::ffi::OsStr>,
+    I: IntoIterator,
+    I::Item: AsRef<std::ffi::OsStr>,
 {
     let port = port();
     let tmpdir = tmpdir();
@@ -102,16 +103,17 @@ where
         .spawn()
         .expect("Couldn't run test binary");
 
-    sleep(Duration::from_secs(1));
+    wait_for_port(port);
     TestServer::new(port, tmpdir, child)
 }
 
 /// Same as `server()` but ignore stderr
-#[fixture(args=&[] as &[&str])]
+#[fixture]
 #[allow(dead_code)]
-pub fn server_no_stderr<S>(args: impl IntoIterator<Item = S>) -> TestServer
+pub fn server_no_stderr<I>(#[default(&[] as &[&str])] args: I) -> TestServer
 where
-    S: AsRef<std::ffi::OsStr>,
+    I: IntoIterator,
+    I::Item: AsRef<std::ffi::OsStr>,
 {
     let port = port();
     let tmpdir = tmpdir();
@@ -126,8 +128,21 @@ where
         .spawn()
         .expect("Couldn't run test binary");
 
-    sleep(Duration::from_secs(1));
+    wait_for_port(port);
     TestServer::new(port, tmpdir, child)
+}
+
+/// Wait a max of 1s for the port to become available.
+fn wait_for_port(port: u16) {
+    let start_wait = Instant::now();
+
+    while !port_check::is_port_reachable(format!("localhost:{}", port)) {
+        sleep(Duration::from_millis(100));
+
+        if start_wait.elapsed().as_secs() > 1 {
+            panic!("timeout waiting for port {}", port);
+        }
+    }
 }
 
 #[allow(dead_code)]
@@ -160,6 +175,6 @@ impl TestServer {
 impl Drop for TestServer {
     fn drop(&mut self) {
         self.child.kill().expect("Couldn't kill test server");
-        /* TODO may need .wait() ? */
+        self.child.wait().unwrap();
     }
 }

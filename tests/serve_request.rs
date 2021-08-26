@@ -121,9 +121,13 @@ fn serves_requests_no_hidden_files_without_flag(server: TestServer) -> Result<()
     Ok(())
 }
 
-#[rstest(no_symlinks, case(true), case(false))]
-fn serves_requests_symlinks(no_symlinks: bool) -> Result<(), Error> {
-    let server = server(["--no-symlinks"].iter().filter(|_| no_symlinks));
+#[rstest]
+#[case(true, server(&["--no-symlinks"]))]
+#[case(false, server(None::<&str>))]
+fn serves_requests_symlinks(
+    #[case] no_symlinks: bool,
+    #[case] server: TestServer,
+) -> Result<(), Error> {
     let files = &["symlink-file.html"];
     let dirs = &["symlink-dir/"];
     let broken = &["symlink broken"];
@@ -137,7 +141,7 @@ fn serves_requests_symlinks(no_symlinks: bool) -> Result<(), Error> {
         symlink_file(FILES[0], server.path().join(file)).expect("Couldn't create symlink");
     }
     for &file in broken {
-        symlink_file("souldnt-exist.xxx", server.path().join(file))
+        symlink_file("should-not-exist.xxx", server.path().join(file))
             .expect("Couldn't create symlink");
     }
 

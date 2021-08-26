@@ -26,8 +26,7 @@ fn show_qrcode_element(server: TestServer) -> Result<(), Error> {
 }
 
 #[rstest]
-fn get_svg_qrcode(server_no_stderr: TestServer) -> Result<(), Error> {
-    let server = server_no_stderr;
+fn get_svg_qrcode(#[from(server_no_stderr)] server: TestServer) -> Result<(), Error> {
     // Ok
     let resp = reqwest::blocking::get(server.url().join("/?qrcode=test")?)?;
 
