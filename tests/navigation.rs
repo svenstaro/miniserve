@@ -108,12 +108,12 @@ fn can_navigate_deep_into_dirs_and_back(server: TestServer) -> Result<(), Error>
 }
 
 #[rstest]
-#[case(server(&["--title", "some title"]), true)]
-#[case(server(None::<&str>), false)]
+#[case(server(&["--title", "some title"]), "some title")]
+#[case(server(None::<&str>), format!("localhost:{}", server.port()))]
 /// We can use breadcrumbs to navigate.
 fn can_navigate_using_breadcrumbs(
     #[case] server: TestServer,
-    #[case] use_custom_title: bool,
+    #[case] title_name: String,
 ) -> Result<(), Error> {
     // Create a vector of directory names. We don't need to fetch the file and so we'll
     // remove that part.
@@ -132,12 +132,6 @@ fn can_navigate_using_breadcrumbs(
     let resp = reqwest::blocking::get(nested_url.as_str())?;
     let body = resp.error_for_status()?;
     let parsed = Document::from_read(body)?;
-
-    let title_name = if use_custom_title {
-        "some title".to_string()
-    } else {
-        format!("localhost:{}", server.port())
-    };
 
     // can go back to root dir by clicking title
     let title_link = get_link_from_text(&parsed, &title_name).expect("Root dir link not found.");
