@@ -72,8 +72,8 @@ fn serves_requests_with_non_default_port(server: TestServer) -> Result<(), Error
     Ok(())
 }
 
-#[rstest(server(&["--hidden"]))]
-fn serves_requests_hidden_files(server: TestServer) -> Result<(), Error> {
+#[rstest]
+fn serves_requests_hidden_files(#[with(&["--hidden"])] server: TestServer) -> Result<(), Error> {
     let body = reqwest::blocking::get(server.url())?.error_for_status()?;
     let parsed = Document::from_read(body)?;
 

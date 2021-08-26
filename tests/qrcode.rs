@@ -16,8 +16,8 @@ fn hide_qrcode_element(server: TestServer) -> Result<(), Error> {
     Ok(())
 }
 
-#[rstest(server(&["-q"]))]
-fn show_qrcode_element(server: TestServer) -> Result<(), Error> {
+#[rstest]
+fn show_qrcode_element(#[with(&["-q"])] server: TestServer) -> Result<(), Error> {
     let body = reqwest::blocking::get(server.url())?.error_for_status()?;
     let parsed = Document::from_read(body)?;
     assert!(parsed.find(Attr("id", "qrcode")).next().is_some());

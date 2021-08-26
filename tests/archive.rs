@@ -32,8 +32,8 @@ fn archives_are_disabled(server: TestServer) -> Result<(), Error> {
     Ok(())
 }
 
-#[rstest(server(&["-g"]))]
-fn test_tar_archives(server: TestServer) -> Result<(), Error> {
+#[rstest]
+fn test_tar_archives(#[with(&["-g"])] server: TestServer) -> Result<(), Error> {
     // Ensure the links to the tar archive exists and tar not exists
     let body = reqwest::blocking::get(server.url())?.error_for_status()?;
     let parsed = Document::from_read(body)?;

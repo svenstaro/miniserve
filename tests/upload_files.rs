@@ -6,8 +6,8 @@ use rstest::rstest;
 use select::document::Document;
 use select::predicate::{Attr, Text};
 
-#[rstest(server(&["-u"]))]
-fn uploading_files_works(server: TestServer) -> Result<(), Error> {
+#[rstest]
+fn uploading_files_works(#[with(&["-u"])] server: TestServer) -> Result<(), Error> {
     let test_file_name = "uploaded test file.txt";
 
     // Before uploading, check whether the uploaded file does not yet exist.
