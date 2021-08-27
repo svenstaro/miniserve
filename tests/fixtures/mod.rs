@@ -88,7 +88,7 @@ pub fn port() -> u16 {
 #[allow(dead_code)]
 pub fn server<I>(#[default(&[] as &[&str])] args: I) -> TestServer
 where
-    I: IntoIterator,
+    I: IntoIterator + Clone,
     I::Item: AsRef<std::ffi::OsStr>,
 {
     let port = port();
@@ -98,13 +98,16 @@ where
         .arg(tmpdir.path())
         .arg("-p")
         .arg(port.to_string())
-        .args(args)
+        .args(args.clone())
         .stdout(Stdio::null())
         .spawn()
         .expect("Couldn't run test binary");
+    let is_tls = args
+        .into_iter()
+        .any(|x| x.as_ref().to_str().unwrap().contains("tls"));
 
     wait_for_port(port);
-    TestServer::new(port, tmpdir, child)
+    TestServer::new(port, tmpdir, child, is_tls)
 }
 
 /// Same as `server()` but ignore stderr
@@ -112,7 +115,7 @@ where
 #[allow(dead_code)]
 pub fn server_no_stderr<I>(#[default(&[] as &[&str])] args: I) -> TestServer
 where
-    I: IntoIterator,
+    I: IntoIterator + Clone,
     I::Item: AsRef<std::ffi::OsStr>,
 {
     let port = port();
@@ -122,14 +125,17 @@ where
         .arg(tmpdir.path())
         .arg("-p")
         .arg(port.to_string())
-        .args(args)
+        .args(args.clone())
         .stdout(Stdio::null())
         .stderr(Stdio::null())
         .spawn()
         .expect("Couldn't run test binary");
+    let is_tls = args
+        .into_iter()
+        .any(|x| x.as_ref().to_str().unwrap().contains("tls"));
 
     wait_for_port(port);
-    TestServer::new(port, tmpdir, child)
+    TestServer::new(port, tmpdir, child, is_tls)
 }
 
 /// Wait a max of 1s for the port to become available.
@@ -150,23 +156,29 @@ pub struct TestServer {
     port: u16,
     tmpdir: TempDir,
     child: Child,
+    is_tls: bool,
 }
 
 #[allow(dead_code)]
 impl TestServer {
-    pub fn new(port: u16, tmpdir: TempDir, child: Child) -> Self {
+    pub fn new(port: u16, tmpdir: TempDir, child: Child, is_tls: bool) -> Self {
         Self {
             port,
             tmpdir,
             child,
+            is_tls,
         }
     }
+
     pub fn url(&self) -> Url {
-        Url::parse(&format!("http://localhost:{}", self.port)).unwrap()
+        let protocol = if self.is_tls { "https" } else { "http" };
+        Url::parse(&format!("{}://localhost:{}", protocol, self.port)).unwrap()
     }
+
     pub fn path(&self) -> &std::path::Path {
         self.tmpdir.path()
     }
+
     pub fn port(&self) -> u16 {
         self.port
     }

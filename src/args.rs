@@ -48,11 +48,11 @@ pub struct CliArgs {
     /// username:password, username:sha256:hash, username:sha512:hash
     /// (e.g. joe:123, joe:sha256:a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3)
     #[structopt(
-        short = "a",
-        long = "auth",
-        parse(try_from_str = parse_auth),
-        number_of_values = 1,
-    )]
+            short = "a",
+            long = "auth",
+            parse(try_from_str = parse_auth),
+            number_of_values = 1,
+        )]
     pub auth: Vec<auth::RequiredAuth>,
 
     /// Generate a random 6-hexdigit route
@@ -69,22 +69,22 @@ pub struct CliArgs {
 
     /// Default color scheme
     #[structopt(
-        short = "c",
-        long = "color-scheme",
-        default_value = "squirrel",
-        possible_values = &renderer::THEME_SLUGS,
-        case_insensitive = true,
-    )]
+            short = "c",
+            long = "color-scheme",
+            default_value = "squirrel",
+            possible_values = &renderer::THEME_SLUGS,
+            case_insensitive = true,
+        )]
     pub color_scheme: String,
 
     /// Default color scheme
     #[structopt(
-        short = "d",
-        long = "color-scheme-dark",
-        default_value = "archlinux",
-        possible_values = &renderer::THEME_SLUGS,
-        case_insensitive = true,
-    )]
+                short = "d",
+                long = "color-scheme-dark",
+                default_value = "archlinux",
+                possible_values = &renderer::THEME_SLUGS,
+                case_insensitive = true,
+            )]
     pub color_scheme_dark: String,
 
     /// Enable QR code display
@@ -133,6 +133,14 @@ pub struct CliArgs {
     /// Generate completion file for a shell
     #[structopt(long = "print-completions", value_name = "shell", possible_values = &structopt::clap::Shell::variants())]
     pub print_completions: Option<structopt::clap::Shell>,
+
+    /// TLS certificate to use
+    #[structopt(long = "tls-cert", requires = "tls-key")]
+    pub tls_cert: Option<PathBuf>,
+
+    /// TLS private key to use
+    #[structopt(long = "tls-key", requires = "tls-cert")]
+    pub tls_key: Option<PathBuf>,
 }
 
 /// Checks wether an interface is valid, i.e. it can be parsed into an IP address
@@ -208,63 +216,63 @@ pub fn parse_header(src: &str) -> Result<HeaderMap, httparse::Error> {
 
 #[rustfmt::skip]
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use rstest::rstest;
-    use pretty_assertions::assert_eq;
+    mod tests {
+        use super::*;
+        use rstest::rstest;
+        use pretty_assertions::assert_eq;
 
-    /// Helper function that creates a `RequiredAuth` structure
-    fn create_required_auth(username: &str, password: &str, encrypt: &str) -> auth::RequiredAuth {
-        use auth::*;
-        use RequiredAuthPassword::*;
+        /// Helper function that creates a `RequiredAuth` structure
+        fn create_required_auth(username: &str, password: &str, encrypt: &str) -> auth::RequiredAuth {
+            use auth::*;
+            use RequiredAuthPassword::*;
 
-        let password = match encrypt {
-            "plain" => Plain(password.to_owned()),
-            "sha256" => Sha256(hex::decode(password.to_owned()).unwrap()),
-            "sha512" => Sha512(hex::decode(password.to_owned()).unwrap()),
-            _ => panic!("Unknown encryption type"),
-        };
+            let password = match encrypt {
+                "plain" => Plain(password.to_owned()),
+                "sha256" => Sha256(hex::decode(password.to_owned()).unwrap()),
+                "sha512" => Sha512(hex::decode(password.to_owned()).unwrap()),
+                _ => panic!("Unknown encryption type"),
+            };
 
-        auth::RequiredAuth {
-            username: username.to_owned(),
-            password,
+            auth::RequiredAuth {
+                username: username.to_owned(),
+                password,
+            }
         }
-    }
 
-    #[rstest(
-        auth_string, username, password, encrypt,
-        case("username:password", "username", "password", "plain"),
-        case("username:sha256:abcd", "username", "abcd", "sha256"),
-        case("username:sha512:abcd", "username", "abcd", "sha512")
-    )]
-    fn parse_auth_valid(auth_string: &str, username: &str, password: &str, encrypt: &str) {
-        assert_eq!(
-            parse_auth(auth_string).unwrap(),
-            create_required_auth(username, password, encrypt),
-        );
-    }
+        #[rstest(
+            auth_string, username, password, encrypt,
+            case("username:password", "username", "password", "plain"),
+            case("username:sha256:abcd", "username", "abcd", "sha256"),
+            case("username:sha512:abcd", "username", "abcd", "sha512")
+        )]
+            fn parse_auth_valid(auth_string: &str, username: &str, password: &str, encrypt: &str) {
+                assert_eq!(
+                    parse_auth(auth_string).unwrap(),
+                    create_required_auth(username, password, encrypt),
+                );
+            }
 
-    #[rstest(
-        auth_string, err_msg,
-        case(
-            "foo",
-            "Invalid format for credentials string. Expected username:password, username:sha256:hash or username:sha512:hash"
-        ),
-        case(
-            "username:blahblah:abcd",
-            "blahblah is not a valid hashing method. Expected sha256 or sha512"
-        ),
-        case(
-            "username:sha256:invalid",
-            "Invalid format for password hash. Expected hex code"
-        ),
-        case(
-            "username:sha512:invalid",
-            "Invalid format for password hash. Expected hex code"
-        ),
-    )]
-    fn parse_auth_invalid(auth_string: &str, err_msg: &str) {
-        let err = parse_auth(auth_string).unwrap_err();
-        assert_eq!(format!("{}", err), err_msg.to_owned());
+        #[rstest(
+            auth_string, err_msg,
+            case(
+                "foo",
+                "Invalid format for credentials string. Expected username:password, username:sha256:hash or username:sha512:hash"
+            ),
+            case(
+                "username:blahblah:abcd",
+                "blahblah is not a valid hashing method. Expected sha256 or sha512"
+            ),
+            case(
+                "username:sha256:invalid",
+                "Invalid format for password hash. Expected hex code"
+            ),
+            case(
+                "username:sha512:invalid",
+                "Invalid format for password hash. Expected hex code"
+            ),
+        )]
+            fn parse_auth_invalid(auth_string: &str, err_msg: &str) {
+                let err = parse_auth(auth_string).unwrap_err();
+                assert_eq!(format!("{}", err), err_msg.to_owned());
+            }
     }
-}
