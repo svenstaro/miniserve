@@ -13,6 +13,8 @@ use select::node::Node;
 use std::process::{Command, Stdio};
 use std::thread::sleep;
 use std::time::Duration;
+use reqwest::blocking::Client;
+
 
 #[cfg(unix)]
 use std::os::unix::fs::{symlink as symlink_dir, symlink as symlink_file};
@@ -218,5 +220,26 @@ fn serves_requests_custom_index_notice(tmpdir: TempDir, port: u16) -> Result<(),
         .unwrap()
         .contains("The file 'not.html' provided for option --index could not be found."));
 
+    Ok(())
+}
+
+#[rstest]
+fn serves_requests_with_path_prefix() -> Result<(), Error> {
+    let route = "foobar";
+    let server = server(&["--path-prefix", route]);
+    let client = Client::new();
+
+    let status = client
+        .get(server.url())
+        .send()?.status();
+    
+    assert_eq!(status, StatusCode::NOT_FOUND);
+
+    let status = client
+        .get(format!("{}{}", server.url(), route))
+        .send()?.status();
+    
+    assert_eq!(status, StatusCode::OK);
+    
     Ok(())
 }
