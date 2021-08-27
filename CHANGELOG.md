@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+
+## [0.15.0] - 2021-08-27
 - Add hardened systemd template unit file to `packaging/miniserve@.service`
 - Fix qrcodegen dependency problem [#568](https://github.com/svenstaro/miniserve/issues/568)
 - Remove animation on QR code hover (it was kind of annoying as it makes things less snappy)
@@ -97,7 +99,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Some theme related bug fixes (thanks @boastful-squirrel)
 
 <!-- next-url -->
-[Unreleased]: https://github.com/svenstaro/miniserve/compare/v0.14.0...HEAD
+[Unreleased]: https://github.com/svenstaro/miniserve/compare/v0.15.0...HEAD
+[0.15.0]: https://github.com/svenstaro/miniserve/compare/v0.14.0...v0.15.0
 [0.14.0]: https://github.com/svenstaro/miniserve/compare/v0.13.0...v0.14.0
 [0.13.0]: https://github.com/svenstaro/miniserve/compare/v0.12.1...v0.13.0
 [0.12.1]: https://github.com/svenstaro/miniserve/compare/v0.12.0...v0.12.1
