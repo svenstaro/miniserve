@@ -156,7 +156,7 @@ pub fn directory_listing(
     skip_symlinks: bool,
     show_hidden: bool,
     file_upload: bool,
-    random_route: Option<String>,
+    path_prefix: Option<String>,
     favicon_route: String,
     css_route: String,
     default_color_scheme: &str,
@@ -189,10 +189,10 @@ pub fn directory_listing(
     }
 
     let base = Path::new(serve_path);
-    let random_route_abs = format!("/{}", random_route.clone().unwrap_or_default());
-    let is_root = base.parent().is_none() || Path::new(&req.path()) == Path::new(&random_route_abs);
+    let path_prefix_abs = format!("/{}", path_prefix.clone().unwrap_or_default());
+    let is_root = base.parent().is_none() || Path::new(&req.path()) == Path::new(&path_prefix_abs);
 
-    let encoded_dir = match base.strip_prefix(random_route_abs) {
+    let encoded_dir = match base.strip_prefix(path_prefix_abs) {
         Ok(c_d) => Path::new("/").join(c_d),
         Err(_) => base.to_path_buf(),
     }
@@ -206,7 +206,7 @@ pub fn directory_listing(
 
         let mut res: Vec<Breadcrumb> = Vec::new();
         let mut link_accumulator =
-            format!("/{}", random_route.map(|r| r + "/").unwrap_or_default());
+            format!("/{}", path_prefix.map(|r| r + "/").unwrap_or_default());
 
         let mut components = Path::new(&*decoded).components().peekable();
 

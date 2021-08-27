@@ -174,11 +174,11 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
                 .bold()
         ));
 
-        if let Some(random_route) = miniserve_config.clone().random_route {
+        if let Some(path_prefix) = miniserve_config.clone().path_prefix {
             addresses.push_str(&format!(
                 "{}",
                 Color::Green
-                    .paint(format!("/{random_route}", random_route = random_route,))
+                    .paint(format!("/{path_prefix}", path_prefix = path_prefix,))
                     .bold()
             ));
         }
@@ -269,16 +269,16 @@ fn configure_header(conf: &MiniserveConfig) -> middleware::DefaultHeaders {
 
 /// Configures the Actix application
 fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
-    let random_route = conf.random_route.clone().unwrap_or_default();
-    let uses_random_route = conf.random_route.clone().is_some();
-    let full_route = format!("/{}", random_route);
+    let path_prefix = conf.path_prefix.clone().unwrap_or_default();
+    let uses_path_prefix = conf.path_prefix.clone().is_some();
+    let full_route = format!("/{}", path_prefix);
 
     let upload_route;
     let serve_path = {
         let path = &conf.path;
         let no_symlinks = conf.no_symlinks;
         let show_hidden = conf.show_hidden;
-        let random_route = conf.random_route.clone();
+        let path_prefix = conf.path_prefix.clone();
         let favicon_route = conf.favicon_route.clone();
         let css_route = conf.css_route.clone();
         let default_color_scheme = conf.default_color_scheme.clone();
@@ -291,8 +291,8 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
         let dirs_first = conf.dirs_first;
         let hide_version_footer = conf.hide_version_footer;
         let title = conf.title.clone();
-        upload_route = if let Some(random_route) = conf.random_route.clone() {
-            format!("/{}/upload", random_route)
+        upload_route = if let Some(path_prefix) = conf.path_prefix.clone() {
+            format!("/{}/upload", path_prefix)
         } else {
             "/upload".to_string()
         };
@@ -321,7 +321,7 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
                         no_symlinks,
                         show_hidden,
                         file_upload,
-                        random_route.clone(),
+                        path_prefix.clone(),
                         favicon_route.clone(),
                         css_route.clone(),
                         &default_color_scheme,
@@ -357,7 +357,7 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
                     file_upload::upload_file(
                         req,
                         payload,
-                        uses_random_route,
+                        uses_path_prefix,
                         favicon_route.clone(),
                         css_route.clone(),
                         &default_color_scheme,
@@ -381,7 +381,7 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
 async fn error_404(req: HttpRequest) -> HttpResponse {
     let err_404 = ContextualError::RouteNotFoundError(req.path().to_string());
     let conf = req.app_data::<MiniserveConfig>().unwrap();
-    let uses_random_route = conf.random_route.is_some();
+    let uses_path_prefix = conf.path_prefix.is_some();
     let favicon_route = conf.favicon_route.clone();
     let css_route = conf.css_route.clone();
     let query_params = listing::extract_query_parameters(&req);
@@ -396,7 +396,7 @@ async fn error_404(req: HttpRequest) -> HttpResponse {
             query_params.sort,
             query_params.order,
             false,
-            !uses_random_route,
+            !uses_path_prefix,
             &favicon_route,
             &css_route,
             &conf.default_color_scheme,

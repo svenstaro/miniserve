@@ -55,9 +55,14 @@ pub struct CliArgs {
     )]
     pub auth: Vec<auth::RequiredAuth>,
 
-    /// Generate a random 6-hexdigit route
-    #[structopt(long = "random-route")]
-    pub random_route: bool,
+
+    /// Use a specific path prefix
+    #[structopt(long = "path-prefix")]
+    pub path_prefix: Option<String>,
+
+    /// Use a random path prefix
+    #[structopt(long = "random-path-prefix", conflicts_with("path-prefix"))]
+    pub random_path_prefix: bool,
 
     /// Do not follow symbolic links
     #[structopt(short = "P", long = "no-symlinks")]

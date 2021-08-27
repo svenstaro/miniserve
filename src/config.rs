@@ -43,8 +43,11 @@ pub struct MiniserveConfig {
     /// Show hidden files
     pub show_hidden: bool,
 
-    /// Enable random route generation
-    pub random_route: Option<String>,
+    /// Use a specific path prefix
+    pub path_prefix: Option<String>,
+
+    /// Use a random path prefix
+    pub random_path_prefix: bool,
 
     /// Randomly generated favicon route
     pub favicon_route: String,
@@ -110,7 +113,9 @@ impl MiniserveConfig {
             ]
         };
 
-        let random_route = if args.random_route {
+        let path_prefix = if let Some(path_prefix) = args.path_prefix {
+            Some(path_prefix)
+        } else if args.random_path_prefix {
             Some(nanoid::nanoid!(6, &ROUTE_ALPHABET))
         } else {
             None
@@ -159,7 +164,8 @@ impl MiniserveConfig {
             path_explicitly_chosen,
             no_symlinks: args.no_symlinks,
             show_hidden: args.hidden,
-            random_route,
+            path_prefix,
+            random_path_prefix: args.random_path_prefix,
             favicon_route,
             css_route,
             default_color_scheme,
