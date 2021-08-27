@@ -227,6 +227,12 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
             .default_service(web::get().to(error_404))
     });
 
+    #[cfg(any(
+        target_arch = "x86",
+        target_arch = "x86_64",
+        target_arch = "aarch64",
+        target_arch = "arm"
+    ))]
     let srv = if let Some(tls_config) = miniserve_config.tls_rustls_config {
         srv.bind_rustls(socket_addresses.as_slice(), tls_config)
             .map_err(|e| ContextualError::IoError("Failed to bind server".to_string(), e))?
@@ -238,6 +244,18 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
             .shutdown_timeout(0)
             .run()
     };
+
+    #[cfg(not(any(
+        target_arch = "x86",
+        target_arch = "x86_64",
+        target_arch = "aarch64",
+        target_arch = "arm"
+    )))]
+    let srv = srv
+        .bind(socket_addresses.as_slice())
+        .map_err(|e| ContextualError::IoError("Failed to bind server".to_string(), e))?
+        .shutdown_timeout(0)
+        .run();
 
     println!(
         "Serving path {path} at {addresses}",

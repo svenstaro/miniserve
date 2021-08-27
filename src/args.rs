@@ -135,10 +135,22 @@ pub struct CliArgs {
     pub print_completions: Option<structopt::clap::Shell>,
 
     /// TLS certificate to use
+    #[cfg(any(
+        target_arch = "x86",
+        target_arch = "x86_64",
+        target_arch = "aarch64",
+        target_arch = "arm"
+    ))]
     #[structopt(long = "tls-cert", requires = "tls-key")]
     pub tls_cert: Option<PathBuf>,
 
     /// TLS private key to use
+    #[cfg(any(
+        target_arch = "x86",
+        target_arch = "x86_64",
+        target_arch = "aarch64",
+        target_arch = "arm"
+    ))]
     #[structopt(long = "tls-key", requires = "tls-cert")]
     pub tls_key: Option<PathBuf>,
 }

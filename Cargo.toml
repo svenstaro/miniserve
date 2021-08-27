@@ -9,6 +9,7 @@ readme = "README.md"
 keywords = ["serve", "http-server", "static-files", "http", "server"]
 categories = ["command-line-utilities", "network-programming", "web-programming::http-server"]
 edition = "2018"
+resolver = "2"
 
 [profile.release]
 lto = true
@@ -17,7 +18,7 @@ codegen-units = 1
 panic = 'abort'
 
 [dependencies]
-actix-web = { version = "3", features = ["rustls"] }
+actix-web = "3"
 actix-files = "0.5"
 actix-multipart = "0.3"
 actix-web-httpauth = "0.5"
@@ -50,7 +51,14 @@ httparse = "1"
 http = "0.2"
 bytes = "1"
 atty = "0.2"
+
+# Use rustls only on architecturs supported by ring.
+# See also https://github.com/briansmith/ring/issues/1182
+# and https://github.com/briansmith/ring/issues/562
+# and https://github.com/briansmith/ring/issues/1367
+[target.'cfg(any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"))'.dependencies]
 rustls = "0.18"
+actix-web = { version = "3", features = ["rustls"] }
 
 [dev-dependencies]
 assert_cmd = "2"
