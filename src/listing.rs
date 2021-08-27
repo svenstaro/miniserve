@@ -205,8 +205,7 @@ pub fn directory_listing(
         let decoded = percent_decode_str(&encoded_dir).decode_utf8_lossy();
 
         let mut res: Vec<Breadcrumb> = Vec::new();
-        let mut link_accumulator =
-            format!("/{}", path_prefix.map(|r| r + "/").unwrap_or_default());
+        let mut link_accumulator = format!("/{}", path_prefix.map(|r| r + "/").unwrap_or_default());
 
         let mut components = Path::new(&*decoded).components().peekable();
 

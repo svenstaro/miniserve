@@ -156,7 +156,7 @@ pub struct TestServer {
     port: u16,
     tmpdir: TempDir,
     child: Child,
-    is_tls: bool
+    is_tls: bool,
 }
 
 #[allow(dead_code)]

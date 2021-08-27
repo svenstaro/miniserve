@@ -55,7 +55,6 @@ pub struct CliArgs {
     )]
     pub auth: Vec<auth::RequiredAuth>,
 
-
     /// Use a specific path prefix
     #[structopt(long = "path-prefix")]
     pub path_prefix: Option<String>,
