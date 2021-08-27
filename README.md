@@ -78,100 +78,103 @@ Sometimes this is just a more practical and quick way than doing things properly
 
 ## Usage
 
-    miniserve 0.15.0
+    miniserve 0.15.1-alpha.0
     Sven-Hendrik Haase <svenstaro@gmail.com>, Boastful Squirrel <boastful.squirrel@gmail.com>
     For when you really just want to serve some files over HTTP right now!
-
+    
     USAGE:
         miniserve [FLAGS] [OPTIONS] [--] [PATH]
-
+    
     FLAGS:
-        -D, --dirs-first
-                List directories first
-
-        -r, --enable-tar
-                Enable uncompressed tar archive generation
-
-        -g, --enable-tar-gz
-                Enable gz-compressed tar archive generation
-
-        -z, --enable-zip
-                Enable zip archive generation
-
-                WARNING: Zipping large directories can result in out-of-memory exception because zip generation is done in
-                memory and cannot be sent on the fly
-        -u, --upload-files
-                Enable file uploading
-
-        -h, --help
-                Prints help information
-
-        -H, --hidden
-                Show hidden files
-
-        -F, --hide-version-footer
-                Hide version footer
-
-        -P, --no-symlinks
-                Do not follow symbolic links
-
-        -o, --overwrite-files
-                Enable overriding existing files during file upload
-
-        -q, --qrcode
-                Enable QR code display
-
-            --random-route
-                Generate a random 6-hexdigit route
-
-        -V, --version
-                Prints version information
-
-        -v, --verbose
-                Be verbose, includes emitting access logs
-
-
+        -D, --dirs-first             
+    	    List directories first
+    
+        -r, --enable-tar             
+    	    Enable uncompressed tar archive generation
+    
+        -g, --enable-tar-gz          
+    	    Enable gz-compressed tar archive generation
+    
+        -z, --enable-zip             
+    	    Enable zip archive generation
+    	    
+    	    WARNING: Zipping large directories can result in out-of-memory exception because zip generation is done in
+    	    memory and cannot be sent on the fly
+        -u, --upload-files           
+    	    Enable file uploading
+    
+        -h, --help                   
+    	    Prints help information
+    
+        -H, --hidden                 
+    	    Show hidden files
+    
+        -F, --hide-version-footer    
+    	    Hide version footer
+    
+        -P, --no-symlinks            
+    	    Do not follow symbolic links
+    
+        -o, --overwrite-files        
+    	    Enable overriding existing files during file upload
+    
+        -q, --qrcode                 
+    	    Enable QR code display
+    
+    	--random-path-prefix     
+    	    Use a random path prefix
+    
+        -V, --version                
+    	    Prints version information
+    
+        -v, --verbose                
+    	    Be verbose, includes emitting access logs
+    
+    
     OPTIONS:
         -a, --auth <auth>...
-                Set authentication. Currently supported formats: username:password, username:sha256:hash,
-                username:sha512:hash (e.g. joe:123,
-                joe:sha256:a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3)
+    	    Set authentication. Currently supported formats: username:password, username:sha256:hash,
+    	    username:sha512:hash (e.g. joe:123,
+    	    joe:sha256:a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3)
         -c, --color-scheme <color-scheme>
-                Default color scheme [default: squirrel]  [possible values: squirrel, archlinux,
-                zenburn, monokai]
+    	    Default color scheme [default: squirrel]  [possible values: squirrel, archlinux,
+    	    zenburn, monokai]
         -d, --color-scheme-dark <color-scheme-dark>
-                Default color scheme [default: archlinux]  [possible values: squirrel, archlinux,
-                zenburn, monokai]
-            --header <header>...
-                Set custom header for responses
-
-            --index <index_file>
-                The name of a directory index file to serve, like "index.html"
-
-                Normally, when miniserve serves a directory, it creates a listing for that directory. However, if a
-                directory contains this file, miniserve will serve that file instead.
-        -i, --interfaces <interfaces>...
-                Interface to listen on
-
-        -p, --port <port>
-                Port to use [default: 8080]
-
-            --print-completions <shell>
-                Generate completion file for a shell [possible values: zsh, bash, fish,
-                powershell, elvish]
-        -t, --title <title>
-                Shown instead of host in page title and heading
-
-            --tls-cert <tls-cert>
-                TLS certificate to use
-
-            --tls-key <tls-key>
-                TLS private key to use
-
-
+    	    Default color scheme [default: archlinux]  [possible values: squirrel, archlinux,
+    	    zenburn, monokai]
+    	--header <header>...                       
+    	    Set custom header for responses
+    
+    	--index <index_file>                       
+    	    The name of a directory index file to serve, like "index.html"
+    	    
+    	    Normally, when miniserve serves a directory, it creates a listing for that directory. However, if a
+    	    directory contains this file, miniserve will serve that file instead.
+        -i, --interfaces <interfaces>...               
+    	    Interface to listen on
+    
+    	--path-prefix <path-prefix>                
+    	    Use a specific path prefix
+    
+        -p, --port <port>                              
+    	    Port to use [default: 8080]
+    
+    	--print-completions <shell>
+    	    Generate completion file for a shell [possible values: zsh, bash, fish,
+    	    powershell, elvish]
+        -t, --title <title>                            
+    	    Shown instead of host in page title and heading
+    
+    	--tls-cert <tls-cert>                      
+    	    TLS certificate to use
+    
+    	--tls-key <tls-key>                        
+    	    TLS private key to use
+    
+    
     ARGS:
-        <PATH>
-                Which path to serve
+        <PATH>    
+    	    Which path to serve
 
 ## How to install
 
