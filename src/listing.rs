@@ -24,7 +24,7 @@ mod percent_encode_sets {
     const BASE: &AsciiSet = &CONTROLS.add(b'%');
     pub const QUERY: &AsciiSet = &BASE.add(b' ').add(b'"').add(b'#').add(b'<').add(b'>');
     pub const PATH: &AsciiSet = &QUERY.add(b'?').add(b'`').add(b'{').add(b'}');
-    pub const PATH_SEGMENT: &AsciiSet = &PATH.add(b'/');
+    pub const PATH_SEGMENT: &AsciiSet = &PATH.add(b'/').add(b'\\');
 }
 
 /// Query parameters
