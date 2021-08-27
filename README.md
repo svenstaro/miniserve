@@ -49,6 +49,10 @@ Sometimes this is just a more practical and quick way than doing things properly
 
     miniserve -i 192.168.0.1 -i 10.13.37.10 -i ::1 /tmp/myshare
 
+### Start with TLS:
+
+    miniserve --tls-cert my.cert --tls-key my.key /tmp/myshare
+
 ### Upload a file using `curl`:
 
     # in one terminal
@@ -74,7 +78,7 @@ Sometimes this is just a more practical and quick way than doing things properly
 
 ## Usage
 
-    miniserve 0.14.0
+    miniserve 0.14.1-alpha.0
     Sven-Hendrik Haase <svenstaro@gmail.com>, Boastful Squirrel <boastful.squirrel@gmail.com>
     For when you really just want to serve some files over HTTP right now!
 
@@ -101,6 +105,12 @@ Sometimes this is just a more practical and quick way than doing things properly
 
         -h, --help
                 Prints help information
+
+        -H, --hidden
+                Show hidden files
+
+        -F, --hide-version-footer
+                Hide version footer
 
         -P, --no-symlinks
                 Do not follow symbolic links
@@ -134,6 +144,7 @@ Sometimes this is just a more practical and quick way than doing things properly
                 zenburn, monokai]
             --header <header>...
                 Set custom header for responses
+
             --index <index_file>
                 The name of a directory index file to serve, like "index.html"
 
@@ -150,6 +161,12 @@ Sometimes this is just a more practical and quick way than doing things properly
                 powershell, elvish]
         -t, --title <title>
                 Shown instead of host in page title and heading
+
+            --tls-cert <tls-cert>
+                TLS certificate to use
+
+            --tls-key <tls-key>
+                TLS private key to use
 
 
     ARGS:

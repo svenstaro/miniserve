@@ -17,7 +17,7 @@ codegen-units = 1
 panic = 'abort'
 
 [dependencies]
-actix-web = "3"
+actix-web = { version = "3", features = ["rustls"] }
 actix-files = "0.5"
 actix-multipart = "0.3"
 actix-web-httpauth = "0.5"
@@ -37,6 +37,7 @@ tar = "0.4"
 futures = "0.3"
 libflate = "1"
 thiserror = "1"
+anyhow = "1"
 log = "0.4"
 strum = "0.21"
 strum_macros = "0.21"
@@ -49,6 +50,7 @@ httparse = "1"
 http = "0.2"
 bytes = "1"
 atty = "0.2"
+rustls = "0.18"
 
 [dev-dependencies]
 assert_cmd = "2"
@@ -59,6 +61,7 @@ rstest = "0.11"
 regex = "1"
 pretty_assertions = "0.7"
 url = "2"
+predicates = "2"
 
 [build-dependencies]
 grass = "0.10"
