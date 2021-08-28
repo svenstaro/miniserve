@@ -32,6 +32,7 @@ jobs:
             cross: true
             strip: true
             compress: true
+            cargo_flags: ""
           - os: ubuntu-latest
             target: aarch64-unknown-linux-musl
             artifact_name: target/aarch64-unknown-linux-musl/release/miniserve
@@ -39,6 +40,7 @@ jobs:
             cross: true
             strip: false
             compress: true
+            cargo_flags: ""
           - os: ubuntu-latest
             target: armv7-unknown-linux-musleabihf
             artifact_name: target/armv7-unknown-linux-musleabihf/release/miniserve
@@ -46,6 +48,7 @@ jobs:
             cross: true
             strip: false
             compress: true
+            cargo_flags: ""
           - os: ubuntu-latest
             target: arm-unknown-linux-musleabihf
             artifact_name: target/arm-unknown-linux-musleabihf/release/miniserve
@@ -53,6 +56,7 @@ jobs:
             cross: true
             strip: false
             compress: true
+            cargo_flags: ""
           - os: ubuntu-latest
             target: mips-unknown-linux-musl
             artifact_name: target/mips-unknown-linux-musl/release/miniserve
@@ -60,6 +64,7 @@ jobs:
             cross: true
             strip: false
             compress: true
+            cargo_flags: "--no-default-features"
           - os: ubuntu-latest
             target: mipsel-unknown-linux-musl
             artifact_name: target/mipsel-unknown-linux-musl/release/miniserve
@@ -67,6 +72,7 @@ jobs:
             cross: true
             strip: false
             compress: true
+            cargo_flags: "--no-default-features"
           - os: ubuntu-latest
             target: mips64-unknown-linux-gnuabi64
             artifact_name: target/mips64-unknown-linux-gnuabi64/release/miniserve
@@ -74,6 +80,7 @@ jobs:
             cross: true
             strip: false
             compress: false
+            cargo_flags: "--no-default-features"
           - os: ubuntu-latest
             target: mips64el-unknown-linux-gnuabi64
             artifact_name: target/mips64el-unknown-linux-gnuabi64/release/miniserve
@@ -81,6 +88,7 @@ jobs:
             cross: true
             strip: false
             compress: false
+            cargo_flags: "--no-default-features"
           - os: ubuntu-latest
             target: riscv64gc-unknown-linux-gnu
             artifact_name: target/riscv64gc-unknown-linux-gnu/release/miniserve
@@ -88,6 +96,7 @@ jobs:
             cross: true
             strip: false
             compress: false
+            cargo_flags: "--no-default-features"
           - os: windows-latest
             target: x86_64-pc-windows-msvc
             artifact_name: target/x86_64-pc-windows-msvc/release/miniserve.exe
@@ -95,6 +104,7 @@ jobs:
             cross: false
             strip: true
             compress: true
+            cargo_flags: ""
           - os: macos-latest
             target: x86_64-apple-darwin
             artifact_name: target/x86_64-apple-darwin/release/miniserve
@@ -102,6 +112,7 @@ jobs:
             cross: false
             strip: true
             compress: true
+            cargo_flags: ""
           - os: ubuntu-latest
             target: x86_64-unknown-freebsd
             artifact_name: target/x86_64-unknown-freebsd/release/miniserve
@@ -109,6 +120,7 @@ jobs:
             cross: true
             strip: false
             compress: false
+            cargo_flags: ""
 
     steps:
       - name: Checkout code
@@ -124,7 +136,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: build
-          args: --release --locked --target=${{ matrix.target }}
+          args: --release --locked --target=${{ matrix.target }} ${{ matrix.cargo_flags }}
           use-cross: ${{ matrix.cross }}
 
       - name: Compress binaries
