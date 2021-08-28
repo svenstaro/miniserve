@@ -18,11 +18,11 @@ codegen-units = 1
 panic = 'abort'
 
 [dependencies]
-actix-web = "3"
-actix-files = "0.5"
-actix-multipart = "0.3"
-actix-web-httpauth = "0.5"
-maud = { version = "0.22", features = ["actix-web"] }
+actix-web = "4.0.0-beta.8"
+actix-files = "0.6.0-beta.6"
+actix-multipart = "0.4.0-beta.5"
+actix-web-httpauth = "0.6.0-beta.2"
+maud = "0.22"
 yansi = "0.5"
 simplelog = "0.10"
 percent-encoding = "2"
@@ -51,7 +51,7 @@ httparse = "1"
 http = "0.2"
 bytes = "1"
 atty = "0.2"
-rustls = { version = "0.18", optional = true }
+rustls = { version = "0.19", optional = true }
 
 [features]
 default = ["tls"]

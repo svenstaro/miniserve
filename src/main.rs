@@ -10,7 +10,6 @@ use actix_web::{
     Responder,
 };
 use actix_web::{middleware, App, HttpRequest, HttpResponse};
-use actix_web_httpauth::middleware::HttpAuthentication;
 use anyhow::Result;
 use log::{error, warn};
 use structopt::clap::crate_version;
@@ -213,10 +212,11 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
         App::new()
             .wrap(configure_header(&inside_config.clone()))
             .app_data(inside_config.clone())
-            .wrap(middleware::Condition::new(
-                !inside_config.auth.is_empty(),
-                HttpAuthentication::basic(auth::handle_auth),
-            ))
+            // we should use `actix_web_httpauth::middleware::HttpAuthentication`
+            // but it is unfortuantrly broken
+            // see: https://github.com/actix/actix-extras/issues/127
+            // TODO replace this when fixed upstream
+            .wrap_fn(auth::auth_middleware)
             .wrap(middleware::Logger::default())
             .route(
                 &format!("/{}", inside_config.favicon_route),
@@ -345,6 +345,7 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
                     )
                 })
                 .prefer_utf8(true)
+                .redirect_to_slash_directory()
                 .default_handler(web::to(error_404));
             Some(files)
         }
@@ -417,14 +418,14 @@ async fn error_404(req: HttpRequest) -> HttpResponse {
 
 async fn favicon() -> impl Responder {
     let logo = include_str!("../data/logo.svg");
-    web::HttpResponse::Ok()
-        .set(ContentType(mime::IMAGE_SVG))
+    HttpResponse::Ok()
+        .insert_header(ContentType(mime::IMAGE_SVG))
         .message_body(logo.into())
 }
 
 async fn css() -> impl Responder {
     let css = include_str!(concat!(env!("OUT_DIR"), "/style.css"));
-    web::HttpResponse::Ok()
-        .set(ContentType(mime::TEXT_CSS))
+    HttpResponse::Ok()
+        .insert_header(ContentType(mime::TEXT_CSS))
         .message_body(css.into())
 }
