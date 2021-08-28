@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+- Fix serving files with backslashes in their names [#578](https://github.com/svenstaro/miniserve/pull/578) (thanks @Jikstra)
 
 ## [0.15.0] - 2021-08-27
 - Add hardened systemd template unit file to `packaging/miniserve@.service`
