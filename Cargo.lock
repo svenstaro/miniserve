@@ -1562,7 +1562,7 @@ dependencies = [
  "regex",
  "reqwest",
  "rstest",
- "rustls 0.18.1",
+ "rustls 0.19.1",
  "select",
  "serde",
  "sha2",
