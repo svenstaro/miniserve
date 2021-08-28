@@ -3,19 +3,19 @@ use actix_web::web::{Bytes, BytesMut};
 use futures::channel::mpsc::Sender;
 use futures::executor::block_on;
 use futures::sink::SinkExt;
-use std::io::{Error, ErrorKind, Result, Write};
+use std::io::{self, Error, ErrorKind, Write};
 
 /// Adapter to implement the `std::io::Write` trait on a `Sender<Bytes>` from a futures channel.
 ///
 /// It uses an intermediate buffer to transfer packets.
 pub struct Pipe {
-    dest: Sender<std::result::Result<Bytes, ()>>,
+    dest: Sender<io::Result<Bytes>>,
     bytes: BytesMut,
 }
 
 impl Pipe {
     /// Wrap the given sender in a `Pipe`.
-    pub fn new(destination: Sender<std::result::Result<Bytes, ()>>) -> Self {
+    pub fn new(destination: Sender<io::Result<Bytes>>) -> Self {
         Pipe {
             dest: destination,
             bytes: BytesMut::new(),
@@ -30,7 +30,7 @@ impl Drop for Pipe {
 }
 
 impl Write for Pipe {
-    fn write(&mut self, buf: &[u8]) -> Result<usize> {
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         // We are given a slice of bytes we do not own, so we must start by copying it.
         self.bytes.extend_from_slice(buf);
 
@@ -42,7 +42,7 @@ impl Write for Pipe {
         Ok(buf.len())
     }
 
-    fn flush(&mut self) -> Result<()> {
+    fn flush(&mut self) -> io::Result<()> {
         block_on(self.dest.flush()).map_err(|e| Error::new(ErrorKind::UnexpectedEof, e))
     }
 }

@@ -2,7 +2,7 @@ use actix_web::body::Body;
 use actix_web::dev::ServiceResponse;
 use actix_web::http::StatusCode;
 use actix_web::web::Query;
-use actix_web::{HttpRequest, HttpResponse, Result};
+use actix_web::{HttpRequest, HttpResponse};
 use bytesize::ByteSize;
 use percent_encoding::{percent_decode_str, utf8_percent_encode};
 use qrcodegen::{QrCode, QrCodeEcc};
@@ -142,7 +142,7 @@ impl Breadcrumb {
     }
 }
 
-pub async fn file_handler(req: HttpRequest) -> Result<actix_files::NamedFile> {
+pub async fn file_handler(req: HttpRequest) -> actix_web::Result<actix_files::NamedFile> {
     let path = &req.app_data::<crate::MiniserveConfig>().unwrap().path;
     actix_files::NamedFile::open(path).map_err(Into::into)
 }
@@ -169,24 +169,9 @@ pub fn directory_listing(
     dirs_first: bool,
     hide_version_footer: bool,
     title: Option<String>,
-) -> Result<ServiceResponse, io::Error> {
+) -> io::Result<ServiceResponse> {
     use actix_web::dev::BodyEncoding;
     let serve_path = req.path();
-
-    // In case the current path is a directory, we want to make sure that the current URL ends
-    // on a slash ("/").
-    if !serve_path.ends_with('/') {
-        let query = match req.query_string() {
-            "" => String::new(),
-            _ => format!("?{}", req.query_string()),
-        };
-        return Ok(ServiceResponse::new(
-            req.clone(),
-            HttpResponse::MovedPermanently()
-                .header("Location", format!("{}/{}", serve_path, query))
-                .body("301"),
-        ));
-    }
 
     let base = Path::new(serve_path);
     let random_route_abs = format!("/{}", random_route.clone().unwrap_or_default());
@@ -243,7 +228,7 @@ pub fn directory_listing(
     if let Some(url) = query_params.qrcode {
         let res = match QrCode::encode_text(&url, QrCodeEcc::Medium) {
             Ok(qr) => HttpResponse::Ok()
-                .header("Content-Type", "image/svg+xml")
+                .append_header(("Content-Type", "image/svg+xml"))
                 .body(qr_to_svg_string(&qr, 2)),
             Err(err) => {
                 log::error!("URL is invalid (too long?): {:?}", err);
@@ -376,7 +361,7 @@ pub fn directory_listing(
         // We will create the archive in a separate thread, and stream the content using a pipe.
         // The pipe is made of a futures channel, and an adapter to implement the `Write` trait.
         // Include 10 messages of buffer for erratic connection speeds.
-        let (tx, rx) = futures::channel::mpsc::channel::<Result<actix_web::web::Bytes, ()>>(10);
+        let (tx, rx) = futures::channel::mpsc::channel::<io::Result<actix_web::web::Bytes>>(10);
         let pipe = crate::pipe::Pipe::new(tx);
 
         // Start the actual archive creation in a separate thread.
@@ -392,11 +377,11 @@ pub fn directory_listing(
             HttpResponse::Ok()
                 .content_type(archive_method.content_type())
                 .encoding(archive_method.content_encoding())
-                .header("Content-Transfer-Encoding", "binary")
-                .header(
+                .append_header(("Content-Transfer-Encoding", "binary"))
+                .append_header((
                     "Content-Disposition",
                     format!("attachment; filename={:?}", file_name),
-                )
+                ))
                 .body(actix_web::body::BodyStream::new(rx)),
         ))
     } else {
