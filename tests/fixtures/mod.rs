@@ -24,6 +24,8 @@ pub static FILES: &[&str] = &[
     "#[]{}()@!$&'`+,;= %20.test",
     #[cfg(unix)]
     ":?#[]{}<>()@!$&'`|*+,;= %20.test",
+    #[cfg(not(windows))]
+    "foo\\bar.test",
 ];
 
 /// Hidden files for testing purpose
