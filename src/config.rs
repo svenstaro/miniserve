@@ -7,6 +7,8 @@ use std::{
 
 use anyhow::{anyhow, Context, Result};
 use http::HeaderMap;
+
+#[cfg(feature = "tls")]
 use rustls::internal::pemfile::{certs, pkcs8_private_keys};
 
 use crate::{args::CliArgs, auth::RequiredAuth};
@@ -95,7 +97,11 @@ pub struct MiniserveConfig {
     pub hide_version_footer: bool,
 
     /// If set, use provided rustls config for TLS
+    #[cfg(feature = "tls")]
     pub tls_rustls_config: Option<rustls::ServerConfig>,
+
+    #[cfg(not(feature = "tls"))]
+    pub tls_rustls_config: Option<()>,
 }
 
 impl MiniserveConfig {
@@ -131,6 +137,7 @@ impl MiniserveConfig {
             _ => args.port,
         };
 
+        #[cfg(feature = "tls")]
         let tls_rustls_server_config = if let (Some(tls_cert), Some(tls_key)) =
             (args.tls_cert, args.tls_key)
         {
@@ -150,6 +157,10 @@ impl MiniserveConfig {
         } else {
             None
         };
+
+        #[cfg(not(feature = "tls"))]
+        let tls_rustls_server_config = None;
+
         Ok(MiniserveConfig {
             verbose: args.verbose,
             path: args.path.unwrap_or_else(|| PathBuf::from(".")),

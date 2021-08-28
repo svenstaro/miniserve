@@ -135,10 +135,12 @@ pub struct CliArgs {
     pub print_completions: Option<structopt::clap::Shell>,
 
     /// TLS certificate to use
+    #[cfg(feature = "tls")]
     #[structopt(long = "tls-cert", requires = "tls-key")]
     pub tls_cert: Option<PathBuf>,
 
     /// TLS private key to use
+    #[cfg(feature = "tls")]
     #[structopt(long = "tls-key", requires = "tls-cert")]
     pub tls_key: Option<PathBuf>,
 }

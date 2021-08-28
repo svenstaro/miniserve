@@ -75,6 +75,7 @@ Sometimes this is just a more practical and quick way than doing things properly
 - Scan QR code for quick access
 - Shell completions
 - Sane and secure defaults
+- TLS (for supported architectures)
 
 ## Usage
 
