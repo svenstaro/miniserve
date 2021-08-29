@@ -1,6 +1,6 @@
 name: Build release binaries (and publish them if this is a tag)
 
-on: push
+on: [push, pull_request]
 
 jobs:
   binaries:
