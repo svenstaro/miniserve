@@ -7,8 +7,6 @@ use regex::Regex;
 use rstest::rstest;
 use std::io::{BufRead, BufReader};
 use std::process::{Command, Stdio};
-use std::thread::sleep;
-use std::time::Duration;
 
 #[rstest]
 #[case(&["-i", "12.123.234.12"])]
@@ -64,18 +62,17 @@ fn validate_printed_urls(tmpdir: TempDir, port: u16, #[case] args: &[&str]) -> R
         .stdout(Stdio::piped())
         .spawn()?;
 
-    sleep(Duration::from_secs(1));
-
-    let urls_line = BufReader::new(child.stdout.take().unwrap())
+    // WARN assumes urls list is terminated by an empty line
+    let url_lines = BufReader::new(child.stdout.take().unwrap())
         .lines()
         .map(|line| line.expect("Error reading stdout"))
-        .filter(|line| line.starts_with("Serving path"))
-        .next()
-        .expect("no url printed to stdout");
+        .take_while(|line| !line.is_empty()) /* non-empty lines */
+        .collect::<Vec<_>>();
+    let url_lines = url_lines.join("\n");
 
     let urls = Regex::new(r"http://[a-zA-Z0-9\.\[\]:/]+")
         .unwrap()
-        .captures_iter(urls_line.as_str())
+        .captures_iter(url_lines.as_str())
         .map(|caps| caps.get(0).unwrap().as_str())
         .collect::<Vec<_>>();
 
