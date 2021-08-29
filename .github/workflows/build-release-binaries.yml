@@ -6,6 +6,7 @@ jobs:
   binaries:
     name: ${{ matrix.os }} for ${{ matrix.target }}
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
     strategy:
       matrix:
         target:
@@ -143,6 +144,12 @@ jobs:
           args: --lzma
           strip: ${{ matrix.strip }}
         if: ${{ matrix.compress }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.target }}
+          path: ${{ matrix.artifact_name }}
 
       ###
       # Below this line, steps will only be ran if a tag was pushed.
