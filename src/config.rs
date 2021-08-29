@@ -1,11 +1,13 @@
+#[cfg(feature = "tls")]
+use std::{fs::File, io::BufReader};
 use std::{
-    fs::File,
-    io::BufReader,
     net::{IpAddr, Ipv4Addr, Ipv6Addr},
     path::PathBuf,
 };
 
-use anyhow::{anyhow, Context, Result};
+#[cfg(feature = "tls")]
+use anyhow::anyhow;
+use anyhow::{Context, Result};
 use http::HeaderMap;
 
 #[cfg(feature = "tls")]
