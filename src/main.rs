@@ -251,6 +251,10 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
 }
 
 /// Allows us to set low-level socket options
+///
+/// This mainly used to set `set_only_v6` socket option
+/// to get a consistent behavior across platforms.
+/// see: https://github.com/svenstaro/miniserve/pull/500
 fn create_tcp_listener(addr: SocketAddr) -> io::Result<TcpListener> {
     use socket2::{Domain, Protocol, Socket, Type};
     let socket = Socket::new(Domain::for_address(addr), Type::STREAM, Some(Protocol::TCP))?;
