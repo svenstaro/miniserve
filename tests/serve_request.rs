@@ -220,3 +220,14 @@ fn serves_requests_custom_index_notice(tmpdir: TempDir, port: u16) -> Result<(),
 
     Ok(())
 }
+
+#[rstest]
+#[case(server(&["--index", FILES[0]]))]
+#[case(server(&["--index", "does-not-exist.html"]))]
+fn index_fallback_to_listing(#[case] server: TestServer) -> Result<(), Error> {
+    // If index file is not found, show directory listing instead.
+    // both cases should return `Ok`
+    reqwest::blocking::get(server.url())?.error_for_status()?;
+
+    Ok(())
+}

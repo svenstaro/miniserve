@@ -281,7 +281,12 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
     let uses_random_route = conf.random_route.clone().is_some();
     let full_route = format!("/{}", random_route);
 
-    let upload_route;
+    let upload_route = if let Some(random_route) = conf.random_route.clone() {
+        format!("/{}/upload", random_route)
+    } else {
+        "/upload".to_string()
+    };
+
     let serve_path = {
         let path = &conf.path;
         let no_symlinks = conf.no_symlinks;
@@ -299,29 +304,24 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
         let dirs_first = conf.dirs_first;
         let hide_version_footer = conf.hide_version_footer;
         let title = conf.title.clone();
-        upload_route = if let Some(random_route) = conf.random_route.clone() {
-            format!("/{}/upload", random_route)
-        } else {
-            "/upload".to_string()
-        };
+
         if path.is_file() {
             None
-        } else if let Some(index_file) = &conf.index {
-            Some(
-                actix_files::Files::new(&full_route, path).index_file(index_file.to_string_lossy()),
-            )
         } else {
             let u_r = upload_route.clone();
-            let files;
-            if show_hidden {
-                files = actix_files::Files::new(&full_route, path)
-                    .show_files_listing()
-                    .use_hidden_files();
-            } else {
-                files = actix_files::Files::new(&full_route, path).show_files_listing();
-            }
 
+            // build `Files` service using configuraion parameters
+            let files = actix_files::Files::new(&full_route, path);
+            let files = match &conf.index {
+                Some(index_file) => files.index_file(index_file.to_string_lossy()),
+                None => files,
+            };
+            let files = match show_hidden {
+                true => files.use_hidden_files(),
+                false => files,
+            };
             let files = files
+                .show_files_listing()
                 .files_listing_renderer(move |dir, req| {
                     listing::directory_listing(
                         dir,
