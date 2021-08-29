@@ -3,7 +3,8 @@ mod fixtures;
 use assert_cmd::prelude::*;
 use assert_fs::fixture::TempDir;
 use fixtures::{
-    port, server, tmpdir, Error, TestServer, DIRECTORIES, FILES, HIDDEN_DIRECTORIES, HIDDEN_FILES,
+    port, server, server_no_stderr, tmpdir, Error, TestServer, DIRECTORIES, FILES,
+    HIDDEN_DIRECTORIES, HIDDEN_FILES,
 };
 use http::StatusCode;
 use regex::Regex;
@@ -222,8 +223,8 @@ fn serves_requests_custom_index_notice(tmpdir: TempDir, port: u16) -> Result<(),
 }
 
 #[rstest]
-#[case(server(&["--index", FILES[0]]))]
-#[case(server(&["--index", "does-not-exist.html"]))]
+#[case(server_no_stderr(&["--index", FILES[0]]))]
+#[case(server_no_stderr(&["--index", "does-not-exist.html"]))]
 fn index_fallback_to_listing(#[case] server: TestServer) -> Result<(), Error> {
     // If index file is not found, show directory listing instead.
     // both cases should return `Ok`
