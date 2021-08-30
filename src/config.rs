@@ -95,6 +95,9 @@ pub struct MiniserveConfig {
     /// If specified, header will be added
     pub header: Vec<HeaderMap>,
 
+    /// If specified, symlink destination will be shown
+    pub show_symlink_info: bool,
+
     /// If enabled, version footer is hidden
     pub hide_version_footer: bool,
 
@@ -187,6 +190,7 @@ impl MiniserveConfig {
             dirs_first: args.dirs_first,
             title: args.title,
             header: args.header,
+            show_symlink_info: args.show_symlink_info,
             hide_version_footer: args.hide_version_footer,
             tls_rustls_config: tls_rustls_server_config,
         })
