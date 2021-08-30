@@ -202,11 +202,6 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
         App::new()
             .wrap(configure_header(&inside_config.clone()))
             .app_data(inside_config.clone())
-            // we should use `actix_web_httpauth::middleware::HttpAuthentication`
-            // but it is unfortuantrly broken
-            // see: https://github.com/actix/actix-extras/issues/127
-            // TODO replace this when fixed upstream
-            .wrap_fn(auth::auth_middleware)
             .wrap_fn(errors::error_page_middleware)
             .wrap(middleware::Logger::default())
             .route(
@@ -214,7 +209,15 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
                 web::get().to(favicon),
             )
             .route(&format!("/{}", inside_config.css_route), web::get().to(css))
-            .configure(|c| configure_app(c, &inside_config))
+            .service(
+                web::scope(inside_config.random_route.as_deref().unwrap_or(""))
+                    // we should use `actix_web_httpauth::middleware::HttpAuthentication`
+                    // but it is unfortuantrly broken
+                    // see: https://github.com/actix/actix-extras/issues/127
+                    // TODO replace this when fixed upstream
+                    .wrap_fn(auth::auth_middleware)
+                    .configure(|c| configure_app(c, &inside_config)),
+            )
             .default_service(web::get().to(error_404))
     });
 
@@ -287,55 +290,34 @@ fn configure_header(conf: &MiniserveConfig) -> middleware::DefaultHeaders {
 
 /// Configures the Actix application
 fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
-    let path = &conf.path;
-    let random_route = conf.random_route.clone().unwrap_or_default();
-    let full_route = format!("/{}", random_route);
-
-    let upload_route = if let Some(random_route) = conf.random_route.clone() {
-        format!("/{}/upload", random_route)
-    } else {
-        "/upload".to_string()
+    let files_service = || {
+        let files = actix_files::Files::new("", &conf.path);
+        let files = match &conf.index {
+            Some(index_file) => files.index_file(index_file.to_string_lossy()),
+            None => files,
+        };
+        let files = match conf.show_hidden {
+            true => files.use_hidden_files(),
+            false => files,
+        };
+        files
+            .show_files_listing()
+            .files_listing_renderer(listing::directory_listing)
+            .prefer_utf8(true)
+            .redirect_to_slash_directory()
+            .default_handler(web::to(error_404))
     };
 
-    let serve_path = {
-        if path.is_file() {
-            None
-        } else {
-            // build `Files` service using configuraion parameters
-            let files = actix_files::Files::new(&full_route, path);
-            let files = match &conf.index {
-                Some(index_file) => files.index_file(index_file.to_string_lossy()),
-                None => files,
-            };
-            let files = match conf.show_hidden {
-                true => files.use_hidden_files(),
-                false => files,
-            };
-            let files = files
-                .show_files_listing()
-                .files_listing_renderer(listing::directory_listing)
-                .prefer_utf8(true)
-                .redirect_to_slash_directory()
-                .default_handler(web::to(error_404));
-            Some(files)
-        }
-    };
-
-    if let Some(serve_path) = serve_path {
+    if !conf.path.is_file() {
         if conf.file_upload {
             // Allow file upload
-            app.service(
-                web::resource(&upload_route).route(web::post().to(file_upload::upload_file)),
-            )
-            // Handle directories
-            .service(serve_path);
-        } else {
-            // Handle directories
-            app.service(serve_path);
+            app.service(web::resource("/upload").route(web::post().to(file_upload::upload_file)));
         }
+        // Handle directories
+        app.service(files_service());
     } else {
         // Handle single files
-        app.service(web::resource(&full_route).route(web::to(listing::file_handler)));
+        app.service(web::resource(["", "/"]).route(web::to(listing::file_handler)));
     }
 }
 
