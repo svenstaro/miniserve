@@ -1,6 +1,6 @@
 use std::io;
 use std::io::Write;
-use std::net::{IpAddr, Ipv4Addr, SocketAddr};
+use std::net::{IpAddr, SocketAddr, TcpListener};
 use std::thread;
 use std::time::Duration;
 
@@ -52,10 +52,11 @@ fn main() -> Result<()> {
 
     let miniserve_config = MiniserveConfig::try_from_args(args)?;
 
-    match run(miniserve_config) {
-        Ok(()) => (),
-        Err(e) => errors::log_error_chain(e.to_string()),
-    }
+    run(miniserve_config).map_err(|e| {
+        errors::log_error_chain(e.to_string());
+        e
+    })?;
+
     Ok(())
 }
 
@@ -102,23 +103,6 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
 
     let inside_config = miniserve_config.clone();
 
-    let interfaces = miniserve_config
-        .interfaces
-        .iter()
-        .map(|&interface| {
-            if interface == IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)) {
-                // If the interface is 0.0.0.0, we'll change it to 127.0.0.1 so that clicking the link will
-                // also work on Windows. Why can't Windows interpret 0.0.0.0?
-                "127.0.0.1".to_string()
-            } else if interface.is_ipv6() {
-                // If the interface is IPv6 then we'll print it with brackets so that it is clickable.
-                format!("[{}]", interface)
-            } else {
-                format!("{}", interface)
-            }
-        })
-        .collect::<Vec<String>>();
-
     let canon_path = miniserve_config.path.canonicalize().map_err(|e| {
         ContextualError::IoError("Failed to resolve path to be served".to_string(), e)
     })?;
@@ -164,62 +148,58 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
             thread::sleep(Duration::from_millis(500));
         }
     }
-    let mut addresses = String::new();
-    for interface in &interfaces {
-        if !addresses.is_empty() {
-            addresses.push_str(", ");
-        }
-        let protocol = if miniserve_config.tls_rustls_config.is_some() {
-            "https"
-        } else {
-            "http"
-        };
-        addresses.push_str(&format!(
-            "{}",
-            Color::Green
-                .paint(format!(
-                    "{protocol}://{interface}:{port}",
-                    protocol = protocol,
-                    interface = &interface,
-                    port = miniserve_config.port
-                ))
-                .bold()
-        ));
 
-        if let Some(random_route) = miniserve_config.clone().random_route {
-            addresses.push_str(&format!(
-                "{}",
-                Color::Green
-                    .paint(format!("/{random_route}", random_route = random_route,))
-                    .bold()
-            ));
-        }
-    }
+    let display_urls = {
+        let (mut ifaces, wildcard): (Vec<_>, Vec<_>) = miniserve_config
+            .interfaces
+            .clone()
+            .into_iter()
+            .partition(|addr| !addr.is_unspecified());
 
-    let socket_addresses = interfaces
-        .iter()
-        .map(|interface| {
-            format!(
-                "{interface}:{port}",
-                interface = &interface,
-                port = miniserve_config.port,
-            )
-            .parse::<SocketAddr>()
-        })
-        .collect::<Result<Vec<SocketAddr>, _>>();
-
-    let socket_addresses = match socket_addresses {
-        Ok(addresses) => addresses,
-        Err(e) => {
-            // Note that this should never fail, since CLI parsing succeeded
-            // This means the format of each IP address is valid, and so is the port
-            // Valid IpAddr + valid port == valid SocketAddr
-            return Err(ContextualError::ParseError(
-                "string as socket address".to_string(),
-                e.to_string(),
-            ));
+        // Replace wildcard addresses with local interface addresses
+        if !wildcard.is_empty() {
+            let all_ipv4 = wildcard.iter().any(|addr| addr.is_ipv4());
+            let all_ipv6 = wildcard.iter().any(|addr| addr.is_ipv6());
+            ifaces = get_if_addrs::get_if_addrs()
+                .unwrap_or_else(|e| {
+                    error!("Failed to get local interface addresses: {}", e);
+                    Default::default()
+                })
+                .into_iter()
+                .map(|iface| iface.ip())
+                .filter(|ip| (all_ipv4 && ip.is_ipv4()) || (all_ipv6 && ip.is_ipv6()))
+                .collect();
+            ifaces.sort();
         }
+
+        ifaces
+            .into_iter()
+            .map(|addr| match addr {
+                IpAddr::V4(_) => format!("{}:{}", addr, miniserve_config.port),
+                IpAddr::V6(_) => format!("[{}]:{}", addr, miniserve_config.port),
+            })
+            .map(|addr| match miniserve_config.tls_rustls_config {
+                Some(_) => format!("https://{}", addr),
+                None => format!("http://{}", addr),
+            })
+            .map(|url| match miniserve_config.random_route {
+                Some(ref random_route) => format!("{}/{}", url, random_route),
+                None => url,
+            })
+            .map(|url| Color::Green.paint(url).bold().to_string())
+            .collect::<Vec<_>>()
     };
+
+    let socket_addresses = miniserve_config
+        .interfaces
+        .iter()
+        .map(|&interface| SocketAddr::new(interface, miniserve_config.port))
+        .collect::<Vec<_>>();
+
+    let display_sockets = socket_addresses
+        .iter()
+        .map(|sock| Color::Green.paint(sock.to_string()).bold().to_string())
+        .collect::<Vec<_>>();
 
     let srv = actix_web::HttpServer::new(move || {
         App::new()
@@ -240,38 +220,57 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
             .default_service(web::get().to(error_404))
     });
 
-    #[cfg(feature = "tls")]
-    let srv = if let Some(tls_config) = miniserve_config.tls_rustls_config {
-        srv.bind_rustls(socket_addresses.as_slice(), tls_config)
-            .map_err(|e| ContextualError::IoError("Failed to bind server".to_string(), e))?
-            .shutdown_timeout(0)
-            .run()
-    } else {
-        srv.bind(socket_addresses.as_slice())
-            .map_err(|e| ContextualError::IoError("Failed to bind server".to_string(), e))?
-            .shutdown_timeout(0)
-            .run()
-    };
+    let srv = socket_addresses.iter().try_fold(srv, |srv, addr| {
+        let listener = create_tcp_listener(*addr).map_err(|e| {
+            ContextualError::IoError(format!("Failed to bind server to {}", addr), e)
+        })?;
 
-    #[cfg(not(feature = "tls"))]
-    let srv = srv
-        .bind(socket_addresses.as_slice())
-        .map_err(|e| ContextualError::IoError("Failed to bind server".to_string(), e))?
-        .shutdown_timeout(0)
-        .run();
+        #[cfg(feature = "tls")]
+        let srv = match &miniserve_config.tls_rustls_config {
+            Some(tls_config) => srv.listen_rustls(listener, tls_config.clone()),
+            None => srv.listen(listener),
+        };
+
+        #[cfg(not(feature = "tls"))]
+        let srv = srv.listen(listener);
+
+        srv.map_err(|e| ContextualError::IoError(format!("Failed to bind server to {}", addr), e))
+    })?;
+
+    let srv = srv.shutdown_timeout(0).run();
+
+    println!("Bound to {}", display_sockets.join(", "));
+
+    println!("Serving path {}", Color::Yellow.paint(path_string).bold());
 
     println!(
-        "Serving path {path} at {addresses}",
-        path = Color::Yellow.paint(path_string).bold(),
-        addresses = addresses,
+        "Availabe at (non-exhaustive list):\n    {}\n",
+        display_urls.join("\n    "),
     );
 
     if atty::is(atty::Stream::Stdout) {
-        println!("\nQuit by pressing CTRL-C");
+        println!("Quit by pressing CTRL-C");
     }
 
     srv.await
         .map_err(|e| ContextualError::IoError("".to_owned(), e))
+}
+
+/// Allows us to set low-level socket options
+///
+/// This mainly used to set `set_only_v6` socket option
+/// to get a consistent behavior across platforms.
+/// see: https://github.com/svenstaro/miniserve/pull/500
+fn create_tcp_listener(addr: SocketAddr) -> io::Result<TcpListener> {
+    use socket2::{Domain, Protocol, Socket, Type};
+    let socket = Socket::new(Domain::for_address(addr), Type::STREAM, Some(Protocol::TCP))?;
+    if addr.is_ipv6() {
+        socket.set_only_v6(true)?;
+    }
+    socket.set_reuse_address(true)?;
+    socket.bind(&addr.into())?;
+    socket.listen(1024 /* Default backlog */)?;
+    Ok(TcpListener::from(socket))
 }
 
 fn configure_header(conf: &MiniserveConfig) -> middleware::DefaultHeaders {
