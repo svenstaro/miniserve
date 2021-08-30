@@ -149,7 +149,7 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
         }
     }
 
-    let addresses = {
+    let display_urls = {
         let (mut ifaces, wildcard): (Vec<_>, Vec<_>) = miniserve_config
             .interfaces
             .clone()
@@ -172,7 +172,7 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
             ifaces.sort();
         }
 
-        let urls = ifaces
+        ifaces
             .into_iter()
             .map(|addr| match addr {
                 IpAddr::V4(_) => format!("{}:{}", addr, miniserve_config.port),
@@ -187,15 +187,18 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
                 None => url,
             })
             .map(|url| Color::Green.paint(url).bold().to_string())
-            .collect::<Vec<_>>();
-
-        urls.join("\n\t")
+            .collect::<Vec<_>>()
     };
 
     let socket_addresses = miniserve_config
         .interfaces
         .iter()
         .map(|&interface| SocketAddr::new(interface, miniserve_config.port))
+        .collect::<Vec<_>>();
+
+    let display_sockets = socket_addresses
+        .iter()
+        .map(|sock| Color::Green.paint(sock.to_string()).bold().to_string())
         .collect::<Vec<_>>();
 
     let srv = actix_web::HttpServer::new(move || {
@@ -236,10 +239,13 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
 
     let srv = srv.shutdown_timeout(0).run();
 
+    println!("Bound to {}", display_sockets.join(", "));
+
+    println!("Serving path {}", Color::Yellow.paint(path_string).bold());
+
     println!(
-        "Serving path {path} at:\n\t{addresses}\n",
-        path = Color::Yellow.paint(path_string).bold(),
-        addresses = addresses,
+        "Availabe at (non-exhaustive list):\n    {}\n",
+        display_urls.join("\n    "),
     );
 
     if atty::is(atty::Stream::Stdout) {
