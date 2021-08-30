@@ -485,6 +485,16 @@ pub fn render_error(
             body.(format!("default_theme_{}", conf.default_color_scheme))
                 .(format!("default_theme_dark_{}", conf.default_color_scheme_dark)) {
 
+                (PreEscaped(r#"
+                    <script>
+                        // read theme from local storage and apply it to body
+                        var theme = localStorage.getItem('theme');
+                        if (theme != null && theme != 'default') {
+                            document.body.classList.add('theme_' + theme);
+                        }
+                    </script>
+                    "#))
+
                 div.error {
                     p { (error_code.to_string()) }
                     @for error in error_description.lines() {
