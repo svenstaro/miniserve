@@ -79,100 +79,107 @@ Sometimes this is just a more practical and quick way than doing things properly
 
 ## Usage
 
-    miniserve 0.15.0
+    miniserve 0.15.1-alpha.0
+
     Sven-Hendrik Haase <svenstaro@gmail.com>, Boastful Squirrel <boastful.squirrel@gmail.com>
+
     For when you really just want to serve some files over HTTP right now!
 
     USAGE:
         miniserve [FLAGS] [OPTIONS] [--] [PATH]
 
+    ARGS:
+        <PATH>
+                Which path to serve
+
     FLAGS:
         -D, --dirs-first
                 List directories first
 
-        -r, --enable-tar
-                Enable uncompressed tar archive generation
+        -F, --hide-version-footer
+                Hide version footer
 
         -g, --enable-tar-gz
                 Enable gz-compressed tar archive generation
 
-        -z, --enable-zip
-                Enable zip archive generation
-
-                WARNING: Zipping large directories can result in out-of-memory exception because zip generation is done in
-                memory and cannot be sent on the fly
-        -u, --upload-files
-                Enable file uploading
-
         -h, --help
-                Prints help information
+                Print help information
 
         -H, --hidden
                 Show hidden files
 
-        -F, --hide-version-footer
-                Hide version footer
+        -o, --overwrite-files
+                Enable overriding existing files during file upload
 
         -P, --no-symlinks
                 Do not follow symbolic links
 
-        -o, --overwrite-files
-                Enable overriding existing files during file upload
-
         -q, --qrcode
                 Enable QR code display
+
+        -r, --enable-tar
+                Enable uncompressed tar archive generation
 
             --random-route
                 Generate a random 6-hexdigit route
 
-        -V, --version
-                Prints version information
+        -u, --upload-files
+                Enable file uploading
 
         -v, --verbose
                 Be verbose, includes emitting access logs
 
+        -V, --version
+                Print version information
+
+        -z, --enable-zip
+                Enable zip archive generation
+
+                WARNING: Zipping large directories can result in out-of-memory exception because zip
+                generation is done in memory and cannot be sent on the fly
 
     OPTIONS:
-        -a, --auth <auth>...
-                Set authentication. Currently supported formats: username:password, username:sha256:hash,
-                username:sha512:hash (e.g. joe:123,
+        -a, --auth <AUTH>...
+                Set authentication. Currently supported formats: username:password,
+                username:sha256:hash, username:sha512:hash (e.g. joe:123,
                 joe:sha256:a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3)
-        -c, --color-scheme <color-scheme>
-                Default color scheme [default: squirrel]  [possible values: squirrel, archlinux,
+
+        -c, --color-scheme <COLOR_SCHEME>
+                Default color scheme [default: squirrel] [possible values: squirrel, archlinux,
                 zenburn, monokai]
-        -d, --color-scheme-dark <color-scheme-dark>
-                Default color scheme [default: archlinux]  [possible values: squirrel, archlinux,
+
+        -d, --color-scheme-dark <COLOR_SCHEME_DARK>
+                Default color scheme [default: archlinux] [possible values: squirrel, archlinux,
                 zenburn, monokai]
-            --header <header>...
+
+            --header <HEADER>...
                 Set custom header for responses
+
+        -i, --interfaces <INTERFACES>...
+                Interface to listen on
 
             --index <index_file>
                 The name of a directory index file to serve, like "index.html"
 
-                Normally, when miniserve serves a directory, it creates a listing for that directory. However, if a
-                directory contains this file, miniserve will serve that file instead.
-        -i, --interfaces <interfaces>...
-                Interface to listen on
+                Normally, when miniserve serves a directory, it creates a listing for that
+                directory. However, if a directory contains this file, miniserve will serve that
+                file instead.
 
-        -p, --port <port>
+        -p, --port <PORT>
                 Port to use [default: 8080]
 
             --print-completions <shell>
-                Generate completion file for a shell [possible values: zsh, bash, fish,
-                powershell, elvish]
-        -t, --title <title>
+                Generate completion file for a shell [possible values: bash, elvish, fish,
+                powershell, zsh]
+
+        -t, --title <TITLE>
                 Shown instead of host in page title and heading
 
-            --tls-cert <tls-cert>
+            --tls-cert <TLS_CERT>
                 TLS certificate to use
 
-            --tls-key <tls-key>
+            --tls-key <TLS_KEY>
                 TLS private key to use
-
-
-    ARGS:
-        <PATH>
-                Which path to serve
 
 ## How to install
 
