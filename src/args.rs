@@ -1,45 +1,48 @@
 use bytes::Bytes;
+use clap::{Clap, ValueHint};
+use clap_generate::Shell;
 use http::header::{HeaderMap, HeaderName, HeaderValue};
 use std::net::IpAddr;
 use std::path::PathBuf;
-use structopt::StructOpt;
 
 use crate::auth;
 use crate::errors::ContextualError;
 use crate::renderer;
 
-#[derive(StructOpt)]
-#[structopt(
+#[derive(Clap)]
+#[clap(
     name = "miniserve",
     author,
     about,
-    global_settings = &[structopt::clap::AppSettings::ColoredHelp],
+    version,
+    setting = clap::AppSettings::ColoredHelp,
 )]
 pub struct CliArgs {
     /// Be verbose, includes emitting access logs
-    #[structopt(short = "v", long = "verbose")]
+    #[clap(short = 'v', long = "verbose")]
     pub verbose: bool,
 
     /// Which path to serve
-    #[structopt(name = "PATH", parse(from_os_str))]
+    #[clap(name = "PATH", parse(from_os_str), value_hint = ValueHint::AnyPath)]
     pub path: Option<PathBuf>,
 
     /// The name of a directory index file to serve, like "index.html"
     ///
     /// Normally, when miniserve serves a directory, it creates a listing for that directory.
     /// However, if a directory contains this file, miniserve will serve that file instead.
-    #[structopt(long, parse(from_os_str), name = "index_file")]
+    #[clap(long, parse(from_os_str), name = "index_file", value_hint = ValueHint::FilePath)]
     pub index: Option<PathBuf>,
 
     /// Port to use
-    #[structopt(short = "p", long = "port", default_value = "8080")]
+    #[clap(short = 'p', long = "port", default_value = "8080")]
     pub port: u16,
 
     /// Interface to listen on
-    #[structopt(
-        short = "i",
+    #[clap(
+        short = 'i',
         long = "interfaces",
         parse(try_from_str = parse_interface),
+        multiple_occurrences(true),
         number_of_values = 1,
     )]
     pub interfaces: Vec<IpAddr>,
@@ -47,29 +50,30 @@ pub struct CliArgs {
     /// Set authentication. Currently supported formats:
     /// username:password, username:sha256:hash, username:sha512:hash
     /// (e.g. joe:123, joe:sha256:a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3)
-    #[structopt(
-        short = "a",
+    #[clap(
+        short = 'a',
         long = "auth",
         parse(try_from_str = parse_auth),
+        multiple_occurrences(true),
         number_of_values = 1,
     )]
     pub auth: Vec<auth::RequiredAuth>,
 
     /// Generate a random 6-hexdigit route
-    #[structopt(long = "random-route")]
+    #[clap(long = "random-route")]
     pub random_route: bool,
 
     /// Do not follow symbolic links
-    #[structopt(short = "P", long = "no-symlinks")]
+    #[clap(short = 'P', long = "no-symlinks")]
     pub no_symlinks: bool,
 
     /// Show hidden files
-    #[structopt(short = "H", long = "hidden")]
+    #[clap(short = 'H', long = "hidden")]
     pub hidden: bool,
 
     /// Default color scheme
-    #[structopt(
-        short = "c",
+    #[clap(
+        short = 'c',
         long = "color-scheme",
         default_value = "squirrel",
         possible_values = &renderer::THEME_SLUGS,
@@ -78,8 +82,8 @@ pub struct CliArgs {
     pub color_scheme: String,
 
     /// Default color scheme
-    #[structopt(
-        short = "d",
+    #[clap(
+        short = 'd',
         long = "color-scheme-dark",
         default_value = "archlinux",
         possible_values = &renderer::THEME_SLUGS,
@@ -88,60 +92,65 @@ pub struct CliArgs {
     pub color_scheme_dark: String,
 
     /// Enable QR code display
-    #[structopt(short = "q", long = "qrcode")]
+    #[clap(short = 'q', long = "qrcode")]
     pub qrcode: bool,
 
     /// Enable file uploading
-    #[structopt(short = "u", long = "upload-files")]
+    #[clap(short = 'u', long = "upload-files")]
     pub file_upload: bool,
 
     /// Enable overriding existing files during file upload
-    #[structopt(short = "o", long = "overwrite-files")]
+    #[clap(short = 'o', long = "overwrite-files")]
     pub overwrite_files: bool,
 
     /// Enable uncompressed tar archive generation
-    #[structopt(short = "r", long = "enable-tar")]
+    #[clap(short = 'r', long = "enable-tar")]
     pub enable_tar: bool,
 
     /// Enable gz-compressed tar archive generation
-    #[structopt(short = "g", long = "enable-tar-gz")]
+    #[clap(short = 'g', long = "enable-tar-gz")]
     pub enable_tar_gz: bool,
 
     /// Enable zip archive generation
     ///
     /// WARNING: Zipping large directories can result in out-of-memory exception
     /// because zip generation is done in memory and cannot be sent on the fly
-    #[structopt(short = "z", long = "enable-zip")]
+    #[clap(short = 'z', long = "enable-zip")]
     pub enable_zip: bool,
 
     /// List directories first
-    #[structopt(short = "D", long = "dirs-first")]
+    #[clap(short = 'D', long = "dirs-first")]
     pub dirs_first: bool,
 
     /// Shown instead of host in page title and heading
-    #[structopt(short = "t", long = "title")]
+    #[clap(short = 't', long = "title")]
     pub title: Option<String>,
 
     /// Set custom header for responses
-    #[structopt(long = "header", parse(try_from_str = parse_header), number_of_values = 1)]
+    #[clap(
+        long = "header",
+        parse(try_from_str = parse_header),
+        multiple_occurrences(true),
+        number_of_values = 1
+    )]
     pub header: Vec<HeaderMap>,
 
     /// Hide version footer
-    #[structopt(short = "F", long = "hide-version-footer")]
+    #[clap(short = 'F', long = "hide-version-footer")]
     pub hide_version_footer: bool,
 
     /// Generate completion file for a shell
-    #[structopt(long = "print-completions", value_name = "shell", possible_values = &structopt::clap::Shell::variants())]
-    pub print_completions: Option<structopt::clap::Shell>,
+    #[clap(long = "print-completions", value_name = "shell", possible_values = &Shell::variants())]
+    pub print_completions: Option<Shell>,
 
     /// TLS certificate to use
     #[cfg(feature = "tls")]
-    #[structopt(long = "tls-cert", requires = "tls-key")]
+    #[clap(long = "tls-cert", requires = "tls-key", value_hint = ValueHint::FilePath)]
     pub tls_cert: Option<PathBuf>,
 
     /// TLS private key to use
     #[cfg(feature = "tls")]
-    #[structopt(long = "tls-key", requires = "tls-cert")]
+    #[clap(long = "tls-key", requires = "tls-cert", value_hint = ValueHint::FilePath)]
     pub tls_key: Option<PathBuf>,
 }
 

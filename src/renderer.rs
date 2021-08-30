@@ -1,9 +1,9 @@
 use actix_web::http::StatusCode;
 use chrono::{DateTime, Utc};
 use chrono_humanize::Humanize;
+use clap::{crate_name, crate_version};
 use maud::{html, Markup, PreEscaped, DOCTYPE};
 use std::time::SystemTime;
-use structopt::clap::{crate_name, crate_version};
 use strum::IntoEnumIterator;
 
 use crate::archive::ArchiveMethod;

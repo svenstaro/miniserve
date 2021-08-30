@@ -1,9 +1,10 @@
 mod fixtures;
 
 use assert_cmd::prelude::*;
+use clap::{crate_name, crate_version};
+use clap_generate::Shell;
 use fixtures::Error;
 use std::process::Command;
-use structopt::clap::{crate_name, crate_version, Shell};
 
 #[test]
 /// Show help and exit.
