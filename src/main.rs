@@ -361,12 +361,22 @@ async fn css() -> impl Responder {
         .message_body(css.into())
 }
 
-// Prints the given QrCode object to the console.
+// Prints to the console two inverted QrCodes side by side.
 fn print_qr(qr: &QrCode) {
-    let border: i32 = 4;
-    for y in (-border..qr.size() + border).step_by(2) {
-        for x in -border..qr.size() + border {
-            let c: char = match (qr.get_module(x, y), qr.get_module(x, y + 1)) {
+    let border = 4;
+    let size = qr.size() + 2 * border;
+
+    for y in (0..size).step_by(2) {
+        for x in 0..2 * size {
+            let inverted = x >= size;
+            let (x, y) = (x % size - border, y - border);
+
+            //each char represents two vertical modules
+            let (mod1, mod2) = match inverted {
+                false => (qr.get_module(x, y), qr.get_module(x, y + 1)),
+                true => (!qr.get_module(x, y), !qr.get_module(x, y + 1)),
+            };
+            let c = match (mod1, mod2) {
                 (false, false) => ' ',
                 (true, false) => '▀',
                 (false, true) => '▄',
