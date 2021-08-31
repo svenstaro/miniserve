@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+
+## [0.16.0] - 2021-08-31
 - Fix serving files with backslashes in their names [#578](https://github.com/svenstaro/miniserve/pull/578) (thanks @Jikstra)
 - Fix behavior of downloading symlinks by upgrading to actix-web 4 [#582](https://github.com/svenstaro/miniserve/pull/582) [#462](https://github.com/svenstaro/miniserve/issues/462) (thanks @aliemjay)
 - List directory if index file not found [#583](https://github.com/svenstaro/miniserve/pull/583) [#275](https://github.com/svenstaro/miniserve/pull/583) (thanks @aliemjay)
@@ -109,7 +111,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Some theme related bug fixes (thanks @boastful-squirrel)
 
 <!-- next-url -->
-[Unreleased]: https://github.com/svenstaro/miniserve/compare/v0.15.0...HEAD
+[Unreleased]: https://github.com/svenstaro/miniserve/compare/v0.16.0...HEAD
+[0.16.0]: https://github.com/svenstaro/miniserve/compare/v0.15.0...v0.16.0
 [0.15.0]: https://github.com/svenstaro/miniserve/compare/v0.14.0...v0.15.0
 [0.14.0]: https://github.com/svenstaro/miniserve/compare/v0.13.0...v0.14.0
 [0.13.0]: https://github.com/svenstaro/miniserve/compare/v0.12.1...v0.13.0
