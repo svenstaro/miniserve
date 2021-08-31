@@ -261,7 +261,7 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
         {
             match QrCode::encode_text(url, QrCodeEcc::Low) {
                 Ok(qr) => {
-                    println!("QR code for {} :", Color::Green.paint(url).bold());
+                    println!("QR code for {}:", Color::Green.paint(url).bold());
                     print_qr(&qr);
                 }
                 Err(e) => {
