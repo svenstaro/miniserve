@@ -12,6 +12,7 @@ use clap::{crate_version, Clap, IntoApp};
 use clap_generate::generators::{Bash, Elvish, Fish, PowerShell, Zsh};
 use clap_generate::{generate, Shell};
 use log::{error, warn};
+use qrcodegen::{QrCode, QrCodeEcc};
 use yansi::{Color, Paint};
 
 mod archive;
@@ -183,7 +184,6 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
                 Some(ref random_route) => format!("{}/{}", url, random_route),
                 None => url,
             })
-            .map(|url| Color::Green.paint(url).bold().to_string())
             .collect::<Vec<_>>()
     };
 
@@ -246,8 +246,30 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
 
     println!(
         "Availabe at (non-exhaustive list):\n    {}\n",
-        display_urls.join("\n    "),
+        display_urls
+            .iter()
+            .map(|url| Color::Green.paint(url).bold().to_string())
+            .collect::<Vec<_>>()
+            .join("\n    "),
     );
+
+    // print QR code to terminal
+    if miniserve_config.show_qrcode && atty::is(atty::Stream::Stdout) {
+        for url in display_urls
+            .iter()
+            .filter(|url| !url.contains("//127.0.0.1:") && !url.contains("//[::1]:"))
+        {
+            match QrCode::encode_text(url, QrCodeEcc::Low) {
+                Ok(qr) => {
+                    println!("QR code for {}:", Color::Green.paint(url).bold());
+                    print_qr(&qr);
+                }
+                Err(e) => {
+                    error!("Failed to render QR to terminal: {}", e);
+                }
+            };
+        }
+    }
 
     if atty::is(atty::Stream::Stdout) {
         println!("Quit by pressing CTRL-C");
@@ -337,4 +359,32 @@ async fn css() -> impl Responder {
     HttpResponse::Ok()
         .insert_header(ContentType(mime::TEXT_CSS))
         .message_body(css.into())
+}
+
+// Prints to the console two inverted QrCodes side by side.
+fn print_qr(qr: &QrCode) {
+    let border = 4;
+    let size = qr.size() + 2 * border;
+
+    for y in (0..size).step_by(2) {
+        for x in 0..2 * size {
+            let inverted = x >= size;
+            let (x, y) = (x % size - border, y - border);
+
+            //each char represents two vertical modules
+            let (mod1, mod2) = match inverted {
+                false => (qr.get_module(x, y), qr.get_module(x, y + 1)),
+                true => (!qr.get_module(x, y), !qr.get_module(x, y + 1)),
+            };
+            let c = match (mod1, mod2) {
+                (false, false) => ' ',
+                (true, false) => '▀',
+                (false, true) => '▄',
+                (true, true) => '█',
+            };
+            print!("{0}", c);
+        }
+        println!();
+    }
+    println!();
 }
