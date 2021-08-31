@@ -160,7 +160,7 @@ jobs:
         run: |
           echo ::set-output name=current_version::${GITHUB_REF#refs/tags/v}
         shell: bash
-        if: startsWith('refs/tags/v', github.ref)
+        if: startsWith(github.ref, 'refs/tags/v')
 
       - name: Get CHANGELOG.md entry
         id: changelog_reader
@@ -168,7 +168,7 @@ jobs:
         with:
           version: ${{ steps.tag_name.outputs.current_version }}
           path: ./CHANGELOG.md
-        if: startsWith('refs/tags/v', github.ref)
+        if: startsWith(github.ref, 'refs/tags/v')
 
       - name: Publish
         uses: svenstaro/upload-release-action@v2
@@ -178,4 +178,4 @@ jobs:
           tag: ${{ github.ref }}
           asset_name: miniserve-$tag-${{ matrix.release_name }}
           body: ${{ steps.changelog_reader.outputs.log_entry }}
-        if: startsWith('refs/tags/v', github.ref)
+        if: startsWith(github.ref, 'refs/tags/v')
