@@ -3,8 +3,7 @@ mod utils;
 
 use crate::fixtures::TestServer;
 use assert_cmd::prelude::*;
-use assert_fs::fixture::TempDir;
-use fixtures::{port, server, tmpdir, Error};
+use fixtures::{server, Error};
 use pretty_assertions::assert_eq;
 use reqwest::blocking::Client;
 use rstest::rstest;
@@ -68,36 +67,40 @@ fn raw_mode_links_to_directories_end_with_raw_true(server: TestServer) -> Result
     fn verify_a_tags(parsed: Document) {
         // Ensure all links end with ?raw=true or are files
         for node in parsed.find(Name("a")) {
-            let class = node.attr("class").unwrap();
-
-            if class == "root" || class == "directory" {
-                assert!(node.attr("href").unwrap().ends_with("?raw=true"));
-            } else if class == "file" {
-                assert!(true);
-            } else {
-                println!(
-                    "This node is a link and neither of class directory, root or file: {:?}",
-                    node
-                );
-                assert!(false);
+            if let Some(class) = node.attr("class") {
+                if class == "root" || class == "directory" {
+                    assert!(node.attr("href").unwrap().ends_with("?raw=true"));
+                } else if class == "file" {
+                    assert!(true);
+                } else {
+                   println!(
+                        "This node is a link and neither of class directory, root or file: {:?}",
+                        node
+                    );
+                    assert!(false);
+                }    
             }
         }
     }
 
     let urls = [
         format!("{}?raw=true", server.url()),
-        format!("{}very?raw=true", server.url()),
+        format!("{}very/?raw=true", server.url()),
         format!("{}very/deeply/?raw=true", server.url()),
-        format!("{}very/deeply/nested?raw=true", server.url()),
+        format!("{}very/deeply/nested/?raw=true", server.url()),
     ];
+
 
     let client = Client::new();
     // Ensure the links to the archives are not present
     for url in urls.iter() {
         let body = client.get(url).send()?.error_for_status()?;
+        
+        let body = client.get(url).send()?.error_for_status()?;
         let parsed = Document::from_read(body)?;
         verify_a_tags(parsed);
     }
+
 
     Ok(())
 }
