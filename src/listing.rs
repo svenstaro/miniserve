@@ -379,6 +379,7 @@ pub fn directory_listing(
                         breadcrumbs,
                         &encoded_dir,
                         conf,
+                        current_user
                     )
                     .into_string(),
                 ),

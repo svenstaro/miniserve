@@ -87,10 +87,10 @@ fn handle_auth(req: &HttpRequest) -> Result<(), ContextualError> {
     }
 
     match BasicAuthParams::try_from_request(req) {
-        Ok(cred) => match match_auth(cred, required_auth) {
+        Ok(cred) => match match_auth(&cred, required_auth) {
             true => {
                 req.extensions_mut().insert(CurrentUser {
-                    name: cred_params.username,
+                    name: cred.username
                 });
                 Ok(())
             },

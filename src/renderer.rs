@@ -6,6 +6,7 @@ use maud::{html, Markup, PreEscaped, DOCTYPE};
 use std::time::SystemTime;
 use strum::IntoEnumIterator;
 
+use crate::auth::CurrentUser;
 use crate::listing::{Breadcrumb, Entry, QueryParameters, SortingMethod, SortingOrder};
 use crate::{archive::ArchiveMethod, MiniserveConfig};
 
@@ -19,11 +20,19 @@ pub fn page(
     conf: &MiniserveConfig,
     current_user: Option<&CurrentUser>,
 ) -> Markup {
+    // If query_params.raw is true, we want render a minimal directory listing
+    if query_params.raw.is_some() && query_params.raw.unwrap() == true {
+        return raw(entries, is_root);
+    }
+ 
     let upload_route = match conf.random_route {
         Some(ref random_route) => format!("/{}/upload", random_route),
         None => "/upload".to_string(),
     };
     let (sort_method, sort_order) = (query_params.sort, query_params.order);
+    
+    
+    
     let upload_action = build_upload_action(&upload_route, encoded_dir, sort_method, sort_order);
 
     let title_path = breadcrumbs
@@ -31,6 +40,8 @@ pub fn page(
         .map(|el| el.name.clone())
         .collect::<Vec<_>>()
         .join("/");
+    
+    
 
     html! {
         (DOCTYPE)
@@ -150,9 +161,7 @@ pub fn page(
 #[allow(clippy::too_many_arguments)]
 pub fn raw(
     entries: Vec<Entry>,
-    is_root: bool,
-    sort_method: Option<SortingMethod>,
-    sort_order: Option<SortingOrder>,
+    is_root: bool
 ) -> Markup {
     html! {
         (DOCTYPE)
@@ -168,16 +177,15 @@ pub fn raw(
                         @if !is_root {
                             tr {
                                 td colspan="3" {
-                                    a.root href=(parametrized_link("../", sort_method, sort_order, true)) {
+                                    a.root href=(parametrized_link("../", None, None, true)) {
                                         ".."
                                     }
                                 }
                             }
                         }
                         @for entry in entries {
-                            (entry_row(entry, sort_method, sort_order, true))
+                            (entry_row(entry, None, None, true))
                         }
->>>>>>> 2949329 (Implement a raw rendering mode for recursive folder download)
                     }
                 }
             }
@@ -400,7 +408,7 @@ fn entry_row(
                                 a.directory {(symlink_dest) "/"}
                             }
                         }@else {
-                            a.directory href=(parametrized_link(&entry.link, sort_method, sort_order)) {
+                            a.directory href=(parametrized_link(&entry.link, sort_method, sort_order, raw)) {
                                 (entry.name) "/"
                             }
                         }
@@ -551,15 +559,6 @@ pub fn render_error(
     conf: &MiniserveConfig,
     return_address: &str,
 ) -> Markup {
-<<<<<<< HEAD
-=======
-    let link = if has_referer {
-        return_address.to_string()
-    } else {
-        parametrized_link(return_address, sort_method, sort_order, false)
-    };
-
->>>>>>> 2949329 (Implement a raw rendering mode for recursive folder download)
     html! {
         (DOCTYPE)
         html {
@@ -591,15 +590,11 @@ pub fn render_error(
                             }
                         }
                     }
-<<<<<<< HEAD
                     @if !conf.hide_version_footer {
-                        (version_footer())
-=======
-                    @if !hide_version_footer {
                         p.footer {
                             (version_footer())
                         }
->>>>>>> 2949329 (Implement a raw rendering mode for recursive folder download)
+                        
                     }
                 }
             }
