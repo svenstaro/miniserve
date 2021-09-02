@@ -90,10 +90,10 @@ fn handle_auth(req: &HttpRequest) -> Result<(), ContextualError> {
         Ok(cred) => match match_auth(&cred, required_auth) {
             true => {
                 req.extensions_mut().insert(CurrentUser {
-                    name: cred.username
+                    name: cred.username,
                 });
                 Ok(())
-            },
+            }
             false => Err(ContextualError::InvalidHttpCredentials),
         },
         Err(_) => Err(ContextualError::RequireHttpCredentials),

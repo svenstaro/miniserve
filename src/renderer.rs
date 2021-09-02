@@ -21,18 +21,16 @@ pub fn page(
     current_user: Option<&CurrentUser>,
 ) -> Markup {
     // If query_params.raw is true, we want render a minimal directory listing
-    if query_params.raw.is_some() && query_params.raw.unwrap() == true {
+    if query_params.raw.is_some() && query_params.raw.unwrap() {
         return raw(entries, is_root);
     }
- 
+
     let upload_route = match conf.random_route {
         Some(ref random_route) => format!("/{}/upload", random_route),
         None => "/upload".to_string(),
     };
     let (sort_method, sort_order) = (query_params.sort, query_params.order);
-    
-    
-    
+
     let upload_action = build_upload_action(&upload_route, encoded_dir, sort_method, sort_order);
 
     let title_path = breadcrumbs
@@ -40,8 +38,6 @@ pub fn page(
         .map(|el| el.name.clone())
         .collect::<Vec<_>>()
         .join("/");
-    
-    
 
     html! {
         (DOCTYPE)
@@ -159,10 +155,7 @@ pub fn page(
 }
 /// Renders the file listing
 #[allow(clippy::too_many_arguments)]
-pub fn raw(
-    entries: Vec<Entry>,
-    is_root: bool
-) -> Markup {
+pub fn raw(entries: Vec<Entry>, is_root: bool) -> Markup {
     html! {
         (DOCTYPE)
         html {
@@ -594,7 +587,7 @@ pub fn render_error(
                         p.footer {
                             (version_footer())
                         }
-                        
+
                     }
                 }
             }
