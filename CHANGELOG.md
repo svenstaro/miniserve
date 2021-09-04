@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased] - ReleaseDate
 - Print QR codes on terminal [#524](https://github.com/svenstaro/miniserve/pull/524) (thanks @aliemjay)
 - Fix mobile layout info pills taking whole width [#591](https://github.com/svenstaro/miniserve/issues/591)
+- Fix security exploit when uploading is enabled [#590](https://github.com/svenstaro/miniserve/pull/590) [#518](https://github.com/svenstaro/miniserve/issues/518) (thanks @aliemjay)
+- Fix uploading to symlink directories [#590](https://github.com/svenstaro/miniserve/pull/590) [#466](https://github.com/svenstaro/miniserve/issues/466) (thanks @aliemjay)
 
 ## [0.16.0] - 2021-08-31
 - Fix serving files with backslashes in their names [#578](https://github.com/svenstaro/miniserve/pull/578) (thanks @Jikstra)
