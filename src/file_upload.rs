@@ -8,7 +8,10 @@ use std::{
 use crate::errors::ContextualError;
 use crate::listing::{self};
 
-/// Create future to save file.
+/// Saves file data from a multipart form field (`field`) to `file_path`, optionally overwriting
+/// existing file.
+///
+/// Returns total bytes written to file.
 async fn save_file(
     field: actix_multipart::Field,
     file_path: PathBuf,
@@ -34,7 +37,7 @@ async fn save_file(
     Ok(written_len)
 }
 
-/// Create new future to handle file as multipart data.
+/// Handles a single field in a multipart form
 async fn handle_multipart(
     field: actix_multipart::Field,
     path: PathBuf,
@@ -121,6 +124,8 @@ pub async fn upload_file(
 
 /// Guarantee that the path is relative and cannot traverse back to parent directories
 /// and optionally prevent traversing hidden directories.
+///
+/// See the unit tests tests::test_sanitize_path* for examples
 fn sanitize_path(path: &Path, traverse_hidden: bool) -> Option<PathBuf> {
     let mut buf = PathBuf::new();
 
@@ -144,4 +149,36 @@ fn sanitize_path(path: &Path, traverse_hidden: bool) -> Option<PathBuf> {
     }
 
     Some(buf)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use pretty_assertions::assert_eq;
+    use rstest::rstest;
+
+    #[rstest]
+    #[case("/foo", "foo")]
+    #[case("////foo", "foo")]
+    #[case("C:/foo", if cfg!(windows) { "foo" } else { "C:/foo" })]
+    #[case("../foo", "foo")]
+    #[case("../foo/../bar/abc", "bar/abc")]
+    fn test_sanitize_path(#[case] input: &str, #[case] output: &str) {
+        assert_eq!(
+            sanitize_path(Path::new(input), true).unwrap(),
+            Path::new(output)
+        );
+        assert_eq!(
+            sanitize_path(Path::new(input), false).unwrap(),
+            Path::new(output)
+        );
+    }
+
+    #[rstest]
+    #[case(".foo")]
+    #[case("/.foo")]
+    #[case("foo/.bar/foo")]
+    fn test_sanitize_path_no_hidden_files(#[case] input: &str) {
+        assert_eq!(sanitize_path(Path::new(input), false), None);
+    }
 }

@@ -80,6 +80,10 @@ fn uploading_files_is_prevented(server: TestServer) -> Result<(), Error> {
     Ok(())
 }
 
+/// Test for path traversal vulnerability (CWE-22) in both path parameter of query string and in
+/// file name (Content-Disposition)
+///
+/// see: https://github.com/svenstaro/miniserve/issues/518
 #[rstest]
 #[case("foo", "bar", "foo/bar")]
 #[case("/../foo", "bar", "foo/bar")]
@@ -87,13 +91,13 @@ fn uploading_files_is_prevented(server: TestServer) -> Result<(), Error> {
 #[case("C:/foo", "C:/bar", if cfg!(windows) { "foo/bar" } else { "C:/foo/C:/bar" })]
 #[case(r"C:\foo", r"C:\bar", if cfg!(windows) { "foo/bar" } else { r"C:\foo/C:\bar" })]
 #[case(r"\foo", r"\..\bar", if cfg!(windows) { "foo/bar" } else { r"\foo/\..\bar" })]
-fn path_traversal(
+fn prevent_path_traversal_attacks(
     #[with(&["-u"])] server: TestServer,
     #[case] path: &str,
     #[case] filename: &'static str,
     #[case] expected: &str,
 ) -> Result<(), Error> {
-    // create test directories
+    // Create test directories
     use std::fs::create_dir_all;
     create_dir_all(server.path().join("foo")).unwrap();
     if !cfg!(windows) {
@@ -132,14 +136,14 @@ fn symlink(#[case] server: TestServer, #[case] ok: bool, tmpdir: TempDir) -> Res
     #[cfg(windows)]
     use std::os::windows::fs::symlink_dir;
 
-    // create symlink directory "foo" to point outside the root
+    // Create symlink directory "foo" to point outside the root
     let (dir, filename) = ("foo", "bar");
     symlink_dir(tmpdir.path(), server.path().join(dir)).unwrap();
 
     let full_path = server.path().join(dir).join(filename);
     assert!(!full_path.exists());
 
-    // try to upload
+    // Try to upload
     let part = multipart::Part::text("this should be uploaded")
         .file_name(filename)
         .mime_str("text/plain")?;
