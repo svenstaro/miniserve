@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+
+## [0.17.0] - 2021-09-04
 - Print QR codes on terminal [#524](https://github.com/svenstaro/miniserve/pull/524) (thanks @aliemjay)
 - Fix mobile layout info pills taking whole width [#591](https://github.com/svenstaro/miniserve/issues/591)
 - Fix security exploit when uploading is enabled [#590](https://github.com/svenstaro/miniserve/pull/590) [#518](https://github.com/svenstaro/miniserve/issues/518) (thanks @aliemjay)
@@ -115,7 +117,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Some theme related bug fixes (thanks @boastful-squirrel)
 
 <!-- next-url -->
-[Unreleased]: https://github.com/svenstaro/miniserve/compare/v0.16.0...HEAD
+[Unreleased]: https://github.com/svenstaro/miniserve/compare/v0.17.0...HEAD
+[0.17.0]: https://github.com/svenstaro/miniserve/compare/v0.16.0...v0.17.0
 [0.16.0]: https://github.com/svenstaro/miniserve/compare/v0.15.0...v0.16.0
 [0.15.0]: https://github.com/svenstaro/miniserve/compare/v0.14.0...v0.15.0
 [0.14.0]: https://github.com/svenstaro/miniserve/compare/v0.13.0...v0.14.0
