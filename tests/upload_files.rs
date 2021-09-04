@@ -127,10 +127,16 @@ fn prevent_path_traversal_attacks(
     Ok(())
 }
 
+/// Test uploading to symlink directories that point outside the server root.
+/// See https://github.com/svenstaro/miniserve/issues/466
 #[rstest]
 #[case(server(&["-u"]), true)]
 #[case(server_no_stderr(&["-u", "--no-symlinks"]), false)]
-fn symlink(#[case] server: TestServer, #[case] ok: bool, tmpdir: TempDir) -> Result<(), Error> {
+fn upload_to_symlink_directory(
+    #[case] server: TestServer,
+    #[case] ok: bool,
+    tmpdir: TempDir,
+) -> Result<(), Error> {
     #[cfg(unix)]
     use std::os::unix::fs::symlink as symlink_dir;
     #[cfg(windows)]
