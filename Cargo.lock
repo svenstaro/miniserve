@@ -1404,7 +1404,6 @@ dependencies = [
  "assert_cmd",
  "assert_fs",
  "atty",
- "bytes",
  "bytesize",
  "chrono",
  "chrono-humanize",
