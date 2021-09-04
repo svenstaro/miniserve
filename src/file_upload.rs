@@ -2,13 +2,16 @@ use actix_web::{http::header, HttpRequest, HttpResponse};
 use futures::TryStreamExt;
 use std::{
     io::Write,
-    path::{Component, PathBuf},
+    path::{Component, Path, PathBuf},
 };
 
 use crate::errors::ContextualError;
 use crate::listing::{self};
 
-/// Create future to save file.
+/// Saves file data from a multipart form field (`field`) to `file_path`, optionally overwriting
+/// existing file.
+///
+/// Returns total bytes written to file.
 async fn save_file(
     field: actix_multipart::Field,
     file_path: PathBuf,
@@ -34,10 +37,10 @@ async fn save_file(
     Ok(written_len)
 }
 
-/// Create new future to handle file as multipart data.
+/// Handles a single field in a multipart form
 async fn handle_multipart(
     field: actix_multipart::Field,
-    file_path: PathBuf,
+    path: PathBuf,
     overwrite_files: bool,
 ) -> Result<u64, ContextualError> {
     let filename = field
@@ -50,21 +53,25 @@ async fn handle_multipart(
             )
         })?;
 
-    match std::fs::metadata(&file_path) {
+    let filename = sanitize_path(Path::new(&filename), false).ok_or_else(|| {
+        ContextualError::InvalidPathError("Invalid file name to upload".to_string())
+    })?;
+
+    match std::fs::metadata(&path) {
         Err(_) => Err(ContextualError::InsufficientPermissionsError(
-            file_path.display().to_string(),
+            path.display().to_string(),
         )),
         Ok(metadata) if !metadata.is_dir() => Err(ContextualError::InvalidPathError(format!(
             "cannot upload file to {}, since it's not a directory",
-            &file_path.display()
+            &path.display()
         ))),
         Ok(metadata) if metadata.permissions().readonly() => Err(
-            ContextualError::InsufficientPermissionsError(file_path.display().to_string()),
+            ContextualError::InsufficientPermissionsError(path.display().to_string()),
         ),
         Ok(_) => Ok(()),
     }?;
 
-    save_file(field, file_path.join(filename), overwrite_files).await
+    save_file(field, path.join(filename), overwrite_files).await
 }
 
 /// Handle incoming request to upload file.
@@ -87,9 +94,9 @@ pub async fn upload_file(
     let upload_path = query_params.path.as_ref().ok_or_else(|| {
         ContextualError::InvalidHttpRequestError("Missing query parameter 'path'".to_string())
     })?;
-    let upload_path = upload_path
-        .strip_prefix(Component::RootDir)
-        .unwrap_or(upload_path);
+    let upload_path = sanitize_path(upload_path, conf.show_hidden).ok_or_else(|| {
+        ContextualError::InvalidPathError("Invalid value for 'path' parameter".to_string())
+    })?;
 
     let app_root_dir = conf.path.canonicalize().map_err(|e| {
         ContextualError::IoError("Failed to resolve path served by miniserve".to_string(), e)
@@ -97,6 +104,7 @@ pub async fn upload_file(
 
     // If the target path is under the app root directory, save the file.
     let target_dir = match app_root_dir.join(upload_path).canonicalize() {
+        Ok(path) if !conf.no_symlinks => Ok(path),
         Ok(path) if path.starts_with(&app_root_dir) => Ok(path),
         _ => Err(ContextualError::InvalidHttpRequestError(
             "Invalid value for 'path' parameter".to_string(),
@@ -112,4 +120,65 @@ pub async fn upload_file(
     Ok(HttpResponse::SeeOther()
         .append_header((header::LOCATION, return_path))
         .finish())
+}
+
+/// Guarantee that the path is relative and cannot traverse back to parent directories
+/// and optionally prevent traversing hidden directories.
+///
+/// See the unit tests tests::test_sanitize_path* for examples
+fn sanitize_path(path: &Path, traverse_hidden: bool) -> Option<PathBuf> {
+    let mut buf = PathBuf::new();
+
+    for comp in path.components() {
+        match comp {
+            Component::Normal(name) => buf.push(name),
+            Component::ParentDir => {
+                buf.pop();
+            }
+            _ => (),
+        }
+    }
+
+    // Double-check that all components are Normal and check for hidden dirs
+    for comp in buf.components() {
+        match comp {
+            Component::Normal(_) if traverse_hidden => (),
+            Component::Normal(name) if !name.to_str()?.starts_with('.') => (),
+            _ => return None,
+        }
+    }
+
+    Some(buf)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use pretty_assertions::assert_eq;
+    use rstest::rstest;
+
+    #[rstest]
+    #[case("/foo", "foo")]
+    #[case("////foo", "foo")]
+    #[case("C:/foo", if cfg!(windows) { "foo" } else { "C:/foo" })]
+    #[case("../foo", "foo")]
+    #[case("../foo/../bar/abc", "bar/abc")]
+    fn test_sanitize_path(#[case] input: &str, #[case] output: &str) {
+        assert_eq!(
+            sanitize_path(Path::new(input), true).unwrap(),
+            Path::new(output)
+        );
+        assert_eq!(
+            sanitize_path(Path::new(input), false).unwrap(),
+            Path::new(output)
+        );
+    }
+
+    #[rstest]
+    #[case(".foo")]
+    #[case("/.foo")]
+    #[case("foo/.bar/foo")]
+    fn test_sanitize_path_no_hidden_files(#[case] input: &str) {
+        assert_eq!(sanitize_path(Path::new(input), false), None);
+    }
 }
