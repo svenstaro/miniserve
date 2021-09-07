@@ -343,9 +343,9 @@ dependencies = [
 
 [[package]]
 name = "assert_fs"
-version = "1.0.4"
+version = "1.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "58436a22e4ac01846f8e72e7dcd3f6aa96a4c9f8fa5e77f9234d287dfac0c354"
+checksum = "7d7b349de9bde9383966c8d3be1103623620ca34d2c43a41b82360e552661007"
 dependencies = [
  "doc-comment",
  "globwalk",
