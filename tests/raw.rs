@@ -12,7 +12,7 @@ use select::predicate::Name;
 
 #[rstest]
 /// The ui displays the correct wget command to download the folder recursively
-fn ui_displays_wget_element(server: TestServer) -> Result<(), Error> {
+fn ui_displays_wget_element(#[with(&["-W"])] server: TestServer) -> Result<(), Error> {
     let client = Client::new();
 
     let body = client.get(server.url()).send()?.error_for_status()?;
@@ -59,7 +59,7 @@ fn ui_displays_wget_element(server: TestServer) -> Result<(), Error> {
 
 #[rstest]
 /// All hrefs in raw mode are links to directories or files & directories end with ?raw=true
-fn raw_mode_links_to_directories_end_with_raw_true(server: TestServer) -> Result<(), Error> {
+fn raw_mode_links_to_directories_end_with_raw_true(#[with(&["-W"])] server: TestServer) -> Result<(), Error> {
     fn verify_a_tags(parsed: Document) {
         // Ensure all links end with ?raw=true or are files
         for node in parsed.find(Name("a")) {
