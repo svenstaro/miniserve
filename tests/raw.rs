@@ -22,7 +22,7 @@ fn ui_displays_wget_element(server: TestServer) -> Result<(), Error> {
     let body = client.get(server.url()).send()?.error_for_status()?;
     let parsed = Document::from_read(body)?;
     let wget_url = parsed
-        .find(Class("downloadWget"))
+        .find(Class("downloadDirectory"))
         .next()
         .unwrap()
         .find(Class("cmd"))
@@ -43,7 +43,7 @@ fn ui_displays_wget_element(server: TestServer) -> Result<(), Error> {
         .error_for_status()?;
     let parsed = Document::from_read(body)?;
     let wget_url = parsed
-        .find(Class("downloadWget"))
+        .find(Class("downloadDirectory"))
         .next()
         .unwrap()
         .find(Class("cmd"))
