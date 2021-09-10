@@ -297,17 +297,10 @@ fn create_tcp_listener(addr: SocketAddr) -> io::Result<TcpListener> {
 }
 
 fn configure_header(conf: &MiniserveConfig) -> middleware::DefaultHeaders {
-    let headers = conf.clone().header;
-
-    let mut default_headers = middleware::DefaultHeaders::new();
-    for header in headers {
-        for (header_name, header_value) in header.into_iter() {
-            if let Some(header_name) = header_name {
-                default_headers = default_headers.header(&header_name, header_value);
-            }
-        }
-    }
-    default_headers
+    conf.header.iter().flatten().fold(
+        middleware::DefaultHeaders::new(),
+        |headers, (header_name, header_value)| headers.header(header_name, header_value),
+    )
 }
 
 /// Configures the Actix application
