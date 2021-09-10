@@ -2,7 +2,6 @@ mod fixtures;
 mod utils;
 
 use crate::fixtures::TestServer;
-use assert_cmd::prelude::*;
 use fixtures::{server, Error};
 use pretty_assertions::assert_eq;
 use reqwest::blocking::Client;
@@ -10,9 +9,6 @@ use rstest::rstest;
 use select::document::Document;
 use select::predicate::Class;
 use select::predicate::Name;
-use std::process::{Command, Stdio};
-use std::thread::sleep;
-use std::time::Duration;
 
 #[rstest]
 /// The ui displays the correct wget command to download the folder recursively
