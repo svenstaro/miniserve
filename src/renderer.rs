@@ -143,7 +143,9 @@ pub fn page(
                         (arrow_up())
                     }
                     div.footer {
-                        (wget_download(&title_path, current_user))
+                        @if conf.show_wget_footer {
+                            (wget_footer(&title_path, current_user))
+                        }
                         @if !conf.hide_version_footer {
                             (version_footer())
                         }
@@ -195,7 +197,7 @@ fn version_footer() -> Markup {
     }
 }
 
-fn wget_download(title_path: &str, current_user: Option<&CurrentUser>) -> Markup {
+fn wget_footer(title_path: &str, current_user: Option<&CurrentUser>) -> Markup {
     let count = {
         let count_slashes = title_path.matches('/').count();
         if count_slashes > 0 {

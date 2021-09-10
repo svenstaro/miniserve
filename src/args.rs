@@ -142,6 +142,10 @@ pub struct CliArgs {
     #[clap(short = 'F', long = "hide-version-footer")]
     pub hide_version_footer: bool,
 
+    /// If enabled, display a wget command to recursively download the current directory
+    #[clap(short = 'W', long = "show-wget-footer")]
+    pub show_wget_footer: bool,
+
     /// Generate completion file for a shell
     #[clap(long = "print-completions", value_name = "shell", possible_values = &Shell::variants())]
     pub print_completions: Option<Shell>,
