@@ -94,8 +94,6 @@ fn raw_mode_links_to_directories_end_with_raw_true(server: TestServer) -> Result
     // Ensure the links to the archives are not present
     for url in urls.iter() {
         let body = client.get(url).send()?.error_for_status()?;
-
-        let body = client.get(url).send()?.error_for_status()?;
         let parsed = Document::from_read(body)?;
         verify_a_tags(parsed);
     }

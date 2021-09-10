@@ -153,8 +153,8 @@ pub fn page(
         }
     }
 }
+
 /// Renders the file listing
-#[allow(clippy::too_many_arguments)]
 pub fn raw(entries: Vec<Entry>, is_root: bool) -> Markup {
     html! {
         (DOCTYPE)
@@ -212,7 +212,7 @@ fn wget_download(title_path: &str, current_user: Option<&CurrentUser>) -> Markup
     };
 
     return html! {
-        div.downloadWget {
+        div.downloadDirectory {
             p { "Download folder:" }
             div.cmd { (format!("wget -r -c -nH -np --cut-dirs={} -R \"index.html*\"{} \"http://{}/?raw=true\"", count, user_params, title_path)) }
         }
