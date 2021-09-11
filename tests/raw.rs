@@ -59,7 +59,9 @@ fn ui_displays_wget_element(#[with(&["-W"])] server: TestServer) -> Result<(), E
 
 #[rstest]
 /// All hrefs in raw mode are links to directories or files & directories end with ?raw=true
-fn raw_mode_links_to_directories_end_with_raw_true(#[with(&["-W"])] server: TestServer) -> Result<(), Error> {
+fn raw_mode_links_to_directories_end_with_raw_true(
+    #[with(&["-W"])] server: TestServer,
+) -> Result<(), Error> {
     fn verify_a_tags(parsed: Document) {
         // Ensure all links end with ?raw=true or are files
         for node in parsed.find(Name("a")) {
