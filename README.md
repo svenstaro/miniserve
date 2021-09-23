@@ -132,6 +132,9 @@ Sometimes this is just a more practical and quick way than doing things properly
         -V, --version
                 Print version information
 
+        -W, --show-wget-footer
+                If enabled, display a wget command to recursively download the current directory
+
         -z, --enable-zip
                 Enable zip archive generation
 
@@ -267,7 +270,7 @@ You can provide `-i` multiple times to bind to multiple interfaces at the same t
 
 ## Why use this over alternatives?
 
-- darkhttpd: Not easily available on Windows and it's not as easy as download and go.
+- darkhttpd: Not easily available on Windows and it's not as easy as download-and-go.
 - Python built-in webserver: Need to have Python installed, it's low performance, and also doesn't do correct MIME type handling in some cases.
 - netcat: Not as convenient to use and sending directories is [somewhat involved](https://nakkaya.com/2009/04/15/using-netcat-for-file-transfers/).
 
