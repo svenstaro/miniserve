@@ -6,6 +6,7 @@ use maud::{html, Markup, PreEscaped, DOCTYPE};
 use std::time::SystemTime;
 use strum::IntoEnumIterator;
 
+use crate::auth::CurrentUser;
 use crate::listing::{Breadcrumb, Entry, QueryParameters, SortingMethod, SortingOrder};
 use crate::{archive::ArchiveMethod, MiniserveConfig};
 
@@ -17,12 +18,19 @@ pub fn page(
     breadcrumbs: Vec<Breadcrumb>,
     encoded_dir: &str,
     conf: &MiniserveConfig,
+    current_user: Option<&CurrentUser>,
 ) -> Markup {
+    // If query_params.raw is true, we want render a minimal directory listing
+    if query_params.raw.is_some() && query_params.raw.unwrap() {
+        return raw(entries, is_root);
+    }
+
     let upload_route = match conf.random_route {
         Some(ref random_route) => format!("/{}/upload", random_route),
         None => "/upload".to_string(),
     };
     let (sort_method, sort_order) = (query_params.sort, query_params.order);
+
     let upload_action = build_upload_action(&upload_route, encoded_dir, sort_method, sort_order);
 
     let title_path = breadcrumbs
@@ -80,7 +88,7 @@ pub fn page(
                                 // wrapped in span so the text doesn't shift slightly when it turns into a link
                                 span { bdi { (el.name) } }
                             } @else {
-                                a href=(parametrized_link(&el.link, sort_method, sort_order)) {
+                                a href=(parametrized_link(&el.link, sort_method, sort_order, false)) {
                                     bdi { (el.name) }
                                 }
                             }
@@ -120,22 +128,59 @@ pub fn page(
                                 tr {
                                     td colspan="3" {
                                         span.root-chevron { (chevron_left()) }
-                                        a.root href=(parametrized_link("../", sort_method, sort_order)) {
+                                        a.root href=(parametrized_link("../", sort_method, sort_order, false)) {
                                             "Parent directory"
                                         }
                                     }
                                 }
                             }
                             @for entry in entries {
-                                (entry_row(entry, sort_method, sort_order))
+                                (entry_row(entry, sort_method, sort_order, false))
                             }
                         }
                     }
                     a.back href="#top" {
                         (arrow_up())
                     }
-                    @if !conf.hide_version_footer {
-                        (version_footer())
+                    div.footer {
+                        @if conf.show_wget_footer {
+                            (wget_footer(&title_path, current_user))
+                        }
+                        @if !conf.hide_version_footer {
+                            (version_footer())
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// Renders the file listing
+pub fn raw(entries: Vec<Entry>, is_root: bool) -> Markup {
+    html! {
+        (DOCTYPE)
+        html {
+            body {
+                table {
+                    thead {
+                        th.name { "Name" }
+                        th.size { "Size" }
+                        th.date { "Last modification" }
+                    }
+                    tbody {
+                        @if !is_root {
+                            tr {
+                                td colspan="3" {
+                                    a.root href=(parametrized_link("../", None, None, true)) {
+                                        ".."
+                                    }
+                                }
+                            }
+                        }
+                        @for entry in entries {
+                            (entry_row(entry, None, None, true))
+                        }
                     }
                 }
             }
@@ -146,10 +191,34 @@ pub fn page(
 // Partial: version footer
 fn version_footer() -> Markup {
     html! {
-        p.footer {
-            (format!("{}/{}", crate_name!(), crate_version!()))
-        }
+       div.version {
+           (format!("{}/{}", crate_name!(), crate_version!()))
+       }
     }
+}
+
+fn wget_footer(title_path: &str, current_user: Option<&CurrentUser>) -> Markup {
+    let count = {
+        let count_slashes = title_path.matches('/').count();
+        if count_slashes > 0 {
+            count_slashes - 1
+        } else {
+            0
+        }
+    };
+
+    let user_params = if let Some(user) = current_user {
+        format!(" --ask-password --user {}", user.name)
+    } else {
+        "".to_string()
+    };
+
+    return html! {
+        div.downloadDirectory {
+            p { "Download folder:" }
+            div.cmd { (format!("wget -r -c -nH -np --cut-dirs={} -R \"index.html*\"{} \"http://{}/?raw=true\"", count, user_params, title_path)) }
+        }
+    };
 }
 
 /// Build the action of the upload form
@@ -232,7 +301,7 @@ fn archive_button(
     } else {
         format!(
             "{}&download={}",
-            parametrized_link("", sort_method, sort_order,),
+            parametrized_link("", sort_method, sort_order, false),
             archive_method
         )
     };
@@ -260,14 +329,19 @@ fn parametrized_link(
     link: &str,
     sort_method: Option<SortingMethod>,
     sort_order: Option<SortingOrder>,
+    raw: bool,
 ) -> String {
+    if raw {
+        return format!("{}?raw=true", make_link_with_trailing_slash(link));
+    }
+
     if let Some(method) = sort_method {
         if let Some(order) = sort_order {
             let parametrized_link = format!(
                 "{}?sort={}&order={}",
                 make_link_with_trailing_slash(link),
                 method,
-                order
+                order,
             );
 
             return parametrized_link;
@@ -315,6 +389,7 @@ fn entry_row(
     entry: Entry,
     sort_method: Option<SortingMethod>,
     sort_order: Option<SortingOrder>,
+    raw: bool,
 ) -> Markup {
     html! {
         tr {
@@ -322,13 +397,13 @@ fn entry_row(
                 p {
                     @if entry.is_dir() {
                         @if let Some(symlink_dest) = entry.symlink_info {
-                            a.symlink href=(parametrized_link(&entry.link, sort_method, sort_order)) {
+                            a.symlink href=(parametrized_link(&entry.link, sort_method, sort_order, raw)) {
                                 (entry.name) "/"
                                 span.symlink-symbol { }
                                 a.directory {(symlink_dest) "/"}
                             }
                         }@else {
-                            a.directory href=(parametrized_link(&entry.link, sort_method, sort_order)) {
+                            a.directory href=(parametrized_link(&entry.link, sort_method, sort_order, raw)) {
                                 (entry.name) "/"
                             }
                         }
@@ -345,9 +420,11 @@ fn entry_row(
                             }
                         }
 
-                        @if let Some(size) = entry.size {
-                            span.mobile-info.size {
-                                (size)
+                        @if !raw {
+                            @if let Some(size) = entry.size {
+                                span.mobile-info.size {
+                                    (size)
+                                }
                             }
                         }
                     }
@@ -509,7 +586,10 @@ pub fn render_error(
                         }
                     }
                     @if !conf.hide_version_footer {
-                        (version_footer())
+                        p.footer {
+                            (version_footer())
+                        }
+
                     }
                 }
             }

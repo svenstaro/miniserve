@@ -42,7 +42,7 @@ pub struct RequiredAuth {
 }
 
 /// Return `true` if `basic_auth` is matches any of `required_auth`
-pub fn match_auth(basic_auth: BasicAuthParams, required_auth: &[RequiredAuth]) -> bool {
+pub fn match_auth(basic_auth: &BasicAuthParams, required_auth: &[RequiredAuth]) -> bool {
     required_auth
         .iter()
         .any(|RequiredAuth { username, password }| {
@@ -74,6 +74,9 @@ pub fn get_hash<T: Digest>(text: &str) -> Vec<u8> {
     hasher.update(text);
     hasher.finalize().to_vec()
 }
+pub struct CurrentUser {
+    pub name: String,
+}
 
 fn handle_auth(req: &HttpRequest) -> Result<(), ContextualError> {
     let required_auth = &req.app_data::<crate::MiniserveConfig>().unwrap().auth;
@@ -84,8 +87,13 @@ fn handle_auth(req: &HttpRequest) -> Result<(), ContextualError> {
     }
 
     match BasicAuthParams::try_from_request(req) {
-        Ok(cred) => match match_auth(cred, required_auth) {
-            true => Ok(()),
+        Ok(cred) => match match_auth(&cred, required_auth) {
+            true => {
+                req.extensions_mut().insert(CurrentUser {
+                    name: cred.username,
+                });
+                Ok(())
+            }
             false => Err(ContextualError::InvalidHttpCredentials),
         },
         Err(_) => Err(ContextualError::RequireHttpCredentials),
@@ -173,7 +181,7 @@ mod tests {
     ) {
         assert_eq!(
             match_auth(
-                BasicAuthParams {
+                &BasicAuthParams {
                     username: param_username.to_owned(),
                     password: param_password.to_owned(),
                 },
@@ -214,7 +222,7 @@ mod tests {
         password: &str,
     ) {
         assert!(match_auth(
-            BasicAuthParams {
+            &BasicAuthParams {
                 username: username.to_owned(),
                 password: password.to_owned(),
             },
@@ -225,7 +233,7 @@ mod tests {
     #[rstest]
     fn test_multiple_auth_wrong_username(account_sample: Vec<RequiredAuth>) {
         assert_eq!(match_auth(
-            BasicAuthParams {
+            &BasicAuthParams {
                 username: "unregistered user".to_owned(),
                 password: "pwd0".to_owned(),
             },
@@ -248,7 +256,7 @@ mod tests {
         password: &str,
     ) {
         assert_eq!(match_auth(
-            BasicAuthParams {
+            &BasicAuthParams {
                 username: username.to_owned(),
                 password: password.to_owned(),
             },
