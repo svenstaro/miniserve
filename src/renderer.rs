@@ -173,7 +173,7 @@ fn build_upload_action(
 const THEME_PICKER_CHOICES: &[(&str, &str)] = &[
     ("Default (light/dark)", "default"),
     ("Squirrel (light)", "squirrel"),
-    ("Archlinux (dark)", "archlinux"),
+    ("Arch Linux (dark)", "archlinux"),
     ("Zenburn (dark)", "zenburn"),
     ("Monokai (dark)", "monokai"),
 ];
