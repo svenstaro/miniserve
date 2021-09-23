@@ -10,31 +10,17 @@ use select::document::Document;
 use select::predicate::Class;
 use select::predicate::Name;
 
-#[rstest]
-/// The ui displays the correct wget command to download the folder recursively
-fn ui_displays_wget_element(#[with(&["-W"])] server: TestServer) -> Result<(), Error> {
+/// The footer displays the correct wget command to download the folder recursively
+#[rstest(depth, dir, case(0, ""), case(2, "very/deeply/nested/"))]
+fn ui_displays_wget_element(
+    depth: u8,
+    dir: &str,
+    #[with(&["-W"])] server: TestServer,
+) -> Result<(), Error> {
     let client = Client::new();
 
-    let body = client.get(server.url()).send()?.error_for_status()?;
-    let parsed = Document::from_read(body)?;
-    let wget_url = parsed
-        .find(Class("downloadDirectory"))
-        .next()
-        .unwrap()
-        .find(Class("cmd"))
-        .next()
-        .unwrap()
-        .text();
-    assert_eq!(
-        wget_url,
-        format!(
-            "wget -r -c -nH -np --cut-dirs=0 -R \"index.html*\" \"{}?raw=true\"",
-            server.url()
-        )
-    );
-
     let body = client
-        .get(format!("{}/very/deeply/nested/", server.url()))
+        .get(format!("{}{}", server.url(), dir))
         .send()?
         .error_for_status()?;
     let parsed = Document::from_read(body)?;
@@ -49,17 +35,26 @@ fn ui_displays_wget_element(#[with(&["-W"])] server: TestServer) -> Result<(), E
     assert_eq!(
         wget_url,
         format!(
-            "wget -r -c -nH -np --cut-dirs=2 -R \"index.html*\" \"{}very/deeply/nested/?raw=true\"",
-            server.url()
+            "wget -r -c -nH -np --cut-dirs={} -R \"index.html*\" \"{}{}?raw=true\"",
+            depth,
+            server.url(),
+            dir
         )
     );
 
     Ok(())
 }
 
-#[rstest]
 /// All hrefs in raw mode are links to directories or files & directories end with ?raw=true
+#[rstest(
+    dir,
+    case(""),
+    case("very/"),
+    case("very/deeply/"),
+    case("very/deeply/nested/")
+)]
 fn raw_mode_links_to_directories_end_with_raw_true(
+    dir: &str,
     #[with(&["-W"])] server: TestServer,
 ) -> Result<(), Error> {
     fn verify_a_tags(parsed: Document) {
@@ -67,7 +62,10 @@ fn raw_mode_links_to_directories_end_with_raw_true(
         for node in parsed.find(Name("a")) {
             if let Some(class) = node.attr("class") {
                 if class == "root" || class == "directory" {
-                    assert!(node.attr("href").unwrap().ends_with("?raw=true"));
+                    assert!(
+                        node.attr("href").unwrap().ends_with("?raw=true"),
+                        "doesn't end with ?raw=true"
+                    );
                 } else if class == "file" {
                     assert!(true);
                 } else {
@@ -81,20 +79,14 @@ fn raw_mode_links_to_directories_end_with_raw_true(
         }
     }
 
-    let urls = [
-        format!("{}?raw=true", server.url()),
-        format!("{}very/?raw=true", server.url()),
-        format!("{}very/deeply/?raw=true", server.url()),
-        format!("{}very/deeply/nested/?raw=true", server.url()),
-    ];
-
     let client = Client::new();
     // Ensure the links to the archives are not present
-    for url in urls.iter() {
-        let body = client.get(url).send()?.error_for_status()?;
-        let parsed = Document::from_read(body)?;
-        verify_a_tags(parsed);
-    }
+    let body = client
+        .get(format!("{}{}?raw=true", server.url(), dir))
+        .send()?
+        .error_for_status()?;
+    let parsed = Document::from_read(body)?;
+    verify_a_tags(parsed);
 
     Ok(())
 }
