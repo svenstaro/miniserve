@@ -58,10 +58,6 @@ pub enum ContextualError {
     #[error("{0}")]
     ArchiveCreationDetailError(String),
 
-    /// Might occur when the HTTP credentials are not provided
-    #[error("Access requires HTTP authentication")]
-    RequireHttpCredentials,
-
     /// Might occur when the HTTP credentials are not correct
     #[error("Invalid credentials for HTTP authentication")]
     InvalidHttpCredentials,
@@ -90,20 +86,17 @@ impl ResponseError for ContextualError {
             Self::ArchiveCreationError(_, err) => err.status_code(),
             Self::RouteNotFoundError(_) => StatusCode::NOT_FOUND,
             Self::InsufficientPermissionsError(_) => StatusCode::FORBIDDEN,
-            Self::InvalidHttpCredentials | Self::RequireHttpCredentials => StatusCode::UNAUTHORIZED,
+            Self::InvalidHttpCredentials => StatusCode::UNAUTHORIZED,
             Self::InvalidHttpRequestError(_) => StatusCode::BAD_REQUEST,
             _ => StatusCode::INTERNAL_SERVER_ERROR,
         }
     }
 
     fn error_response(&self) -> HttpResponse {
-        if let Self::RequireHttpCredentials = self {
-        } else {
-            log_error_chain(self.to_string());
-        }
+        log_error_chain(self.to_string());
 
         let mut resp = HttpResponse::build(self.status_code());
-        if let Self::RequireHttpCredentials | Self::InvalidHttpCredentials = self {
+        if let Self::InvalidHttpCredentials = self {
             resp.append_header((
                 header::WWW_AUTHENTICATE,
                 header::HeaderValue::from_static("Basic realm=\"miniserve\""),
