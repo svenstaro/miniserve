@@ -51,7 +51,7 @@ mime = "0.3"
 httparse = "1"
 http = "0.2"
 atty = "0.2"
-rustls = { version = "0.19", optional = true }
+rustls = { version = "0.20", optional = true }
 socket2 = "0.4"
 get_if_addrs = "0.5"
 
