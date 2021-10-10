@@ -5,6 +5,7 @@ use std::path::PathBuf;
 use std::thread;
 use std::time::Duration;
 
+use actix_files::NamedFile;
 use actix_web::web;
 use actix_web::{http::header::ContentType, Responder};
 use actix_web::{middleware, App, HttpRequest, HttpResponse};
@@ -320,23 +321,10 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
             None => files,
         };
         let files = match &conf.spa_index {
-            Some(spa_index_file) => {
-                let spa_index_full = &conf.path.join(spa_index_file);
-                let spa_index_string: String = spa_index_full.to_string_lossy().into();
-
-                files.default_handler(move |req: actix_web::dev::ServiceRequest| {
-                    let (request, _payload) = req.into_parts();
-                    let spa_index_string = spa_index_string.clone();
-
-                    async move {
-                        let response = actix_files::NamedFile::open(
-                            &spa_index_string
-                        )?
-                            .into_response(&request);
-                        Ok(actix_web::dev::ServiceResponse::new(request, response))
-                    }
-                })
-            },
+            Some(spa_index_file) => files.default_handler(
+                NamedFile::open(&conf.path.join(spa_index_file))
+                    .expect("Cant open SPA index file.")
+            ),
             None => files.default_handler(web::to(error_404)),
         };
         let files = match conf.show_hidden {
