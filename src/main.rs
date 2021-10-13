@@ -7,6 +7,7 @@ use std::time::Duration;
 use actix_web::web;
 use actix_web::{http::header::ContentType, Responder};
 use actix_web::{middleware, App, HttpRequest, HttpResponse};
+use actix_web_httpauth::middleware::HttpAuthentication;
 use anyhow::{bail, Result};
 use clap::{crate_version, Clap, IntoApp};
 use clap_generate::generators::{Bash, Elvish, Fish, PowerShell, Zsh};
@@ -211,11 +212,10 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
             .route(&format!("/{}", inside_config.css_route), web::get().to(css))
             .service(
                 web::scope(inside_config.random_route.as_deref().unwrap_or(""))
-                    // we should use `actix_web_httpauth::middleware::HttpAuthentication`
-                    // but it is unfortuantrly broken
-                    // see: https://github.com/actix/actix-extras/issues/127
-                    // TODO replace this when fixed upstream
-                    .wrap_fn(auth::auth_middleware)
+                    .wrap(middleware::Condition::new(
+                        !inside_config.auth.is_empty(),
+                        HttpAuthentication::basic(auth::handle_auth),
+                    ))
                     .configure(|c| configure_app(c, &inside_config)),
             )
             .default_service(web::get().to(error_404))
