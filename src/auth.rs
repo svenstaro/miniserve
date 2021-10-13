@@ -1,8 +1,7 @@
-use actix_web::dev::{Service, ServiceRequest, ServiceResponse};
-use actix_web::{HttpRequest, ResponseError};
-use futures::future::Either;
+use actix_web::dev::ServiceRequest;
+use actix_web::HttpMessage;
+use actix_web_httpauth::extractors::basic::BasicAuth;
 use sha2::{Digest, Sha256, Sha512};
-use std::future::{ready, Future};
 
 use crate::errors::ContextualError;
 
@@ -13,16 +12,12 @@ pub struct BasicAuthParams {
     pub password: String,
 }
 
-impl BasicAuthParams {
-    fn try_from_request(req: &HttpRequest) -> actix_web::Result<Self> {
-        use actix_web::http::header::Header;
-        use actix_web_httpauth::headers::authorization::{Authorization, Basic};
-
-        let auth = Authorization::<Basic>::parse(req)?.into_scheme();
-        Ok(Self {
+impl From<BasicAuth> for BasicAuthParams {
+    fn from(auth: BasicAuth) -> Self {
+        Self {
             username: auth.user_id().to_string(),
             password: auth.password().unwrap_or(&"".into()).to_string(),
-        })
+        }
     }
 }
 
@@ -74,47 +69,24 @@ pub fn get_hash<T: Digest>(text: &str) -> Vec<u8> {
     hasher.update(text);
     hasher.finalize().to_vec()
 }
+
 pub struct CurrentUser {
     pub name: String,
 }
 
-fn handle_auth(req: &HttpRequest) -> Result<(), ContextualError> {
+pub async fn handle_auth(
+    req: ServiceRequest,
+    cred: BasicAuth,
+) -> actix_web::Result<ServiceRequest> {
     let required_auth = &req.app_data::<crate::MiniserveConfig>().unwrap().auth;
 
-    if required_auth.is_empty() {
-        // auth is disabled by configuration
-        return Ok(());
-    }
+    req.extensions_mut().insert(CurrentUser {
+        name: cred.user_id().to_string(),
+    });
 
-    match BasicAuthParams::try_from_request(req) {
-        Ok(cred) => match match_auth(&cred, required_auth) {
-            true => {
-                req.extensions_mut().insert(CurrentUser {
-                    name: cred.username,
-                });
-                Ok(())
-            }
-            false => Err(ContextualError::InvalidHttpCredentials),
-        },
-        Err(_) => Err(ContextualError::RequireHttpCredentials),
-    }
-}
-
-pub fn auth_middleware<S>(
-    mut req: ServiceRequest,
-    srv: &S,
-) -> impl Future<Output = actix_web::Result<ServiceResponse>> + 'static
-where
-    S: Service<ServiceRequest, Response = ServiceResponse, Error = actix_web::Error>,
-    S::Future: 'static,
-{
-    match handle_auth(req.parts_mut().0) {
-        Ok(_) => Either::Left(srv.call(req)),
-        Err(err) => {
-            let resp = req.into_response(err.error_response());
-            Either::Right(ready(Ok(resp)))
-        }
-    }
+    match_auth(&cred.into(), required_auth)
+        .then(|| req)
+        .ok_or_else(|| ContextualError::InvalidHttpCredentials.into())
 }
 
 #[rustfmt::skip]
