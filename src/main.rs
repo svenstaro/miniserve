@@ -323,7 +323,7 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
         let files = match &conf.spa_index {
             Some(spa_index_file) => files.default_handler(
                 NamedFile::open(&conf.path.join(spa_index_file))
-                    .expect("Cant open SPA index file.")
+                    .expect("Cant open SPA index file."),
             ),
             None => files.default_handler(web::to(error_404)),
         };
