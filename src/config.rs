@@ -177,7 +177,10 @@ impl MiniserveConfig {
         let tls_rustls_server_config = None;
 
         // If spa_index is set but index is unset, copy the former into the latter
-        let index = args.index.or(args.spa_index.clone());
+        let index = match args.index {
+            Some(index) => Some(index),
+            None => args.spa_index.clone(),
+        };
 
         Ok(MiniserveConfig {
             verbose: args.verbose,
