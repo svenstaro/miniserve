@@ -1,4 +1,4 @@
-use clap::{Clap, ValueHint};
+use clap::{Parser, ValueHint};
 use clap_generate::Shell;
 use http::header::{HeaderMap, HeaderName, HeaderValue};
 use std::net::IpAddr;
@@ -8,14 +8,8 @@ use crate::auth;
 use crate::errors::ContextualError;
 use crate::renderer;
 
-#[derive(Clap)]
-#[clap(
-    name = "miniserve",
-    author,
-    about,
-    version,
-    setting = clap::AppSettings::ColoredHelp,
-)]
+#[derive(Parser)]
+#[clap(name = "miniserve", author, about, version)]
 pub struct CliArgs {
     /// Be verbose, includes emitting access logs
     #[clap(short = 'v', long = "verbose")]
@@ -75,7 +69,7 @@ pub struct CliArgs {
         short = 'c',
         long = "color-scheme",
         default_value = "squirrel",
-        possible_values = &renderer::THEME_SLUGS,
+        possible_values = &*renderer::THEME_SLUGS,
         case_insensitive = true,
     )]
     pub color_scheme: String,
@@ -85,7 +79,7 @@ pub struct CliArgs {
         short = 'd',
         long = "color-scheme-dark",
         default_value = "archlinux",
-        possible_values = &renderer::THEME_SLUGS,
+        possible_values = &*renderer::THEME_SLUGS,
         case_insensitive = true,
     )]
     pub color_scheme_dark: String,
@@ -147,7 +141,7 @@ pub struct CliArgs {
     pub show_wget_footer: bool,
 
     /// Generate completion file for a shell
-    #[clap(long = "print-completions", value_name = "shell", possible_values = &Shell::variants())]
+    #[clap(long = "print-completions", value_name = "shell", arg_enum)]
     pub print_completions: Option<Shell>,
 
     /// TLS certificate to use

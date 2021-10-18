@@ -8,10 +8,9 @@ use actix_web::web;
 use actix_web::{http::header::ContentType, Responder};
 use actix_web::{middleware, App, HttpRequest, HttpResponse};
 use actix_web_httpauth::middleware::HttpAuthentication;
-use anyhow::{bail, Result};
-use clap::{crate_version, Clap, IntoApp};
-use clap_generate::generators::{Bash, Elvish, Fish, PowerShell, Zsh};
-use clap_generate::{generate, Shell};
+use anyhow::Result;
+use clap::{crate_version, IntoApp, Parser};
+use clap_generate::generate;
 use log::{error, warn};
 use qrcodegen::{QrCode, QrCodeEcc};
 use yansi::{Color, Paint};
@@ -34,18 +33,8 @@ fn main() -> Result<()> {
 
     if let Some(shell) = args.print_completions {
         let mut clap_app = args::CliArgs::into_app();
-        match shell {
-            Shell::Bash => generate::<Bash, _>(&mut clap_app, "miniserve", &mut std::io::stdout()),
-            Shell::Elvish => {
-                generate::<Elvish, _>(&mut clap_app, "miniserve", &mut std::io::stdout())
-            }
-            Shell::Fish => generate::<Fish, _>(&mut clap_app, "miniserve", &mut std::io::stdout()),
-            Shell::PowerShell => {
-                generate::<PowerShell, _>(&mut clap_app, "miniserve", &mut std::io::stdout())
-            }
-            Shell::Zsh => generate::<Zsh, _>(&mut clap_app, "miniserve", &mut std::io::stdout()),
-            _ => bail!("Invalid shell provided!"),
-        }
+        let app_name = clap_app.get_name().to_string();
+        generate(shell, &mut clap_app, app_name, &mut io::stdout());
         return Ok(());
     }
 
