@@ -30,7 +30,7 @@ port_check = "0.1"
 bytesize = "1"
 nanoid = "0.4"
 alphanumeric-sort = "1"
-clap = { version = "3.0.0-beta.4", features = ["wrap_help"] }
+clap = { version = "3.0.0-beta.5", features = ["wrap_help"] }
 clap_generate = "3.0.0-beta.4"
 chrono = "0.4"
 chrono-humanize = "0.2"
