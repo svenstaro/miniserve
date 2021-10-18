@@ -1,7 +1,7 @@
 use std::io;
 use std::io::Write;
 use std::net::{IpAddr, SocketAddr, TcpListener};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::thread;
 use std::time::Duration;
 
@@ -275,9 +275,10 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
         .map_err(|e| ContextualError::IoError("".to_owned(), e))
 }
 
-fn check_file_exists(canon_path: &PathBuf, file_option: &Option<PathBuf>, option_name: &str) {
+fn check_file_exists(canon_path: &Path, file_option: &Option<PathBuf>, option_name: &str) {
     if let Some(file_path) = file_option {
-        let has_file: std::path::PathBuf = [&canon_path, file_path].iter().collect();
+        let file_path: &Path = file_path.as_ref();
+        let has_file: std::path::PathBuf = [canon_path, file_path].iter().collect();
         if !has_file.exists() {
             error!(
                 "The file '{}' provided for option --{} could not be found.",
