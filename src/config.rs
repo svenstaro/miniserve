@@ -68,12 +68,12 @@ pub struct MiniserveConfig {
     /// However, if a directory contains this file, miniserve will serve that file instead.
     pub index: Option<std::path::PathBuf>,
 
-    /// The index file of a single page application
+    /// Activate SPA (Single Page Application) mode
     ///
-    /// If this option is set, miniserve will serve the specified file instead of a 404 page when
-    /// a non-existent path is requested. This is intended for single-page applications where
-    /// routing takes place on the client side.
-    pub spa_index: Option<std::path::PathBuf>,
+    /// This will cause the file given by `index` to be served for all non-existing file paths. In
+    /// effect, this will serve the index file whenever a 404 would otherwise occur in order to
+    /// allow the SPA router to handle the request instead.
+    pub spa: bool,
 
     /// Enable QR code display
     pub show_qrcode: bool,
@@ -176,12 +176,6 @@ impl MiniserveConfig {
         #[cfg(not(feature = "tls"))]
         let tls_rustls_server_config = None;
 
-        // If spa_index is set but index is unset, copy the former into the latter
-        let index = match args.index {
-            Some(index) => Some(index),
-            None => args.spa_index.clone(),
-        };
-
         Ok(MiniserveConfig {
             verbose: args.verbose,
             path: args.path.unwrap_or_else(|| PathBuf::from(".")),
@@ -196,8 +190,8 @@ impl MiniserveConfig {
             css_route,
             default_color_scheme,
             default_color_scheme_dark,
-            index,
-            spa_index: args.spa_index,
+            index: args.index,
+            spa: args.spa,
             overwrite_files: args.overwrite_files,
             show_qrcode: args.qrcode,
             file_upload: args.file_upload,

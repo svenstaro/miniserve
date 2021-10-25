@@ -26,13 +26,13 @@ pub struct CliArgs {
     #[clap(long, parse(from_os_str), name = "index_file", value_hint = ValueHint::FilePath)]
     pub index: Option<PathBuf>,
 
-    /// The index file of a single page application
+    /// Activate SPA (Single Page Application) mode
     ///
-    /// If this option is set, miniserve will serve the specified file instead of a 404 page when
-    /// a non-existent path is requested. This is intended for single-page applications where
-    /// routing takes place on the client side.
-    #[clap(long, parse(from_os_str), name = "spa_index_file", value_hint = ValueHint::FilePath)]
-    pub spa_index: Option<PathBuf>,
+    /// This will cause the file given by --index to be served for all non-existing file paths. In
+    /// effect, this will serve the index file whenever a 404 would otherwise occur in order to
+    /// allow the SPA router to handle the request instead.
+    #[clap(long, requires = "index_file")]
+    pub spa: bool,
 
     /// Port to use
     #[clap(short = 'p', long = "port", default_value = "8080")]

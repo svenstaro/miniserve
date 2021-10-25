@@ -97,8 +97,7 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
         ContextualError::IoError("Failed to resolve path to be served".to_string(), e)
     })?;
 
-    check_file_exists(&canon_path, &miniserve_config.index, "index");
-    check_file_exists(&canon_path, &miniserve_config.spa_index, "spa-index");
+    check_file_exists(&canon_path, &miniserve_config.index);
 
     let path_string = canon_path.to_string_lossy();
 
@@ -264,15 +263,14 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
         .map_err(|e| ContextualError::IoError("".to_owned(), e))
 }
 
-fn check_file_exists(canon_path: &Path, file_option: &Option<PathBuf>, option_name: &str) {
+fn check_file_exists(canon_path: &Path, file_option: &Option<PathBuf>) {
     if let Some(file_path) = file_option {
         let file_path: &Path = file_path.as_ref();
         let has_file: std::path::PathBuf = [canon_path, file_path].iter().collect();
         if !has_file.exists() {
             error!(
-                "The file '{}' provided for option --{} could not be found.",
+                "The file '{}' provided for option --index could not be found.",
                 file_path.to_string_lossy(),
-                option_name,
             );
         }
     }
@@ -307,15 +305,25 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
     let files_service = || {
         let files = actix_files::Files::new("", &conf.path);
         let files = match &conf.index {
-            Some(index_file) => files.index_file(index_file.to_string_lossy()),
-            None => files,
-        };
-        let files = match &conf.spa_index {
-            Some(spa_index_file) => files.default_handler(
-                NamedFile::open(&conf.path.join(spa_index_file))
-                    .expect("Cant open SPA index file."),
-            ),
-            None => files.default_handler(web::to(error_404)),
+            Some(index_file) => {
+                if conf.spa {
+                    files
+                        .index_file(index_file.to_string_lossy())
+                        .default_handler(
+                            NamedFile::open(&conf.path.join(index_file))
+                                .expect("Cant open SPA index file."),
+                        )
+                } else {
+                    files.index_file(index_file.to_string_lossy())
+                }
+            }
+            None => {
+                if conf.spa {
+                    unreachable!("This can't be reached since we require --index to be provided if --spa is given via clap");
+                } else {
+                    files
+                }
+            }
         };
         let files = match conf.show_hidden {
             true => files.use_hidden_files(),
