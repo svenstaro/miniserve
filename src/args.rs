@@ -186,11 +186,7 @@ fn parse_auth(src: &str) -> Result<auth::RequiredAuth, ContextualError> {
     };
 
     let password = if let Some(hash_hex) = split.next() {
-        let hash_bin = if let Ok(hash_bin) = hex::decode(hash_hex) {
-            hash_bin
-        } else {
-            return Err(ContextualError::InvalidPasswordHash);
-        };
+        let hash_bin = hex::decode(hash_hex).map_err(|_| ContextualError::InvalidPasswordHash)?;
 
         match second_part {
             "sha256" => auth::RequiredAuthPassword::Sha256(hash_bin),
