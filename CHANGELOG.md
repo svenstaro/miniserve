@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+
+## [0.18.0] - 2021-10-26
 - Add raw mode and raw mode footer display [#508](https://github.com/svenstaro/miniserve/pull/508) (thanks @Jikstra)
 - Add SPA mode [#515](https://github.com/svenstaro/miniserve/pull/515) (thanks @sinking-point)
 
@@ -119,7 +121,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Some theme related bug fixes (thanks @boastful-squirrel)
 
 <!-- next-url -->
-[Unreleased]: https://github.com/svenstaro/miniserve/compare/v0.17.0...HEAD
+[Unreleased]: https://github.com/svenstaro/miniserve/compare/v0.18.0...HEAD
+[0.18.0]: https://github.com/svenstaro/miniserve/compare/v0.17.0...v0.18.0
 [0.17.0]: https://github.com/svenstaro/miniserve/compare/v0.16.0...v0.17.0
 [0.16.0]: https://github.com/svenstaro/miniserve/compare/v0.15.0...v0.16.0
 [0.15.0]: https://github.com/svenstaro/miniserve/compare/v0.14.0...v0.15.0
