@@ -44,7 +44,7 @@ pub fn page(
         html {
             (page_header(&title_path, conf.file_upload, &conf.favicon_route, &conf.css_route))
 
-            body#drop-container
+            body #drop-container
                 .(format!("default_theme_{}", conf.default_color_scheme))
                 .(format!("default_theme_dark_{}", conf.default_color_scheme_dark)) {
 
@@ -81,7 +81,7 @@ pub fn page(
                 }
                 (color_scheme_selector(conf.show_qrcode))
                 div.container {
-                    span#top { }
+                    span #top { }
                     h1.title dir="ltr" {
                         @for el in breadcrumbs {
                             @if el.link == "." {
@@ -110,7 +110,7 @@ pub fn page(
                                 form id="file_submit" action=(upload_action) method="POST" enctype="multipart/form-data" {
                                     p { "Select a file to upload or drag it anywhere into the window" }
                                     div {
-                                        input#file-input type="file" name="file_to_upload" required="" multiple {}
+                                        input #file-input type="file" name="file_to_upload" required="" multiple {}
                                         button type="submit" { "Upload file" }
                                     }
                                 }
@@ -259,7 +259,7 @@ fn color_scheme_selector(show_qrcode: bool) -> Markup {
                         "QR code"
                     }
                     div.qrcode {
-                        img#qrcode alt="QR code" title="QR code of this page";
+                        img #qrcode alt="QR code" title="QR code of this page";
                     }
                 }
             }
