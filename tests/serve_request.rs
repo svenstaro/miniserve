@@ -226,9 +226,9 @@ fn serves_requests_custom_index_notice(tmpdir: TempDir, port: u16) -> Result<(),
     let output = child.wait_with_output().expect("Failed to read stdout");
     let all_text = String::from_utf8(output.stderr);
 
-    assert!(all_text
-        .unwrap()
-        .contains("The file 'not.html' provided for option --index could not be found."));
+    assert!(
+        all_text?.contains("The file 'not.html' provided for option --index could not be found.")
+    );
 
     Ok(())
 }
@@ -237,9 +237,26 @@ fn serves_requests_custom_index_notice(tmpdir: TempDir, port: u16) -> Result<(),
 #[case(server_no_stderr(&["--index", FILES[0]]))]
 #[case(server_no_stderr(&["--index", "does-not-exist.html"]))]
 fn index_fallback_to_listing(#[case] server: TestServer) -> Result<(), Error> {
-    // If index file is not found, show directory listing instead.
-    // both cases should return `Ok`
+    // If index file is not found, show directory listing instead both cases should return `Ok`
     reqwest::blocking::get(server.url())?.error_for_status()?;
+
+    Ok(())
+}
+
+#[rstest]
+#[case(server_no_stderr(&["--spa", "--index", FILES[0]]), "/")]
+#[case(server_no_stderr(&["--spa", "--index", FILES[0]]), "/spa-route")]
+#[case(server_no_stderr(&["--index", FILES[0]]), "/")]
+fn serve_index_instead_of_404_in_spa_mode(
+    #[case] server: TestServer,
+    #[case] url: &str,
+) -> Result<(), Error> {
+    let body = reqwest::blocking::get(format!("{}{}", server.url(), url))?.error_for_status()?;
+    let parsed = Document::from_read(body)?;
+    assert!(parsed
+        .find(|x: &Node| x.text() == "Test Hello Yes")
+        .next()
+        .is_some());
 
     Ok(())
 }
