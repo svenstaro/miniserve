@@ -217,7 +217,7 @@ Alternatively install with [Homebrew](https://brew.sh/).
 
 **With Cargo**: Make sure you have a recent version of Rust. Then you can run
 
-    cargo install miniserve
+    cargo install --locked miniserve
     miniserve
 
 **With Docker:** If you prefer using Docker for this, run
