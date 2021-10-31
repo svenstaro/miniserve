@@ -30,6 +30,14 @@ Sometimes this is just a more practical and quick way than doing things properly
 ### Serve a single file:
 
     miniserve linux-distro.iso
+    
+### Set a custom index file to serve instead of a file listing:
+
+    miniserve --index test.html
+    
+### Serve an SPA (Single Page Application) so that non-existent paths are forwarded to the SPA's router instead
+
+    miniserve --spa --index index.html
 
 ### Require username/password:
 
