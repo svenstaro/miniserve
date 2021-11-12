@@ -1343,27 +1343,19 @@ checksum = "a3e378b66a060d48947b590737b30a1be76706c8dd7b8ba0f2fe3989c68a853f"
 
 [[package]]
 name = "maud"
-version = "0.22.3"
+version = "0.23.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "59d449907de7d1ae5b290cbaf9ea34a8a7df3fa5db027664bb55bb2b0fc1407c"
+checksum = "7384febb4f8fc970cc2efab1650a6f48cac2e79b0b29587c90497b646fb10e1e"
 dependencies = [
- "maud_htmlescape",
  "maud_macros",
 ]
 
 [[package]]
-name = "maud_htmlescape"
-version = "0.17.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0555daa37f94b5ebb206faf8cdc7b260c2aa371b509e929de9a1e37416d97fa6"
-
-[[package]]
 name = "maud_macros"
-version = "0.22.3"
+version = "0.23.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e6896f8e8cdcea80b99ac0f1f7a233708e640737a8517448f50500e401bb8d76"
+checksum = "423430ac467408136d7de93f2929debd8a7bc3e795c92476f45e259b158e3355"
 dependencies = [
- "maud_htmlescape",
  "proc-macro-error",
  "proc-macro2",
  "quote",
