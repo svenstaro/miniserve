@@ -578,7 +578,7 @@ pub fn render_error(
                         p { (error) }
                     }
                     // WARN don't expose random route!
-                    @if !conf.random_route.is_some() {
+                    @if conf.random_route.is_none() {
                         div.error-nav {
                             a.error-back href=(return_address) {
                                 "Go back to file listing"

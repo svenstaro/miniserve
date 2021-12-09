@@ -78,7 +78,7 @@ pub struct CliArgs {
         long = "color-scheme",
         default_value = "squirrel",
         possible_values = &*renderer::THEME_SLUGS,
-        case_insensitive = true,
+        ignore_case = true,
     )]
     pub color_scheme: String,
 
@@ -88,7 +88,7 @@ pub struct CliArgs {
         long = "color-scheme-dark",
         default_value = "archlinux",
         possible_values = &*renderer::THEME_SLUGS,
-        case_insensitive = true,
+        ignore_case = true,
     )]
     pub color_scheme_dark: String,
 

@@ -32,7 +32,7 @@ fn version_shows() -> Result<(), Error> {
 #[test]
 /// Print completions and exit.
 fn print_completions() -> Result<(), Error> {
-    for shell in Shell::arg_values() {
+    for shell in Shell::possible_values() {
         Command::cargo_bin("miniserve")?
             .arg("--print-completions")
             .arg(shell.get_name())
