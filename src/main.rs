@@ -229,7 +229,7 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
     println!("Serving path {}", Color::Yellow.paint(path_string).bold());
 
     println!(
-        "Availabe at (non-exhaustive list):\n    {}\n",
+        "Available at (non-exhaustive list):\n    {}\n",
         display_urls
             .iter()
             .map(|url| Color::Green.paint(url).bold().to_string())
