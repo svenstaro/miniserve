@@ -43,15 +43,12 @@ async fn handle_multipart(
     path: PathBuf,
     overwrite_files: bool,
 ) -> Result<u64, ContextualError> {
-    let filename = field
-        .content_disposition()
-        .and_then(|cd| cd.get_filename().map(String::from))
-        .ok_or_else(|| {
-            ContextualError::ParseError(
-                "HTTP header".to_string(),
-                "Failed to retrieve the name of the file to upload".to_string(),
-            )
-        })?;
+    let filename = field.content_disposition().get_filename().ok_or_else(|| {
+        ContextualError::ParseError(
+            "HTTP header".to_string(),
+            "Failed to retrieve the name of the file to upload".to_string(),
+        )
+    })?;
 
     let filename = sanitize_path(Path::new(&filename), false).ok_or_else(|| {
         ContextualError::InvalidPathError("Invalid file name to upload".to_string())

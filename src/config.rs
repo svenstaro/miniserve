@@ -11,7 +11,7 @@ use anyhow::{Context, Result};
 use http::HeaderMap;
 
 #[cfg(feature = "tls")]
-use rustls::internal::pemfile::{certs, pkcs8_private_keys};
+use rustls_pemfile::{certs, pkcs8_private_keys};
 
 use crate::{args::CliArgs, auth::RequiredAuth};
 
@@ -156,7 +156,6 @@ impl MiniserveConfig {
         let tls_rustls_server_config = if let (Some(tls_cert), Some(tls_key)) =
             (args.tls_cert, args.tls_key)
         {
-            let mut server_config = rustls::ServerConfig::new(rustls::NoClientAuth::new());
             let cert_file = &mut BufReader::new(
                 File::open(&tls_cert)
                     .context(format!("Couldn't access TLS certificate {:?}", tls_cert))?,
@@ -164,10 +163,32 @@ impl MiniserveConfig {
             let key_file = &mut BufReader::new(
                 File::open(&tls_key).context(format!("Couldn't access TLS key {:?}", tls_key))?,
             );
-            let cert_chain = certs(cert_file).map_err(|_| anyhow!("Couldn't load certificates"))?;
+            let cert_chain = match rustls_pemfile::read_one(cert_file) {
+                Ok(item) => match item {
+                    Some(item) => match item {
+                        rustls_pemfile::Item::X509Certificate(item) => item,
+                        _ => return Err(anyhow!("Certfile is not a X509Certificate")),
+                    },
+                    None => {
+                        return Err(anyhow!(
+                            "Certfile does not contain any recognized certificates"
+                        ))
+                    }
+                },
+                _ => return Err(anyhow!("Could not read certfile")),
+            };
             let mut keys =
                 pkcs8_private_keys(key_file).map_err(|_| anyhow!("Couldn't load private key"))?;
-            server_config.set_single_cert(cert_chain, keys.remove(0))?;
+            let server_config = rustls::ServerConfig::builder()
+                .with_safe_default_cipher_suites()
+                .with_safe_default_kx_groups()
+                .with_safe_default_protocol_versions()
+                .unwrap()
+                .with_no_client_auth()
+                .with_single_cert(
+                    vec![rustls::Certificate(cert_chain)],
+                    rustls::PrivateKey(keys.remove(0)),
+                )?;
             Some(server_config)
         } else {
             None

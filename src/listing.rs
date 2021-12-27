@@ -1,7 +1,7 @@
-use actix_web::body::Body;
+use actix_web::body::BoxBody;
 use actix_web::dev::ServiceResponse;
 use actix_web::web::Query;
-use actix_web::{HttpRequest, HttpResponse};
+use actix_web::{HttpMessage, HttpRequest, HttpResponse};
 use bytesize::ByteSize;
 use percent_encoding::{percent_decode_str, utf8_percent_encode};
 use qrcodegen::{QrCode, QrCodeEcc};
@@ -225,7 +225,7 @@ pub fn directory_listing(
                 .body(qr_to_svg_string(&qr, 2)),
             Err(err) => {
                 log::error!("URL is invalid (too long?): {:?}", err);
-                HttpResponse::UriTooLong().body(Body::Empty)
+                HttpResponse::UriTooLong().finish()
             }
         };
         return Ok(ServiceResponse::new(req.clone(), res));

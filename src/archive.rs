@@ -1,4 +1,4 @@
-use actix_web::http::ContentEncoding;
+use actix_web::http::header::ContentEncoding;
 use libflate::gzip::Encoder;
 use serde::Deserialize;
 use std::fs::File;

@@ -1,6 +1,6 @@
 use crate::{renderer::render_error, MiniserveConfig};
 use actix_web::{
-    body::AnyBody,
+    body::{BoxBody, MessageBody},
     dev::{ResponseHead, Service, ServiceRequest, ServiceResponse},
     http::{header, StatusCode},
     HttpRequest, HttpResponse, ResponseError,
@@ -134,13 +134,15 @@ where
     }
 }
 
-fn map_error_page(req: &HttpRequest, head: &mut ResponseHead, body: AnyBody) -> AnyBody {
-    let error_msg = match &body {
-        AnyBody::Bytes(bytes) => match std::str::from_utf8(bytes) {
-            Ok(msg) => msg,
-            _ => return body,
-        },
-        _ => return body,
+fn map_error_page<'a>(req: &HttpRequest, head: &mut ResponseHead, body: BoxBody) -> BoxBody {
+    let error_msg = match body.try_into_bytes() {
+        Ok(bytes) => bytes,
+        Err(body) => return body,
+    };
+
+    let error_msg = match std::str::from_utf8(&error_msg) {
+        Ok(msg) => msg,
+        _ => return BoxBody::new(error_msg),
     };
 
     let conf = req.app_data::<MiniserveConfig>().unwrap();
@@ -155,9 +157,7 @@ fn map_error_page(req: &HttpRequest, head: &mut ResponseHead, body: AnyBody) -> 
         header::HeaderValue::from_static("text/html; charset=utf-8"),
     );
 
-    render_error(error_msg, head.status, conf, return_address)
-        .into_string()
-        .into()
+    BoxBody::new(render_error(error_msg, head.status, conf, return_address).into_string())
 }
 
 pub fn log_error_chain(description: String) {

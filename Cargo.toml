@@ -17,10 +17,10 @@ codegen-units = 1
 panic = 'abort'
 
 [dependencies]
-actix-web = "4.0.0-beta.9"
-actix-files = "0.6.0-beta.7"
-actix-multipart = "0.4.0-beta.6"
-actix-web-httpauth = "0.6.0-beta.2"
+actix-web = "4.0.0-beta.15"
+actix-files = "0.6.0-beta.11"
+actix-multipart = "0.4.0-beta.11"
+actix-web-httpauth = "0.6.0-beta.6"
 maud = "0.23"
 yansi = "0.5"
 simplelog = "0.11"
@@ -50,7 +50,8 @@ mime = "0.3"
 httparse = "1"
 http = "0.2"
 atty = "0.2"
-rustls = { version = "0.19", optional = true }
+rustls = { version = "0.20", optional = true }
+rustls-pemfile = { version = "0.2", optional = true }
 socket2 = "0.4"
 get_if_addrs = "0.5"
 
@@ -60,7 +61,7 @@ default = ["tls"]
 # See also https://github.com/briansmith/ring/issues/1182
 # and https://github.com/briansmith/ring/issues/562
 # and https://github.com/briansmith/ring/issues/1367
-tls = ["rustls", "actix-web/rustls"]
+tls = ["rustls", "rustls-pemfile", "actix-web/rustls"]
 
 [dev-dependencies]
 assert_cmd = "2"
