@@ -60,8 +60,12 @@ pub struct CliArgs {
     )]
     pub auth: Vec<auth::RequiredAuth>,
 
+    /// Use a specific route prefix
+    #[clap(long = "route-prefix")]
+    pub route_prefix: Option<String>,
+
     /// Generate a random 6-hexdigit route
-    #[clap(long = "random-route")]
+    #[clap(long = "random-route", conflicts_with("route-prefix"))]
     pub random_route: bool,
 
     /// Do not follow symbolic links

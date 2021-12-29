@@ -162,7 +162,7 @@ pub fn directory_listing(
     let serve_path = req.path();
 
     let base = Path::new(serve_path);
-    let random_route_abs = format!("/{}", conf.random_route.clone().unwrap_or_default());
+    let random_route_abs = format!("/{}", conf.route_prefix);
     let is_root = base.parent().is_none() || Path::new(&req.path()) == Path::new(&random_route_abs);
 
     let encoded_dir = match base.strip_prefix(random_route_abs) {
@@ -181,10 +181,8 @@ pub fn directory_listing(
         let decoded = percent_decode_str(&encoded_dir).decode_utf8_lossy();
 
         let mut res: Vec<Breadcrumb> = Vec::new();
-        let mut link_accumulator = match &conf.random_route {
-            Some(random_route) => format!("/{}/", random_route),
-            None => "/".to_string(),
-        };
+
+        let mut link_accumulator = format!("{}/", &conf.route_prefix);
 
         let mut components = Path::new(&*decoded).components().peekable();
 
