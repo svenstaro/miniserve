@@ -133,7 +133,7 @@ impl MiniserveConfig {
 
         let route_prefix = match (args.route_prefix, args.random_route) {
             (Some(prefix), _) if prefix.starts_with('/') => prefix,
-            (Some(prefix), _) => format!("/{}", prefix),
+            (Some(prefix), _) => format!("/{}", prefix.trim_matches('/')),
             (_, true) => format!("/{}", nanoid::nanoid!(6, &ROUTE_ALPHABET)),
             _ => "".to_owned(),
         };
