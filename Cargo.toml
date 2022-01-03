@@ -29,8 +29,8 @@ port_check = "0.1"
 bytesize = "1"
 nanoid = "0.4"
 alphanumeric-sort = "1"
-clap = { version = "3.0.0-rc.0", features = ["derive", "cargo", "wrap_help"] }
-clap_generate = "3.0.0-rc.11"
+clap = { version = "3.0.0", features = ["derive", "cargo", "wrap_help"] }
+clap_complete = "3.0.0"
 chrono = "0.4"
 chrono-humanize = "0.2"
 serde = { version = "1", features = ["derive"] }
