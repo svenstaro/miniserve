@@ -165,13 +165,7 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
                 Some(_) => format!("https://{}", addr),
                 None => format!("http://{}", addr),
             })
-            .map(|url| {
-                if !miniserve_config.route_prefix.is_empty() {
-                    format!("{}{}", url, miniserve_config.route_prefix)
-                } else {
-                    url
-                }
-            })
+            .map(|url| format!("{}{}", url, miniserve_config.route_prefix))
             .collect::<Vec<_>>()
     };
 
