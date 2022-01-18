@@ -29,7 +29,7 @@ port_check = "0.1"
 bytesize = "1"
 nanoid = "0.4"
 alphanumeric-sort = "1"
-clap = { version = "3.0.7", features = ["derive", "cargo", "wrap_help"] }
+clap = { version = "3.0.9", features = ["derive", "cargo", "wrap_help"] }
 clap_complete = "3.0.3"
 chrono = "0.4"
 chrono-humanize = "0.2"
