@@ -574,9 +574,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "3.0.7"
+version = "3.0.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "12e8611f9ae4e068fa3e56931fded356ff745e70987ff76924a6e0ab1c8ef2e3"
+checksum = "7a30c3bf9ff12dfe5dae53f0a96e0febcd18420d1c0e7fad77796d9d5c4b5375"
 dependencies = [
  "atty",
  "bitflags",
@@ -596,7 +596,7 @@ version = "3.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6fff450c061c4de8162fd6fa0a7a73f70f10c211869a34897724823ed9ec0046"
 dependencies = [
- "clap 3.0.7",
+ "clap 3.0.10",
 ]
 
 [[package]]
@@ -1426,7 +1426,7 @@ dependencies = [
  "bytesize",
  "chrono",
  "chrono-humanize",
- "clap 3.0.7",
+ "clap 3.0.10",
  "clap_complete",
  "futures",
  "get_if_addrs",
