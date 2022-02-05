@@ -109,18 +109,19 @@ impl ResponseError for ContextualError {
 }
 
 /// Middleware to convert plain-text error responses to user-friendly web pages
-pub fn error_page_middleware<S>(
+pub fn error_page_middleware<S, B>(
     req: ServiceRequest,
     srv: &S,
 ) -> impl Future<Output = actix_web::Result<ServiceResponse>> + 'static
 where
-    S: Service<ServiceRequest, Response = ServiceResponse, Error = actix_web::Error>,
+    S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = actix_web::Error>,
+    B: MessageBody + 'static,
     S::Future: 'static,
 {
     let fut = srv.call(req);
 
     async {
-        let res = fut.await?;
+        let res = fut.await?.map_into_boxed_body();
 
         if (res.status().is_client_error() || res.status().is_server_error())
             && res.headers().get(header::CONTENT_TYPE).map(AsRef::as_ref)
@@ -134,7 +135,7 @@ where
     }
 }
 
-fn map_error_page<'a>(req: &HttpRequest, head: &mut ResponseHead, body: BoxBody) -> BoxBody {
+fn map_error_page(req: &HttpRequest, head: &mut ResponseHead, body: BoxBody) -> BoxBody {
     let error_msg = match body.try_into_bytes() {
         Ok(bytes) => bytes,
         Err(body) => return body,

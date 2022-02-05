@@ -6,8 +6,6 @@ use std::thread;
 use std::time::Duration;
 
 use actix_files::NamedFile;
-use actix_web::body::BoxBody;
-use actix_web::middleware::Compat;
 use actix_web::web;
 use actix_web::{http::header::ContentType, Responder};
 use actix_web::{middleware, App, HttpRequest, HttpResponse};
@@ -200,7 +198,9 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
                 web::scope(inside_config.random_route.as_deref().unwrap_or(""))
                     .wrap(middleware::Condition::new(
                         !inside_config.auth.is_empty(),
-                        Compat::new(HttpAuthentication::basic(auth::handle_auth)),
+                        actix_web::middleware::Compat::new(HttpAuthentication::basic(
+                            auth::handle_auth,
+                        )),
                     ))
                     .configure(|c| configure_app(c, &inside_config)),
             )
@@ -366,7 +366,7 @@ async fn css() -> impl Responder {
     let css = include_str!(concat!(env!("OUT_DIR"), "/style.css"));
     HttpResponse::Ok()
         .insert_header(ContentType(mime::TEXT_CSS))
-        .message_body(BoxBody::new(css))
+        .body(css)
 }
 
 // Prints to the console two inverted QrCodes side by side.
