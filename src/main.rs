@@ -14,7 +14,7 @@ use actix_web::{middleware, App, HttpRequest, HttpResponse};
 use actix_web_httpauth::middleware::HttpAuthentication;
 use anyhow::Result;
 use clap::{crate_version, IntoApp, Parser};
-use clap_generate::generate;
+use clap_complete::generate;
 use log::{error, warn};
 use qrcodegen::{QrCode, QrCodeEcc};
 use yansi::{Color, Paint};

@@ -2,7 +2,7 @@ mod fixtures;
 
 use assert_cmd::prelude::*;
 use clap::{crate_name, crate_version};
-use clap_generate::Shell;
+use clap_complete::Shell;
 use fixtures::Error;
 use std::process::Command;
 
