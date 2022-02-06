@@ -165,10 +165,7 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
                 Some(_) => format!("https://{}", addr),
                 None => format!("http://{}", addr),
             })
-            .map(|url| match miniserve_config.random_route {
-                Some(ref random_route) => format!("{}/{}", url, random_route),
-                None => url,
-            })
+            .map(|url| format!("{}{}", url, miniserve_config.route_prefix))
             .collect::<Vec<_>>()
     };
 
@@ -195,7 +192,7 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
             )
             .route(&format!("/{}", inside_config.css_route), web::get().to(css))
             .service(
-                web::scope(inside_config.random_route.as_deref().unwrap_or(""))
+                web::scope(&inside_config.route_prefix)
                     .wrap(middleware::Condition::new(
                         !inside_config.auth.is_empty(),
                         actix_web::middleware::Compat::new(HttpAuthentication::basic(
