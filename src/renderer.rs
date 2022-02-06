@@ -124,9 +124,11 @@ pub fn page(
                             @if !is_root {
                                 tr {
                                     td colspan="3" {
-                                        span.root-chevron { (chevron_left()) }
-                                        a.root href=(parametrized_link("../", sort_method, sort_order, false)) {
-                                            "Parent directory"
+                                        p {
+                                            span.root-chevron { (chevron_left()) }
+                                            a.root href=(parametrized_link("../", sort_method, sort_order, false)) {
+                                                "Parent directory"
+                                            }
                                         }
                                     }
                                 }
@@ -169,8 +171,10 @@ pub fn raw(entries: Vec<Entry>, is_root: bool) -> Markup {
                         @if !is_root {
                             tr {
                                 td colspan="3" {
-                                    a.root href=(parametrized_link("../", None, None, true)) {
-                                        ".."
+                                    p {
+                                        a.root href=(parametrized_link("../", None, None, true)) {
+                                            ".."
+                                        }
                                     }
                                 }
                             }
