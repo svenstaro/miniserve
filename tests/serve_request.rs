@@ -262,14 +262,14 @@ fn serve_index_instead_of_404_in_spa_mode(
 }
 
 #[rstest]
-fn serves_requests_with_path_prefix(
-    #[with(["--route-prefix", "foobar"])] server: TestServer,
-) -> Result<(), Error> {
+#[case(server(&["--route-prefix", "foobar"]))]
+#[case(server(&["--route-prefix", "/foobar/"]))]
+fn serves_requests_with_route_prefix(#[case] server: TestServer) -> Result<(), Error> {
     let url_without_route = server.url();
     let status = reqwest::blocking::get(url_without_route)?.status();
     assert_eq!(status, StatusCode::NOT_FOUND);
 
-    let url_with_route = format!("{}{}", server.url(), "foobar");
+    let url_with_route = server.url().join("foobar")?;
     let status = reqwest::blocking::get(url_with_route)?.status();
     assert_eq!(status, StatusCode::OK);
 
