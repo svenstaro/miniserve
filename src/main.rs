@@ -198,7 +198,9 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
                 web::scope(inside_config.random_route.as_deref().unwrap_or(""))
                     .wrap(middleware::Condition::new(
                         !inside_config.auth.is_empty(),
-                        HttpAuthentication::basic(auth::handle_auth),
+                        actix_web::middleware::Compat::new(HttpAuthentication::basic(
+                            auth::handle_auth,
+                        )),
                     ))
                     .configure(|c| configure_app(c, &inside_config)),
             )
@@ -296,7 +298,7 @@ fn create_tcp_listener(addr: SocketAddr) -> io::Result<TcpListener> {
 fn configure_header(conf: &MiniserveConfig) -> middleware::DefaultHeaders {
     conf.header.iter().flatten().fold(
         middleware::DefaultHeaders::new(),
-        |headers, (header_name, header_value)| headers.header(header_name, header_value),
+        |headers, (header_name, header_value)| headers.add((header_name, header_value)),
     )
 }
 
@@ -357,14 +359,14 @@ async fn favicon() -> impl Responder {
     let logo = include_str!("../data/logo.svg");
     HttpResponse::Ok()
         .insert_header(ContentType(mime::IMAGE_SVG))
-        .message_body(logo.into())
+        .body(logo)
 }
 
 async fn css() -> impl Responder {
     let css = include_str!(concat!(env!("OUT_DIR"), "/style.css"));
     HttpResponse::Ok()
         .insert_header(ContentType(mime::TEXT_CSS))
-        .message_body(css.into())
+        .body(css)
 }
 
 // Prints to the console two inverted QrCodes side by side.

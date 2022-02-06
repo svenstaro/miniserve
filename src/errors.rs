@@ -1,6 +1,6 @@
 use crate::{renderer::render_error, MiniserveConfig};
 use actix_web::{
-    body::AnyBody,
+    body::{BoxBody, MessageBody},
     dev::{ResponseHead, Service, ServiceRequest, ServiceResponse},
     http::{header, StatusCode},
     HttpRequest, HttpResponse, ResponseError,
@@ -109,18 +109,19 @@ impl ResponseError for ContextualError {
 }
 
 /// Middleware to convert plain-text error responses to user-friendly web pages
-pub fn error_page_middleware<S>(
+pub fn error_page_middleware<S, B>(
     req: ServiceRequest,
     srv: &S,
 ) -> impl Future<Output = actix_web::Result<ServiceResponse>> + 'static
 where
-    S: Service<ServiceRequest, Response = ServiceResponse, Error = actix_web::Error>,
+    S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = actix_web::Error>,
+    B: MessageBody + 'static,
     S::Future: 'static,
 {
     let fut = srv.call(req);
 
     async {
-        let res = fut.await?;
+        let res = fut.await?.map_into_boxed_body();
 
         if (res.status().is_client_error() || res.status().is_server_error())
             && res.headers().get(header::CONTENT_TYPE).map(AsRef::as_ref)
@@ -134,13 +135,15 @@ where
     }
 }
 
-fn map_error_page(req: &HttpRequest, head: &mut ResponseHead, body: AnyBody) -> AnyBody {
-    let error_msg = match &body {
-        AnyBody::Bytes(bytes) => match std::str::from_utf8(bytes) {
-            Ok(msg) => msg,
-            _ => return body,
-        },
-        _ => return body,
+fn map_error_page(req: &HttpRequest, head: &mut ResponseHead, body: BoxBody) -> BoxBody {
+    let error_msg = match body.try_into_bytes() {
+        Ok(bytes) => bytes,
+        Err(body) => return body,
+    };
+
+    let error_msg = match std::str::from_utf8(&error_msg) {
+        Ok(msg) => msg,
+        _ => return BoxBody::new(error_msg),
     };
 
     let conf = req.app_data::<MiniserveConfig>().unwrap();
@@ -155,9 +158,7 @@ fn map_error_page(req: &HttpRequest, head: &mut ResponseHead, body: AnyBody) -> 
         header::HeaderValue::from_static("text/html; charset=utf-8"),
     );
 
-    render_error(error_msg, head.status, conf, return_address)
-        .into_string()
-        .into()
+    BoxBody::new(render_error(error_msg, head.status, conf, return_address).into_string())
 }
 
 pub fn log_error_chain(description: String) {
