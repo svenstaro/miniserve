@@ -251,6 +251,11 @@ table tbody tr td {
     line-height: 1.125rem;
 }
 
+table tbody tr td p {
+    display: flex;
+    align-items: center;
+}
+
 table thead tr th {
     padding: 0.5rem 0.625rem 0.625rem;
     font-weight: bold;
@@ -329,8 +334,8 @@ th span.active span {
 
 .back {
     position: fixed;
-    width: 3.8rem;
-    height: 3.8rem;
+    width: 3rem;
+    height: 3rem;
     align-items: center;
     justify-content: center;
     bottom: 3rem;
@@ -340,6 +345,8 @@ th span.active span {
     box-shadow: 0 0 8px -4px #888888;
     color: var(--back_button_link_color);
     display: none;
+    padding: 0;
+    font-size: 2em;
 }
 
 .back:visited {
@@ -482,9 +489,9 @@ th span.active span {
     }
 
     .mobile-info {
-        display: block;
-        float: right;
-        margin-top: 0.5rem;
+        display: inline-flex;
+        align-items: center;
+        margin: auto;
     }
 
     table tbody tr td {
@@ -492,9 +499,12 @@ th span.active span {
         padding-bottom: 0;
     }
 
-    a.directory {
-        display: block;
+    a {
         padding: 0.5625rem 0;
+    }
+
+    a.directory {
+        flex-grow: 1;
     }
 
     .file-entry {
@@ -503,9 +513,7 @@ th span.active span {
 
     a.root,
     a.file {
-        display: inline-block;
-        flex: 1;
-        padding: 0.5625rem 0;
+        flex-grow: 1;
     }
 
     .back {
