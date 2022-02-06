@@ -53,6 +53,7 @@ fn bind_ipv4_ipv6(
 #[case(&["-i", "0.0.0.0"])]
 #[case(&["-i", "::", "-i", "0.0.0.0"])]
 #[case(&["--random-route"])]
+#[case(&["--route-prefix", "/prefix"])]
 fn validate_printed_urls(tmpdir: TempDir, port: u16, #[case] args: &[&str]) -> Result<(), Error> {
     let mut child = Command::cargo_bin("miniserve")?
         .arg(tmpdir.path())

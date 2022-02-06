@@ -47,8 +47,8 @@ pub struct MiniserveConfig {
     /// Show hidden files
     pub show_hidden: bool,
 
-    /// Enable random route generation
-    pub random_route: Option<String>,
+    /// Route prefix; Either empty or prefixed with slash
+    pub route_prefix: String,
 
     /// Randomly generated favicon route
     pub favicon_route: String,
@@ -131,16 +131,16 @@ impl MiniserveConfig {
             ]
         };
 
-        let random_route = if args.random_route {
-            Some(nanoid::nanoid!(6, &ROUTE_ALPHABET))
-        } else {
-            None
+        let route_prefix = match (args.route_prefix, args.random_route) {
+            (Some(prefix), _) => format!("/{}", prefix.trim_matches('/')),
+            (_, true) => format!("/{}", nanoid::nanoid!(6, &ROUTE_ALPHABET)),
+            _ => "".to_owned(),
         };
 
         // Generate some random routes for the favicon and css so that they are very unlikely to conflict with
         // real files.
-        let favicon_route = nanoid::nanoid!(10, &ROUTE_ALPHABET);
-        let css_route = nanoid::nanoid!(10, &ROUTE_ALPHABET);
+        let favicon_route = format!("{}/{}", route_prefix, nanoid::nanoid!(10, &ROUTE_ALPHABET));
+        let css_route = format!("{}/{}", route_prefix, nanoid::nanoid!(10, &ROUTE_ALPHABET));
 
         let default_color_scheme = args.color_scheme;
         let default_color_scheme_dark = args.color_scheme_dark;
@@ -197,7 +197,7 @@ impl MiniserveConfig {
             path_explicitly_chosen,
             no_symlinks: args.no_symlinks,
             show_hidden: args.hidden,
-            random_route,
+            route_prefix,
             favicon_route,
             css_route,
             default_color_scheme,
