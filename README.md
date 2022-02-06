@@ -87,7 +87,7 @@ Sometimes this is just a more practical and quick way than doing things properly
 
 ## Usage
 
-    miniserve 0.18.0
+    miniserve 0.19.0
 
     Sven-Hendrik Haase <svenstaro@gmail.com>, Boastful Squirrel <boastful.squirrel@gmail.com>
 
@@ -102,7 +102,8 @@ Sometimes this is just a more practical and quick way than doing things properly
 
     OPTIONS:
         -a, --auth <AUTH>
-                Set authentication. Currently supported formats: username:password, username:sha256:hash, username:sha512:hash (e.g. joe:123,
+                Set authentication. Currently supported formats: username:password, username:sha256:hash,
+                username:sha512:hash (e.g. joe:123,
                 joe:sha256:a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3)
 
         -c, --color-scheme <COLOR_SCHEME>
@@ -141,7 +142,8 @@ Sometimes this is just a more practical and quick way than doing things properly
             --index <index_file>
                 The name of a directory index file to serve, like "index.html"
 
-                Normally, when miniserve serves a directory, it creates a listing for that directory. However, if a directory contains this file, miniserve will serve that file instead.
+                Normally, when miniserve serves a directory, it creates a listing for that directory.
+                However, if a directory contains this file, miniserve will serve that file instead.
 
         -l, --show-symlink-info
                 Show symlink info
@@ -171,11 +173,15 @@ Sometimes this is just a more practical and quick way than doing things properly
             --random-route
                 Generate a random 6-hexdigit route
 
+            --route-prefix <ROUTE_PREFIX>
+                Use a specific route prefix
+
             --spa
                 Activate SPA (Single Page Application) mode
 
-                This will cause the file given by --index to be served for all non-existing file paths. In effect, this will serve the index file whenever a 404 would otherwise occur in order to allow the SPA
-                router to handle the request instead.
+                This will cause the file given by --index to be served for all non-existing file paths. In
+                effect, this will serve the index file whenever a 404 would otherwise occur in order to
+                allow the SPA router to handle the request instead.
 
         -t, --title <TITLE>
                 Shown instead of host in page title and heading
@@ -201,7 +207,8 @@ Sometimes this is just a more practical and quick way than doing things properly
         -z, --enable-zip
                 Enable zip archive generation
 
-                WARNING: Zipping large directories can result in out-of-memory exception because zip generation is done in memory and cannot be sent on the fly
+                WARNING: Zipping large directories can result in out-of-memory exception because zip
+                generation is done in memory and cannot be sent on the fly
 
 ## How to install
 
