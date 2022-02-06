@@ -225,7 +225,7 @@ On [Termux](https://termux.com/)
     chmod +x miniserve-osx
     ./miniserve-osx
 
-Alternatively install with [Homebrew](https://brew.sh/).
+Alternatively install with [Homebrew](https://brew.sh/):
 
     brew install miniserve
     miniserve
@@ -234,14 +234,22 @@ Alternatively install with [Homebrew](https://brew.sh/).
 
     miniserve-win.exe
 
+Alternatively install with [Scoop](https://scoop.sh/):
+
+    scoop install miniserve
+
 **With Cargo**: Make sure you have a recent version of Rust. Then you can run
 
     cargo install --locked miniserve
     miniserve
 
-**With Docker:** If you prefer using Docker for this, run
+**With Docker:** Make sure the Docker daemon is running and then run
 
-    docker run -v /tmp:/tmp -p 8080:8080 --rm -it svenstaro/miniserve /tmp
+    docker run -v /tmp:/tmp -p 8080:8080 --rm -it docker.io/svenstaro/miniserve /tmp
+
+**With Podman:** Just run
+
+    podman run -v /tmp:/tmp -p 8080:8080 --rm -it docker.io/svenstaro/miniserve /tmp
 
 ## Shell completions
 
