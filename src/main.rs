@@ -34,7 +34,7 @@ fn main() -> Result<()> {
     let args = args::CliArgs::parse();
 
     if let Some(shell) = args.print_completions {
-        let mut clap_app = args::CliArgs::into_app();
+        let mut clap_app = args::CliArgs::command();
         let app_name = clap_app.get_name().to_string();
         generate(shell, &mut clap_app, app_name, &mut io::stdout());
         return Ok(());

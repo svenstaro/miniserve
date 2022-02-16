@@ -76,8 +76,3 @@ predicates = "2"
 
 [build-dependencies]
 grass = "0.10"
-
-# This needs to stay here at least until https://github.com/abonander/mime_guess/pull/66 is merged.
-# Also see https://github.com/svenstaro/miniserve/issues/160
-[patch.crates-io]
-mime_guess = { git = "https://github.com/svenstaro/mime_guess.git" }
