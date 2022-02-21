@@ -164,6 +164,9 @@ Sometimes this is just a more practical and quick way than doing things properly
 
                 [possible values: bash, elvish, fish, powershell, zsh]
 
+            --print-manpage
+                Generate man page
+
         -q, --qrcode
                 Enable QR code display
 
