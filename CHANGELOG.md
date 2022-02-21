@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - ReleaseDate
 
+## [0.19.2] - 2022-02-21
+
 ## [0.19.1] - 2022-02-16
 - Better MIME type guessing support due to updated mime_guess
 
@@ -129,7 +131,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Some theme related bug fixes (thanks @boastful-squirrel)
 
 <!-- next-url -->
-[Unreleased]: https://github.com/svenstaro/miniserve/compare/v0.19.1...HEAD
+[Unreleased]: https://github.com/svenstaro/miniserve/compare/v0.19.2...HEAD
+[0.19.2]: https://github.com/svenstaro/miniserve/compare/v0.19.1...v0.19.2
 [0.19.1]: https://github.com/svenstaro/miniserve/compare/v0.19.0...v0.19.1
 [0.19.0]: https://github.com/svenstaro/miniserve/compare/v0.18.0...v0.19.0
 [0.18.0]: https://github.com/svenstaro/miniserve/compare/v0.17.0...v0.18.0
