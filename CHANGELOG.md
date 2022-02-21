@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased] - ReleaseDate
 
 ## [0.19.2] - 2022-02-21
+- Add man page support via `--print-manpage` [#738](https://github.com/svenstaro/miniserve/pull/738)
 
 ## [0.19.1] - 2022-02-16
 - Better MIME type guessing support due to updated mime_guess
