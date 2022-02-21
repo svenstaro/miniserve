@@ -40,6 +40,13 @@ fn main() -> Result<()> {
         return Ok(());
     }
 
+    if args.print_manpage {
+        let clap_app = args::CliArgs::command();
+        let man = clap_mangen::Man::new(clap_app);
+        man.render(&mut io::stdout())?;
+        return Ok(());
+    }
+
     let miniserve_config = MiniserveConfig::try_from_args(args)?;
 
     run(miniserve_config).map_err(|e| {

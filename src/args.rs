@@ -156,6 +156,10 @@ pub struct CliArgs {
     #[clap(long = "print-completions", value_name = "shell", arg_enum)]
     pub print_completions: Option<Shell>,
 
+    /// Generate man page
+    #[clap(long = "print-manpage")]
+    pub print_manpage: bool,
+
     /// TLS certificate to use
     #[cfg(feature = "tls")]
     #[clap(long = "tls-cert", requires = "tls-key", value_hint = ValueHint::FilePath)]
