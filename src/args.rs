@@ -104,6 +104,10 @@ pub struct CliArgs {
     #[clap(short = 'u', long = "upload-files")]
     pub file_upload: bool,
 
+    /// Enable image uploading
+    #[clap(short = 'I', long = "upload-images")]
+    pub image_upload: bool,
+
     /// Enable overriding existing files during file upload
     #[clap(short = 'o', long = "overwrite-files")]
     pub overwrite_files: bool,

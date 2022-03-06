@@ -81,6 +81,9 @@ pub struct MiniserveConfig {
     /// Enable file upload
     pub file_upload: bool,
 
+    /// Set the input type for file uploads to image, allowing to take pictures from some browsers on smartphones
+    pub image_upload: bool,
+
     /// Enable upload to override existing files
     pub overwrite_files: bool,
 
@@ -188,6 +191,8 @@ impl MiniserveConfig {
         #[cfg(not(feature = "tls"))]
         let tls_rustls_server_config = None;
 
+        let file_upload = args.file_upload || args.image_upload;
+
         Ok(MiniserveConfig {
             verbose: args.verbose,
             path: args.path.unwrap_or_else(|| PathBuf::from(".")),
@@ -206,7 +211,8 @@ impl MiniserveConfig {
             spa: args.spa,
             overwrite_files: args.overwrite_files,
             show_qrcode: args.qrcode,
-            file_upload: args.file_upload,
+            file_upload,
+            image_upload: args.image_upload,
             tar_enabled: args.enable_tar,
             tar_gz_enabled: args.enable_tar_gz,
             zip_enabled: args.enable_zip,
