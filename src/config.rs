@@ -167,12 +167,11 @@ impl MiniserveConfig {
             let key = pemfile::read_all(key_file)
                 .context("Reading private key file")?
                 .into_iter()
-                .filter_map(|item| match item {
+                .find_map(|item| match item {
                     pemfile::Item::RSAKey(key) | pemfile::Item::PKCS8Key(key) => Some(key),
                     _ => None,
                 })
-                .next()
-                .ok_or(anyhow!("No supported private key in file"))?;
+                .ok_or_else(|| anyhow!("No supported private key in file"))?;
             let server_config = rustls::ServerConfig::builder()
                 .with_safe_defaults()
                 .with_no_client_auth()
