@@ -70,6 +70,13 @@ Sometimes this is just a more practical and quick way than doing things properly
 
 (where `$FILE` is the path to the file. This uses miniserve's default port of 8080)
 
+### Take pictures and upload them from smartphones:
+
+    miniserve -u -m image -q
+
+This uses the `--media-type` option, which sends a hint for the expected media type to the browser.
+Some mobile browsers like Firefox on Android will offer to open the camera app when seeing this.
+
 ## Features
 
 - Easy to use
