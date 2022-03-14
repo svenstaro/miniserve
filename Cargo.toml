@@ -71,7 +71,7 @@ assert_fs = "1"
 select = "0.5"
 rstest = "0.12"
 regex = "1"
-pretty_assertions = "1.0"
+pretty_assertions = "1.2"
 url = "2"
 predicates = "2"
 
