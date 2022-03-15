@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+
+## [0.19.3] - 2022-03-15
 - Allow to set the accept input attribute to arbitrary values using `-m` and `-M` [#755](https://github.com/svenstaro/miniserve/pull/755) (thanks @mayjs)
 
 ## [0.19.2] - 2022-02-21
@@ -133,7 +135,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Some theme related bug fixes (thanks @boastful-squirrel)
 
 <!-- next-url -->
-[Unreleased]: https://github.com/svenstaro/miniserve/compare/v0.19.2...HEAD
+[Unreleased]: https://github.com/svenstaro/miniserve/compare/v0.19.3...HEAD
+[0.19.3]: https://github.com/svenstaro/miniserve/compare/v0.19.2...v0.19.3
 [0.19.2]: https://github.com/svenstaro/miniserve/compare/v0.19.1...v0.19.2
 [0.19.1]: https://github.com/svenstaro/miniserve/compare/v0.19.0...v0.19.1
 [0.19.0]: https://github.com/svenstaro/miniserve/compare/v0.18.0...v0.19.0
