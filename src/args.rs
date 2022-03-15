@@ -8,6 +8,13 @@ use crate::auth;
 use crate::errors::ContextualError;
 use crate::renderer;
 
+#[derive(clap::ArgEnum, Clone)]
+pub enum MediaType {
+    Image,
+    Audio,
+    Video,
+}
+
 #[derive(Parser)]
 #[clap(name = "miniserve", author, about, version)]
 pub struct CliArgs {
@@ -103,6 +110,19 @@ pub struct CliArgs {
     /// Enable file uploading
     #[clap(short = 'u', long = "upload-files")]
     pub file_upload: bool,
+
+    /// Specify uploadable media types
+    #[clap(arg_enum, short = 'm', long = "media-type", requires = "file-upload")]
+    pub media_type: Option<Vec<MediaType>>,
+
+    /// Directly specify the uploadable media type expression
+    #[clap(
+        short = 'M',
+        long = "raw-media-type",
+        requires = "file-upload",
+        conflicts_with = "media-type"
+    )]
+    pub media_type_raw: Option<String>,
 
     /// Enable overriding existing files during file upload
     #[clap(short = 'o', long = "overwrite-files")]

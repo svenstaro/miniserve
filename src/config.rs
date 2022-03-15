@@ -13,7 +13,10 @@ use http::HeaderMap;
 #[cfg(feature = "tls")]
 use rustls_pemfile as pemfile;
 
-use crate::{args::CliArgs, auth::RequiredAuth};
+use crate::{
+    args::{CliArgs, MediaType},
+    auth::RequiredAuth,
+};
 
 /// Possible characters for random routes
 const ROUTE_ALPHABET: [char; 16] = [
@@ -80,6 +83,9 @@ pub struct MiniserveConfig {
 
     /// Enable file upload
     pub file_upload: bool,
+
+    /// HTML accept attribute value
+    pub uploadable_media_type: Option<String>,
 
     /// Enable upload to override existing files
     pub overwrite_files: bool,
@@ -187,6 +193,20 @@ impl MiniserveConfig {
         #[cfg(not(feature = "tls"))]
         let tls_rustls_server_config = None;
 
+        let uploadable_media_type = args.media_type_raw.or_else(|| {
+            args.media_type.map(|types| {
+                types
+                    .into_iter()
+                    .map(|t| match t {
+                        MediaType::Audio => "audio/*",
+                        MediaType::Image => "image/*",
+                        MediaType::Video => "video/*",
+                    })
+                    .collect::<Vec<_>>()
+                    .join(",")
+            })
+        });
+
         Ok(MiniserveConfig {
             verbose: args.verbose,
             path: args.path.unwrap_or_else(|| PathBuf::from(".")),
@@ -206,6 +226,7 @@ impl MiniserveConfig {
             overwrite_files: args.overwrite_files,
             show_qrcode: args.qrcode,
             file_upload: args.file_upload,
+            uploadable_media_type,
             tar_enabled: args.enable_tar,
             tar_gz_enabled: args.enable_tar_gz,
             zip_enabled: args.enable_zip,

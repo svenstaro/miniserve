@@ -107,7 +107,10 @@ pub fn page(
                                 form id="file_submit" action=(upload_action) method="POST" enctype="multipart/form-data" {
                                     p { "Select a file to upload or drag it anywhere into the window" }
                                     div {
-                                        input #file-input type="file" name="file_to_upload" required="" multiple {}
+                                        @match &conf.uploadable_media_type {
+                                            Some(accept) => {input #file-input accept=(accept) type="file" name="file_to_upload" required="" multiple {}},
+                                            None => {input #file-input type="file" name="file_to_upload" required="" multiple {}}
+                                        }
                                         button type="submit" { "Upload file" }
                                     }
                                 }

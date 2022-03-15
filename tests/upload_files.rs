@@ -167,3 +167,23 @@ fn upload_to_symlink_directory(
 
     Ok(())
 }
+
+/// Test setting the HTML accept attribute using -m and -M.
+#[rstest]
+#[case(server(&["-u"]), None)]
+#[case(server(&["-u", "-m", "image"]), Some("image/*"))]
+#[case(server(&["-u", "-m", "image", "-m", "audio", "-m", "video"]), Some("image/*,audio/*,video/*"))]
+#[case(server(&["-u", "-m", "audio", "-m", "image", "-m", "video"]), Some("audio/*,image/*,video/*"))]
+#[case(server(&["-u", "-M", "test_value"]), Some("test_value"))]
+fn set_media_type(
+    #[case] server: TestServer,
+    #[case] expected_accept_value: Option<&str>,
+) -> Result<(), Error> {
+    let body = reqwest::blocking::get(server.url())?.error_for_status()?;
+    let parsed = Document::from_read(body)?;
+
+    let input = parsed.find(Attr("id", "file-input")).next().unwrap();
+    assert_eq!(input.attr("accept"), expected_accept_value);
+
+    Ok(())
+}
