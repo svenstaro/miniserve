@@ -155,6 +155,14 @@ Some mobile browsers like Firefox on Android will offer to open the camera app w
         -l, --show-symlink-info
                 Show symlink info
 
+        -m, --media-type <MEDIA_TYPE>
+                Specify uploadable media types
+
+                [possible values: image, audio, video]
+
+        -M, --raw-media-type <MEDIA_TYPE_RAW>
+                Directly specify the uploadable media type expression
+
         -o, --overwrite-files
                 Enable overriding existing files during file upload
 

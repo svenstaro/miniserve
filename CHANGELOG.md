@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+- Allow to set the accept input attribute to arbitrary values using `-m` and `-M` [#755](https://github.com/svenstaro/miniserve/pull/755) (thanks @mayjs)
 
 ## [0.19.2] - 2022-02-21
 - Add man page support via `--print-manpage` [#738](https://github.com/svenstaro/miniserve/pull/738)
