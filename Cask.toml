@@ -8,3 +8,20 @@ description = """
 
 [darwin]
 x86_64 = { executable = "https://github.com/svenstaro/miniserve/releases/download/v{version}/miniserve-v{version}-x86_64-apple-darwin"}
+aarch64 = { executable = "https://github.com/svenstaro/miniserve/releases/download/v{version}/miniserve-v{version}-aarch64-apple-darwin"}
+
+[windows]
+x86_64 = { executable = "https://github.com/svenstaro/miniserve/releases/download/v{version}/miniserve-v{version}-x86_64-pc-windows-msvc.exe"}
+
+[linux]
+x86_64 = { executable = "https://github.com/svenstaro/miniserve/releases/download/v{version}/miniserve-v{version}-x86_64-unknown-linux-musl"}
+arm = { executable = "https://github.com/svenstaro/miniserve/releases/download/v{version}/miniserve-v{version}-arm-unknown-linux-musleabihf"}
+armv7 = { executable = "https://github.com/svenstaro/miniserve/releases/download/v{version}/miniserve-v{version}-armv7-unknown-linux-musleabihf"}
+aarch64 = { executable = "https://github.com/svenstaro/miniserve/releases/download/v{version}/miniserve-v{version}-aarch64-unknown-linux-musl"}
+mips = { executable = "https://github.com/svenstaro/miniserve/releases/download/v{version}/miniserve-v{version}-mips-unknown-linux-musl"}
+mips64 = { executable = "https://github.com/svenstaro/miniserve/releases/download/v{version}/miniserve-v{version}-mips64-unknown-linux-gnuabi64"}
+mips64el = { executable = "https://github.com/svenstaro/miniserve/releases/download/v{version}/miniserve-v{version}-mips64el-unknown-linux-gnuabi64"}
+riscv64 = { executable = "https://github.com/svenstaro/miniserve/releases/download/v{version}/miniserve-v{version}-riscv64gc-unknown-linux-gnu"}
+
+[freebsd]
+x86_64 = { executable = "https://github.com/svenstaro/miniserve/releases/download/v{version}/miniserve-v{version}-x86_64-unknown-freebsd" }
