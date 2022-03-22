@@ -276,6 +276,10 @@ Alternatively install with [Scoop](https://scoop.sh/):
 
     podman run -v /tmp:/tmp -p 8080:8080 --rm -it docker.io/svenstaro/miniserve /tmp
 
+**With [Cask](https://github.com/axetroy/cask.rs):** Just run
+
+    cask install github.com/svenstaro/miniserve
+
 ## Shell completions
 
 If you'd like to make use of the built-in shell completion support, you need to run `miniserve
