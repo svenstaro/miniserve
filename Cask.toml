@@ -7,4 +7,4 @@ description = """
 """
 
 [darwin]
-x86_64 = "https://github.com/svenstaro/miniserve/releases/download/v{version}/miniserve-v{version}-x86_64-apple-darwin"
+x86_64 = { executable = "https://github.com/svenstaro/miniserve/releases/download/v{version}/miniserve-v{version}-x86_64-apple-darwin"}
