@@ -1,0 +1,10 @@
+[package]
+name = "github.com/svenstaro/miniserve"
+bin = "miniserve"
+repository = "https://github.com/svenstaro/miniserve"
+description = """
+🌟 For when you really just want to serve some files over HTTP right now!
+"""
+
+[darwin]
+x86_64 = "https://github.com/svenstaro/miniserve/releases/download/v{version}/miniserve-v{version}-x86_64-apple-darwin"
