@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+- Fix random route leaking on error pages [#764](https://github.com/svenstaro/miniserve/pull/764) (thanks @steffhip)
 
 ## [0.19.3] - 2022-03-15
 - Allow to set the accept input attribute to arbitrary values using `-m` and `-M` [#755](https://github.com/svenstaro/miniserve/pull/755) (thanks @mayjs)
