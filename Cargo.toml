@@ -56,6 +56,9 @@ rustls-pemfile = { version = "0.3", optional = true }
 socket2 = "0.4"
 get_if_addrs = "0.5"
 
+[patch.crates-io]
+zip = { git="https://github.com/zip-rs/zip", branch="master" }
+
 [features]
 default = ["tls"]
 # This feature allows us to use rustls only on architectures supported by ring.

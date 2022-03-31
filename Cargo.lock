@@ -2922,11 +2922,11 @@ checksum = "09041cd90cf85f7f8b2df60c646f853b7f535ce68f85244eb6731cf89fa498ec"
 [[package]]
 name = "zip"
 version = "0.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e6fa4aa90e99fb8d701bda16fb040d8ed2f9c7176fb44de750e880a74b580315"
+source = "git+https://github.com/zip-rs/zip?branch=master#d00ad632a1f21fdc747e30e25c3eebc047dfd958"
 dependencies = [
  "byteorder",
  "crc32fast",
+ "crossbeam-utils",
 ]
 
 [[package]]
