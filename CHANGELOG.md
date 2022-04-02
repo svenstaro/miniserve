@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+
+## [0.19.4] - 2022-04-02
 - Fix random route leaking on error pages [#764](https://github.com/svenstaro/miniserve/pull/764) (thanks @steffhip)
 
 ## [0.19.3] - 2022-03-15
@@ -136,7 +138,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Some theme related bug fixes (thanks @boastful-squirrel)
 
 <!-- next-url -->
-[Unreleased]: https://github.com/svenstaro/miniserve/compare/v0.19.3...HEAD
+[Unreleased]: https://github.com/svenstaro/miniserve/compare/v0.19.4...HEAD
+[0.19.4]: https://github.com/svenstaro/miniserve/compare/v0.19.3...v0.19.4
 [0.19.3]: https://github.com/svenstaro/miniserve/compare/v0.19.2...v0.19.3
 [0.19.2]: https://github.com/svenstaro/miniserve/compare/v0.19.1...v0.19.2
 [0.19.1]: https://github.com/svenstaro/miniserve/compare/v0.19.0...v0.19.1
