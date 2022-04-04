@@ -76,4 +76,4 @@ url = "2"
 predicates = "2"
 
 [build-dependencies]
-grass = "0.10"
+grass = "0.11"
