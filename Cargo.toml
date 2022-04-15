@@ -52,7 +52,7 @@ httparse = "1"
 http = "0.2"
 atty = "0.2"
 rustls = { version = "0.20", optional = true }
-rustls-pemfile = { version = "0.3", optional = true }
+rustls-pemfile = { version = "1.0", optional = true }
 socket2 = "0.4"
 get_if_addrs = "0.5"
 
