@@ -36,6 +36,7 @@ pub struct QueryParameters {
     pub sort: Option<SortingMethod>,
     pub order: Option<SortingOrder>,
     pub raw: Option<bool>,
+    pub mkdir_name: Option<String>,
     qrcode: Option<String>,
     download: Option<ArchiveMethod>,
 }

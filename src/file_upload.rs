@@ -39,10 +39,68 @@ async fn save_file(
 
 /// Handles a single field in a multipart form
 async fn handle_multipart(
-    field: actix_multipart::Field,
+    mut field: actix_multipart::Field,
     path: PathBuf,
     overwrite_files: bool,
+    allow_mkdir: bool,
+    allow_hidden_paths: bool,
 ) -> Result<u64, ContextualError> {
+    let field_name = field.name().to_string();
+
+    if field_name == "mkdir" {
+        if !allow_mkdir {
+            return Err(ContextualError::InsufficientPermissionsError(
+                path.display().to_string(),
+            ));
+        }
+
+        let mut user_given_path = PathBuf::new();
+        let mut absolute_path = path.clone();
+
+        // Get the path the user gave
+        let mkdir_path_bytes = field.try_next().await;
+        match mkdir_path_bytes {
+            Ok(Some(mkdir_path_bytes)) => {
+                let mkdir_path = std::str::from_utf8(&mkdir_path_bytes).map_err(|e| {
+                    ContextualError::ParseError(
+                        "Failed to parse 'mkdir' path".to_string(),
+                        e.to_string(),
+                    )
+                })?;
+                let mkdir_path = mkdir_path.replace('\\', "/");
+                absolute_path.push(&mkdir_path);
+                user_given_path.push(&mkdir_path);
+            }
+            _ => {
+                return Err(ContextualError::ParseError(
+                    "Failed to parse 'mkdir' path".to_string(),
+                    "".to_string(),
+                ))
+            }
+        };
+
+        // Disallow using `..` (parent) in mkdir path
+        if user_given_path
+            .components()
+            .any(|c| c == Component::ParentDir)
+        {
+            return Err(ContextualError::InvalidPathError(
+                "Cannot use '..' in mkdir path".to_string(),
+            ));
+        }
+        // Hidden paths check
+        sanitize_path(&user_given_path, allow_hidden_paths).ok_or_else(|| {
+            ContextualError::InvalidPathError("Cannot use hidden paths in mkdir path".to_string())
+        })?;
+
+        // Make directories
+        std::fs::create_dir_all(&absolute_path).map_err(|e| {
+            ContextualError::IoError(format!("Failed to create {}", absolute_path.display()), e)
+        })?;
+
+        return Ok(0);
+    }
+
     let filename = field.content_disposition().get_filename().ok_or_else(|| {
         ContextualError::ParseError(
             "HTTP header".to_string(),
@@ -71,7 +129,7 @@ async fn handle_multipart(
     save_file(field, path.join(filename), overwrite_files).await
 }
 
-/// Handle incoming request to upload file.
+/// Handle incoming request to upload a file or create a directory.
 /// Target file path is expected as path parameter in URI and is interpreted as relative from
 /// server root directory. Any path which will go outside of this directory is considered
 /// invalid.
@@ -99,7 +157,7 @@ pub async fn upload_file(
         ContextualError::IoError("Failed to resolve path served by miniserve".to_string(), e)
     })?;
 
-    // If the target path is under the app root directory, save the file.
+    // Disallow the target path to go outside of the served directory
     let target_dir = match app_root_dir.join(upload_path).canonicalize() {
         Ok(path) if !conf.no_symlinks => Ok(path),
         Ok(path) if path.starts_with(&app_root_dir) => Ok(path),
@@ -110,7 +168,15 @@ pub async fn upload_file(
 
     actix_multipart::Multipart::new(req.headers(), payload)
         .map_err(ContextualError::MultipartError)
-        .and_then(|field| handle_multipart(field, target_dir.clone(), conf.overwrite_files))
+        .and_then(|field| {
+            handle_multipart(
+                field,
+                target_dir.clone(),
+                conf.overwrite_files,
+                conf.mkdir_enabled,
+                conf.show_hidden,
+            )
+        })
         .try_collect::<Vec<u64>>()
         .await?;
 

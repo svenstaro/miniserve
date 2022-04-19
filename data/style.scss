@@ -395,39 +395,52 @@ th span.active span {
     margin-right: 1rem;
 }
 
-.upload {
+.toolbar_box_group {
+    min-width: max-content;
+}
+
+.toolbar_box {
     margin-top: 1rem;
     display: flex;
     justify-content: flex-end;
 }
 
-.upload p {
+.toolbar_box p {
     font-size: 0.8rem;
     margin-bottom: 1rem;
     color: var(--upload_text_color);
 }
 
-.upload form {
+.toolbar_box form {
     padding: 1rem;
     border: 1px solid var(--upload_form_border_color);
     background: var(--upload_form_background);
 }
 
-.upload button {
+.toolbar_box input {
+    padding: 0.5rem;
+    margin-right: 0.2rem;
+    border-radius: 0.2rem;
+    border: 0;
+    display: inline;
+}
+
+.toolbar_box button {
     background: var(--upload_button_background);
     padding: 0.5rem;
     border-radius: 0.2rem;
     color: var(--upload_button_text_color);
     border: none;
+    min-width: max-content;
 }
 
-.upload div {
+.toolbar_box div {
     display: flex;
     align-items: baseline;
     justify-content: space-between;
 }
 
-.drag-form {
+.form {
     display: none;
     background: var(--drag_background);
     position: absolute;
@@ -436,9 +449,10 @@ th span.active span {
     height: calc(100% - 1rem);
     text-align: center;
     z-index: 2;
+    margin: 0 5px;
 }
 
-.drag-title {
+.form_title {
     position: fixed;
     color: var(--drag_text_color);
     top: 50%;
@@ -468,6 +482,13 @@ th span.active span {
 
 .error-nav {
     margin-top: 4rem;
+}
+
+@media (min-width: 900px) {
+    .toolbar_box_group {
+        display: flex;
+        justify-content: flex-end;
+    }
 }
 
 @media (max-width: 760px) {

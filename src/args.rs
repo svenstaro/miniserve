@@ -111,6 +111,10 @@ pub struct CliArgs {
     #[clap(short = 'u', long = "upload-files")]
     pub file_upload: bool,
 
+    /// Enable creating directories
+    #[clap(short = 'U', long = "mkdir", requires = "file-upload")]
+    pub mkdir_enabled: bool,
+
     /// Specify uploadable media types
     #[clap(arg_enum, short = 'm', long = "media-type", requires = "file-upload")]
     pub media_type: Option<Vec<MediaType>>,
