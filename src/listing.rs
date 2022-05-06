@@ -1,3 +1,8 @@
+#![allow(clippy::format_push_string)]
+use std::io;
+use std::path::{Component, Path, PathBuf};
+use std::time::SystemTime;
+
 use actix_web::dev::ServiceResponse;
 use actix_web::web::Query;
 use actix_web::{HttpMessage, HttpRequest, HttpResponse};
@@ -5,9 +10,6 @@ use bytesize::ByteSize;
 use percent_encoding::{percent_decode_str, utf8_percent_encode};
 use qrcodegen::{QrCode, QrCodeEcc};
 use serde::Deserialize;
-use std::io;
-use std::path::{Component, Path, PathBuf};
-use std::time::SystemTime;
 use strum_macros::{Display, EnumString};
 
 use crate::archive::ArchiveMethod;
