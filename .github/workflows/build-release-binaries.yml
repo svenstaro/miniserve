@@ -152,7 +152,7 @@ jobs:
           path: ${{ matrix.artifact_name }}
 
       ###
-      # Below this line, steps will only be ran if a tag was pushed.
+      # Below this line, steps will only be run if a tag was pushed.
       ###
 
       - name: Get tag name
