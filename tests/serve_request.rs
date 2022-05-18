@@ -131,41 +131,49 @@ fn serves_requests_symlinks(
     #[case] show_symlink_info: bool,
     #[case] server: TestServer,
 ) -> Result<(), Error> {
-    let files = &["symlink-file.html"];
-    let dirs = &["symlink-dir/"];
-    let broken = &["symlink broken"];
+    let file = "symlink-file.html";
+    let dir = "symlink-dir/";
+    let broken = "symlink broken";
 
-    for &directory in dirs {
-        let orig = DIRECTORIES[0].strip_suffix("/").unwrap();
-        let link = server.path().join(directory.strip_suffix("/").unwrap());
-        symlink_dir(orig, link).expect("Couldn't create symlink");
-    }
-    for &file in files {
-        symlink_file(FILES[0], server.path().join(file)).expect("Couldn't create symlink");
-    }
-    for &file in broken {
-        symlink_file("should-not-exist.xxx", server.path().join(file))
-            .expect("Couldn't create symlink");
-    }
+    // Set up some basic symlinks:
+    // to dir, to file, to non-existant location
+    let orig = DIRECTORIES[0].strip_suffix("/").unwrap();
+    let link = server.path().join(dir.strip_suffix("/").unwrap());
+    symlink_dir(orig, link).expect("Couldn't create symlink");
+    symlink_file(FILES[0], server.path().join(file)).expect("Couldn't create symlink");
+    symlink_file("should-not-exist.xxx", server.path().join(broken))
+        .expect("Couldn't create symlink");
 
     let body = reqwest::blocking::get(server.url())?.error_for_status()?;
     let parsed = Document::from_read(body)?;
 
-    for &entry in files.into_iter().chain(dirs) {
+    for &entry in &[file, dir] {
+        let status = reqwest::blocking::get(server.url().join(&entry)?)?.status();
+        // We expect a 404 here for when `no_symlinks` is `true`.
+        if no_symlinks {
+            assert_eq!(status, StatusCode::NOT_FOUND);
+        } else {
+            assert_eq!(status, StatusCode::OK);
+        }
+
         let node = parsed
             .find(|x: &Node| x.name().unwrap_or_default() == "a" && x.text() == entry)
             .next();
+
+        // If symlinks are deactivated, none should be shown in the listing.
         assert_eq!(node.is_none(), no_symlinks);
         if node.is_some() && show_symlink_info {
             assert_eq!(node.unwrap().attr("class").unwrap(), "symlink");
         }
+
+        // If following symlinks is deactivated, we can just skip this iteration as we assorted
+        // above tht no entries in the listing can be found for symlinks in that case.
         if no_symlinks {
             continue;
         }
 
         let node = node.unwrap();
         assert_eq!(node.attr("href").unwrap().strip_prefix("/").unwrap(), entry);
-        reqwest::blocking::get(server.url().join(&entry)?)?.error_for_status()?;
         if entry.ends_with("/") {
             let node = parsed
                 .find(|x: &Node| x.name().unwrap_or_default() == "a" && x.text() == DIRECTORIES[0])
@@ -178,9 +186,7 @@ fn serves_requests_symlinks(
             assert_eq!(node.unwrap().attr("class").unwrap(), "file");
         }
     }
-    for &entry in broken {
-        assert!(parsed.find(|x: &Node| x.text() == entry).next().is_none());
-    }
+    assert!(parsed.find(|x: &Node| x.text() == broken).next().is_none());
 
     Ok(())
 }

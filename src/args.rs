@@ -75,7 +75,7 @@ pub struct CliArgs {
     #[clap(long = "random-route", conflicts_with("route-prefix"))]
     pub random_route: bool,
 
-    /// Do not follow symbolic links
+    /// Hide symlinks in listing and prevent them from being followed
     #[clap(short = 'P', long = "no-symlinks")]
     pub no_symlinks: bool,
 
@@ -160,7 +160,7 @@ pub struct CliArgs {
     )]
     pub header: Vec<HeaderMap>,
 
-    /// Show symlink info
+    /// Visualize symlinks in directory listing
     #[clap(short = 'l', long = "show-symlink-info")]
     pub show_symlink_info: bool,
 

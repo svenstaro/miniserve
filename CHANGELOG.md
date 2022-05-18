@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+- Fix security issue where `--no-symlinks` would only hide symlinks from listing but it would
+  still be possible to follow them if the path was known
 
 ## [0.19.4] - 2022-04-02
 - Fix random route leaking on error pages [#764](https://github.com/svenstaro/miniserve/pull/764) (thanks @steffhip)
