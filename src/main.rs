@@ -304,6 +304,8 @@ fn configure_header(conf: &MiniserveConfig) -> middleware::DefaultHeaders {
 }
 
 /// Configures the Actix application
+///
+/// This is where we configure the app to serve an index file, the file listing, or a single file.
 fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
     let files_service = || {
         let files = actix_files::Files::new("", &conf.path);
@@ -332,11 +334,28 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
             true => files.use_hidden_files(),
             false => files,
         };
+
+        let base_path = conf.path.clone();
+        let symlinks_may_be_followed = !conf.no_symlinks;
         files
             .show_files_listing()
             .files_listing_renderer(listing::directory_listing)
             .prefer_utf8(true)
             .redirect_to_slash_directory()
+            .path_filter(move |path, _| {
+                // Only allow symlinks to be followed in case conf.no_symlinks is false.
+                let path_is_symlink = base_path
+                    .join(path)
+                    .symlink_metadata()
+                    .map(|m| m.file_type().is_symlink())
+                    .unwrap_or(false);
+
+                if path_is_symlink {
+                    symlinks_may_be_followed
+                } else {
+                    true
+                }
+            })
     };
 
     if !conf.path.is_file() {
