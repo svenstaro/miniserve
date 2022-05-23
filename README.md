@@ -143,6 +143,9 @@ Some mobile browsers like Firefox on Android will offer to open the camera app w
             --header <HEADER>
                 Set custom header for responses
 
+            --hide-theme-selector
+                Hide theme selector
+
         -i, --interfaces <INTERFACES>
                 Interface to listen on
 
@@ -172,7 +175,7 @@ Some mobile browsers like Firefox on Android will offer to open the camera app w
                 [default: 8080]
 
         -P, --no-symlinks
-                Do not follow symbolic links
+                Do not follow symbolic links and prevent them from being followed
 
             --print-completions <shell>
                 Generate completion file for a shell
