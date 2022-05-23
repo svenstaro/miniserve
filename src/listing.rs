@@ -69,7 +69,7 @@ pub enum SortingOrder {
     Descending,
 }
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Eq)]
 /// Possible entry types
 pub enum EntryType {
     /// Entry is a directory

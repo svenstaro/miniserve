@@ -21,7 +21,7 @@ impl From<BasicAuth> for BasicAuthParams {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 /// `password` field of `RequiredAuth`
 pub enum RequiredAuthPassword {
     Plain(String),
@@ -29,7 +29,7 @@ pub enum RequiredAuthPassword {
     Sha512(Vec<u8>),
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 /// Authentication structure to match `BasicAuthParams` against
 pub struct RequiredAuth {
     pub username: String,
