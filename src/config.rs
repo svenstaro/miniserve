@@ -81,7 +81,7 @@ pub struct MiniserveConfig {
     /// Enable QR code display
     pub show_qrcode: bool,
 
-    /// Enable change theme display
+    /// Show theme selector in frontend
     pub show_change_theme: bool,
 
     /// Enable file upload
