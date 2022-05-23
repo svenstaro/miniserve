@@ -83,7 +83,7 @@ pub struct CliArgs {
     #[clap(short = 'H', long = "hidden")]
     pub hidden: bool,
 
-    /// Enable change theme display
+    /// Show theme selector in frontend
     #[clap(long = "change-theme")]
     pub change_theme: bool,
 
