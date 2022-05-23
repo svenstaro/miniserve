@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+- Added `--hide-theme-selector` flag to hide the theme selector functionality in the frontend.
 
 ## [0.19.5] - 2022-05-18
 - Fix security issue where `--no-symlinks` would only hide symlinks from listing but it would
