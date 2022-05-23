@@ -81,6 +81,9 @@ pub struct MiniserveConfig {
     /// Enable QR code display
     pub show_qrcode: bool,
 
+    /// Show theme selector in frontend
+    pub show_change_theme: bool,
+
     /// Enable file upload
     pub file_upload: bool,
 
@@ -225,6 +228,7 @@ impl MiniserveConfig {
             spa: args.spa,
             overwrite_files: args.overwrite_files,
             show_qrcode: args.qrcode,
+            show_change_theme: args.change_theme,
             file_upload: args.file_upload,
             uploadable_media_type,
             tar_enabled: args.enable_tar,

@@ -76,7 +76,7 @@ pub fn page(
                         }
                     }
                 }
-                (color_scheme_selector(conf.show_qrcode))
+                (color_scheme_selector(conf.show_qrcode, conf.show_change_theme))
                 div.container {
                     span #top { }
                     h1.title dir="ltr" {
@@ -254,7 +254,7 @@ const THEME_PICKER_CHOICES: &[(&str, &str)] = &[
 pub const THEME_SLUGS: &[&str] = &["squirrel", "archlinux", "zenburn", "monokai"];
 
 /// Partial: color scheme selector
-fn color_scheme_selector(show_qrcode: bool) -> Markup {
+fn color_scheme_selector(show_qrcode: bool, show_change_theme: bool) -> Markup {
     html! {
         nav {
             @if show_qrcode {
@@ -267,14 +267,16 @@ fn color_scheme_selector(show_qrcode: bool) -> Markup {
                     }
                 }
             }
-            div {
-                p {
-                    "Change theme..."
-                }
-                ul.theme {
-                    @for color_scheme in THEME_PICKER_CHOICES {
-                        li.(format!("theme_{}", color_scheme.1)) {
-                            (color_scheme_link(color_scheme))
+            @if show_change_theme {
+                div {
+                    p {
+                        "Change theme..."
+                    }
+                    ul.theme {
+                        @for color_scheme in THEME_PICKER_CHOICES {
+                            li.(format!("theme_{}", color_scheme.1)) {
+                                (color_scheme_link(color_scheme))
+                            }
                         }
                     }
                 }
