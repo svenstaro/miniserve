@@ -81,9 +81,6 @@ pub struct MiniserveConfig {
     /// Enable QR code display
     pub show_qrcode: bool,
 
-    /// Show theme selector in frontend
-    pub show_change_theme: bool,
-
     /// Enable file upload
     pub file_upload: bool,
 
@@ -116,6 +113,9 @@ pub struct MiniserveConfig {
 
     /// If enabled, version footer is hidden
     pub hide_version_footer: bool,
+
+    /// If enabled, theme selector is hidden
+    pub hide_theme_selector: bool,
 
     /// If enabled, display a wget command to recursively download the current directory
     pub show_wget_footer: bool,
@@ -228,7 +228,6 @@ impl MiniserveConfig {
             spa: args.spa,
             overwrite_files: args.overwrite_files,
             show_qrcode: args.qrcode,
-            show_change_theme: args.change_theme,
             file_upload: args.file_upload,
             uploadable_media_type,
             tar_enabled: args.enable_tar,
@@ -239,6 +238,7 @@ impl MiniserveConfig {
             header: args.header,
             show_symlink_info: args.show_symlink_info,
             hide_version_footer: args.hide_version_footer,
+            hide_theme_selector: args.hide_theme_selector,
             show_wget_footer: args.show_wget_footer,
             tls_rustls_config: tls_rustls_server_config,
         })

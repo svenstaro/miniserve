@@ -83,10 +83,6 @@ pub struct CliArgs {
     #[clap(short = 'H', long = "hidden")]
     pub hidden: bool,
 
-    /// Show theme selector in frontend
-    #[clap(long = "change-theme")]
-    pub change_theme: bool,
-
     /// Default color scheme
     #[clap(
         short = 'c',
@@ -171,6 +167,10 @@ pub struct CliArgs {
     /// Hide version footer
     #[clap(short = 'F', long = "hide-version-footer")]
     pub hide_version_footer: bool,
+
+    /// Hide theme selector
+    #[clap(long = "hide-theme-selector")]
+    pub hide_theme_selector: bool,
 
     /// If enabled, display a wget command to recursively download the current directory
     #[clap(short = 'W', long = "show-wget-footer")]
