@@ -217,12 +217,12 @@ fn wget_footer(title_path: &str, current_user: Option<&CurrentUser>) -> Markup {
         "".to_string()
     };
 
-    return html! {
+    html! {
         div.downloadDirectory {
             p { "Download folder:" }
             div.cmd { (format!("wget -r -c -nH -np --cut-dirs={} -R \"index.html*\"{} \"http://{}/?raw=true\"", count, user_params, title_path)) }
         }
-    };
+    }
 }
 
 /// Build the action of the upload form
