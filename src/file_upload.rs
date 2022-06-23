@@ -44,8 +44,23 @@ async fn handle_multipart(
     overwrite_files: bool,
     allow_mkdir: bool,
     allow_hidden_paths: bool,
+    allow_symlinks: bool,
 ) -> Result<u64, ContextualError> {
     let field_name = field.name().to_string();
+
+    match std::fs::metadata(&path) {
+        Err(_) => Err(ContextualError::InsufficientPermissionsError(
+            path.display().to_string(),
+        )),
+        Ok(metadata) if !metadata.is_dir() => Err(ContextualError::InvalidPathError(format!(
+            "cannot upload file to {}, since it's not a directory",
+            &path.display()
+        ))),
+        Ok(metadata) if metadata.permissions().readonly() => Err(
+            ContextualError::InsufficientPermissionsError(path.display().to_string()),
+        ),
+        Ok(_) => Ok(()),
+    }?;
 
     if field_name == "mkdir" {
         if !allow_mkdir {
@@ -93,9 +108,17 @@ async fn handle_multipart(
             ContextualError::InvalidPathError("Cannot use hidden paths in mkdir path".to_string())
         })?;
 
-        // Make directories
+        // Ensure there are no illegal symlinks
+        if !allow_symlinks {
+            if contains_symlink(&absolute_path) {
+                return Err(ContextualError::InsufficientPermissionsError(
+                    user_given_path.display().to_string(),
+                ));
+            }
+        }
+
         std::fs::create_dir_all(&absolute_path).map_err(|e| {
-            ContextualError::IoError(format!("Failed to create {}", absolute_path.display()), e)
+            ContextualError::IoError(format!("Failed to create {}", user_given_path.display()), e)
         })?;
 
         return Ok(0);
@@ -108,25 +131,20 @@ async fn handle_multipart(
         )
     })?;
 
-    let filename = sanitize_path(Path::new(&filename), false).ok_or_else(|| {
+    let filename_path = sanitize_path(Path::new(&filename), false).ok_or_else(|| {
         ContextualError::InvalidPathError("Invalid file name to upload".to_string())
     })?;
 
-    match std::fs::metadata(&path) {
-        Err(_) => Err(ContextualError::InsufficientPermissionsError(
-            path.display().to_string(),
-        )),
-        Ok(metadata) if !metadata.is_dir() => Err(ContextualError::InvalidPathError(format!(
-            "cannot upload file to {}, since it's not a directory",
-            &path.display()
-        ))),
-        Ok(metadata) if metadata.permissions().readonly() => Err(
-            ContextualError::InsufficientPermissionsError(path.display().to_string()),
-        ),
-        Ok(_) => Ok(()),
-    }?;
+    // Ensure there are no illegal symlinks in the file upload path
+    if !allow_symlinks {
+        if contains_symlink(&path) {
+            return Err(ContextualError::InsufficientPermissionsError(
+                filename.to_string(),
+            ));
+        }
+    }
 
-    save_file(field, path.join(filename), overwrite_files).await
+    save_file(field, path.join(filename_path), overwrite_files).await
 }
 
 /// Handle incoming request to upload a file or create a directory.
@@ -158,7 +176,10 @@ pub async fn upload_file(
     })?;
 
     // Disallow the target path to go outside of the served directory
-    let target_dir = match app_root_dir.join(upload_path).canonicalize() {
+    // The target directory shouldn't be canonicalized when it gets passed to
+    // handle_multipart so that it can check for symlinks if needed
+    let non_canonicalized_target_dir = app_root_dir.join(upload_path);
+    match non_canonicalized_target_dir.canonicalize() {
         Ok(path) if !conf.no_symlinks => Ok(path),
         Ok(path) if path.starts_with(&app_root_dir) => Ok(path),
         _ => Err(ContextualError::InvalidHttpRequestError(
@@ -171,10 +192,11 @@ pub async fn upload_file(
         .and_then(|field| {
             handle_multipart(
                 field,
-                target_dir.clone(),
+                non_canonicalized_target_dir.clone(),
                 conf.overwrite_files,
                 conf.mkdir_enabled,
                 conf.show_hidden,
+                !conf.no_symlinks,
             )
         })
         .try_collect::<Vec<u64>>()
@@ -212,6 +234,28 @@ fn sanitize_path(path: &Path, traverse_hidden: bool) -> Option<PathBuf> {
     }
 
     Some(buf)
+}
+
+/// Returns if a path goes through a symolic link
+fn contains_symlink(path: &PathBuf) -> bool {
+    let mut joined_path = PathBuf::new();
+    for path_slice in path {
+        joined_path = joined_path.join(path_slice);
+        if !joined_path.exists() {
+            // On Windows, `\\?\` won't exist even though it's the root
+            // So, we can't just return here
+            // But we don't need to check if it's a symlink since it won't be
+            continue;
+        }
+        if joined_path
+            .symlink_metadata()
+            .map(|m| m.file_type().is_symlink())
+            .unwrap_or(false)
+        {
+            return true;
+        }
+    }
+    false
 }
 
 #[cfg(test)]
