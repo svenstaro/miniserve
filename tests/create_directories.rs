@@ -90,6 +90,8 @@ fn creating_directories_is_prevented(server: TestServer) -> Result<(), Error> {
     Ok(())
 }
 
+/// This should fail because directory creation through symlinks should not be possible
+/// when the the no symlinks flag is set.
 #[rstest]
 fn creating_directories_through_symlinks_is_prevented(
     #[with(&["--upload-files", "--mkdir", "--no-symlinks"])] server: TestServer,
