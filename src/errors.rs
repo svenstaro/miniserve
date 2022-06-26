@@ -30,7 +30,7 @@ pub enum ContextualError {
     #[error("Invalid format for credentials string. Expected username:password, username:sha256:hash or username:sha512:hash")]
     InvalidAuthFormat,
 
-    /// Might occure if the hash method is neither sha256 nor sha512
+    /// Might occur if the hash method is neither sha256 nor sha512
     #[error("{0} is not a valid hashing method. Expected sha256 or sha512")]
     InvalidHashMethod(String),
 
@@ -42,7 +42,7 @@ pub enum ContextualError {
     #[error("HTTP password length exceeds 255 characters")]
     PasswordTooLongError,
 
-    /// Might occur if the user has unsufficient permissions to create an entry in a given directory
+    /// Might occur if the user has insufficient permissions to create an entry in a given directory
     #[error("Insufficient permissions to create file in {0}")]
     InsufficientPermissionsError(String),
 
@@ -51,7 +51,7 @@ pub enum ContextualError {
     ParseError(String, String),
 
     /// Might occur when the creation of an archive fails
-    #[error("An error occured while creating the {0}\ncaused by: {1}")]
+    #[error("An error occurred while creating the {0}\ncaused by: {1}")]
     ArchiveCreationError(String, Box<ContextualError>),
 
     /// More specific archive creation failure reason

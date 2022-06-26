@@ -81,6 +81,9 @@ pub struct MiniserveConfig {
     /// Enable QR code display
     pub show_qrcode: bool,
 
+    /// Enable creating directories
+    pub mkdir_enabled: bool,
+
     /// Enable file upload
     pub file_upload: bool,
 
@@ -228,6 +231,7 @@ impl MiniserveConfig {
             spa: args.spa,
             overwrite_files: args.overwrite_files,
             show_qrcode: args.qrcode,
+            mkdir_enabled: args.mkdir_enabled,
             file_upload: args.file_upload,
             uploadable_media_type,
             tar_enabled: args.enable_tar,

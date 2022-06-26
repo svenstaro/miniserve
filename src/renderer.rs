@@ -29,6 +29,7 @@ pub fn page(
     let (sort_method, sort_order) = (query_params.sort, query_params.order);
 
     let upload_action = build_upload_action(&upload_route, encoded_dir, sort_method, sort_order);
+    let mkdir_action = build_mkdir_action(&upload_route, encoded_dir);
 
     let title_path = breadcrumbs
         .iter()
@@ -69,10 +70,20 @@ pub fn page(
                     </script>
                     "#))
 
-                @if conf.file_upload {
-                    div.drag-form {
-                        div.drag-title {
-                            h1 { "Drop your file here to upload it" }
+                div.toolbar_box_group {
+                    @if conf.file_upload {
+                        div.form {
+                            div.form_title {
+                                h1 { "Drop your file here to upload it" }
+                            }
+                        }
+                    }
+
+                    @if conf.mkdir_enabled {
+                        div.form {
+                            div.form_title {
+                                h1 { "Create a new directory" }
+                            }
                         }
                     }
                 }
@@ -102,16 +113,29 @@ pub fn page(
                                 }
                             }
                         }
-                        @if conf.file_upload {
-                            div.upload {
-                                form id="file_submit" action=(upload_action) method="POST" enctype="multipart/form-data" {
-                                    p { "Select a file to upload or drag it anywhere into the window" }
-                                    div {
-                                        @match &conf.uploadable_media_type {
-                                            Some(accept) => {input #file-input accept=(accept) type="file" name="file_to_upload" required="" multiple {}},
-                                            None => {input #file-input type="file" name="file_to_upload" required="" multiple {}}
+                        div.toolbar_box_group {
+                            @if conf.file_upload {
+                                div.toolbar_box {
+                                    form id="file_submit" action=(upload_action) method="POST" enctype="multipart/form-data" {
+                                        p { "Select a file to upload or drag it anywhere into the window" }
+                                        div {
+                                            @match &conf.uploadable_media_type {
+                                                Some(accept) => {input #file-input accept=(accept) type="file" name="file_to_upload" required="" multiple {}},
+                                                None => {input #file-input type="file" name="file_to_upload" required="" multiple {}}
+                                            }
+                                            button type="submit" { "Upload file" }
                                         }
-                                        button type="submit" { "Upload file" }
+                                    }
+                                }
+                            }
+                            @if conf.mkdir_enabled {
+                                div.toolbar_box {
+                                    form id="mkdir" action=(mkdir_action) method="POST" enctype="multipart/form-data" {
+                                        p { "Specify a directory name to create" }
+                                        div.toolbar_box {
+                                            input type="text" name="mkdir" required="" placeholder="Directory name" {}
+                                            button type="submit" { "Create directory" }
+                                        }
                                     }
                                 }
                             }
@@ -241,6 +265,11 @@ fn build_upload_action(
     }
 
     upload_action
+}
+
+/// Build the action of the mkdir form
+fn build_mkdir_action(mkdir_route: &str, encoded_dir: &str) -> String {
+    format!("{}?path={}", mkdir_route, encoded_dir)
 }
 
 const THEME_PICKER_CHOICES: &[(&str, &str)] = &[

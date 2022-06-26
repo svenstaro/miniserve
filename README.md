@@ -70,6 +70,15 @@ Sometimes this is just a more practical and quick way than doing things properly
 
 (where `$FILE` is the path to the file. This uses miniserve's default port of 8080)
 
+### Create a directory using `curl`:
+
+    # in one terminal
+    miniserve --upload-files --mkdir .
+    # in another terminal
+    curl -F "mkdir=$DIR_NAME" http://localhost:8080/upload\?path=\/
+
+(where `$DIR_NAME` is the name of the directory. This uses miniserve's default port of 8080.)
+
 ### Take pictures and upload them from smartphones:
 
     miniserve -u -m image -q
@@ -86,6 +95,7 @@ Some mobile browsers like Firefox on Android will offer to open the camera app w
 - Mega fast and highly parallel (thanks to [Rust](https://www.rust-lang.org/) and [Actix](https://actix.rs/))
 - Folder download (compressed on the fly as `.tar.gz` or `.zip`)
 - File uploading
+- Directory creation
 - Pretty themes (with light and dark theme support)
 - Scan QR code for quick access
 - Shell completions
@@ -215,6 +225,9 @@ Some mobile browsers like Firefox on Android will offer to open the camera app w
 
         -u, --upload-files
                 Enable file uploading
+
+        -U  --mkdir
+                Enable directory creating
 
         -v, --verbose
                 Be verbose, includes emitting access logs
