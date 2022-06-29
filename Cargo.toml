@@ -30,7 +30,7 @@ bytesize = "1"
 nanoid = "0.4"
 alphanumeric-sort = "1"
 clap = { version = "3.2", features = ["derive", "cargo", "wrap_help"] }
-clap_complete = "3.2.2"
+clap_complete = "3.2.3"
 clap_mangen = "0.1"
 chrono = "0.4"
 chrono-humanize = "0.2"
