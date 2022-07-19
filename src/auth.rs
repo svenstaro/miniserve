@@ -77,16 +77,18 @@ pub struct CurrentUser {
 pub async fn handle_auth(
     req: ServiceRequest,
     cred: BasicAuth,
-) -> actix_web::Result<ServiceRequest> {
+) -> actix_web::Result<ServiceRequest, (actix_web::Error, ServiceRequest)> {
     let required_auth = &req.app_data::<crate::MiniserveConfig>().unwrap().auth;
 
     req.extensions_mut().insert(CurrentUser {
         name: cred.user_id().to_string(),
     });
 
-    match_auth(&cred.into(), required_auth)
-        .then(|| req)
-        .ok_or_else(|| ContextualError::InvalidHttpCredentials.into())
+    if match_auth(&cred.into(), required_auth) {
+        Ok(req)
+    } else {
+        Err((ContextualError::InvalidHttpCredentials.into(), req))
+    }
 }
 
 #[rustfmt::skip]
