@@ -232,7 +232,7 @@ pub fn qr_code_page(qr: &QrCode) -> Markup {
     html! {
         (DOCTYPE)
         html {
-            body {
+            body.qr_code_page {
                 // make QR code expand and fill page
                 style {
                     (PreEscaped("\

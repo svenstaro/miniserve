@@ -818,6 +818,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b5320ae4c3782150d900b79807611a59a99fc9a1d61d686faafc24b93fc8d7ca"
 
 [[package]]
+name = "fake-tty"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1caac348c61d1f9a7d43c3629abc75540754a4971944953f84b98cb8280e3971"
+
+[[package]]
 name = "fancy-regex"
 version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1563,6 +1569,7 @@ dependencies = [
  "clap_complete",
  "clap_mangen",
  "comrak",
+ "fake-tty",
  "futures",
  "get_if_addrs",
  "grass",

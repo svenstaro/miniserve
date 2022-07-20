@@ -69,6 +69,7 @@ tls = ["rustls", "rustls-pemfile", "actix-web/rustls"]
 [dev-dependencies]
 assert_cmd = "2"
 assert_fs = "1"
+fake-tty = "0.2.0"
 predicates = "2"
 pretty_assertions = "1.2"
 regex = "1"
