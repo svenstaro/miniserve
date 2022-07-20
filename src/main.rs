@@ -307,67 +307,47 @@ fn configure_header(conf: &MiniserveConfig) -> middleware::DefaultHeaders {
 ///
 /// This is where we configure the app to serve an index file, the file listing, or a single file.
 fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
-    let files_service = || {
-        let files = actix_files::Files::new("", &conf.path);
-        let files = match &conf.index {
-            Some(index_file) => {
-                if conf.spa {
-                    files
-                        .index_file(index_file.to_string_lossy())
-                        .default_handler(
-                            NamedFile::open(&conf.path.join(index_file))
-                                .expect("Cant open SPA index file."),
-                        )
-                } else {
-                    files.index_file(index_file.to_string_lossy())
-                }
+    let dir_service = || {
+        let mut files = actix_files::Files::new("", &conf.path);
+
+        if let Some(ref index_file) = conf.index {
+            files = files.index_file(index_file.to_string_lossy());
+            // --spa requires --index in clap
+            if conf.spa {
+                files = files.default_handler(
+                    NamedFile::open(&conf.path.join(index_file))
+                        .expect("Cant open SPA index file."),
+                );
             }
-            None => {
-                if conf.spa {
-                    unreachable!("This can't be reached since we require --index to be provided if --spa is given via clap");
-                } else {
-                    files
-                }
-            }
-        };
-        let files = match conf.show_hidden {
-            true => files.use_hidden_files(),
-            false => files,
-        };
+        }
+
+        if conf.show_hidden {
+            files = files.use_hidden_files();
+        }
 
         let base_path = conf.path.clone();
-        let symlinks_may_be_followed = !conf.no_symlinks;
+        let no_symlinks = conf.no_symlinks;
         files
             .show_files_listing()
             .files_listing_renderer(listing::directory_listing)
             .prefer_utf8(true)
             .redirect_to_slash_directory()
             .path_filter(move |path, _| {
-                // Only allow symlinks to be followed in case conf.no_symlinks is false.
-                let path_is_symlink = base_path
-                    .join(path)
-                    .symlink_metadata()
-                    .map(|m| m.file_type().is_symlink())
-                    .unwrap_or(false);
-
-                if path_is_symlink {
-                    symlinks_may_be_followed
-                } else {
-                    true
-                }
+                // deny symlinks if conf.no_symlinks
+                !(no_symlinks && base_path.join(path).is_symlink())
             })
     };
 
-    if !conf.path.is_file() {
+    if conf.path.is_file() {
+        // Handle single files
+        app.service(web::resource(["", "/"]).route(web::to(listing::file_handler)));
+    } else {
         if conf.file_upload {
             // Allow file upload
             app.service(web::resource("/upload").route(web::post().to(file_upload::upload_file)));
         }
         // Handle directories
-        app.service(files_service());
-    } else {
-        // Handle single files
-        app.service(web::resource(["", "/"]).route(web::to(listing::file_handler)));
+        app.service(dir_service());
     }
 }
 
