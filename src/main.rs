@@ -1,7 +1,6 @@
 use std::io;
 use std::io::Write;
 use std::net::{IpAddr, SocketAddr, TcpListener};
-use std::path::{Path, PathBuf};
 use std::thread;
 use std::time::Duration;
 
@@ -70,33 +69,19 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
         simplelog::LevelFilter::Warn
     };
 
-    if simplelog::TermLogger::init(
+    simplelog::TermLogger::init(
         log_level,
         simplelog::Config::default(),
         simplelog::TerminalMode::Mixed,
         simplelog::ColorChoice::Auto,
     )
-    .is_err()
-    {
-        simplelog::SimpleLogger::init(log_level, simplelog::Config::default())
-            .expect("Couldn't initialize logger")
-    }
+    .or_else(|_| simplelog::SimpleLogger::init(log_level, simplelog::Config::default()))
+    .expect("Couldn't initialize logger");
 
-    if miniserve_config.no_symlinks {
-        let is_symlink = miniserve_config
-            .path
-            .symlink_metadata()
-            .map_err(|e| {
-                ContextualError::IoError("Failed to retrieve symlink's metadata".to_string(), e)
-            })?
-            .file_type()
-            .is_symlink();
-
-        if is_symlink {
-            return Err(ContextualError::NoSymlinksOptionWithSymlinkServePath(
-                miniserve_config.path.to_string_lossy().to_string(),
-            ));
-        }
+    if miniserve_config.no_symlinks && miniserve_config.path.is_symlink() {
+        return Err(ContextualError::NoSymlinksOptionWithSymlinkServePath(
+            miniserve_config.path.to_string_lossy().to_string(),
+        ));
     }
 
     let inside_config = miniserve_config.clone();
@@ -105,7 +90,15 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
         ContextualError::IoError("Failed to resolve path to be served".to_string(), e)
     })?;
 
-    check_file_exists(&canon_path, &miniserve_config.index);
+    // warn if --index is specified but not found
+    if let Some(ref index) = miniserve_config.index {
+        if !canon_path.join(index).exists() {
+            warn!(
+                "The file '{}' provided for option --index could not be found.",
+                index.to_string_lossy(),
+            );
+        }
+    }
 
     let path_string = canon_path.to_string_lossy();
 
@@ -265,19 +258,6 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
 
     srv.await
         .map_err(|e| ContextualError::IoError("".to_owned(), e))
-}
-
-fn check_file_exists(canon_path: &Path, file_option: &Option<PathBuf>) {
-    if let Some(file_path) = file_option {
-        let file_path: &Path = file_path.as_ref();
-        let has_file: std::path::PathBuf = [canon_path, file_path].iter().collect();
-        if !has_file.exists() {
-            error!(
-                "The file '{}' provided for option --index could not be found.",
-                file_path.to_string_lossy(),
-            );
-        }
-    }
 }
 
 /// Allows us to set low-level socket options
