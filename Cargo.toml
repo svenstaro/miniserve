@@ -1,60 +1,60 @@
 [package]
-name = "miniserve"
-version = "0.20.0"
-description = "For when you really just want to serve some files over HTTP right now!"
 authors = ["Sven-Hendrik Haase <svenstaro@gmail.com>", "Boastful Squirrel <boastful.squirrel@gmail.com>"]
-repository = "https://github.com/svenstaro/miniserve"
-license = "MIT"
-readme = "README.md"
-keywords = ["serve", "http-server", "static-files", "http", "server"]
 categories = ["command-line-utilities", "network-programming", "web-programming::http-server"]
+description = "For when you really just want to serve some files over HTTP right now!"
 edition = "2021"
+keywords = ["serve", "http-server", "static-files", "http", "server"]
+license = "MIT"
+name = "miniserve"
+readme = "README.md"
+repository = "https://github.com/svenstaro/miniserve"
+version = "0.20.0"
 
 [profile.release]
+codegen-units = 1
 lto = true
 opt-level = 'z'
-codegen-units = 1
 panic = 'abort'
 
 [dependencies]
-actix-web = "4"
 actix-files = "0.6"
 actix-multipart = "0.4"
+actix-web = "4"
 actix-web-httpauth = "0.7"
-maud = "0.23"
-yansi = "0.5"
-simplelog = "0.12"
-percent-encoding = "2"
-port_check = "0.1"
-bytesize = "1"
-nanoid = "0.4"
 alphanumeric-sort = "1"
-clap = { version = "3.2", features = ["derive", "cargo", "wrap_help"] }
-clap_complete = "3.2.3"
-clap_mangen = "0.1"
+anyhow = "1"
+atty = "0.2"
+bytesize = "1"
 chrono = "0.4"
 chrono-humanize = "0.2"
-serde = { version = "1", features = ["derive"] }
-tar = "0.4"
+clap = {version = "3.2", features = ["derive", "cargo", "wrap_help"]}
+clap_complete = "3.2.3"
+clap_mangen = "0.1"
 futures = "0.3"
+get_if_addrs = "0.5"
+hex = "0.4"
+http = "0.2"
+httparse = "1"
 libflate = "1"
-thiserror = "1"
-anyhow = "1"
 log = "0.4"
+maud = "0.23"
+mime = "0.3"
+nanoid = "0.4"
+percent-encoding = "2"
+port_check = "0.1"
+qrcode = "0.12.0"
+rustls = {version = "0.20", optional = true}
+rustls-pemfile = {version = "1.0", optional = true}
+serde = {version = "1", features = ["derive"]}
+sha2 = "0.10"
+simplelog = "0.12"
+socket2 = "0.4"
 strum = "0.24"
 strum_macros = "0.24"
-sha2 = "0.10"
-hex = "0.4"
-zip = { version = "0.6.2", default-features = false }
-qrcodegen = "1"
-mime = "0.3"
-httparse = "1"
-http = "0.2"
-atty = "0.2"
-rustls = { version = "0.20", optional = true }
-rustls-pemfile = { version = "1.0", optional = true }
-socket2 = "0.4"
-get_if_addrs = "0.5"
+tar = "0.4"
+thiserror = "1"
+yansi = "0.5"
+zip = {version = "0.6.2", default-features = false}
 
 [features]
 default = ["tls"]
@@ -66,14 +66,14 @@ tls = ["rustls", "rustls-pemfile", "actix-web/rustls"]
 
 [dev-dependencies]
 assert_cmd = "2"
-reqwest = { version = "0.11", features = ["blocking", "multipart", "rustls-tls"], default-features = false }
 assert_fs = "1"
-select = "0.5"
-rstest = "0.15"
-regex = "1"
-pretty_assertions = "1.2"
-url = "2"
 predicates = "2"
+pretty_assertions = "1.2"
+regex = "1"
+reqwest = {version = "0.11", features = ["blocking", "multipart", "rustls-tls"], default-features = false}
+rstest = "0.15"
+select = "0.5"
+url = "2"
 
 [build-dependencies]
 grass = "0.11"
