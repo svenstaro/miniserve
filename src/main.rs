@@ -13,13 +13,14 @@ use anyhow::Result;
 use clap::{crate_version, IntoApp, Parser};
 use clap_complete::generate;
 use log::{error, warn};
-use qrcodegen::{QrCode, QrCodeEcc};
+use qrcode::QrCode;
 use yansi::{Color, Paint};
 
 mod archive;
 mod args;
 mod auth;
 mod config;
+mod consts;
 mod errors;
 mod file_upload;
 mod listing;
@@ -239,7 +240,7 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
             .iter()
             .filter(|url| !url.contains("//127.0.0.1:") && !url.contains("//[::1]:"))
         {
-            match QrCode::encode_text(url, QrCodeEcc::Low) {
+            match QrCode::with_error_correction_level(url, consts::QR_EC_LEVEL) {
                 Ok(qr) => {
                     println!("QR code for {}:", Color::Green.paint(url).bold());
                     print_qr(&qr);
@@ -352,30 +353,27 @@ async fn css() -> impl Responder {
         .body(css)
 }
 
-// Prints to the console two inverted QrCodes side by side.
+// Prints to the console a normal and an inverted QrCode side by side.
 fn print_qr(qr: &QrCode) {
-    let border = 4;
-    let size = qr.size() + 2 * border;
+    use qrcode::render::unicode::Dense1x2;
 
-    for y in (0..size).step_by(2) {
-        for x in 0..2 * size {
-            let inverted = x >= size;
-            let (x, y) = (x % size - border, y - border);
-
-            //each char represents two vertical modules
-            let (mod1, mod2) = match inverted {
-                false => (qr.get_module(x, y), qr.get_module(x, y + 1)),
-                true => (!qr.get_module(x, y), !qr.get_module(x, y + 1)),
-            };
-            let c = match (mod1, mod2) {
-                (false, false) => ' ',
-                (true, false) => '▀',
-                (false, true) => '▄',
-                (true, true) => '█',
-            };
-            print!("{0}", c);
-        }
-        println!();
-    }
-    println!();
+    let normal = qr
+        .render()
+        .quiet_zone(true)
+        .dark_color(Dense1x2::Dark)
+        .light_color(Dense1x2::Light)
+        .build();
+    let inverted = qr
+        .render()
+        .quiet_zone(true)
+        .dark_color(Dense1x2::Light)
+        .light_color(Dense1x2::Dark)
+        .build();
+    let codes = normal
+        .lines()
+        .zip(inverted.lines())
+        .map(|(l, r)| format!("{} {}", l, r))
+        .collect::<Vec<_>>()
+        .join("\n");
+    println!("{}", codes);
 }

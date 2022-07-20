@@ -3,6 +3,7 @@ use chrono::{DateTime, Utc};
 use chrono_humanize::Humanize;
 use clap::{crate_name, crate_version};
 use maud::{html, Markup, PreEscaped, DOCTYPE};
+use qrcode::QrCode;
 use std::time::SystemTime;
 use strum::IntoEnumIterator;
 
@@ -219,6 +220,45 @@ pub fn raw(entries: Vec<Entry>, is_root: bool) -> Markup {
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+/// Renders the QR code page
+pub fn qr_code_page(qr: &QrCode) -> Markup {
+    use qrcode::render::svg;
+
+    html! {
+        (DOCTYPE)
+        html {
+            body {
+                // make QR code expand and fill page
+                style {
+                    (PreEscaped("\
+                        html {\
+                            width: 100vw;\
+                            height: 100vh;\
+                        }\
+                        body {\
+                            width: 100%;\
+                            height: 100%;\
+                            margin: 0;\
+                            display: grid;\
+                            align-items: center;\
+                            justify-items: center;\
+                        }\
+                        svg {\
+                            width: 80%;\
+                            height: 80%;\
+                        }\
+                    "))
+                }
+                (PreEscaped(qr.render()
+                    .quiet_zone(false)
+                    .dark_color(svg::Color("#000000"))
+                    .light_color(svg::Color("#ffffff"))
+                    .build()))
             }
         }
     }
