@@ -222,7 +222,7 @@ pub fn directory_listing(
     if let Some(url) = query_params.qrcode {
         let res = match QrCode::with_error_correction_level(url, consts::QR_EC_LEVEL) {
             Ok(qr) => HttpResponse::Ok()
-                .content_type("text/html; charset=utf-8")
+                .content_type(mime::TEXT_HTML_UTF_8)
                 .body(renderer::qr_code_page(&qr).into_string()),
             Err(err) => {
                 log::error!("URL is invalid (too long?): {:?}", err);
