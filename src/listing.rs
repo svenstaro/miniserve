@@ -323,7 +323,7 @@ pub fn directory_listing(
             return Ok(ServiceResponse::new(
                 req.clone(),
                 HttpResponse::Forbidden()
-                    .content_type("text/plain; charset=utf-8")
+                    .content_type(mime::TEXT_PLAIN_UTF_8)
                     .body("Archive creation is disabled."),
             ));
         }
@@ -369,20 +369,18 @@ pub fn directory_listing(
     } else {
         Ok(ServiceResponse::new(
             req.clone(),
-            HttpResponse::Ok()
-                .content_type("text/html; charset=utf-8")
-                .body(
-                    renderer::page(
-                        entries,
-                        is_root,
-                        query_params,
-                        breadcrumbs,
-                        &encoded_dir,
-                        conf,
-                        current_user,
-                    )
-                    .into_string(),
-                ),
+            HttpResponse::Ok().content_type(mime::TEXT_HTML_UTF_8).body(
+                renderer::page(
+                    entries,
+                    is_root,
+                    query_params,
+                    breadcrumbs,
+                    &encoded_dir,
+                    conf,
+                    current_user,
+                )
+                .into_string(),
+            ),
         ))
     }
 }

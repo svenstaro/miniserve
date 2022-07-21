@@ -103,7 +103,7 @@ impl ResponseError for ContextualError {
             ));
         }
 
-        resp.content_type("text/plain; charset=utf-8")
+        resp.content_type(mime::TEXT_PLAIN_UTF_8)
             .body(self.to_string())
     }
 }
@@ -125,7 +125,7 @@ where
 
         if (res.status().is_client_error() || res.status().is_server_error())
             && res.headers().get(header::CONTENT_TYPE).map(AsRef::as_ref)
-                == Some(b"text/plain; charset=utf-8")
+                == Some(mime::TEXT_PLAIN_UTF_8.essence_str().as_bytes())
         {
             let req = res.request().clone();
             Ok(res.map_body(|head, body| map_error_page(&req, head, body)))
@@ -155,7 +155,7 @@ fn map_error_page(req: &HttpRequest, head: &mut ResponseHead, body: BoxBody) -> 
 
     head.headers.insert(
         header::CONTENT_TYPE,
-        header::HeaderValue::from_static("text/html; charset=utf-8"),
+        mime::TEXT_HTML_UTF_8.essence_str().try_into().unwrap(),
     );
 
     BoxBody::new(render_error(error_msg, head.status, conf, return_address).into_string())
