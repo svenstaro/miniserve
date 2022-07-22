@@ -16,7 +16,7 @@ impl From<BasicAuth> for BasicAuthParams {
     fn from(auth: BasicAuth) -> Self {
         Self {
             username: auth.user_id().to_string(),
-            password: auth.password().unwrap_or(&"".into()).to_string(),
+            password: auth.password().unwrap_or_default().to_string(),
         }
     }
 }
