@@ -9,6 +9,7 @@ use std::process::Command;
 use std::thread::sleep;
 use std::time::Duration;
 
+#[cfg(not(windows))]
 fn run_in_faketty_kill_and_get_stdout(template: &Command) -> Result<String, Error> {
     use fake_tty::{bash_command, get_stdout};
 
@@ -33,6 +34,8 @@ fn run_in_faketty_kill_and_get_stdout(template: &Command) -> Result<String, Erro
 }
 
 #[rstest]
+// Disabled for Windows because `fake_tty` does not currently support it.
+#[cfg(not(windows))]
 fn qrcode_hidden_in_tty_when_disabled(tmpdir: TempDir, port: u16) -> Result<(), Error> {
     let mut template = Command::cargo_bin("miniserve")?;
     template.arg("-p").arg(port.to_string()).arg(tmpdir.path());
@@ -44,6 +47,8 @@ fn qrcode_hidden_in_tty_when_disabled(tmpdir: TempDir, port: u16) -> Result<(), 
 }
 
 #[rstest]
+// Disabled for Windows because `fake_tty` does not currently support it.
+#[cfg(not(windows))]
 fn qrcode_shown_in_tty_when_enabled(tmpdir: TempDir, port: u16) -> Result<(), Error> {
     let mut template = Command::cargo_bin("miniserve")?;
     template
