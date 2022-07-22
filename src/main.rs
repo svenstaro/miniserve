@@ -290,7 +290,7 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
     let dir_service = || {
         let mut files = actix_files::Files::new("", &conf.path);
 
-        // Use specific index file if one was provided. 
+        // Use specific index file if one was provided.
         if let Some(ref index_file) = conf.index {
             files = files.index_file(index_file.to_string_lossy());
             // Handle SPA option.
