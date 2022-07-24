@@ -230,7 +230,7 @@ fn serves_requests_custom_index_notice(tmpdir: TempDir, port: u16) -> Result<(),
 
     child.kill()?;
     let output = child.wait_with_output().expect("Failed to read stdout");
-    let all_text = String::from_utf8(output.stderr);
+    let all_text = String::from_utf8(output.stdout);
 
     assert!(
         all_text?.contains("The file 'not.html' provided for option --index could not be found.")

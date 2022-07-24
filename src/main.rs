@@ -1,7 +1,6 @@
 use std::io;
 use std::io::Write;
 use std::net::{IpAddr, SocketAddr, TcpListener};
-use std::path::{Path, PathBuf};
 use std::thread;
 use std::time::Duration;
 
@@ -69,33 +68,19 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
         simplelog::LevelFilter::Warn
     };
 
-    if simplelog::TermLogger::init(
+    simplelog::TermLogger::init(
         log_level,
         simplelog::Config::default(),
         simplelog::TerminalMode::Mixed,
         simplelog::ColorChoice::Auto,
     )
-    .is_err()
-    {
-        simplelog::SimpleLogger::init(log_level, simplelog::Config::default())
-            .expect("Couldn't initialize logger")
-    }
+    .or_else(|_| simplelog::SimpleLogger::init(log_level, simplelog::Config::default()))
+    .expect("Couldn't initialize logger");
 
-    if miniserve_config.no_symlinks {
-        let is_symlink = miniserve_config
-            .path
-            .symlink_metadata()
-            .map_err(|e| {
-                ContextualError::IoError("Failed to retrieve symlink's metadata".to_string(), e)
-            })?
-            .file_type()
-            .is_symlink();
-
-        if is_symlink {
-            return Err(ContextualError::NoSymlinksOptionWithSymlinkServePath(
-                miniserve_config.path.to_string_lossy().to_string(),
-            ));
-        }
+    if miniserve_config.no_symlinks && miniserve_config.path.is_symlink() {
+        return Err(ContextualError::NoSymlinksOptionWithSymlinkServePath(
+            miniserve_config.path.to_string_lossy().to_string(),
+        ));
     }
 
     let inside_config = miniserve_config.clone();
@@ -104,7 +89,15 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
         ContextualError::IoError("Failed to resolve path to be served".to_string(), e)
     })?;
 
-    check_file_exists(&canon_path, &miniserve_config.index);
+    // warn if --index is specified but not found
+    if let Some(ref index) = miniserve_config.index {
+        if !canon_path.join(index).exists() {
+            warn!(
+                "The file '{}' provided for option --index could not be found.",
+                index.to_string_lossy(),
+            );
+        }
+    }
 
     let path_string = canon_path.to_string_lossy();
 
@@ -266,19 +259,6 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
         .map_err(|e| ContextualError::IoError("".to_owned(), e))
 }
 
-fn check_file_exists(canon_path: &Path, file_option: &Option<PathBuf>) {
-    if let Some(file_path) = file_option {
-        let file_path: &Path = file_path.as_ref();
-        let has_file: std::path::PathBuf = [canon_path, file_path].iter().collect();
-        if !has_file.exists() {
-            error!(
-                "The file '{}' provided for option --index could not be found.",
-                file_path.to_string_lossy(),
-            );
-        }
-    }
-}
-
 /// Allows us to set low-level socket options
 ///
 /// This mainly used to set `set_only_v6` socket option
@@ -307,67 +287,50 @@ fn configure_header(conf: &MiniserveConfig) -> middleware::DefaultHeaders {
 ///
 /// This is where we configure the app to serve an index file, the file listing, or a single file.
 fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
-    let files_service = || {
-        let files = actix_files::Files::new("", &conf.path);
-        let files = match &conf.index {
-            Some(index_file) => {
-                if conf.spa {
-                    files
-                        .index_file(index_file.to_string_lossy())
-                        .default_handler(
-                            NamedFile::open(&conf.path.join(index_file))
-                                .expect("Cant open SPA index file."),
-                        )
-                } else {
-                    files.index_file(index_file.to_string_lossy())
-                }
+    let dir_service = || {
+        let mut files = actix_files::Files::new("", &conf.path);
+
+        // Use specific index file if one was provided.
+        if let Some(ref index_file) = conf.index {
+            files = files.index_file(index_file.to_string_lossy());
+            // Handle SPA option.
+            //
+            // Note: --spa requires --index in clap.
+            if conf.spa {
+                files = files.default_handler(
+                    NamedFile::open(&conf.path.join(index_file))
+                        .expect("Cant open SPA index file."),
+                );
             }
-            None => {
-                if conf.spa {
-                    unreachable!("This can't be reached since we require --index to be provided if --spa is given via clap");
-                } else {
-                    files
-                }
-            }
-        };
-        let files = match conf.show_hidden {
-            true => files.use_hidden_files(),
-            false => files,
-        };
+        }
+
+        if conf.show_hidden {
+            files = files.use_hidden_files();
+        }
 
         let base_path = conf.path.clone();
-        let symlinks_may_be_followed = !conf.no_symlinks;
+        let no_symlinks = conf.no_symlinks;
         files
             .show_files_listing()
             .files_listing_renderer(listing::directory_listing)
             .prefer_utf8(true)
             .redirect_to_slash_directory()
             .path_filter(move |path, _| {
-                // Only allow symlinks to be followed in case conf.no_symlinks is false.
-                let path_is_symlink = base_path
-                    .join(path)
-                    .symlink_metadata()
-                    .map(|m| m.file_type().is_symlink())
-                    .unwrap_or(false);
-
-                if path_is_symlink {
-                    symlinks_may_be_followed
-                } else {
-                    true
-                }
+                // deny symlinks if conf.no_symlinks
+                !(no_symlinks && base_path.join(path).is_symlink())
             })
     };
 
-    if !conf.path.is_file() {
+    if conf.path.is_file() {
+        // Handle single files
+        app.service(web::resource(["", "/"]).route(web::to(listing::file_handler)));
+    } else {
         if conf.file_upload {
             // Allow file upload
             app.service(web::resource("/upload").route(web::post().to(file_upload::upload_file)));
         }
         // Handle directories
-        app.service(files_service());
-    } else {
-        // Handle single files
-        app.service(web::resource(["", "/"]).route(web::to(listing::file_handler)));
+        app.service(dir_service());
     }
 }
 
