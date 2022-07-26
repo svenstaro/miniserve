@@ -11,6 +11,8 @@ use std::time::Duration;
 
 #[cfg(not(windows))]
 fn run_in_faketty_kill_and_get_stdout(template: &Command) -> Result<String, Error> {
+    use std::process::Stdio;
+
     use fake_tty::{bash_command, get_stdout};
 
     let cmd = {
@@ -22,7 +24,7 @@ fn run_in_faketty_kill_and_get_stdout(template: &Command) -> Result<String, Erro
             .join(" ");
         format!("{} {}", bin, args)
     };
-    let mut child = bash_command(&cmd).spawn()?;
+    let mut child = bash_command(&cmd).stdin(Stdio::null()).spawn()?;
 
     sleep(Duration::from_secs(1));
 
