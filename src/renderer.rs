@@ -18,7 +18,7 @@ pub fn page(
     readme: Option<(String, String)>,
     is_root: bool,
     query_params: QueryParameters,
-    breadcrumbs: Vec<Breadcrumb>,
+    breadcrumbs: &[Breadcrumb],
     encoded_dir: &str,
     conf: &MiniserveConfig,
     current_user: Option<&CurrentUser>,
@@ -34,11 +34,7 @@ pub fn page(
     let upload_action = build_upload_action(&upload_route, encoded_dir, sort_method, sort_order);
     let mkdir_action = build_mkdir_action(&upload_route, encoded_dir);
 
-    let title_path = breadcrumbs
-        .iter()
-        .map(|el| el.name.clone())
-        .collect::<Vec<_>>()
-        .join("/");
+    let title_path = breadcrumbs_to_path_string(breadcrumbs);
 
     html! {
         (DOCTYPE)
@@ -226,34 +222,16 @@ pub fn raw(entries: Vec<Entry>, is_root: bool) -> Markup {
 }
 
 /// Renders the QR code page
-pub fn qr_code_page(qr: &QrCode) -> Markup {
+pub fn qr_code_page(breadcrumbs: &[Breadcrumb], qr: &QrCode, conf: &MiniserveConfig) -> Markup {
     use qrcode::render::svg;
+
+    let title = breadcrumbs_to_path_string(breadcrumbs);
 
     html! {
         (DOCTYPE)
-        html {
-            body.qr_code_page {
-                // make QR code expand and fill page
-                style {
-                    (PreEscaped("\
-                        html {\
-                            width: 100vw;\
-                            height: 100vh;\
-                        }\
-                        body {\
-                            width: 100%;\
-                            height: 100%;\
-                            margin: 0;\
-                            display: grid;\
-                            align-items: center;\
-                            justify-items: center;\
-                        }\
-                        svg {\
-                            width: 80%;\
-                            height: 80%;\
-                        }\
-                    "))
-                }
+        html.qr_code_page {
+            (page_header(&title, false, &conf.favicon_route, &conf.css_route))
+            body {
                 (PreEscaped(qr.render()
                     .quiet_zone(false)
                     .dark_color(svg::Color("#000000"))
@@ -262,6 +240,15 @@ pub fn qr_code_page(qr: &QrCode) -> Markup {
             }
         }
     }
+}
+
+/// Build a path string from a list of breadcrumbs.
+fn breadcrumbs_to_path_string(breadcrumbs: &[Breadcrumb]) -> String {
+    breadcrumbs
+        .iter()
+        .map(|el| el.name.clone())
+        .collect::<Vec<_>>()
+        .join("/")
 }
 
 // Partial: version footer

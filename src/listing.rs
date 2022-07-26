@@ -154,10 +154,7 @@ pub async fn file_handler(req: HttpRequest) -> actix_web::Result<actix_files::Na
 
 /// List a directory and renders a HTML file accordingly
 /// Adapted from https://docs.rs/actix-web/0.7.13/src/actix_web/fs.rs.html#564
-pub fn directory_listing(
-    dir: &actix_files::Directory,
-    req: &HttpRequest,
-) -> io::Result<ServiceResponse> {
+pub fn directory_listing(dir: &actix_files::Directory, req: &HttpRequest) -> io::Result<ServiceResponse> {
     let extensions = req.extensions();
     let current_user: Option<&CurrentUser> = extensions.get::<CurrentUser>();
 
@@ -198,8 +195,7 @@ pub fn directory_listing(
                 }
                 Component::Normal(s) => {
                     name = s.to_string_lossy().to_string();
-                    link_accumulator
-                        .push_str(&(utf8_percent_encode(&name, PATH_SEGMENT).to_string() + "/"));
+                    link_accumulator.push_str(&(utf8_percent_encode(&name, PATH_SEGMENT).to_string() + "/"));
                 }
                 _ => name = "".to_string(),
             };
@@ -223,7 +219,7 @@ pub fn directory_listing(
         let res = match QrCode::with_error_correction_level(url, consts::QR_EC_LEVEL) {
             Ok(qr) => HttpResponse::Ok()
                 .content_type(mime::TEXT_HTML_UTF_8)
-                .body(renderer::qr_code_page(&qr).into_string()),
+                .body(renderer::qr_code_page(&breadcrumbs, &qr, conf).into_string()),
             Err(err) => {
                 log::error!("URL is invalid (too long?): {:?}", err);
                 HttpResponse::UriTooLong().finish()
@@ -301,9 +297,9 @@ pub fn directory_listing(
     }
 
     match query_params.sort.unwrap_or(SortingMethod::Name) {
-        SortingMethod::Name => entries.sort_by(|e1, e2| {
-            alphanumeric_sort::compare_str(e1.name.to_lowercase(), e2.name.to_lowercase())
-        }),
+        SortingMethod::Name => {
+            entries.sort_by(|e1, e2| alphanumeric_sort::compare_str(e1.name.to_lowercase(), e2.name.to_lowercase()))
+        }
         SortingMethod::Size => entries.sort_by(|e1, e2| {
             // If we can't get the size of the entry (directory for instance)
             // let's consider it's 0b
@@ -371,10 +367,7 @@ pub fn directory_listing(
                 .content_type(archive_method.content_type())
                 .append_header(archive_method.content_encoding())
                 .append_header(("Content-Transfer-Encoding", "binary"))
-                .append_header((
-                    "Content-Disposition",
-                    format!("attachment; filename={:?}", file_name),
-                ))
+                .append_header(("Content-Disposition", format!("attachment; filename={:?}", file_name)))
                 .body(actix_web::body::BodyStream::new(rx)),
         ))
     } else {
@@ -386,7 +379,7 @@ pub fn directory_listing(
                     readme,
                     is_root,
                     query_params,
-                    breadcrumbs,
+                    &breadcrumbs,
                     &encoded_dir,
                     conf,
                     current_user,
