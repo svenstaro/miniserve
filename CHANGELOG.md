@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+- Fix bug where static files would be served incorrectly when using `--random-route` [#835](https://github.com/svenstaro/miniserve/pull/835) (thanks @solarknight)
 
 ## [0.20.0] - 2022-06-26
 - Fixed security issue where it was possible to upload files to locations pointed to by symlinks
