@@ -151,8 +151,20 @@ impl MiniserveConfig {
 
         // Generate some random routes for the favicon and css so that they are very unlikely to conflict with
         // real files.
-        let favicon_route = format!("/{}", nanoid::nanoid!(10, &ROUTE_ALPHABET));
-        let css_route = format!("/{}", nanoid::nanoid!(10, &ROUTE_ALPHABET));
+        // If --random-route is enabled , in order to not leak the random generated route, we must not use it
+        // as static files prefix.
+        // Otherwise, we should apply route_prefix to static files.
+        let (favicon_route, css_route) = if args.random_route {
+            (
+                format!("/{}", nanoid::nanoid!(10, &ROUTE_ALPHABET)),
+                format!("/{}", nanoid::nanoid!(10, &ROUTE_ALPHABET)),
+            )
+        } else {
+            (
+                format!("{}/{}", route_prefix, nanoid::nanoid!(10, &ROUTE_ALPHABET)),
+                format!("{}/{}", route_prefix, nanoid::nanoid!(10, &ROUTE_ALPHABET)),
+            )
+        };
 
         let default_color_scheme = args.color_scheme;
         let default_color_scheme_dark = args.color_scheme_dark;
