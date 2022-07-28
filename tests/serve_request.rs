@@ -9,8 +9,7 @@ use fixtures::{
 use http::StatusCode;
 use regex::Regex;
 use rstest::rstest;
-use select::document::Document;
-use select::node::Node;
+use select::{document::Document, node::Node, predicate::Attr};
 use std::process::{Command, Stdio};
 use std::thread::sleep;
 use std::time::Duration;
@@ -278,6 +277,28 @@ fn serves_requests_with_route_prefix(#[case] server: TestServer) -> Result<(), E
     let url_with_route = server.url().join("foobar")?;
     let status = reqwest::blocking::get(url_with_route)?.status();
     assert_eq!(status, StatusCode::OK);
+
+    Ok(())
+}
+
+#[rstest]
+#[case(server_no_stderr(&[] as &[&str]), "/[a-f0-9]+")]
+#[case(server_no_stderr(&["--random-route"]), "/[a-f0-9]+")]
+#[case(server_no_stderr(&["--route-prefix", "foobar"]), "/foobar/[a-f0-9]+")]
+fn serves_requests_static_file_check(
+    #[case] server: TestServer,
+    #[case] static_file_pattern: String,
+) -> Result<(), Error> {
+    let body = reqwest::blocking::get(server.url())?;
+    let parsed = Document::from_read(body)?;
+    let re = Regex::new(&static_file_pattern).unwrap();
+
+    assert!(parsed
+        .find(Attr("rel", "stylesheet"))
+        .all(|x| re.is_match(x.attr("href").unwrap())));
+    assert!(parsed
+        .find(Attr("rel", "icon"))
+        .all(|x| re.is_match(x.attr("href").unwrap())));
 
     Ok(())
 }
