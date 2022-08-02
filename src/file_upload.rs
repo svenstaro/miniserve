@@ -171,6 +171,19 @@ pub async fn upload_file(
         ContextualError::IoError("Failed to resolve path served by miniserve".to_string(), e)
     })?;
 
+
+    // Disallow paths outside of restricted directories
+    // TODO: Probably not the most rust-ic style...
+    if !conf.restrict_upload_dir.is_empty() {
+        let upl_path = upload_path.clone().into_os_string().into_string().unwrap();
+
+        if !(conf.restrict_upload_dir.contains(&upl_path)){
+            // not good
+            return Err(ContextualError::InvalidPathError("Not allowed to upload to this path".to_string()));
+        }
+    }
+
+
     // Disallow the target path to go outside of the served directory
     // The target directory shouldn't be canonicalized when it gets passed to
     // handle_multipart so that it can check for symlinks if needed

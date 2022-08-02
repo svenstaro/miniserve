@@ -38,7 +38,14 @@ pub fn page(
     let upload_action = build_upload_action(&upload_route, encoded_dir, sort_method, sort_order);
     let mkdir_action = build_mkdir_action(&upload_route, encoded_dir);
 
+    let upload_allowed = conf.restrict_upload_dir.contains(&encoded_dir[1..].to_string());
     let title_path = breadcrumbs_to_path_string(breadcrumbs);
+
+    let title_path = breadcrumbs
+        .iter()
+        .map(|el| el.name.clone())
+        .collect::<Vec<_>>()
+        .join("/");
 
     html! {
         (DOCTYPE)
@@ -120,7 +127,7 @@ pub fn page(
                             }
                         }
                         div.toolbar_box_group {
-                            @if conf.file_upload {
+                            @if conf.file_upload && upload_allowed {
                                 div.toolbar_box {
                                     form id="file_submit" action=(upload_action) method="POST" enctype="multipart/form-data" {
                                         p { "Select a file to upload or drag it anywhere into the window" }

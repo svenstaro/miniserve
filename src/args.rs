@@ -111,6 +111,10 @@ pub struct CliArgs {
     #[clap(short = 'u', long = "upload-files")]
     pub file_upload: bool,
 
+    /// Restrict upload directories
+    #[clap(long = "restrict-upload-dir")]
+    pub restrict_upload_dir: Vec<String>,
+
     /// Enable creating directories
     #[clap(short = 'U', long = "mkdir", requires = "file-upload")]
     pub mkdir_enabled: bool,
