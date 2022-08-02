@@ -112,6 +112,51 @@ fn uploading_files_is_restricted(
     Ok(())
 }
 
+// This tests that we can upload files to the directory specified by --restrict-upload-dir
+#[rstest]
+fn uploading_files_to_restricted_dir_works(
+    #[with(&["-u", "--restrict-upload-dir", "someDir"])] server: TestServer
+) -> Result<(), Error> {
+    let test_file_name = "uploaded test file.txt";
+
+    // Create test directory
+    use std::fs::create_dir_all;
+    create_dir_all(server.path().join("someDir")).unwrap();
+
+    // Before uploading, check whether the uploaded file does not yet exist.
+    let body = reqwest::blocking::get(server.url().join("someDir")?)?.error_for_status()?;
+    let parsed = Document::from_read(body)?;
+    assert!(parsed.find(Text).all(|x| x.text() != test_file_name));
+
+    // Perform the actual upload.
+    let upload_action = parsed
+        .find(Attr("id", "file_submit"))
+        .next()
+        .expect("Couldn't find element with id=file_submit")
+        .attr("action")
+        .expect("Upload form doesn't have action attribute");
+    let form = multipart::Form::new();
+    let part = multipart::Part::text("this should be uploaded")
+        .file_name(test_file_name)
+        .mime_str("text/plain")?;
+    let form = form.part("file_to_upload", part);
+
+    let client = Client::new();
+    client
+        .post(server.url().join(upload_action)?)
+        .multipart(form)
+        .send()?
+        .error_for_status()?;
+
+    // After uploading, check whether the uploaded file is now getting listed.
+    let body = reqwest::blocking::get(server.url().join("someDir")?)?;
+    let parsed = Document::from_read(body)?;
+    assert!(parsed.find(Text).any(|x| x.text() == test_file_name));
+
+    Ok(())
+}
+
+
 /// Test for path traversal vulnerability (CWE-22) in both path parameter of query string and in
 /// file name (Content-Disposition)
 ///
