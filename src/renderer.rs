@@ -38,8 +38,9 @@ pub fn page(
     let upload_action = build_upload_action(&upload_route, encoded_dir, sort_method, sort_order);
     let mkdir_action = build_mkdir_action(&upload_route, encoded_dir);
 
-    let upload_allowed = conf.restrict_upload_dir.contains(&encoded_dir[1..].to_string());
     let title_path = breadcrumbs_to_path_string(breadcrumbs);
+    let upload_allowed = conf.restrict_upload_dir.is_empty() || 
+        conf.restrict_upload_dir.contains(&encoded_dir[1..].to_string());
 
     let title_path = breadcrumbs
         .iter()
