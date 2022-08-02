@@ -72,7 +72,7 @@ fn uploading_files_is_prevented(server: TestServer) -> Result<(), Error> {
         .error_for_status()
         .is_err());
 
-    // After uploading, check whether the uploaded file is now getting listed.
+    // After uploading, check whether the uploaded file is NOT getting listed.
     let body = reqwest::blocking::get(server.url())?;
     let parsed = Document::from_read(body)?;
     assert!(!parsed.find(Text).any(|x| x.text() == test_file_name));
@@ -80,21 +80,15 @@ fn uploading_files_is_prevented(server: TestServer) -> Result<(), Error> {
     Ok(())
 }
 
+// This test runs the server with --restrict-upload-dir argument and 
+// checks that file upload to a different directory is actually prevented.
 #[rstest]
 fn uploading_files_is_restricted(
     #[with(&["-u", "--restrict-upload-dir", "someDir"])] server: TestServer
 ) -> Result<(), Error> {
     let test_file_name = "uploaded test file.txt";
 
-    // Before uploading, check whether the uploaded file does not yet exist.
-    let body = reqwest::blocking::get(server.url())?.error_for_status()?;
-    let parsed = Document::from_read(body)?;
-    assert!(parsed.find(Text).all(|x| x.text() != test_file_name));
-
-    // Ensure the file upload form is not present
-    assert!(parsed.find(Attr("id", "file_submit")).next().is_none());
-
-    // Then try to upload anyway
+    // Then try to upload file to root directory (which is not the --restrict-upload-dir)
     let form = multipart::Form::new();
     let part = multipart::Part::text("this should not be uploaded")
         .file_name(test_file_name)
@@ -110,7 +104,7 @@ fn uploading_files_is_restricted(
         .error_for_status()
         .is_err());
 
-    // After uploading, check whether the uploaded file is now getting listed.
+    // After uploading, check whether the uploaded file is NOT getting listed.
     let body = reqwest::blocking::get(server.url())?;
     let parsed = Document::from_read(body)?;
     assert!(!parsed.find(Text).any(|x| x.text() == test_file_name));
