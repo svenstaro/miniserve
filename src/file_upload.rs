@@ -175,10 +175,15 @@ pub async fn upload_file(
     // Disallow paths outside of restricted directories
     // TODO: Probably not the most rust-ic style...
     if !conf.restrict_upload_dir.is_empty() {
-        let upl_path = upload_path.clone().into_os_string().into_string().unwrap();
+        let mut upload_allowed = false;
+        for restricted_dir in conf.restrict_upload_dir.iter() {            
+            if upload_path.starts_with(restricted_dir) {
+                    upload_allowed = true;
+                    break;
+                }
+            }
 
-        if !(conf.restrict_upload_dir.contains(&upl_path)){
-            // not good
+        if !upload_allowed {
             return Err(ContextualError::InvalidPathError("Not allowed to upload to this path".to_string()));
         }
     }

@@ -39,15 +39,22 @@ pub fn page(
     let mkdir_action = build_mkdir_action(&upload_route, encoded_dir);
 
     let title_path = breadcrumbs_to_path_string(breadcrumbs);
-    let upload_allowed = conf.restrict_upload_dir.is_empty() || 
-        conf.restrict_upload_dir.contains(&encoded_dir[1..].to_string());
 
-    let title_path = breadcrumbs
-        .iter()
-        .map(|el| el.name.clone())
-        .collect::<Vec<_>>()
-        .join("/");
-
+    // TODO: Probably not very idiomatic
+    let mut upload_allowed = false;
+    
+    if conf.restrict_upload_dir.is_empty() {
+        upload_allowed = true;
+    } else {
+        for restricted_dir in conf.restrict_upload_dir.iter() {
+            let full_restricted_path = &format!("/{}", restricted_dir.display());
+            if encoded_dir.starts_with(full_restricted_path) {
+                upload_allowed = true;
+                break;
+            }
+        }
+    }
+    
     html! {
         (DOCTYPE)
         html {
