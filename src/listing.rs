@@ -232,7 +232,7 @@ pub fn directory_listing(
     }
 
     let mut entries: Vec<Entry> = Vec::new();
-    let mut readme: Option<String> = None;
+    let mut readme: Option<PathBuf> = None;
 
     for entry in dir.path.read_dir()? {
         if dir.is_visible(&entry) || conf.show_hidden {
@@ -285,7 +285,11 @@ pub fn directory_listing(
                     ));
 		    // TODO: Pattern match?
 		    if conf.readme && file_name.to_lowercase() == "readme.md"{
-			readme = Some(file_name);
+			let file_path = conf.path.canonicalize().unwrap()
+			    .join(base.as_os_str().to_str().unwrap()
+				  .strip_prefix("/").unwrap())
+			    .join(&file_name);
+			readme = Some(file_path);
 		    }
                 }
             } else {
