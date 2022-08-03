@@ -40,20 +40,8 @@ pub fn page(
 
     let title_path = breadcrumbs_to_path_string(breadcrumbs);
 
-    // TODO: Probably not very idiomatic
-    let mut upload_allowed = false;
-    
-    if conf.restrict_upload_dir.is_empty() {
-        upload_allowed = true;
-    } else {
-        for restricted_dir in conf.restrict_upload_dir.iter() {
-            let full_restricted_path = &format!("/{}", restricted_dir.display());
-            if encoded_dir.starts_with(full_restricted_path) {
-                upload_allowed = true;
-                break;
-            }
-        }
-    }
+    let upload_allowed = conf.restrict_upload_dir.is_empty() || conf.restrict_upload_dir.iter().any(
+        |x| encoded_dir.starts_with(&format!("/{}", x.display())) );
     
     html! {
         (DOCTYPE)
