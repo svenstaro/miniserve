@@ -5,6 +5,7 @@ use clap::{crate_name, crate_version};
 use maud::{html, Markup, PreEscaped, DOCTYPE};
 use std::time::SystemTime;
 use strum::IntoEnumIterator;
+use std::path::Path;
 
 use crate::auth::CurrentUser;
 use crate::listing::{Breadcrumb, Entry, QueryParameters, SortingMethod, SortingOrder};
@@ -13,6 +14,7 @@ use crate::{archive::ArchiveMethod, MiniserveConfig};
 /// Renders the file listing
 pub fn page(
     entries: Vec<Entry>,
+    readme: Option<String>,
     is_root: bool,
     query_params: QueryParameters,
     breadcrumbs: Vec<Breadcrumb>,
@@ -165,6 +167,13 @@ pub fn page(
                             }
                         }
                     }
+		    @if readme.is_some() {
+			div {
+			    h3 { (readme.as_ref().unwrap()) }
+			    (PreEscaped
+			     (markdown::file_to_html(Path::new(&readme.unwrap())).unwrap()));
+			}
+		    }
                     a.back href="#top" {
                         (arrow_up())
                     }

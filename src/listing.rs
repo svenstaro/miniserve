@@ -232,6 +232,7 @@ pub fn directory_listing(
     }
 
     let mut entries: Vec<Entry> = Vec::new();
+    let mut readme: Option<String> = None;
 
     for entry in dir.path.read_dir()? {
         if dir.is_visible(&entry) || conf.show_hidden {
@@ -275,13 +276,17 @@ pub fn directory_listing(
                     ));
                 } else if metadata.is_file() {
                     entries.push(Entry::new(
-                        file_name,
+                        file_name.clone(),
                         EntryType::File,
                         file_url,
                         Some(ByteSize::b(metadata.len())),
                         last_modification_date,
                         symlink_dest,
                     ));
+		    // TODO: Pattern match, or user arg for readme name?
+		    if file_name.to_lowercase() == "readme.md"{
+			readme = Some(file_name);
+		    }
                 }
             } else {
                 continue;
@@ -372,6 +377,7 @@ pub fn directory_listing(
             HttpResponse::Ok().content_type(mime::TEXT_HTML_UTF_8).body(
                 renderer::page(
                     entries,
+		    readme,
                     is_root,
                     query_params,
                     breadcrumbs,
