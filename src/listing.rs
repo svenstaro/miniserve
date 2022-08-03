@@ -283,8 +283,8 @@ pub fn directory_listing(
                         last_modification_date,
                         symlink_dest,
                     ));
-		    // TODO: Pattern match, or user arg for readme name?
-		    if file_name.to_lowercase() == "readme.md"{
+		    // TODO: Pattern match?
+		    if conf.readme && file_name.to_lowercase() == "readme.md"{
 			readme = Some(file_name);
 		    }
                 }
