@@ -83,8 +83,8 @@ fn uploading_files_is_prevented(server: TestServer) -> Result<(), Error> {
 // This test runs the server with --restrict-upload-dir argument and 
 // checks that file upload to a different directory is actually prevented.
 #[rstest]
-#[case(server_no_stderr(&["-u",  "--restrict-upload-dir", "someDir"]))]
-#[case(server_no_stderr(&["-u",  "--restrict-upload-dir", "someDir/some_sub_dir"]))]
+#[case(server_no_stderr(&["-u",  "--allowed-upload-dir", "someDir"]))]
+#[case(server_no_stderr(&["-u",  "--allowed-upload-dir", "someDir/some_sub_dir"]))]
 fn uploading_files_is_restricted(
     #[case] server: TestServer
 ) -> Result<(), Error> {
@@ -116,8 +116,8 @@ fn uploading_files_is_restricted(
 
 // This tests that we can upload files to the directory specified by --restrict-upload-dir
 #[rstest]
-#[case(server(&["-u",  "--restrict-upload-dir", "someDir"]), "someDir")]
-#[case(server(&["-u",  "--restrict-upload-dir", "someDir/some_sub_dir"]), "someDir/some_sub_dir")]
+#[case(server(&["-u",  "--allowed-upload-dir", "someDir"]), "someDir")]
+#[case(server(&["-u",  "--allowed-upload-dir", "someDir/some_sub_dir"]), "someDir/some_sub_dir")]
 fn uploading_files_to_restricted_dir_works(
     #[case] server: TestServer,
     #[case] upload_dir: &str,

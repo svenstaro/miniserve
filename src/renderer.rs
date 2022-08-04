@@ -40,7 +40,7 @@ pub fn page(
 
     let title_path = breadcrumbs_to_path_string(breadcrumbs);
 
-    let upload_allowed = conf.restrict_upload_dir.is_empty() || conf.restrict_upload_dir.iter().any(
+    let upload_allowed = conf.allowed_upload_dir.is_empty() || conf.allowed_upload_dir.iter().any(
         |x| encoded_dir.starts_with(&format!("/{}", x.display())) );
     
     html! {

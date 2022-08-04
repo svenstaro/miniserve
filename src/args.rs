@@ -111,9 +111,11 @@ pub struct CliArgs {
     #[clap(short = 'u', long = "upload-files")]
     pub file_upload: bool,
 
-    /// Restrict upload directories
-    #[clap(long = "restrict-upload-dir", requires = "file-upload", value_hint = ValueHint::FilePath)]
-    pub restrict_upload_dir: Vec<PathBuf>,
+    /// Allowed upload directories (together with -u)
+    /// 
+    /// If this is set, uploads are only allowed into the provided directories. 
+    #[clap(long, requires = "file-upload", value_hint = ValueHint::FilePath)]
+    pub allowed_upload_dir: Vec<PathBuf>,
 
     /// Enable creating directories
     #[clap(short = 'U', long = "mkdir", requires = "file-upload")]

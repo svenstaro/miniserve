@@ -88,7 +88,7 @@ pub struct MiniserveConfig {
     pub file_upload: bool,
 
     /// Restrict file upload dirs
-    pub restrict_upload_dir: Vec<PathBuf>,
+    pub allowed_upload_dir: Vec<PathBuf>,
 
     /// HTML accept attribute value
     pub uploadable_media_type: Option<String>,
@@ -251,7 +251,7 @@ impl MiniserveConfig {
             show_qrcode: args.qrcode,
             mkdir_enabled: args.mkdir_enabled,
             file_upload: args.file_upload,
-            restrict_upload_dir: args.restrict_upload_dir,
+            allowed_upload_dir: args.allowed_upload_dir,
             uploadable_media_type,
             tar_enabled: args.enable_tar,
             tar_gz_enabled: args.enable_tar_gz,
