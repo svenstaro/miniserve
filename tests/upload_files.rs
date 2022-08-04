@@ -80,8 +80,8 @@ fn uploading_files_is_prevented(server: TestServer) -> Result<(), Error> {
     Ok(())
 }
 
-// This test runs the server with --restrict-upload-dir argument and 
-// checks that file upload to a different directory is actually prevented.
+/// This test runs the server with --allowed-upload-dir argument and 
+/// checks that file upload to a different directory is actually prevented.
 #[rstest]
 #[case(server_no_stderr(&["-u",  "--allowed-upload-dir", "someDir"]))]
 #[case(server_no_stderr(&["-u",  "--allowed-upload-dir", "someDir/some_sub_dir"]))]
@@ -90,7 +90,7 @@ fn uploading_files_is_restricted(
 ) -> Result<(), Error> {
     let test_file_name = "uploaded test file.txt";
 
-    // Then try to upload file to root directory (which is not the --restrict-upload-dir)
+    // Then try to upload file to root directory (which is not the --allowed-upload-dir)
     let form = multipart::Form::new();
     let part = multipart::Part::text("this should not be uploaded")
         .file_name(test_file_name)
@@ -114,11 +114,11 @@ fn uploading_files_is_restricted(
     Ok(())
 }
 
-// This tests that we can upload files to the directory specified by --restrict-upload-dir
+/// This tests that we can upload files to the directory specified by --allow-upload-dir
 #[rstest]
 #[case(server(&["-u",  "--allowed-upload-dir", "someDir"]), "someDir")]
 #[case(server(&["-u",  "--allowed-upload-dir", "someDir/some_sub_dir"]), "someDir/some_sub_dir")]
-fn uploading_files_to_restricted_dir_works(
+fn uploading_files_to_allowed_dir_works(
     #[case] server: TestServer,
     #[case] upload_dir: &str,
 ) -> Result<(), Error> {
