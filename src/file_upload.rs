@@ -176,7 +176,7 @@ pub async fn upload_file(
     let upload_allowed = conf.allowed_upload_dir.is_empty() || 
         conf.allowed_upload_dir.iter().any(|s| upload_path.starts_with(s)); 
 
-    if !(upload_allowed) {
+    if !upload_allowed {
         return Err(ContextualError::InvalidPathError("Not allowed to upload to this path".to_string()));
     }
 
