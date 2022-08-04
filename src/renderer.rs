@@ -2,11 +2,11 @@ use actix_web::http::StatusCode;
 use chrono::{DateTime, Utc};
 use chrono_humanize::Humanize;
 use clap::{crate_name, crate_version};
+use comrak::{markdown_to_html, ComrakOptions};
 use maud::{html, Markup, PreEscaped, DOCTYPE};
 use std::path::PathBuf;
 use std::time::SystemTime;
 use strum::IntoEnumIterator;
-use comrak::{markdown_to_html, ComrakOptions};
 
 use crate::auth::CurrentUser;
 use crate::listing::{Breadcrumb, Entry, QueryParameters, SortingMethod, SortingOrder};
@@ -168,17 +168,17 @@ pub fn page(
                             }
                         }
                     }
-		    @if readme.is_some() {
-			div {
-			    h3 { (readme.as_ref().unwrap().file_name().unwrap()
-				  .to_string_lossy().to_string()) }
-			    (PreEscaped
-			     (markdown_to_html(
-				 &std::fs::read_to_string(readme.unwrap())
-				     .unwrap_or_else(|_| "Cannot read File.".to_string()),
-				 &ComrakOptions::default())));
-			}
-		    }
+            @if readme.is_some() {
+            div {
+                h3 { (readme.as_ref().unwrap().file_name().unwrap()
+                  .to_string_lossy().to_string()) }
+                (PreEscaped
+                 (markdown_to_html(
+                 &std::fs::read_to_string(readme.unwrap())
+                     .unwrap_or_else(|_| "Cannot read File.".to_string()),
+                 &ComrakOptions::default())));
+            }
+            }
                     a.back href="#top" {
                         (arrow_up())
                     }

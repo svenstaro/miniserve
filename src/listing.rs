@@ -283,14 +283,22 @@ pub fn directory_listing(
                         last_modification_date,
                         symlink_dest,
                     ));
-		    // TODO: Pattern match?
-		    if conf.readme && file_name.to_lowercase() == "readme.md"{
-			let file_path = conf.path.canonicalize().unwrap()
-			    .join(base.as_os_str().to_str().unwrap()
-				  .strip_prefix("/").unwrap())
-			    .join(&file_name);
-			readme = Some(file_path);
-		    }
+                    // TODO: Pattern match?
+                    if conf.readme && file_name.to_lowercase() == "readme.md" {
+                        let file_path = conf
+                            .path
+                            .canonicalize()
+                            .unwrap()
+                            .join(
+                                base.as_os_str()
+                                    .to_str()
+                                    .unwrap()
+                                    .strip_prefix('/')
+                                    .unwrap(),
+                            )
+                            .join(&file_name);
+                        readme = Some(file_path);
+                    }
                 }
             } else {
                 continue;
@@ -381,7 +389,7 @@ pub fn directory_listing(
             HttpResponse::Ok().content_type(mime::TEXT_HTML_UTF_8).body(
                 renderer::page(
                     entries,
-		    readme,
+                    readme,
                     is_root,
                     query_params,
                     breadcrumbs,

@@ -259,7 +259,7 @@ impl MiniserveConfig {
             hide_version_footer: args.hide_version_footer,
             hide_theme_selector: args.hide_theme_selector,
             show_wget_footer: args.show_wget_footer,
-	    readme: args.readme,
+            readme: args.readme,
             tls_rustls_config: tls_rustls_server_config,
         })
     }
