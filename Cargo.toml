@@ -15,6 +15,7 @@ lto = true
 opt-level = 'z'
 codegen-units = 1
 panic = 'abort'
+strip = true
 
 [dependencies]
 actix-web = "4"
