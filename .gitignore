@@ -7,3 +7,4 @@
 
 /target
 **/*.rs.bk
+.idea/
