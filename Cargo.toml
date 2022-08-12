@@ -55,7 +55,6 @@ tar = "0.4"
 thiserror = "1"
 yansi = "0.5"
 zip = { version = "0.6.2", default-features = false }
-get_if_addrs = "0.5"
 comrak = "0.14.0"
 
 [features]

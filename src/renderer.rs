@@ -12,6 +12,7 @@ use crate::auth::CurrentUser;
 use crate::listing::{Breadcrumb, Entry, QueryParameters, SortingMethod, SortingOrder};
 use crate::{archive::ArchiveMethod, MiniserveConfig};
 
+#[allow(clippy::too_many_arguments)]
 /// Renders the file listing
 pub fn page(
     entries: Vec<Entry>,
@@ -169,15 +170,15 @@ pub fn page(
                         }
                     }
             @if readme.is_some() {
-            div {
-                h3 { (readme.as_ref().unwrap().file_name().unwrap()
-                  .to_string_lossy().to_string()) }
-                (PreEscaped
-                 (markdown_to_html(
-                 &std::fs::read_to_string(readme.unwrap())
-                     .unwrap_or_else(|_| "Cannot read File.".to_string()),
-                 &ComrakOptions::default())));
-            }
+                div {
+                    h3 { (readme.as_ref().unwrap().file_name().unwrap()
+                          .to_string_lossy().to_string()) }
+                    (PreEscaped
+                     (markdown_to_html(
+                         &std::fs::read_to_string(readme.unwrap())
+                             .unwrap_or_else(|_| "Cannot read File.".to_string()),
+                         &ComrakOptions::default())));
+                }
             }
                     a.back href="#top" {
                         (arrow_up())
