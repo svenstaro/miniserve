@@ -87,7 +87,7 @@ pub struct MiniserveConfig {
     /// Enable file upload
     pub file_upload: bool,
 
-    /// Restrict file upload dirs
+    /// List of allowed upload directories
     pub allowed_upload_dir: Vec<PathBuf>,
 
     /// HTML accept attribute value
