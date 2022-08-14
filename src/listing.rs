@@ -7,6 +7,7 @@ use actix_web::dev::ServiceResponse;
 use actix_web::web::Query;
 use actix_web::{HttpMessage, HttpRequest, HttpResponse};
 use bytesize::ByteSize;
+use comrak::{markdown_to_html, ComrakOptions};
 use percent_encoding::{percent_decode_str, utf8_percent_encode};
 use qrcodegen::{QrCode, QrCodeEcc};
 use serde::Deserialize;
@@ -146,6 +147,50 @@ impl Breadcrumb {
     }
 }
 
+/// Readme file information
+pub struct Readme {
+    pub render: bool,
+    pub path: Option<PathBuf>,
+    pub filename: Option<String>,
+    pub contents: Option<String>,
+}
+
+impl Readme {
+    fn blank() -> Self {
+        Readme {
+            render: false,
+            path: None,
+            filename: None,
+            contents: None,
+        }
+    }
+
+    fn new(root: PathBuf, base: &Path, filename: String) -> Self {
+        let file_path = root
+            .canonicalize()
+            .unwrap()
+            .join(
+                base.as_os_str()
+                    .to_str()
+                    .unwrap()
+                    .strip_prefix('/')
+                    .unwrap(),
+            )
+            .join(&filename);
+        let contents = markdown_to_html(
+            &std::fs::read_to_string(&file_path)
+                .unwrap_or_else(|_| "Cannot read File.".to_string()),
+            &ComrakOptions::default(),
+        );
+        Readme {
+            render: true,
+            path: Some(file_path),
+            filename: Some(filename),
+            contents: Some(contents),
+        }
+    }
+}
+
 pub async fn file_handler(req: HttpRequest) -> actix_web::Result<actix_files::NamedFile> {
     let path = &req.app_data::<crate::MiniserveConfig>().unwrap().path;
     actix_files::NamedFile::open(path).map_err(Into::into)
@@ -232,7 +277,7 @@ pub fn directory_listing(
     }
 
     let mut entries: Vec<Entry> = Vec::new();
-    let mut readme: Option<PathBuf> = None;
+    let mut readme = Readme::blank();
 
     for entry in dir.path.read_dir()? {
         if dir.is_visible(&entry) || conf.show_hidden {
@@ -284,19 +329,7 @@ pub fn directory_listing(
                         symlink_dest,
                     ));
                     if conf.readme && file_name.to_lowercase() == "readme.md" {
-                        let file_path = conf
-                            .path
-                            .canonicalize()
-                            .unwrap()
-                            .join(
-                                base.as_os_str()
-                                    .to_str()
-                                    .unwrap()
-                                    .strip_prefix('/')
-                                    .unwrap(),
-                            )
-                            .join(&file_name);
-                        readme = Some(file_path);
+                        readme = Readme::new(conf.path.clone(), base, file_name)
                     }
                 }
             } else {
