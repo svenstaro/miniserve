@@ -14,7 +14,7 @@ use crate::{archive::ArchiveMethod, MiniserveConfig};
 /// Renders the file listing
 pub fn page(
     entries: Vec<Entry>,
-    readme: Readme,
+    readme: Option<Readme>,
     is_root: bool,
     query_params: QueryParameters,
     breadcrumbs: Vec<Breadcrumb>,
@@ -167,10 +167,10 @@ pub fn page(
                             }
                         }
                     }
-            @if readme.render {
+            @if readme.is_some() {
                 div {
-                    h3 { (readme.filename.unwrap()) }
-                    (PreEscaped (readme.contents.unwrap()));
+                    h3 { (readme.as_ref().unwrap().filename) }
+                    (PreEscaped (readme.unwrap().contents));
                 }
             }
                     a.back href="#top" {

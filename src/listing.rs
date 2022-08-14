@@ -149,22 +149,12 @@ impl Breadcrumb {
 
 /// Readme file information
 pub struct Readme {
-    pub render: bool,
-    pub path: Option<PathBuf>,
-    pub filename: Option<String>,
-    pub contents: Option<String>,
+    pub path: PathBuf,
+    pub filename: String,
+    pub contents: String,
 }
 
 impl Readme {
-    fn blank() -> Self {
-        Readme {
-            render: false,
-            path: None,
-            filename: None,
-            contents: None,
-        }
-    }
-
     fn new(root: PathBuf, base: &Path, filename: String) -> Self {
         let file_path = root
             .canonicalize()
@@ -183,10 +173,9 @@ impl Readme {
             &ComrakOptions::default(),
         );
         Readme {
-            render: true,
-            path: Some(file_path),
-            filename: Some(filename),
-            contents: Some(contents),
+            path: file_path,
+            filename,
+            contents,
         }
     }
 }
@@ -277,7 +266,7 @@ pub fn directory_listing(
     }
 
     let mut entries: Vec<Entry> = Vec::new();
-    let mut readme = Readme::blank();
+    let mut readme: Option<Readme> = None;
 
     for entry in dir.path.read_dir()? {
         if dir.is_visible(&entry) || conf.show_hidden {
@@ -329,7 +318,7 @@ pub fn directory_listing(
                         symlink_dest,
                     ));
                     if conf.readme && file_name.to_lowercase() == "readme.md" {
-                        readme = Readme::new(conf.path.clone(), base, file_name)
+                        readme = Some(Readme::new(conf.path.clone(), base, file_name));
                     }
                 }
             } else {
