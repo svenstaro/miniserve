@@ -206,7 +206,7 @@ Some mobile browsers like Firefox on Android will offer to open the camera app w
                 Generate a random 6-hexdigit route
 
             --readme
-                Enable README.md redering in directories
+                Enable README.md rendering in directories
 
             --route-prefix <ROUTE_PREFIX>
                 Use a specific route prefix

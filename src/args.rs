@@ -198,7 +198,7 @@ pub struct CliArgs {
     #[clap(long = "tls-key", requires = "tls-cert", value_hint = ValueHint::FilePath)]
     pub tls_key: Option<PathBuf>,
 
-    /// Enable README.md redering in directories
+    /// Enable README.md rendering in directories
     #[clap(long)]
     pub readme: bool,
 }
