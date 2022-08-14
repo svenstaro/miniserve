@@ -7,14 +7,14 @@ use std::time::SystemTime;
 use strum::IntoEnumIterator;
 
 use crate::auth::CurrentUser;
-use crate::listing::{Breadcrumb, Entry, QueryParameters, Readme, SortingMethod, SortingOrder};
+use crate::listing::{Breadcrumb, Entry, QueryParameters, SortingMethod, SortingOrder};
 use crate::{archive::ArchiveMethod, MiniserveConfig};
 
 #[allow(clippy::too_many_arguments)]
 /// Renders the file listing
 pub fn page(
     entries: Vec<Entry>,
-    readme: Option<Readme>,
+    readme: Option<(String, String)>,
     is_root: bool,
     query_params: QueryParameters,
     breadcrumbs: Vec<Breadcrumb>,
@@ -167,12 +167,12 @@ pub fn page(
                             }
                         }
                     }
-            @if readme.is_some() {
-                div {
-                    h3 { (readme.as_ref().unwrap().filename) }
-                    (PreEscaped (readme.unwrap().contents));
-                }
-            }
+                    @if let Some(readme) = readme {
+                        div {
+                            h3 { (readme.0) }
+                            (PreEscaped (readme.1));
+                        }
+                    }
                     a.back href="#top" {
                         (arrow_up())
                     }

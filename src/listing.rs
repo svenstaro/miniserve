@@ -147,39 +147,6 @@ impl Breadcrumb {
     }
 }
 
-/// Readme file information
-pub struct Readme {
-    pub path: PathBuf,
-    pub filename: String,
-    pub contents: String,
-}
-
-impl Readme {
-    fn new(root: PathBuf, base: &Path, filename: String) -> Self {
-        let file_path = root
-            .canonicalize()
-            .unwrap()
-            .join(
-                base.as_os_str()
-                    .to_str()
-                    .unwrap()
-                    .strip_prefix('/')
-                    .unwrap(),
-            )
-            .join(&filename);
-        let contents = markdown_to_html(
-            &std::fs::read_to_string(&file_path)
-                .unwrap_or_else(|_| "Cannot read File.".to_string()),
-            &ComrakOptions::default(),
-        );
-        Readme {
-            path: file_path,
-            filename,
-            contents,
-        }
-    }
-}
-
 pub async fn file_handler(req: HttpRequest) -> actix_web::Result<actix_files::NamedFile> {
     let path = &req.app_data::<crate::MiniserveConfig>().unwrap().path;
     actix_files::NamedFile::open(path).map_err(Into::into)
@@ -266,7 +233,7 @@ pub fn directory_listing(
     }
 
     let mut entries: Vec<Entry> = Vec::new();
-    let mut readme: Option<Readme> = None;
+    let mut readme: Option<(String, String)> = None;
 
     for entry in dir.path.read_dir()? {
         if dir.is_visible(&entry) || conf.show_hidden {
@@ -318,7 +285,13 @@ pub fn directory_listing(
                         symlink_dest,
                     ));
                     if conf.readme && file_name.to_lowercase() == "readme.md" {
-                        readme = Some(Readme::new(conf.path.clone(), base, file_name));
+                        readme = Some((
+                            file_name.to_string(),
+                            markdown_to_html(
+                                &std::fs::read_to_string(entry.path())?,
+                                &ComrakOptions::default(),
+                            ),
+                        ));
                     }
                 }
             } else {
