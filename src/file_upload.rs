@@ -172,7 +172,7 @@ pub async fn upload_file(
     })?;
 
 
-    // Disallow paths outside of restricted directories
+    // Disallow paths outside of allowed directories
     let upload_allowed = conf.allowed_upload_dir.is_empty() || 
         conf.allowed_upload_dir.iter().any(|s| upload_path.starts_with(s)); 
 
