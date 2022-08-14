@@ -101,6 +101,7 @@ Some mobile browsers like Firefox on Android will offer to open the camera app w
 - Shell completions
 - Sane and secure defaults
 - TLS (for supported architectures)
+- Supports README.md rendering like on GitHub
 
 ## Usage
 
@@ -203,6 +204,9 @@ Some mobile browsers like Firefox on Android will offer to open the camera app w
 
             --random-route
                 Generate a random 6-hexdigit route
+
+            --readme
+                Enable README.md rendering in directories
 
             --route-prefix <ROUTE_PREFIX>
                 Use a specific route prefix

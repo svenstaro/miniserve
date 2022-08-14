@@ -123,6 +123,9 @@ pub struct MiniserveConfig {
     /// If enabled, display a wget command to recursively download the current directory
     pub show_wget_footer: bool,
 
+    /// If enabled, render the readme from the current directory
+    pub readme: bool,
+
     /// If set, use provided rustls config for TLS
     #[cfg(feature = "tls")]
     pub tls_rustls_config: Option<rustls::ServerConfig>,
@@ -256,6 +259,7 @@ impl MiniserveConfig {
             hide_version_footer: args.hide_version_footer,
             hide_theme_selector: args.hide_theme_selector,
             show_wget_footer: args.show_wget_footer,
+            readme: args.readme,
             tls_rustls_config: tls_rustls_server_config,
         })
     }

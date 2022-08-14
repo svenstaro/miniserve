@@ -197,6 +197,10 @@ pub struct CliArgs {
     #[cfg(feature = "tls")]
     #[clap(long = "tls-key", requires = "tls-cert", value_hint = ValueHint::FilePath)]
     pub tls_key: Option<PathBuf>,
+
+    /// Enable README.md rendering in directories
+    #[clap(long)]
+    pub readme: bool,
 }
 
 /// Checks wether an interface is valid, i.e. it can be parsed into an IP address
