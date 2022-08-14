@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - ReleaseDate
 - Fix bug where static files would be served incorrectly when using `--random-route` [#835](https://github.com/svenstaro/miniserve/pull/835) (thanks @solarknight)
+- Add `--readme` to render the README in the current directory after the file listing [#860](https://github.com/svenstaro/miniserve/pull/860) (thanks @Atreyagaurav)
 
 ## [0.20.0] - 2022-06-26
 - Fixed security issue where it was possible to upload files to locations pointed to by symlinks
