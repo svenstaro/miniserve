@@ -1,5 +1,6 @@
 mod fixtures;
 
+use std::fs::create_dir_all;
 use assert_fs::fixture::TempDir;
 use fixtures::{server, server_no_stderr, tmpdir, Error, TestServer};
 use reqwest::blocking::{multipart, Client};
@@ -125,7 +126,6 @@ fn uploading_files_to_allowed_dir_works(
     let test_file_name = "uploaded test file.txt";
 
     // Create test directory
-    use std::fs::create_dir_all;
     create_dir_all(server.path().join(upload_dir)).unwrap();
 
     // Before uploading, check whether the uploaded file does not yet exist.
@@ -180,7 +180,6 @@ fn prevent_path_traversal_attacks(
     #[case] expected: &str,
 ) -> Result<(), Error> {
     // Create test directories
-    use std::fs::create_dir_all;
     create_dir_all(server.path().join("foo")).unwrap();
     if !cfg!(windows) {
         for dir in &["C:/foo/C:", r"C:\foo", r"\foo"] {
