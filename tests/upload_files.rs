@@ -84,8 +84,8 @@ fn uploading_files_is_prevented(server: TestServer) -> Result<(), Error> {
 /// This test runs the server with --allowed-upload-dir argument and
 /// checks that file upload to a different directory is actually prevented.
 #[rstest]
-#[case(server_no_stderr(&["-u",  "--allowed-upload-dir", "someDir"]))]
-#[case(server_no_stderr(&["-u",  "--allowed-upload-dir", "someDir/some_sub_dir"]))]
+#[case(server_no_stderr(&["-u", "someDir"]))]
+#[case(server_no_stderr(&["-u", "someDir/some_sub_dir"]))]
 fn uploading_files_is_restricted(#[case] server: TestServer) -> Result<(), Error> {
     let test_file_name = "uploaded test file.txt";
 
@@ -117,9 +117,9 @@ fn uploading_files_is_restricted(#[case] server: TestServer) -> Result<(), Error
 
 /// This tests that we can upload files to the directory specified by --allow-upload-dir
 #[rstest]
-#[case(server(&["-u",  "--allowed-upload-dir", "someDir"]), vec!["someDir"])]
-#[case(server(&["-u",  "--allowed-upload-dir", "someDir/some_sub_dir"]), vec!["someDir/some_sub_dir"])]
-#[case(server(&["-u",  "--allowed-upload-dir", "someDir/some_sub_dir", "--allowed-upload-dir", "someDir/some_other_dir"]), 
+#[case(server(&["-u", "someDir"]), vec!["someDir"])]
+#[case(server(&["-u", "someDir/some_sub_dir"]), vec!["someDir/some_sub_dir"])]
+#[case(server(&["-u", "someDir/some_sub_dir", "-u", "someDir/some_other_dir"]), 
        vec!["someDir/some_sub_dir", "someDir/some_other_dir"])]
 fn uploading_files_to_allowed_dir_works(
     #[case] server: TestServer,

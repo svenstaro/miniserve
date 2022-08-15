@@ -108,28 +108,22 @@ pub struct CliArgs {
     pub qrcode: bool,
 
     /// Enable file uploading
-    #[clap(short = 'u', long = "upload-files")]
-    pub file_upload: bool,
-
-    /// Allowed upload directories (together with -u)
-    /// 
-    /// If this is set, uploads are only allowed into the provided directories. 
-    #[clap(long, requires = "file-upload", value_hint = ValueHint::FilePath)]
-    pub allowed_upload_dir: Vec<PathBuf>,
+    #[clap(short = 'u', long = "upload-files", value_hint = ValueHint::FilePath, min_values = 0)]
+    pub allowed_upload_dir: Option<Vec<PathBuf>>,
 
     /// Enable creating directories
-    #[clap(short = 'U', long = "mkdir", requires = "file-upload")]
+    #[clap(short = 'U', long = "mkdir", requires = "allowed-upload-dir")]
     pub mkdir_enabled: bool,
 
     /// Specify uploadable media types
-    #[clap(arg_enum, short = 'm', long = "media-type", requires = "file-upload")]
+    #[clap(arg_enum, short = 'm', long = "media-type", requires = "allowed-upload-dir")]
     pub media_type: Option<Vec<MediaType>>,
 
     /// Directly specify the uploadable media type expression
     #[clap(
         short = 'M',
         long = "raw-media-type",
-        requires = "file-upload",
+        requires = "allowed-upload-dir",
         conflicts_with = "media-type"
     )]
     pub media_type_raw: Option<String>,
