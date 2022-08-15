@@ -1,12 +1,12 @@
 mod fixtures;
 
-use std::fs::create_dir_all;
 use assert_fs::fixture::TempDir;
 use fixtures::{server, server_no_stderr, tmpdir, Error, TestServer};
 use reqwest::blocking::{multipart, Client};
 use rstest::rstest;
 use select::document::Document;
 use select::predicate::{Attr, Text};
+use std::fs::create_dir_all;
 
 #[rstest]
 fn uploading_files_works(#[with(&["-u"])] server: TestServer) -> Result<(), Error> {
@@ -81,14 +81,12 @@ fn uploading_files_is_prevented(server: TestServer) -> Result<(), Error> {
     Ok(())
 }
 
-/// This test runs the server with --allowed-upload-dir argument and 
+/// This test runs the server with --allowed-upload-dir argument and
 /// checks that file upload to a different directory is actually prevented.
 #[rstest]
 #[case(server_no_stderr(&["-u",  "--allowed-upload-dir", "someDir"]))]
 #[case(server_no_stderr(&["-u",  "--allowed-upload-dir", "someDir/some_sub_dir"]))]
-fn uploading_files_is_restricted(
-    #[case] server: TestServer
-) -> Result<(), Error> {
+fn uploading_files_is_restricted(#[case] server: TestServer) -> Result<(), Error> {
     let test_file_name = "uploaded test file.txt";
 
     // Then try to upload file to root directory (which is not the --allowed-upload-dir)
@@ -100,12 +98,14 @@ fn uploading_files_is_restricted(
 
     let client = Client::new();
     // Ensure uploading fails and returns an error
-    assert!(client
-        .post(server.url().join("/upload?path=/")?)
-        .multipart(form)
-        .send()?
-        .error_for_status()
-        .is_err());
+    assert_eq!(
+        500,
+        client
+            .post(server.url().join("/upload?path=/")?)
+            .multipart(form)
+            .send()?
+            .status()
+    );
 
     // After uploading, check whether the uploaded file is NOT getting listed.
     let body = reqwest::blocking::get(server.url())?;
@@ -127,7 +127,7 @@ fn uploading_files_to_allowed_dir_works(
 ) -> Result<(), Error> {
     let test_file_name = "uploaded test file.txt";
 
-    for upload_dir in upload_dirs{
+    for upload_dir in upload_dirs {
         // Create test directory
         create_dir_all(server.path().join(upload_dir)).unwrap();
 
@@ -160,11 +160,9 @@ fn uploading_files_to_allowed_dir_works(
         let body = reqwest::blocking::get(server.url().join(upload_dir)?)?;
         let parsed = Document::from_read(body)?;
         assert!(parsed.find(Text).any(|x| x.text() == test_file_name));
-
     }
     Ok(())
 }
-
 
 /// Test for path traversal vulnerability (CWE-22) in both path parameter of query string and in
 /// file name (Content-Disposition)
