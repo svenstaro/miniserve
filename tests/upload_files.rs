@@ -117,47 +117,51 @@ fn uploading_files_is_restricted(
 
 /// This tests that we can upload files to the directory specified by --allow-upload-dir
 #[rstest]
-#[case(server(&["-u",  "--allowed-upload-dir", "someDir"]), "someDir")]
-#[case(server(&["-u",  "--allowed-upload-dir", "someDir/some_sub_dir"]), "someDir/some_sub_dir")]
+#[case(server(&["-u",  "--allowed-upload-dir", "someDir"]), vec!["someDir"])]
+#[case(server(&["-u",  "--allowed-upload-dir", "someDir/some_sub_dir"]), vec!["someDir/some_sub_dir"])]
+#[case(server(&["-u",  "--allowed-upload-dir", "someDir/some_sub_dir", "--allowed-upload-dir", "someDir/some_other_dir"]), 
+       vec!["someDir/some_sub_dir", "someDir/some_other_dir"])]
 fn uploading_files_to_allowed_dir_works(
     #[case] server: TestServer,
-    #[case] upload_dir: &str,
+    #[case] upload_dirs: Vec<&str>,
 ) -> Result<(), Error> {
     let test_file_name = "uploaded test file.txt";
 
-    // Create test directory
-    create_dir_all(server.path().join(upload_dir)).unwrap();
+    for upload_dir in upload_dirs{
+        // Create test directory
+        create_dir_all(server.path().join(upload_dir)).unwrap();
 
-    // Before uploading, check whether the uploaded file does not yet exist.
-    let body = reqwest::blocking::get(server.url().join(upload_dir)?)?.error_for_status()?;
-    let parsed = Document::from_read(body)?;
-    assert!(parsed.find(Text).all(|x| x.text() != test_file_name));
+        // Before uploading, check whether the uploaded file does not yet exist.
+        let body = reqwest::blocking::get(server.url().join(upload_dir)?)?.error_for_status()?;
+        let parsed = Document::from_read(body)?;
+        assert!(parsed.find(Text).all(|x| x.text() != test_file_name));
 
-    // Perform the actual upload.
-    let upload_action = parsed
-        .find(Attr("id", "file_submit"))
-        .next()
-        .expect("Couldn't find element with id=file_submit")
-        .attr("action")
-        .expect("Upload form doesn't have action attribute");
-    let form = multipart::Form::new();
-    let part = multipart::Part::text("this should be uploaded")
-        .file_name(test_file_name)
-        .mime_str("text/plain")?;
-    let form = form.part("file_to_upload", part);
+        // Perform the actual upload.
+        let upload_action = parsed
+            .find(Attr("id", "file_submit"))
+            .next()
+            .expect("Couldn't find element with id=file_submit")
+            .attr("action")
+            .expect("Upload form doesn't have action attribute");
+        let form = multipart::Form::new();
+        let part = multipart::Part::text("this should be uploaded")
+            .file_name(test_file_name)
+            .mime_str("text/plain")?;
+        let form = form.part("file_to_upload", part);
 
-    let client = Client::new();
-    client
-        .post(server.url().join(upload_action)?)
-        .multipart(form)
-        .send()?
-        .error_for_status()?;
+        let client = Client::new();
+        client
+            .post(server.url().join(upload_action)?)
+            .multipart(form)
+            .send()?
+            .error_for_status()?;
 
-    // After uploading, check whether the uploaded file is now getting listed.
-    let body = reqwest::blocking::get(server.url().join(upload_dir)?)?;
-    let parsed = Document::from_read(body)?;
-    assert!(parsed.find(Text).any(|x| x.text() == test_file_name));
+        // After uploading, check whether the uploaded file is now getting listed.
+        let body = reqwest::blocking::get(server.url().join(upload_dir)?)?;
+        let parsed = Document::from_read(body)?;
+        assert!(parsed.find(Text).any(|x| x.text() == test_file_name));
 
+    }
     Ok(())
 }
 
