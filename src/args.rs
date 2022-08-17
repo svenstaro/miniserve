@@ -107,7 +107,7 @@ pub struct CliArgs {
     #[clap(short = 'q', long = "qrcode")]
     pub qrcode: bool,
 
-    /// Enable file uploading
+    /// Enable file uploading (and optionally specify for which directory)
     #[clap(short = 'u', long = "upload-files", value_hint = ValueHint::FilePath, min_values = 0)]
     pub allowed_upload_dir: Option<Vec<PathBuf>>,
 
