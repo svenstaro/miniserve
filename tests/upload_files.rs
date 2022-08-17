@@ -118,6 +118,7 @@ fn uploading_files_is_restricted(#[case] server: TestServer) -> Result<(), Error
 /// This tests that we can upload files to the directory specified by --allow-upload-dir
 #[rstest]
 #[case(server(&["-u", "someDir"]), vec!["someDir"])]
+#[case(server(&["-u", "./someDir"]), vec!["./someDir"])]
 #[case(server(&["-u", "someDir/some_sub_dir"]), vec!["someDir/some_sub_dir"])]
 #[case(server(&["-u", "someDir/some_sub_dir", "-u", "someDir/some_other_dir"]), 
        vec!["someDir/some_sub_dir", "someDir/some_other_dir"])]

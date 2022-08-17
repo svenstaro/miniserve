@@ -218,7 +218,7 @@ pub async fn upload_file(
 /// and optionally prevent traversing hidden directories.
 ///
 /// See the unit tests tests::test_sanitize_path* for examples
-fn sanitize_path(path: &Path, traverse_hidden: bool) -> Option<PathBuf> {
+pub fn sanitize_path(path: &Path, traverse_hidden: bool) -> Option<PathBuf> {
     let mut buf = PathBuf::new();
 
     for comp in path.components() {
