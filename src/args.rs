@@ -116,7 +116,12 @@ pub struct CliArgs {
     pub mkdir_enabled: bool,
 
     /// Specify uploadable media types
-    #[clap(arg_enum, short = 'm', long = "media-type", requires = "allowed-upload-dir")]
+    #[clap(
+        arg_enum,
+        short = 'm',
+        long = "media-type",
+        requires = "allowed-upload-dir"
+    )]
     pub media_type: Option<Vec<MediaType>>,
 
     /// Directly specify the uploadable media type expression

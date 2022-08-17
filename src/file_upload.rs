@@ -171,16 +171,18 @@ pub async fn upload_file(
         ContextualError::IoError("Failed to resolve path served by miniserve".to_string(), e)
     })?;
 
-
     // Disallow paths outside of allowed directories
-    let upload_allowed = conf.allowed_upload_dir.is_empty() || 
-        conf.allowed_upload_dir.iter().any(|s| upload_path.starts_with(s)); 
+    let upload_allowed = conf.allowed_upload_dir.is_empty()
+        || conf
+            .allowed_upload_dir
+            .iter()
+            .any(|s| upload_path.starts_with(s));
 
     if !upload_allowed {
-        return Err(ContextualError::InvalidPathError("Not allowed to upload to this path".to_string()));
+        return Err(ContextualError::InvalidPathError(
+            "Not allowed to upload to this path".to_string(),
+        ));
     }
-
-
 
     // Disallow the target path to go outside of the served directory
     // The target directory shouldn't be canonicalized when it gets passed to
