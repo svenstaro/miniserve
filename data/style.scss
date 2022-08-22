@@ -20,21 +20,22 @@ $themes: squirrel, archlinux, monokai, zenburn;
 html.qr_code_page {
     width: 100vw;
     height: 100vh;
+
+    body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        display: grid;
+        align-items: center;
+        justify-items: center;
+    }
+
+    svg {
+        width: 80%;
+        height: 80%;
+    }
 }
 
-html.qr_code_page body {
-    width: 100%;
-    height: 100%;
-    margin: 0;
-    display: grid;
-    align-items: center;
-    justify-items: center;
-}
-
-html.qr_code_page svg {
-    width: 80%;
-    height: 80%;
-}
 
 html {
     font-smoothing: antialiased;
