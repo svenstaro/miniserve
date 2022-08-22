@@ -9,9 +9,11 @@ $themes: squirrel, archlinux, monokai, zenburn;
 // in a selector list.
 @function body_not_themed() {
     $s: unquote("body");
+
     @each $t in $themes {
         $s: selector.append($s, unquote(":not(.theme_#{$t})"));
     }
+
     @return $s;
 }
 
@@ -58,6 +60,7 @@ body {
         flex-direction: row;
         justify-content: center;
         flex-wrap: wrap;
+
         .cmd {
             margin: 0;
             padding-left: 5px;
@@ -131,7 +134,7 @@ nav {
     justify-content: flex-end;
 }
 
-nav > div {
+nav>div {
     position: relative;
     margin-left: 0.5rem;
 }
@@ -144,7 +147,7 @@ nav p {
     color: var(--change_theme_link_color);
 }
 
-nav p + * {
+nav p+* {
     display: none;
     position: absolute;
     left: 0;
@@ -162,12 +165,12 @@ nav p + * {
     }
 }
 
-nav > div:hover p {
+nav>div:hover p {
     cursor: pointer;
     color: var(--switch_theme_link_color);
 }
 
-nav > div:hover p + * {
+nav>div:hover p+* {
     display: block;
     border-top: 1px solid var(--switch_theme_border);
 }
@@ -768,9 +771,13 @@ th span.active span {
 // - is set as default theme by .default_theme_* and no other theme is active
 // to the placeholder selector list by means of @extend.
 @each $theme in $themes {
-    %theme_#{$theme} { @include theme_#{$theme}; }
+    %theme_#{$theme} {
+        @include theme_#{$theme};
+    }
 
-    body.theme_#{$theme} { @extend %theme_#{$theme}; }
+    body.theme_#{$theme} {
+        @extend %theme_#{$theme};
+    }
 
     #{body_not_themed()}.default_theme_#{$theme} {
         @extend %theme_#{$theme};
@@ -783,7 +790,9 @@ th span.active span {
 // them when dark mode is enabled.
 @each $theme in $themes {
     @media (prefers-color-scheme: dark) {
-        %theme_dark_#{$theme} { @include theme_#{$theme}; }
+        %theme_dark_#{$theme} {
+            @include theme_#{$theme};
+        }
     }
 
     // this extension will still end up inside the media query,
