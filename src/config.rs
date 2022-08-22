@@ -251,10 +251,10 @@ impl MiniserveConfig {
             overwrite_files: args.overwrite_files,
             show_qrcode: args.qrcode,
             mkdir_enabled: args.mkdir_enabled,
-            file_upload: !args.allowed_upload_dir.is_none(),
+            file_upload: args.allowed_upload_dir.is_some(),
             allowed_upload_dir: args
                 .allowed_upload_dir
-                .unwrap_or(vec![])
+                .unwrap_or_default()
                 .iter()
                 .map(|x| sanitize_path(x, false).unwrap())
                 .collect(),
