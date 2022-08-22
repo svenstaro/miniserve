@@ -5,14 +5,12 @@ use assert_fs::TempDir;
 use fixtures::{port, server_no_stderr, tmpdir, Error, TestServer};
 use reqwest::StatusCode;
 use rstest::rstest;
-use std::process::Command;
+use std::process::{Command, Stdio};
 use std::thread::sleep;
 use std::time::Duration;
 
 #[cfg(not(windows))]
 fn run_in_faketty_kill_and_get_stdout(template: &Command) -> Result<String, Error> {
-    use std::process::Stdio;
-
     use fake_tty::{bash_command, get_stdout};
 
     let cmd = {
@@ -72,6 +70,8 @@ fn qrcode_hidden_in_non_tty_when_enabled(tmpdir: TempDir, port: u16) -> Result<(
         .arg(port.to_string())
         .arg("-q")
         .arg(tmpdir.path())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
         .spawn()?;
 
     sleep(Duration::from_secs(1));
