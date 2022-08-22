@@ -17,9 +17,6 @@ $themes: squirrel, archlinux, monokai, zenburn;
     @return $s;
 }
 
-// make QR code expand and fill page
-// --------------------------------------------------
-
 html.qr_code_page {
     width: 100vw;
     height: 100vh;
@@ -38,8 +35,6 @@ html.qr_code_page svg {
     width: 80%;
     height: 80%;
 }
-
-// --------------------------------------------------
 
 html {
     font-smoothing: antialiased;
