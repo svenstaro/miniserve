@@ -154,7 +154,10 @@ pub async fn file_handler(req: HttpRequest) -> actix_web::Result<actix_files::Na
 
 /// List a directory and renders a HTML file accordingly
 /// Adapted from https://docs.rs/actix-web/0.7.13/src/actix_web/fs.rs.html#564
-pub fn directory_listing(dir: &actix_files::Directory, req: &HttpRequest) -> io::Result<ServiceResponse> {
+pub fn directory_listing(
+    dir: &actix_files::Directory,
+    req: &HttpRequest,
+) -> io::Result<ServiceResponse> {
     let extensions = req.extensions();
     let current_user: Option<&CurrentUser> = extensions.get::<CurrentUser>();
 
@@ -195,7 +198,8 @@ pub fn directory_listing(dir: &actix_files::Directory, req: &HttpRequest) -> io:
                 }
                 Component::Normal(s) => {
                     name = s.to_string_lossy().to_string();
-                    link_accumulator.push_str(&(utf8_percent_encode(&name, PATH_SEGMENT).to_string() + "/"));
+                    link_accumulator
+                        .push_str(&(utf8_percent_encode(&name, PATH_SEGMENT).to_string() + "/"));
                 }
                 _ => name = "".to_string(),
             };
@@ -297,9 +301,9 @@ pub fn directory_listing(dir: &actix_files::Directory, req: &HttpRequest) -> io:
     }
 
     match query_params.sort.unwrap_or(SortingMethod::Name) {
-        SortingMethod::Name => {
-            entries.sort_by(|e1, e2| alphanumeric_sort::compare_str(e1.name.to_lowercase(), e2.name.to_lowercase()))
-        }
+        SortingMethod::Name => entries.sort_by(|e1, e2| {
+            alphanumeric_sort::compare_str(e1.name.to_lowercase(), e2.name.to_lowercase())
+        }),
         SortingMethod::Size => entries.sort_by(|e1, e2| {
             // If we can't get the size of the entry (directory for instance)
             // let's consider it's 0b
@@ -367,7 +371,10 @@ pub fn directory_listing(dir: &actix_files::Directory, req: &HttpRequest) -> io:
                 .content_type(archive_method.content_type())
                 .append_header(archive_method.content_encoding())
                 .append_header(("Content-Transfer-Encoding", "binary"))
-                .append_header(("Content-Disposition", format!("attachment; filename={:?}", file_name)))
+                .append_header((
+                    "Content-Disposition",
+                    format!("attachment; filename={:?}", file_name),
+                ))
                 .body(actix_web::body::BodyStream::new(rx)),
         ))
     } else {
