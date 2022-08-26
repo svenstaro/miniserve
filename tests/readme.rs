@@ -25,7 +25,7 @@ fn no_readme_contents(server: TestServer) -> Result<(), Error> {
 }
 
 #[rstest]
-/// Show readme contents when told to if there is no readme.md file
+/// Show readme contents when told to if there is readme.md file
 fn show_readme_contents(tmpdir: TempDir) -> Result<(), Error> {
     tmpdir
         .child("readme.md")
@@ -68,13 +68,13 @@ fn show_readme_contents(tmpdir: TempDir) -> Result<(), Error> {
 }
 
 #[rstest]
-/// Show readme contents when told to if there is no readme.md file
+/// Show readme contents when told to if there is readme.md file on directories.
 fn show_readme_contents_directories(tmpdir: TempDir) -> Result<(), Error> {
     let directories = DIRECTORIES.to_vec();
     for directory in directories.iter() {
         tmpdir
             .child(format!("{}{}", directory, "readme.md"))
-            .write_str("Readme Contents.")
+            .write_str(&format!("Readme Contents for {}.", directory))
             .expect("Couldn't write to file");
     }
 
@@ -115,7 +115,7 @@ fn show_readme_contents_directories(tmpdir: TempDir) -> Result<(), Error> {
                 .unwrap()
                 .text()
                 .trim()
-                == "Readme Contents."
+                == format!("Readme Contents for {}.", directory)
         );
     }
 
