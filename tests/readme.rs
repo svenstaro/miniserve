@@ -48,13 +48,14 @@ fn show_readme_contents(#[with(&["--readme"])] server: TestServer) -> Result<(),
 
 #[rstest]
 /// Show readme contents when told to if there is readme.md file on directories.
-fn show_readme_contents_directories(#[with(&["--readme"])] server: TestServer) -> Result<(), Error> {
+fn show_readme_contents_directories(
+    #[with(&["--readme"])] server: TestServer,
+) -> Result<(), Error> {
     let directories = DIRECTORIES.to_vec();
 
     for directory in directories {
         let dir_body =
-            reqwest::blocking::get(server.url().join(&directory)?)?
-                .error_for_status()?;
+            reqwest::blocking::get(server.url().join(&directory)?)?.error_for_status()?;
         let dir_body_parsed = Document::from_read(dir_body)?;
         assert!(dir_body_parsed.find(Attr("id", "readme")).next().is_some());
         assert!(dir_body_parsed
