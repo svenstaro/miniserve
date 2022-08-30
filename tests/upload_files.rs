@@ -117,23 +117,27 @@ fn uploading_files_is_restricted(#[case] server: TestServer) -> Result<(), Error
 
 /// This tests that we can upload files to the directory specified by --allow-upload-dir
 #[rstest]
-#[case(server(&["-u", "someDir"]), vec!["someDir"])]
-#[case(server(&["-u", "./-someDir"]), vec!["./-someDir"])]
-#[case(server(&["-u", "someDir/some_sub_dir"]), vec!["someDir/some_sub_dir"])]
+#[case(server(&["-u", "someDir"]), vec!["someDir".to_string()])]
+#[case(server(&["-u", "./-someDir"]), vec!["./-someDir".to_string()])]
+#[case(server(&["-u", "someDir/some_sub_dir"]), vec!["someDir/some_sub_dir".to_string()])]
 #[case(server(&["-u", "someDir/some_sub_dir", "-u", "someDir/some_other_dir"]), 
-       vec!["someDir/some_sub_dir", "someDir/some_other_dir"])]
+       vec!["someDir/some_sub_dir".to_string(), "someDir/some_other_dir".to_string()])]
 fn uploading_files_to_allowed_dir_works(
     #[case] server: TestServer,
-    #[case] upload_dirs: Vec<&str>,
+    #[case] mut upload_dirs: Vec<String>,
 ) -> Result<(), Error> {
     let test_file_name = "uploaded test file.txt";
+    
+    if cfg!(target_os = "windows"){
+        upload_dirs = upload_dirs.iter().map(|x| x.replace("/", "\\")).collect();
+    }
 
     for upload_dir in upload_dirs {
         // Create test directory
-        create_dir_all(server.path().join(upload_dir)).unwrap();
+        create_dir_all(server.path().join(upload_dir.as_str())).unwrap();
 
         // Before uploading, check whether the uploaded file does not yet exist.
-        let body = reqwest::blocking::get(server.url().join(upload_dir)?)?.error_for_status()?;
+        let body = reqwest::blocking::get(server.url().join(upload_dir.as_str())?)?.error_for_status()?;
         let parsed = Document::from_read(body)?;
         assert!(parsed.find(Text).all(|x| x.text() != test_file_name));
 
@@ -158,7 +162,7 @@ fn uploading_files_to_allowed_dir_works(
             .error_for_status()?;
 
         // After uploading, check whether the uploaded file is now getting listed.
-        let body = reqwest::blocking::get(server.url().join(upload_dir)?)?;
+        let body = reqwest::blocking::get(server.url().join(upload_dir.as_str())?)?;
         let parsed = Document::from_read(body)?;
         assert!(parsed.find(Text).any(|x| x.text() == test_file_name));
     }
