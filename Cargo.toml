@@ -70,7 +70,7 @@ tls = ["rustls", "rustls-pemfile", "actix-web/rustls"]
 assert_cmd = "2"
 assert_fs = "1"
 predicates = "2"
-pretty_assertions = "1.2"
+pretty_assertions = "1.3"
 regex = "1"
 reqwest = { version = "0.11", features = ["blocking", "multipart", "rustls-tls"], default-features = false }
 rstest = "0.15"
