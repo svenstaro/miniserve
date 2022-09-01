@@ -12,8 +12,8 @@ use actix_web_httpauth::middleware::HttpAuthentication;
 use anyhow::Result;
 use clap::{crate_version, IntoApp, Parser};
 use clap_complete::generate;
+use fast_qr::QRBuilder;
 use log::{error, warn};
-use qrcode::QrCode;
 use yansi::{Color, Paint};
 
 mod archive;
@@ -240,13 +240,13 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
             .iter()
             .filter(|url| !url.contains("//127.0.0.1:") && !url.contains("//[::1]:"))
         {
-            match QrCode::with_error_correction_level(url, consts::QR_EC_LEVEL) {
+            match QRBuilder::new(url.clone()).ecl(consts::QR_EC_LEVEL).build() {
                 Ok(qr) => {
                     println!("QR code for {}:", Color::Green.paint(url).bold());
-                    print_qr(&qr);
+                    qr.print();
                 }
                 Err(e) => {
-                    error!("Failed to render QR to terminal: {}", e);
+                    error!("Failed to render QR to terminal: {:?}", e);
                 }
             };
         }
@@ -351,29 +351,4 @@ async fn css() -> impl Responder {
     HttpResponse::Ok()
         .insert_header(ContentType(mime::TEXT_CSS))
         .body(css)
-}
-
-// Prints to the console a normal and an inverted QrCode side by side.
-fn print_qr(qr: &QrCode) {
-    use qrcode::render::unicode::Dense1x2;
-
-    let normal = qr
-        .render()
-        .quiet_zone(true)
-        .dark_color(Dense1x2::Dark)
-        .light_color(Dense1x2::Light)
-        .build();
-    let inverted = qr
-        .render()
-        .quiet_zone(true)
-        .dark_color(Dense1x2::Light)
-        .light_color(Dense1x2::Dark)
-        .build();
-    let codes = normal
-        .lines()
-        .zip(inverted.lines())
-        .map(|(l, r)| format!("{} {}", l, r))
-        .collect::<Vec<_>>()
-        .join("\n");
-    println!("{}", codes);
 }

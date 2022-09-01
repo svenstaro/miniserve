@@ -2,10 +2,10 @@ use actix_web::http::StatusCode;
 use chrono::{DateTime, Utc};
 use chrono_humanize::Humanize;
 use clap::{crate_name, crate_version};
-use lazy_static::lazy_static;
+use fast_qr::convert::svg::SvgBuilder;
+use fast_qr::qr::QRCodeError;
+use fast_qr::QRBuilder;
 use maud::{html, Markup, PreEscaped, DOCTYPE};
-use qrcode::{types::QrError, QrCode};
-use regex::Regex;
 use std::time::SystemTime;
 use strum::IntoEnumIterator;
 
@@ -229,27 +229,11 @@ pub fn raw(entries: Vec<Entry>, is_root: bool) -> Markup {
 }
 
 /// Renders the QR code SVG
-fn qr_code_svg(url: impl AsRef<str>, no_width_height_attr: bool) -> Result<String, QrError> {
-    use qrcode::render::svg;
-    let qr = QrCode::with_error_correction_level(url.as_ref(), consts::QR_EC_LEVEL)?;
-    let mut svg = qr
-        .render()
-        .quiet_zone(false)
-        .dark_color(svg::Color("#000000"))
-        .light_color(svg::Color("#ffffff"))
-        .build();
-
-    if no_width_height_attr {
-        // HACK: qrcode crate hard-codes height and width into SVG's attributes.
-        // This behaviour may be undesirable because we want it to fit its HTML container.
-        // The proper way to remove them is to use a XML parser, but regex is good enough for a
-        // simple case like this.
-        lazy_static! {
-            static ref RE: Regex =
-                Regex::new(r#"(?P<front><svg.+? )width=".+?" height=".+?"(?P<aft>.+?>)"#).unwrap();
-        }
-        svg = RE.replace(&svg, "$front$aft").to_string();
-    }
+fn qr_code_svg(url: impl AsRef<str>, margin: usize) -> Result<String, QRCodeError> {
+    let qr = QRBuilder::new(url.as_ref().into())
+        .ecl(consts::QR_EC_LEVEL)
+        .build()?;
+    let svg = SvgBuilder::new().margin(margin).build_qr(qr);
 
     Ok(svg)
 }
@@ -338,9 +322,9 @@ fn qr_spoiler(show_qrcode: bool, content: impl AsRef<str>) -> Markup {
                     "QR code"
                 }
                 div.qrcode #qrcode {
-                    @match qr_code_svg(content, true) {
+                    @match qr_code_svg(content, 1) {
                         Ok(svg) => (PreEscaped(svg)),
-                        Err(err) => (format!("QR generation error: {}", err)),
+                        Err(err) => (format!("QR generation error: {:?}", err)),
                     }
                 }
             }
