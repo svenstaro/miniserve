@@ -17,26 +17,6 @@ $themes: squirrel, archlinux, monokai, zenburn;
     @return $s;
 }
 
-html.qr_code_page {
-    width: 100vw;
-    height: 100vh;
-
-    body {
-        width: 100%;
-        height: 100%;
-        margin: 0;
-        display: grid;
-        align-items: center;
-        justify-items: center;
-    }
-
-    svg {
-        width: 80%;
-        height: 80%;
-    }
-}
-
-
 html {
     font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
@@ -198,8 +178,11 @@ nav .qrcode {
     background: var(--switch_theme_background);
 }
 
-nav .qrcode img {
+nav .qrcode svg {
     display: block;
+    border: 0.3rem;
+    border-style: solid;
+    border-color: #ffffff;
 }
 
 nav .theme {

@@ -9,14 +9,13 @@ use actix_web::{HttpMessage, HttpRequest, HttpResponse};
 use bytesize::ByteSize;
 use comrak::{markdown_to_html, ComrakOptions};
 use percent_encoding::{percent_decode_str, utf8_percent_encode};
-use qrcode::QrCode;
 use serde::Deserialize;
 use strum_macros::{Display, EnumString};
 
 use crate::archive::ArchiveMethod;
 use crate::auth::CurrentUser;
 use crate::errors::{self, ContextualError};
-use crate::{consts, renderer};
+use crate::renderer;
 
 use self::percent_encode_sets::PATH_SEGMENT;
 
@@ -38,7 +37,6 @@ pub struct QueryParameters {
     pub order: Option<SortingOrder>,
     pub raw: Option<bool>,
     pub mkdir_name: Option<String>,
-    qrcode: Option<String>,
     download: Option<ArchiveMethod>,
 }
 
@@ -166,6 +164,13 @@ pub fn directory_listing(
 
     let base = Path::new(serve_path);
     let random_route_abs = format!("/{}", conf.route_prefix);
+    let abs_url = format!(
+        "{}://{}{}",
+        req.connection_info().scheme(),
+        req.connection_info().host(),
+        req.uri()
+    );
+    dbg!(&abs_url);
     let is_root = base.parent().is_none() || Path::new(&req.path()) == Path::new(&random_route_abs);
 
     let encoded_dir = match base.strip_prefix(random_route_abs) {
@@ -217,20 +222,6 @@ pub fn directory_listing(
     };
 
     let query_params = extract_query_parameters(req);
-
-    // If the `qrcode` parameter is included in the url, then should respond to the QR code
-    if let Some(url) = query_params.qrcode {
-        let res = match QrCode::with_error_correction_level(url, consts::QR_EC_LEVEL) {
-            Ok(qr) => HttpResponse::Ok()
-                .content_type(mime::TEXT_HTML_UTF_8)
-                .body(renderer::qr_code_page(&breadcrumbs, &qr, conf).into_string()),
-            Err(err) => {
-                log::error!("URL is invalid (too long?): {:?}", err);
-                HttpResponse::UriTooLong().finish()
-            }
-        };
-        return Ok(ServiceResponse::new(req.clone(), res));
-    }
 
     let mut entries: Vec<Entry> = Vec::new();
     let mut readme: Option<(String, String)> = None;
@@ -384,6 +375,7 @@ pub fn directory_listing(
                 renderer::page(
                     entries,
                     readme,
+                    abs_url,
                     is_root,
                     query_params,
                     &breadcrumbs,

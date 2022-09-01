@@ -2,12 +2,15 @@ use actix_web::http::StatusCode;
 use chrono::{DateTime, Utc};
 use chrono_humanize::Humanize;
 use clap::{crate_name, crate_version};
+use lazy_static::lazy_static;
 use maud::{html, Markup, PreEscaped, DOCTYPE};
-use qrcode::QrCode;
+use qrcode::{types::QrError, QrCode};
+use regex::Regex;
 use std::time::SystemTime;
 use strum::IntoEnumIterator;
 
 use crate::auth::CurrentUser;
+use crate::consts;
 use crate::listing::{Breadcrumb, Entry, QueryParameters, SortingMethod, SortingOrder};
 use crate::{archive::ArchiveMethod, MiniserveConfig};
 
@@ -16,6 +19,7 @@ use crate::{archive::ArchiveMethod, MiniserveConfig};
 pub fn page(
     entries: Vec<Entry>,
     readme: Option<(String, String)>,
+    abs_url: impl AsRef<str>,
     is_root: bool,
     query_params: QueryParameters,
     breadcrumbs: &[Breadcrumb],
@@ -86,7 +90,10 @@ pub fn page(
                         }
                     }
                 }
-                (color_scheme_selector(conf.show_qrcode, conf.hide_theme_selector))
+                nav {
+                    (qr_spoiler(conf.show_qrcode, abs_url))
+                    (color_scheme_selector(conf.hide_theme_selector))
+                }
                 div.container {
                     span #top { }
                     h1.title dir="ltr" {
@@ -221,25 +228,30 @@ pub fn raw(entries: Vec<Entry>, is_root: bool) -> Markup {
     }
 }
 
-/// Renders the QR code page
-pub fn qr_code_page(breadcrumbs: &[Breadcrumb], qr: &QrCode, conf: &MiniserveConfig) -> Markup {
+/// Renders the QR code SVG
+fn qr_code_svg(url: impl AsRef<str>, no_width_height_attr: bool) -> Result<String, QrError> {
     use qrcode::render::svg;
+    let qr = QrCode::with_error_correction_level(url.as_ref(), consts::QR_EC_LEVEL)?;
+    let mut svg = qr
+        .render()
+        .quiet_zone(false)
+        .dark_color(svg::Color("#000000"))
+        .light_color(svg::Color("#ffffff"))
+        .build();
 
-    let title = breadcrumbs_to_path_string(breadcrumbs);
-
-    html! {
-        (DOCTYPE)
-        html.qr_code_page {
-            (page_header(&title, false, &conf.favicon_route, &conf.css_route))
-            body {
-                (PreEscaped(qr.render()
-                    .quiet_zone(false)
-                    .dark_color(svg::Color("#000000"))
-                    .light_color(svg::Color("#ffffff"))
-                    .build()))
-            }
+    if no_width_height_attr {
+        // HACK: qrcode crate hard-codes height and width into SVG's attributes.
+        // This behaviour may be undesirable because we want it to fit its HTML container.
+        // The proper way to remove them is to use a XML parser, but regex is good enough for a
+        // simple case like this.
+        lazy_static! {
+            static ref RE: Regex =
+                Regex::new(r#"(?P<front><svg.+? )width=".+?" height=".+?"(?P<aft>.+?>)"#).unwrap();
         }
+        svg = RE.replace(&svg, "$front$aft").to_string();
     }
+
+    Ok(svg)
 }
 
 /// Build a path string from a list of breadcrumbs.
@@ -317,30 +329,37 @@ const THEME_PICKER_CHOICES: &[(&str, &str)] = &[
 
 pub const THEME_SLUGS: &[&str] = &["squirrel", "archlinux", "zenburn", "monokai"];
 
-/// Partial: color scheme selector
-fn color_scheme_selector(show_qrcode: bool, hide_theme_selector: bool) -> Markup {
+/// Partial: qr code spoiler
+fn qr_spoiler(show_qrcode: bool, content: impl AsRef<str>) -> Markup {
     html! {
-        nav {
-            @if show_qrcode {
-                div {
-                    p onmouseover="document.querySelector('#qrcode').src = `?qrcode=${encodeURIComponent(window.location.href)}`" {
-                        "QR code"
-                    }
-                    div.qrcode {
-                        img #qrcode alt="QR code" title="QR code of this page";
+        @if show_qrcode {
+            div {
+                p {
+                    "QR code"
+                }
+                div.qrcode #qrcode {
+                    @match qr_code_svg(content, true) {
+                        Ok(svg) => (PreEscaped(svg)),
+                        Err(err) => (format!("QR generation error: {}", err)),
                     }
                 }
             }
-            @if !hide_theme_selector {
-                div {
-                    p {
-                        "Change theme..."
-                    }
-                    ul.theme {
-                        @for color_scheme in THEME_PICKER_CHOICES {
-                            li.(format!("theme_{}", color_scheme.1)) {
-                                (color_scheme_link(color_scheme))
-                            }
+        }
+    }
+}
+
+/// Partial: color scheme selector
+fn color_scheme_selector(hide_theme_selector: bool) -> Markup {
+    html! {
+        @if !hide_theme_selector {
+            div {
+                p {
+                    "Change theme..."
+                }
+                ul.theme {
+                    @for color_scheme in THEME_PICKER_CHOICES {
+                        li.(format!("theme_{}", color_scheme.1)) {
+                            (color_scheme_link(color_scheme))
                         }
                     }
                 }

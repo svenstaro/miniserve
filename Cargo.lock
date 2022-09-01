@@ -1576,6 +1576,7 @@ dependencies = [
  "hex",
  "http",
  "httparse",
+ "lazy_static",
  "libflate",
  "log",
  "maud",
