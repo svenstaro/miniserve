@@ -170,7 +170,6 @@ pub fn directory_listing(
         req.connection_info().host(),
         req.uri()
     );
-    dbg!(&abs_url);
     let is_root = base.parent().is_none() || Path::new(&req.path()) == Path::new(&random_route_abs);
 
     let encoded_dir = match base.strip_prefix(random_route_abs) {
