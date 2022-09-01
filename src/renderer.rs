@@ -322,7 +322,7 @@ fn qr_spoiler(show_qrcode: bool, content: impl AsRef<str>) -> Markup {
                     "QR code"
                 }
                 div.qrcode #qrcode {
-                    @match qr_code_svg(content, 1) {
+                    @match qr_code_svg(content, consts::SVG_QR_MARGIN) {
                         Ok(svg) => (PreEscaped(svg)),
                         Err(err) => (format!("QR generation error: {:?}", err)),
                     }
