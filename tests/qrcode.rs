@@ -2,8 +2,7 @@ mod fixtures;
 
 use assert_cmd::prelude::CommandCargoExt;
 use assert_fs::TempDir;
-use fixtures::{port, server_no_stderr, tmpdir, Error, TestServer};
-use reqwest::StatusCode;
+use fixtures::{port, tmpdir, Error};
 use rstest::rstest;
 use std::process::{Command, Stdio};
 use std::thread::sleep;
@@ -81,24 +80,5 @@ fn qrcode_hidden_in_non_tty_when_enabled(tmpdir: TempDir, port: u16) -> Result<(
     let stdout = String::from_utf8(output.stdout)?;
 
     assert!(!stdout.contains("QR code for "));
-    Ok(())
-}
-
-#[rstest]
-fn get_svg_qrcode(#[from(server_no_stderr)] server: TestServer) -> Result<(), Error> {
-    // Ok
-    let resp = reqwest::blocking::get(server.url().join("?qrcode=test")?)?;
-
-    assert_eq!(resp.status(), StatusCode::OK);
-    let body = resp.text()?;
-    assert!(body.contains("qr_code_page"));
-    assert!(body.contains("<svg"));
-
-    // Err
-    let content: String = "0".repeat(8192);
-    let resp = reqwest::blocking::get(server.url().join(&format!("?qrcode={}", content))?)?;
-
-    assert_eq!(resp.status(), StatusCode::URI_TOO_LONG);
-
     Ok(())
 }
