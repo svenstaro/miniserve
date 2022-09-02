@@ -17,7 +17,6 @@ pub static FILES: &[&str] = &[
     "test.txt",
     "test.html",
     "test.mkv",
-    "readme.md",
     #[cfg(not(windows))]
     "test \" \' & < >.csv",
     "😀.data",
