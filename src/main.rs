@@ -188,6 +188,8 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
             .wrap(middleware::Logger::default())
             .route(&inside_config.favicon_route, web::get().to(favicon))
             .route(&inside_config.css_route, web::get().to(css))
+            .route(&inside_config.uppy_css_route, web::get().to(uppy_css))
+            .route(&inside_config.uppy_js_route, web::get().to(uppy_js))
             .service(
                 web::scope(&inside_config.route_prefix)
                     .wrap(middleware::Condition::new(
@@ -350,6 +352,18 @@ async fn css() -> impl Responder {
     HttpResponse::Ok()
         .insert_header(ContentType(mime::TEXT_CSS))
         .body(css)
+}
+async fn uppy_css() -> impl Responder {
+    let uppy_css = include_str!("../data/uppy.min.css");
+    HttpResponse::Ok()
+        .insert_header(ContentType(mime::TEXT_CSS))
+        .body(uppy_css)
+}
+async fn uppy_js() -> impl Responder {
+    let uppy_js = include_str!("../data/uppy.min.js");
+    HttpResponse::Ok()
+        .insert_header(ContentType(mime::APPLICATION_JAVASCRIPT))
+        .body(uppy_js)
 }
 
 // Prints to the console two inverted QrCodes side by side.
