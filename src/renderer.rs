@@ -130,14 +130,14 @@ pub fn page(
                                     }
                                     link rel="stylesheet" href={ (conf.uppy_css_route) };
                                     script src={ (conf.uppy_js_route) } {};
-                                    (PreEscaped(r#"
+                                    (PreEscaped(format!(r#"
                                     <button id="uppyT">Uppy</button>
                                     <script>
-                                        var uppy = new Uppy.Uppy({logger:Uppy.debugLogger})
-                                        uppy.use(Uppy.Dashboard, {trigger: '#uppyT', proudlyDisplayPoweredByUppy: false, theme: 'auto'})
-                                        uppy.use(Uppy.XHRUpload, {endpoint: '/upload?path=/', fieldName: 'file_to_upload', allowedMetaFields: []})
+                                        var uppy = new Uppy.Uppy({{logger:Uppy.debugLogger}});
+                                        uppy.use(Uppy.Dashboard, {{trigger: '#uppyT', proudlyDisplayPoweredByUppy: false, theme: 'auto', showProgressDetails: true, doneButtonHandler: ()=>{{location.reload()}}}});
+                                        uppy.use(Uppy.XHRUpload, {{endpoint: '{}', fieldName: 'file_to_upload', allowedMetaFields: []}});
                                     </script>
-                                    "#))
+                                    "#, upload_action)))
                                 }
                             }
                             @if conf.mkdir_enabled {
