@@ -11,7 +11,6 @@ use actix_web::{middleware, App, HttpRequest, HttpResponse};
 use actix_web_httpauth::middleware::HttpAuthentication;
 use anyhow::Result;
 use clap::{crate_version, IntoApp, Parser};
-use clap_complete::generate;
 use log::{error, warn};
 use qrcodegen::{QrCode, QrCodeEcc};
 use yansi::{Color, Paint};
@@ -35,7 +34,7 @@ fn main() -> Result<()> {
     if let Some(shell) = args.print_completions {
         let mut clap_app = args::CliArgs::command();
         let app_name = clap_app.get_name().to_string();
-        generate(shell, &mut clap_app, app_name, &mut io::stdout());
+        clap_complete::generate(shell, &mut clap_app, app_name, &mut io::stdout());
         return Ok(());
     }
 
