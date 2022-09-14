@@ -121,12 +121,12 @@ impl Entry {
         }
     }
 
-    /// Returns wether the entry is a directory
+    /// Returns whether the entry is a directory
     pub fn is_dir(&self) -> bool {
         self.entry_type == EntryType::Directory
     }
 
-    /// Returns wether the entry is a file
+    /// Returns whether the entry is a file
     pub fn is_file(&self) -> bool {
         self.entry_type == EntryType::File
     }

@@ -203,7 +203,7 @@ pub struct CliArgs {
     pub readme: bool,
 }
 
-/// Checks wether an interface is valid, i.e. it can be parsed into an IP address
+/// Checks whether an interface is valid, i.e. it can be parsed into an IP address
 fn parse_interface(src: &str) -> Result<IpAddr, std::net::AddrParseError> {
     src.parse::<IpAddr>()
 }
