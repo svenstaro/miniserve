@@ -20,7 +20,7 @@ fn webpage_hides_qrcode_when_disabled(server: TestServer) -> Result<(), Error> {
 }
 
 #[rstest]
-fn webpage_hides_qrcode_when_enabled(#[with(&["-q"])] server: TestServer) -> Result<(), Error> {
+fn webpage_shows_qrcode_when_enabled(#[with(&["-q"])] server: TestServer) -> Result<(), Error> {
     let body = reqwest::blocking::get(server.url())?.error_for_status()?;
     let parsed = Document::from_read(body)?;
     assert!(parsed.find(Attr("id", "qrcode")).next().is_some());
