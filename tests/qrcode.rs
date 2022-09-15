@@ -2,11 +2,31 @@ mod fixtures;
 
 use assert_cmd::prelude::CommandCargoExt;
 use assert_fs::TempDir;
-use fixtures::{port, tmpdir, Error};
+use fixtures::{port, server, tmpdir, Error, TestServer};
 use rstest::rstest;
+use select::document::Document;
+use select::predicate::Attr;
 use std::process::{Command, Stdio};
 use std::thread::sleep;
 use std::time::Duration;
+
+#[rstest]
+fn webpage_hides_qrcode_when_disabled(server: TestServer) -> Result<(), Error> {
+    let body = reqwest::blocking::get(server.url())?.error_for_status()?;
+    let parsed = Document::from_read(body)?;
+    assert!(parsed.find(Attr("id", "qrcode")).next().is_none());
+
+    Ok(())
+}
+
+#[rstest]
+fn webpage_hides_qrcode_when_enabled(#[with(&["-q"])] server: TestServer) -> Result<(), Error> {
+    let body = reqwest::blocking::get(server.url())?.error_for_status()?;
+    let parsed = Document::from_read(body)?;
+    assert!(parsed.find(Attr("id", "qrcode")).next().is_some());
+
+    Ok(())
+}
 
 #[cfg(not(windows))]
 fn run_in_faketty_kill_and_get_stdout(template: &Command) -> Result<String, Error> {
