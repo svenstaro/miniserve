@@ -11,7 +11,6 @@ use actix_web::{middleware, App, HttpRequest, HttpResponse};
 use actix_web_httpauth::middleware::HttpAuthentication;
 use anyhow::Result;
 use clap::{crate_version, IntoApp, Parser};
-use clap_complete::generate;
 use fast_qr::QRBuilder;
 use log::{error, warn};
 use yansi::{Color, Paint};
@@ -36,7 +35,7 @@ fn main() -> Result<()> {
     if let Some(shell) = args.print_completions {
         let mut clap_app = args::CliArgs::command();
         let app_name = clap_app.get_name().to_string();
-        generate(shell, &mut clap_app, app_name, &mut io::stdout());
+        clap_complete::generate(shell, &mut clap_app, app_name, &mut io::stdout());
         return Ok(());
     }
 
@@ -300,7 +299,7 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
             if conf.spa {
                 files = files.default_handler(
                     NamedFile::open(&conf.path.join(index_file))
-                        .expect("Cant open SPA index file."),
+                        .expect("Can't open SPA index file."),
                 );
             }
         }

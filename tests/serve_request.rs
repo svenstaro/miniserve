@@ -33,6 +33,9 @@ fn serves_requests_with_no_options(tmpdir: TempDir) -> Result<(), Error> {
     for &file in FILES {
         assert!(parsed.find(|x: &Node| x.text() == file).next().is_some());
     }
+    for &dir in DIRECTORIES {
+        assert!(parsed.find(|x: &Node| x.text() == dir).next().is_some());
+    }
 
     child.kill()?;
 
@@ -135,7 +138,7 @@ fn serves_requests_symlinks(
     let broken = "symlink broken";
 
     // Set up some basic symlinks:
-    // to dir, to file, to non-existant location
+    // to dir, to file, to non-existent location
     let orig = DIRECTORIES[0].strip_suffix("/").unwrap();
     let link = server.path().join(dir.strip_suffix("/").unwrap());
     symlink_dir(orig, link).expect("Couldn't create symlink");
@@ -166,7 +169,7 @@ fn serves_requests_symlinks(
         }
 
         // If following symlinks is deactivated, we can just skip this iteration as we assorted
-        // above tht no entries in the listing can be found for symlinks in that case.
+        // above the no entries in the listing can be found for symlinks in that case.
         if no_symlinks {
             continue;
         }

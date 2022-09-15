@@ -5,7 +5,7 @@
 # miniserve - a CLI tool to serve files and dirs over HTTP
 
 [![CI](https://github.com/svenstaro/miniserve/workflows/CI/badge.svg)](https://github.com/svenstaro/miniserve/actions)
-[![Docker Cloud Build Status](https://img.shields.io/docker/cloud/build/svenstaro/miniserve)](https://cloud.docker.com/repository/docker/svenstaro/miniserve/)
+[![Docker Hub](https://img.shields.io/docker/pulls/svenstaro/miniserve)](https://cloud.docker.com/repository/docker/svenstaro/miniserve/)
 [![Crates.io](https://img.shields.io/crates/v/miniserve.svg)](https://crates.io/crates/miniserve)
 [![license](http://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/svenstaro/miniserve/blob/master/LICENSE)
 [![Stars](https://img.shields.io/github/stars/svenstaro/miniserve.svg)](https://github.com/svenstaro/miniserve/stargazers)
@@ -105,7 +105,7 @@ Some mobile browsers like Firefox on Android will offer to open the camera app w
 
 ## Usage
 
-    miniserve 0.20.0
+    miniserve 0.21.0
 
     Sven-Hendrik Haase <svenstaro@gmail.com>, Boastful Squirrel <boastful.squirrel@gmail.com>
 
