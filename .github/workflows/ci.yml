@@ -4,13 +4,11 @@ on: [push, pull_request]
 
 jobs:
   ci:
-    name: ${{ matrix.rust }} on ${{ matrix.os }}
+    name: ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 30
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        rust: [stable, nightly]
 
     steps:
       - name: Checkout code
@@ -20,7 +18,7 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: ${{ matrix.rust }}
+          toolchain: stable
           override: true
           components: rustfmt, clippy
 
@@ -45,4 +43,3 @@ jobs:
         with:
           command: clippy
           args: -- -D warnings
-        if: matrix.rust == 'nightly'
