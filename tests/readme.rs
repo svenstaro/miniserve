@@ -8,17 +8,21 @@ use std::fs::{remove_file, File};
 use std::io::Write;
 use std::path::PathBuf;
 
-#[rstest]
 /// Do not show readme contents by default
+#[rstest]
 fn no_readme_contents(server: TestServer) -> Result<(), Error> {
     let body = reqwest::blocking::get(server.url())?.error_for_status()?;
     let parsed = Document::from_read(body)?;
+
+    // Check that the regular file listing still works.
     for &file in FILES {
         assert!(parsed.find(|x: &Node| x.text() == file).next().is_some());
     }
     for &dir in DIRECTORIES {
         assert!(parsed.find(|x: &Node| x.text() == dir).next().is_some());
     }
+
+    // Check that there is no readme stuff here.
     assert!(parsed.find(Attr("id", "readme")).next().is_none());
     assert!(parsed.find(Attr("id", "readme-filename")).next().is_none());
     assert!(parsed.find(Attr("id", "readme-contents")).next().is_none());
@@ -26,6 +30,7 @@ fn no_readme_contents(server: TestServer) -> Result<(), Error> {
     Ok(())
 }
 
+/// Show readme contents when told to if there is a readme file in the root
 #[rstest(
     readme_name,
     case("Readme.md"),
@@ -34,8 +39,6 @@ fn no_readme_contents(server: TestServer) -> Result<(), Error> {
     case("README.MD"),
     case("ReAdMe.Md")
 )]
-
-/// Show readme contents when told to if there is readme.md/README.md file in root
 fn show_root_readme_contents(
     #[with(&["--readme"])] server: TestServer,
     readme_name: &str,
@@ -44,14 +47,17 @@ fn show_root_readme_contents(
     let body = reqwest::blocking::get(server.url())?.error_for_status()?;
     let parsed = Document::from_read(body)?;
 
+    // All the files are still getting listed...
     for &file in FILES {
         assert!(parsed.find(|x: &Node| x.text() == file).next().is_some());
     }
+    // ...in addition to the readme contents below the file listing.
     assert_readme_contents(&parsed, &readme_name);
     remove_file(readme_path).unwrap();
     Ok(())
 }
 
+/// Show readme contents when told to if there is a readme file in any of the directories
 #[rstest(
     readme_name,
     case("Readme.md"),
@@ -60,7 +66,6 @@ fn show_root_readme_contents(
     case("README.MD"),
     case("ReAdMe.Md")
 )]
-/// Show readme contents when told to if there is readme.md/README.md file in directories
 fn show_nested_readme_contents(
     #[with(&["--readme"])] server: TestServer,
     readme_name: &str,
@@ -70,9 +75,11 @@ fn show_nested_readme_contents(
         let body = reqwest::blocking::get(server.url().join(dir)?)?.error_for_status()?;
         let parsed = Document::from_read(body)?;
 
+        // All the files are still getting listed...
         for &file in FILES {
             assert!(parsed.find(|x: &Node| x.text() == file).next().is_some());
         }
+        // ...in addition to the readme contents below the file listing.
         assert_readme_contents(&parsed, &readme_name);
         remove_file(readme_path).unwrap();
     }
