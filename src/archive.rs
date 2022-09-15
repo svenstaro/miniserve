@@ -250,7 +250,7 @@ where
                 continue;
             }
             let current_entry_name = entry_path.file_name().ok_or_else(|| {
-                ContextualError::InvalidPathError("Invalid file or direcotory name".to_string())
+                ContextualError::InvalidPathError("Invalid file or directory name".to_string())
             })?;
             if entry_metadata.is_file() {
                 let mut f = File::open(&entry_path)

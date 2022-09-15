@@ -298,7 +298,7 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
             if conf.spa {
                 files = files.default_handler(
                     NamedFile::open(&conf.path.join(index_file))
-                        .expect("Cant open SPA index file."),
+                        .expect("Can't open SPA index file."),
                 );
             }
         }
