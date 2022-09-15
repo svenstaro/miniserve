@@ -321,7 +321,7 @@ fn qr_spoiler(show_qrcode: bool, content: impl AsRef<str>) -> Markup {
                 p {
                     "QR code"
                 }
-                div.qrcode #qrcode {
+                div.qrcode #qrcode title=(PreEscaped(content.as_ref())) {
                     @match qr_code_svg(content, consts::SVG_QR_MARGIN) {
                         Ok(svg) => (PreEscaped(svg)),
                         Err(err) => (format!("QR generation error: {:?}", err)),
