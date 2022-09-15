@@ -168,9 +168,11 @@ pub fn page(
                         }
                     }
                     @if let Some(readme) = readme {
-                        div {
-                            h3 { (readme.0) }
-                            (PreEscaped (readme.1));
+                        div id="readme" {
+                            h3 id="readme-filename" { (readme.0) }
+                            div id="readme-contents" {
+                                (PreEscaped (readme.1))
+                            };
                         }
                     }
                     a.back href="#top" {
