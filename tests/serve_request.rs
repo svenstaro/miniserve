@@ -33,6 +33,9 @@ fn serves_requests_with_no_options(tmpdir: TempDir) -> Result<(), Error> {
     for &file in FILES {
         assert!(parsed.find(|x: &Node| x.text() == file).next().is_some());
     }
+    for &dir in DIRECTORIES {
+        assert!(parsed.find(|x: &Node| x.text() == dir).next().is_some());
+    }
 
     child.kill()?;
 
