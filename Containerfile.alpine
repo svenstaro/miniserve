@@ -1,0 +1,3 @@
+FROM docker.io/alpine
+COPY --chmod=755 miniserve /app/
+ENTRYPOINT ["/app/miniserve"]
