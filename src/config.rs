@@ -59,6 +59,12 @@ pub struct MiniserveConfig {
     /// Randomly generated css route
     pub css_route: String,
 
+    /// Randomly generated uppy css route
+    pub uppy_css_route: String,
+
+    /// Randomly generated uppy js route
+    pub uppy_js_route: String,
+
     /// Default color scheme
     pub default_color_scheme: String,
 
@@ -157,13 +163,17 @@ impl MiniserveConfig {
         // If --random-route is enabled , in order to not leak the random generated route, we must not use it
         // as static files prefix.
         // Otherwise, we should apply route_prefix to static files.
-        let (favicon_route, css_route) = if args.random_route {
+        let (favicon_route, css_route, uppy_css_route, uppy_js_route) = if args.random_route {
             (
+                format!("/{}", nanoid::nanoid!(10, &ROUTE_ALPHABET)),
+                format!("/{}", nanoid::nanoid!(10, &ROUTE_ALPHABET)),
                 format!("/{}", nanoid::nanoid!(10, &ROUTE_ALPHABET)),
                 format!("/{}", nanoid::nanoid!(10, &ROUTE_ALPHABET)),
             )
         } else {
             (
+                format!("{}/{}", route_prefix, nanoid::nanoid!(10, &ROUTE_ALPHABET)),
+                format!("{}/{}", route_prefix, nanoid::nanoid!(10, &ROUTE_ALPHABET)),
                 format!("{}/{}", route_prefix, nanoid::nanoid!(10, &ROUTE_ALPHABET)),
                 format!("{}/{}", route_prefix, nanoid::nanoid!(10, &ROUTE_ALPHABET)),
             )
@@ -240,6 +250,8 @@ impl MiniserveConfig {
             route_prefix,
             favicon_route,
             css_route,
+            uppy_css_route,
+            uppy_js_route,
             default_color_scheme,
             default_color_scheme_dark,
             index: args.index,

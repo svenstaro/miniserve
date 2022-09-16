@@ -128,6 +128,16 @@ pub fn page(
                                             button type="submit" { "Upload file" }
                                         }
                                     }
+                                    link rel="stylesheet" href={ (conf.uppy_css_route) };
+                                    script src={ (conf.uppy_js_route) } {};
+                                    (PreEscaped(format!(r#"
+                                    <button id="uppyT">Uppy</button>
+                                    <script>
+                                        var uppy = new Uppy.Uppy({{logger:Uppy.debugLogger}});
+                                        uppy.use(Uppy.Dashboard, {{trigger: '#uppyT', proudlyDisplayPoweredByUppy: false, theme: 'auto', showProgressDetails: true, doneButtonHandler: ()=>{{location.reload()}}}});
+                                        uppy.use(Uppy.XHRUpload, {{endpoint: '{}', fieldName: 'file_to_upload', allowedMetaFields: []}});
+                                    </script>
+                                    "#, upload_action)))
                                 }
                             }
                             @if conf.mkdir_enabled {
