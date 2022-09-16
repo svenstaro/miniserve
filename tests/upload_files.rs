@@ -127,8 +127,8 @@ fn uploading_files_to_allowed_dir_works(
     #[case] mut upload_dirs: Vec<String>,
 ) -> Result<(), Error> {
     let test_file_name = "uploaded test file.txt";
-    
-    if cfg!(target_os = "windows"){
+
+    if cfg!(target_os = "windows") {
         upload_dirs = upload_dirs.iter().map(|x| x.replace("/", "\\")).collect();
     }
 
@@ -137,7 +137,8 @@ fn uploading_files_to_allowed_dir_works(
         create_dir_all(server.path().join(upload_dir.as_str())).unwrap();
 
         // Before uploading, check whether the uploaded file does not yet exist.
-        let body = reqwest::blocking::get(server.url().join(upload_dir.as_str())?)?.error_for_status()?;
+        let body =
+            reqwest::blocking::get(server.url().join(upload_dir.as_str())?)?.error_for_status()?;
         let parsed = Document::from_read(body)?;
         assert!(parsed.find(Text).all(|x| x.text() != test_file_name));
 
