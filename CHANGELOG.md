@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+- Faster QR code generation [#848](https://github.com/svenstaro/miniserve/pull/848/files) (thanks @cyqsimon)
 
 ## [0.21.0] - 2022-09-15
 - Fix bug where static files would be served incorrectly when using `--random-route` [#835](https://github.com/svenstaro/miniserve/pull/835) (thanks @solarknight)
