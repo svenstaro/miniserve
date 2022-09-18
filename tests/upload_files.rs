@@ -119,18 +119,16 @@ fn uploading_files_is_restricted(#[case] server: TestServer) -> Result<(), Error
 #[rstest]
 #[case(server(&["-u", "someDir"]), vec!["someDir".to_string()])]
 #[case(server(&["-u", "./-someDir"]), vec!["./-someDir".to_string()])]
-#[case(server(&["-u", "someDir/some_sub_dir"]), vec!["someDir/some_sub_dir".to_string()])]
-#[case(server(&["-u", "someDir/some_sub_dir", "-u", "someDir/some_other_dir"]), 
+#[case(server(&["-u", if cfg!(windows) {r"someDir\some_sub_dir"} else {"someDir/some_sub_dir"}]),
+  vec!["someDir/some_sub_dir".to_string()])]
+#[case(server(&["-u", if cfg!(windows) {r"someDir\some_sub_dir"} else {"someDir/some_sub_dir"}, 
+                "-u", if cfg!(windows) {r"someDir\some_other_dir"} else {"someDir/some_other_dir"}]), 
        vec!["someDir/some_sub_dir".to_string(), "someDir/some_other_dir".to_string()])]
 fn uploading_files_to_allowed_dir_works(
     #[case] server: TestServer,
-    #[case] mut upload_dirs: Vec<String>,
+    #[case] upload_dirs: Vec<String>,
 ) -> Result<(), Error> {
     let test_file_name = "uploaded test file.txt";
-
-    if cfg!(target_os = "windows") {
-        upload_dirs = upload_dirs.iter().map(|x| x.replace("/", "\\")).collect();
-    }
 
     for upload_dir in upload_dirs {
         // Create test directory
