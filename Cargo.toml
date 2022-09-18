@@ -32,6 +32,7 @@ clap = { version = "3.2", features = ["derive", "cargo", "wrap_help"] }
 clap_complete = "3.2.3"
 clap_mangen = "0.1"
 comrak = "0.14.0"
+fast_qr = "0.3.1"
 futures = "0.3"
 get_if_addrs = "0.5"
 hex = "0.4"
@@ -44,7 +45,6 @@ mime = "0.3"
 nanoid = "0.4"
 percent-encoding = "2"
 port_check = "0.1"
-qrcodegen = "1"
 rustls = { version = "0.20", optional = true }
 rustls-pemfile = { version = "1.0", optional = true }
 serde = { version = "1", features = ["derive"] }
@@ -76,6 +76,10 @@ reqwest = { version = "0.11", features = ["blocking", "multipart", "rustls-tls"]
 rstest = "0.15"
 select = "0.5"
 url = "2"
+
+[target.'cfg(not(windows))'.dev-dependencies]
+# fake_tty does not support Windows for now
+fake-tty = "0.2.0"
 
 [build-dependencies]
 grass = "0.11"

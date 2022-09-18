@@ -2,11 +2,15 @@ use actix_web::http::StatusCode;
 use chrono::{DateTime, Utc};
 use chrono_humanize::Humanize;
 use clap::{crate_name, crate_version};
+use fast_qr::convert::svg::SvgBuilder;
+use fast_qr::qr::QRCodeError;
+use fast_qr::QRBuilder;
 use maud::{html, Markup, PreEscaped, DOCTYPE};
 use std::time::SystemTime;
 use strum::IntoEnumIterator;
 
 use crate::auth::CurrentUser;
+use crate::consts;
 use crate::listing::{Breadcrumb, Entry, QueryParameters, SortingMethod, SortingOrder};
 use crate::{archive::ArchiveMethod, MiniserveConfig};
 
@@ -15,9 +19,10 @@ use crate::{archive::ArchiveMethod, MiniserveConfig};
 pub fn page(
     entries: Vec<Entry>,
     readme: Option<(String, String)>,
+    abs_url: impl AsRef<str>,
     is_root: bool,
     query_params: QueryParameters,
-    breadcrumbs: Vec<Breadcrumb>,
+    breadcrumbs: &[Breadcrumb],
     encoded_dir: &str,
     conf: &MiniserveConfig,
     current_user: Option<&CurrentUser>,
@@ -33,11 +38,7 @@ pub fn page(
     let upload_action = build_upload_action(&upload_route, encoded_dir, sort_method, sort_order);
     let mkdir_action = build_mkdir_action(&upload_route, encoded_dir);
 
-    let title_path = breadcrumbs
-        .iter()
-        .map(|el| el.name.clone())
-        .collect::<Vec<_>>()
-        .join("/");
+    let title_path = breadcrumbs_to_path_string(breadcrumbs);
 
     html! {
         (DOCTYPE)
@@ -89,7 +90,10 @@ pub fn page(
                         }
                     }
                 }
-                (color_scheme_selector(conf.show_qrcode, conf.hide_theme_selector))
+                nav {
+                    (qr_spoiler(conf.show_qrcode, abs_url))
+                    (color_scheme_selector(conf.hide_theme_selector))
+                }
                 div.container {
                     span #top { }
                     h1.title dir="ltr" {
@@ -226,6 +230,25 @@ pub fn raw(entries: Vec<Entry>, is_root: bool) -> Markup {
     }
 }
 
+/// Renders the QR code SVG
+fn qr_code_svg(url: impl AsRef<str>, margin: usize) -> Result<String, QRCodeError> {
+    let qr = QRBuilder::new(url.as_ref().into())
+        .ecl(consts::QR_EC_LEVEL)
+        .build()?;
+    let svg = SvgBuilder::new().margin(margin).build_qr(qr);
+
+    Ok(svg)
+}
+
+/// Build a path string from a list of breadcrumbs.
+fn breadcrumbs_to_path_string(breadcrumbs: &[Breadcrumb]) -> String {
+    breadcrumbs
+        .iter()
+        .map(|el| el.name.clone())
+        .collect::<Vec<_>>()
+        .join("/")
+}
+
 // Partial: version footer
 fn version_footer() -> Markup {
     html! {
@@ -292,30 +315,37 @@ const THEME_PICKER_CHOICES: &[(&str, &str)] = &[
 
 pub const THEME_SLUGS: &[&str] = &["squirrel", "archlinux", "zenburn", "monokai"];
 
-/// Partial: color scheme selector
-fn color_scheme_selector(show_qrcode: bool, hide_theme_selector: bool) -> Markup {
+/// Partial: qr code spoiler
+fn qr_spoiler(show_qrcode: bool, content: impl AsRef<str>) -> Markup {
     html! {
-        nav {
-            @if show_qrcode {
-                div {
-                    p onmouseover="document.querySelector('#qrcode').src = `?qrcode=${encodeURIComponent(window.location.href)}`" {
-                        "QR code"
-                    }
-                    div.qrcode {
-                        img #qrcode alt="QR code" title="QR code of this page";
+        @if show_qrcode {
+            div {
+                p {
+                    "QR code"
+                }
+                div.qrcode #qrcode title=(PreEscaped(content.as_ref())) {
+                    @match qr_code_svg(content, consts::SVG_QR_MARGIN) {
+                        Ok(svg) => (PreEscaped(svg)),
+                        Err(err) => (format!("QR generation error: {:?}", err)),
                     }
                 }
             }
-            @if !hide_theme_selector {
-                div {
-                    p {
-                        "Change theme..."
-                    }
-                    ul.theme {
-                        @for color_scheme in THEME_PICKER_CHOICES {
-                            li.(format!("theme_{}", color_scheme.1)) {
-                                (color_scheme_link(color_scheme))
-                            }
+        }
+    }
+}
+
+/// Partial: color scheme selector
+fn color_scheme_selector(hide_theme_selector: bool) -> Markup {
+    html! {
+        @if !hide_theme_selector {
+            div {
+                p {
+                    "Change theme..."
+                }
+                ul.theme {
+                    @for color_scheme in THEME_PICKER_CHOICES {
+                        li.(format!("theme_{}", color_scheme.1)) {
+                            (color_scheme_link(color_scheme))
                         }
                     }
                 }

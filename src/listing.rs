@@ -9,7 +9,6 @@ use actix_web::{HttpMessage, HttpRequest, HttpResponse};
 use bytesize::ByteSize;
 use comrak::{markdown_to_html, ComrakOptions};
 use percent_encoding::{percent_decode_str, utf8_percent_encode};
-use qrcodegen::{QrCode, QrCodeEcc};
 use serde::Deserialize;
 use strum_macros::{Display, EnumString};
 
@@ -38,7 +37,6 @@ pub struct QueryParameters {
     pub order: Option<SortingOrder>,
     pub raw: Option<bool>,
     pub mkdir_name: Option<String>,
-    qrcode: Option<String>,
     download: Option<ArchiveMethod>,
 }
 
@@ -166,6 +164,12 @@ pub fn directory_listing(
 
     let base = Path::new(serve_path);
     let random_route_abs = format!("/{}", conf.route_prefix);
+    let abs_url = format!(
+        "{}://{}{}",
+        req.connection_info().scheme(),
+        req.connection_info().host(),
+        req.uri()
+    );
     let is_root = base.parent().is_none() || Path::new(&req.path()) == Path::new(&random_route_abs);
 
     let encoded_dir = match base.strip_prefix(random_route_abs) {
@@ -217,20 +221,6 @@ pub fn directory_listing(
     };
 
     let query_params = extract_query_parameters(req);
-
-    // If the `qrcode` parameter is included in the url, then should respond to the QR code
-    if let Some(url) = query_params.qrcode {
-        let res = match QrCode::encode_text(&url, QrCodeEcc::Medium) {
-            Ok(qr) => HttpResponse::Ok()
-                .append_header(("Content-Type", "image/svg+xml"))
-                .body(qr_to_svg_string(&qr, 2)),
-            Err(err) => {
-                log::error!("URL is invalid (too long?): {:?}", err);
-                HttpResponse::UriTooLong().finish()
-            }
-        };
-        return Ok(ServiceResponse::new(req.clone(), res));
-    }
 
     let mut entries: Vec<Entry> = Vec::new();
     let mut readme: Option<(String, String)> = None;
@@ -384,9 +374,10 @@ pub fn directory_listing(
                 renderer::page(
                     entries,
                     readme,
+                    abs_url,
                     is_root,
                     query_params,
-                    breadcrumbs,
+                    &breadcrumbs,
                     &encoded_dir,
                     conf,
                     current_user,
@@ -406,35 +397,4 @@ pub fn extract_query_parameters(req: &HttpRequest) -> QueryParameters {
             QueryParameters::default()
         }
     }
-}
-
-// Returns a string of SVG code for an image depicting
-// the given QR Code, with the given number of border modules.
-// The string always uses Unix newlines (\n), regardless of the platform.
-fn qr_to_svg_string(qr: &QrCode, border: i32) -> String {
-    assert!(border >= 0, "Border must be non-negative");
-    let mut result = String::new();
-    result += "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
-    result += "<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\" \"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">\n";
-    let dimension = qr
-        .size()
-        .checked_add(border.checked_mul(2).unwrap())
-        .unwrap();
-    result += &format!(
-		"<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" viewBox=\"0 0 {0} {0}\" stroke=\"none\">\n", dimension);
-    result += "\t<rect width=\"100%\" height=\"100%\" fill=\"#FFFFFF\"/>\n";
-    result += "\t<path d=\"";
-    for y in 0..qr.size() {
-        for x in 0..qr.size() {
-            if qr.get_module(x, y) {
-                if x != 0 || y != 0 {
-                    result += " ";
-                }
-                result += &format!("M{},{}h1v1h-1z", x + border, y + border);
-            }
-        }
-    }
-    result += "\" fill=\"#000000\"/>\n";
-    result += "</svg>\n";
-    result
 }

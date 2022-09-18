@@ -17,8 +17,6 @@ $themes: squirrel, archlinux, monokai, zenburn;
     @return $s;
 }
 
-
-
 html {
     font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
@@ -180,7 +178,7 @@ nav .qrcode {
     background: var(--switch_theme_background);
 }
 
-nav .qrcode img {
+nav .qrcode svg {
     display: block;
 }
 

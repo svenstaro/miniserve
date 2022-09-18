@@ -801,6 +801,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b5320ae4c3782150d900b79807611a59a99fc9a1d61d686faafc24b93fc8d7ca"
 
 [[package]]
+name = "fake-tty"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1caac348c61d1f9a7d43c3629abc75540754a4971944953f84b98cb8280e3971"
+
+[[package]]
 name = "fancy-regex"
 version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -808,6 +814,15 @@ checksum = "9d6b8560a05112eb52f04b00e5d3790c0dd75d9d980eb8a122fb23b92a623ccf"
 dependencies = [
  "bit-set",
  "regex",
+]
+
+[[package]]
+name = "fast_qr"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b798dfd6e29b85c0bcf434272db4cde0100ab4d82c5db0a4f422e77b30d0b4e4"
+dependencies = [
+ "wasm-bindgen",
 ]
 
 [[package]]
@@ -1525,6 +1540,8 @@ dependencies = [
  "clap_complete",
  "clap_mangen",
  "comrak",
+ "fake-tty",
+ "fast_qr",
  "futures",
  "get_if_addrs",
  "grass",
@@ -1540,7 +1557,6 @@ dependencies = [
  "port_check",
  "predicates",
  "pretty_assertions",
- "qrcodegen",
  "regex",
  "reqwest",
  "rstest",
@@ -2016,12 +2032,6 @@ checksum = "0a2ca2c61bc9f3d74d2886294ab7b9853abd9c1ad903a3ac7815c58989bb7bab"
 dependencies = [
  "unicode-ident",
 ]
-
-[[package]]
-name = "qrcodegen"
-version = "1.8.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4339fc7a1021c9c1621d87f5e3505f2805c8c105420ba2f2a4df86814590c142"
 
 [[package]]
 name = "quote"
