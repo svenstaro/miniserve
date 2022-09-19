@@ -261,7 +261,7 @@ impl MiniserveConfig {
                         .unwrap()
                         .to_str()
                         .unwrap()
-                        .replace(r"\", "/")
+                        .replace('\\', "/")
                 })
                 .collect(),
             uploadable_media_type,
