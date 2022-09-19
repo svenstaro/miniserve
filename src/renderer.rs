@@ -44,7 +44,7 @@ pub fn page(
         || conf
             .allowed_upload_dir
             .iter()
-            .any(|x| encoded_dir.starts_with(&format!("/{}", x.display())));
+            .any(|x| encoded_dir.starts_with(&format!("/{}", x)));
 
     html! {
         (DOCTYPE)

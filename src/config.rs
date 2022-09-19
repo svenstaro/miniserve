@@ -89,7 +89,7 @@ pub struct MiniserveConfig {
     pub file_upload: bool,
 
     /// List of allowed upload directories
-    pub allowed_upload_dir: Vec<PathBuf>,
+    pub allowed_upload_dir: Vec<String>,
 
     /// HTML accept attribute value
     pub uploadable_media_type: Option<String>,
@@ -256,7 +256,13 @@ impl MiniserveConfig {
                 .allowed_upload_dir
                 .unwrap_or_default()
                 .iter()
-                .map(|x| sanitize_path(x, false).unwrap())
+                .map(|x| {
+                    sanitize_path(x, false)
+                        .unwrap()
+                        .to_str()
+                        .unwrap()
+                        .replace(r"\", "/")
+                })
                 .collect(),
             uploadable_media_type,
             tar_enabled: args.enable_tar,
