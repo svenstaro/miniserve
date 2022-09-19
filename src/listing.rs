@@ -9,6 +9,7 @@ use actix_web::{HttpMessage, HttpRequest, HttpResponse};
 use bytesize::ByteSize;
 use comrak::{markdown_to_html, ComrakOptions};
 use percent_encoding::{percent_decode_str, utf8_percent_encode};
+use regex::Regex;
 use serde::Deserialize;
 use strum_macros::{Display, EnumString};
 
@@ -224,6 +225,7 @@ pub fn directory_listing(
 
     let mut entries: Vec<Entry> = Vec::new();
     let mut readme: Option<(String, String)> = None;
+    let readme_rx: Regex = Regex::new("^readme([.](md|txt))?$").unwrap();
 
     for entry in dir.path.read_dir()? {
         if dir.is_visible(&entry) || conf.show_hidden {
@@ -274,13 +276,18 @@ pub fn directory_listing(
                         last_modification_date,
                         symlink_dest,
                     ));
-                    if conf.readme && file_name.to_lowercase() == "readme.md" {
+                    if conf.readme && readme_rx.is_match(&file_name.to_lowercase()) {
+                        let ext = file_name.split('.').last().unwrap().to_lowercase();
                         readme = Some((
                             file_name.to_string(),
-                            markdown_to_html(
-                                &std::fs::read_to_string(entry.path())?,
-                                &ComrakOptions::default(),
-                            ),
+                            if ext == "md" {
+                                markdown_to_html(
+                                    &std::fs::read_to_string(entry.path())?,
+                                    &ComrakOptions::default(),
+                                )
+                            } else {
+                                format!("<pre>{}</pre>", &std::fs::read_to_string(entry.path())?)
+                            },
                         ));
                     }
                 }
