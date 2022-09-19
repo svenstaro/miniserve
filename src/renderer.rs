@@ -235,7 +235,7 @@ fn qr_code_svg(url: impl AsRef<str>, margin: usize) -> Result<String, QRCodeErro
     let qr = QRBuilder::new(url.as_ref().into())
         .ecl(consts::QR_EC_LEVEL)
         .build()?;
-    let svg = SvgBuilder::new().margin(margin).build_qr(qr);
+    let svg = SvgBuilder::default().margin(margin).to_str(&qr);
 
     Ok(svg)
 }
