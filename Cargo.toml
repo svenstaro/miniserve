@@ -32,7 +32,7 @@ clap = { version = "3.2", features = ["derive", "cargo", "wrap_help"] }
 clap_complete = "3.2.3"
 clap_mangen = "0.1"
 comrak = "0.14.0"
-fast_qr = "0.3.1"
+fast_qr = "0.5.1"
 futures = "0.3"
 get_if_addrs = "0.5"
 hex = "0.4"
