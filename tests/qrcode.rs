@@ -48,7 +48,7 @@ fn run_in_faketty_kill_and_get_stdout(template: &Command) -> Result<String, Erro
             .join(" ");
         format!("{} {}", bin, args)
     };
-    let mut child = bash_command(&cmd).stdin(Stdio::null()).spawn()?;
+    let mut child = bash_command(&cmd)?.stdin(Stdio::null()).spawn()?;
 
     sleep(Duration::from_secs(1));
 
