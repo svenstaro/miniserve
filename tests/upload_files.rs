@@ -100,7 +100,7 @@ fn uploading_files_is_restricted(#[case] server: TestServer) -> Result<(), Error
     let client = Client::new();
     // Ensure uploading fails and returns an error
     assert_eq!(
-        500,
+        403,
         client
             .post(server.url().join("/upload?path=/")?)
             .multipart(form)

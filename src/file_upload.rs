@@ -179,9 +179,7 @@ pub async fn upload_file(
             .any(|s| upload_path.starts_with(s));
 
     if !upload_allowed {
-        return Err(ContextualError::InvalidPathError(
-            "Not allowed to upload to this path".to_string(),
-        ));
+        return Err(ContextualError::UploadForbiddenError);
     }
 
     // Disallow the target path to go outside of the served directory
