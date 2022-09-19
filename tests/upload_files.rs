@@ -7,6 +7,7 @@ use rstest::rstest;
 use select::document::Document;
 use select::predicate::{Attr, Text};
 use std::fs::create_dir_all;
+use std::path::Path;
 
 #[rstest]
 fn uploading_files_works(#[with(&["-u"])] server: TestServer) -> Result<(), Error> {
@@ -117,26 +118,25 @@ fn uploading_files_is_restricted(#[case] server: TestServer) -> Result<(), Error
 
 /// This tests that we can upload files to the directory specified by --allow-upload-dir
 #[rstest]
-#[case(server(&["-u", "someDir"]), vec!["someDir".to_string()])]
-#[case(server(&["-u", "./-someDir"]), vec!["./-someDir".to_string()])]
-#[case(server(&["-u", if cfg!(windows) {r"someDir\some_sub_dir"} else {"someDir/some_sub_dir"}]),
-  vec!["someDir/some_sub_dir".to_string()])]
-#[case(server(&["-u", if cfg!(windows) {r"someDir\some_sub_dir"} else {"someDir/some_sub_dir"}, 
-                "-u", if cfg!(windows) {r"someDir\some_other_dir"} else {"someDir/some_other_dir"}]), 
-       vec!["someDir/some_sub_dir".to_string(), "someDir/some_other_dir".to_string()])]
+#[case(server(&["-u", "someDir"]), vec!["someDir"])]
+#[case(server(&["-u", "./-someDir"]), vec!["./-someDir"])]
+#[case(server(&["-u", Path::new("someDir/some_sub_dir").to_str().unwrap()]),
+  vec!["someDir/some_sub_dir"])]
+#[case(server(&["-u", Path::new("someDir/some_sub_dir").to_str().unwrap(), 
+                "-u", Path::new("someDir/some_other_dir").to_str().unwrap()]), 
+       vec!["someDir/some_sub_dir", "someDir/some_other_dir"])]
 fn uploading_files_to_allowed_dir_works(
     #[case] server: TestServer,
-    #[case] upload_dirs: Vec<String>,
+    #[case] upload_dirs: Vec<&str>,
 ) -> Result<(), Error> {
     let test_file_name = "uploaded test file.txt";
 
     for upload_dir in upload_dirs {
         // Create test directory
-        create_dir_all(server.path().join(upload_dir.as_str())).unwrap();
+        create_dir_all(server.path().join(Path::new(upload_dir))).unwrap();
 
         // Before uploading, check whether the uploaded file does not yet exist.
-        let body =
-            reqwest::blocking::get(server.url().join(upload_dir.as_str())?)?.error_for_status()?;
+        let body = reqwest::blocking::get(server.url().join(upload_dir)?)?.error_for_status()?;
         let parsed = Document::from_read(body)?;
         assert!(parsed.find(Text).all(|x| x.text() != test_file_name));
 
@@ -161,7 +161,7 @@ fn uploading_files_to_allowed_dir_works(
             .error_for_status()?;
 
         // After uploading, check whether the uploaded file is now getting listed.
-        let body = reqwest::blocking::get(server.url().join(upload_dir.as_str())?)?;
+        let body = reqwest::blocking::get(server.url().join(upload_dir)?)?;
         let parsed = Document::from_read(body)?;
         assert!(parsed.find(Text).any(|x| x.text() == test_file_name));
     }
