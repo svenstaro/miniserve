@@ -823,9 +823,9 @@ dependencies = [
 
 [[package]]
 name = "fake-tty"
-version = "0.2.0"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1caac348c61d1f9a7d43c3629abc75540754a4971944953f84b98cb8280e3971"
+checksum = "aa6c2a740a5d6940f90a0f13b5828440c2a7160bd1e235cf934d5df0e7a3e1ad"
 
 [[package]]
 name = "fancy-regex"

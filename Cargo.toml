@@ -80,7 +80,7 @@ url = "2"
 
 [target.'cfg(not(windows))'.dev-dependencies]
 # fake_tty does not support Windows for now
-fake-tty = "0.2.0"
+fake-tty = "0.3.1"
 
 [build-dependencies]
 grass = "0.11"
