@@ -64,7 +64,11 @@ fn show_root_readme_contents(
     case("readme.md"),
     case("README.md"),
     case("README.MD"),
-    case("ReAdMe.Md")
+    case("ReAdMe.Md"),
+    case("Readme.txt"),
+    case("README.txt"),
+    case("README"),
+    case("ReAdMe")
 )]
 fn show_nested_readme_contents(
     #[with(&["--readme"])] server: TestServer,
@@ -113,13 +117,11 @@ fn assert_readme_contents(parsed_dom: &Document, filename: &str) {
         .find(Attr("id", "readme-contents"))
         .next()
         .is_some());
-    assert!(
-        parsed_dom
-            .find(Attr("id", "readme-contents"))
-            .next()
-            .unwrap()
-            .text()
-            .trim()
-            == format!("Contents of {}", filename)
-    );
+    assert!(parsed_dom
+        .find(Attr("id", "readme-contents"))
+        .next()
+        .unwrap()
+        .text()
+        .trim()
+        .contains(&format!("Contents of {}", filename)));
 }
