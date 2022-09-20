@@ -40,6 +40,12 @@ pub fn page(
 
     let title_path = breadcrumbs_to_path_string(breadcrumbs);
 
+    let upload_allowed = conf.allowed_upload_dir.is_empty()
+        || conf
+            .allowed_upload_dir
+            .iter()
+            .any(|x| encoded_dir.starts_with(&format!("/{}", x)));
+
     html! {
         (DOCTYPE)
         html {
@@ -120,7 +126,7 @@ pub fn page(
                             }
                         }
                         div.toolbar_box_group {
-                            @if conf.file_upload {
+                            @if conf.file_upload && upload_allowed {
                                 div.toolbar_box {
                                     form id="file_submit" action=(upload_action) method="POST" enctype="multipart/form-data" {
                                         p { "Select a file to upload or drag it anywhere into the window" }

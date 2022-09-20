@@ -6,6 +6,8 @@ use reqwest::blocking::{multipart, Client};
 use rstest::rstest;
 use select::document::Document;
 use select::predicate::{Attr, Text};
+use std::fs::create_dir_all;
+use std::path::Path;
 
 #[rstest]
 fn uploading_files_works(#[with(&["-u"])] server: TestServer) -> Result<(), Error> {
@@ -72,11 +74,97 @@ fn uploading_files_is_prevented(server: TestServer) -> Result<(), Error> {
         .error_for_status()
         .is_err());
 
-    // After uploading, check whether the uploaded file is now getting listed.
+    // After uploading, check whether the uploaded file is NOT getting listed.
     let body = reqwest::blocking::get(server.url())?;
     let parsed = Document::from_read(body)?;
     assert!(!parsed.find(Text).any(|x| x.text() == test_file_name));
 
+    Ok(())
+}
+
+/// This test runs the server with --allowed-upload-dir argument and
+/// checks that file upload to a different directory is actually prevented.
+#[rstest]
+#[case(server_no_stderr(&["-u", "someDir"]))]
+#[case(server_no_stderr(&["-u", "someDir/some_sub_dir"]))]
+fn uploading_files_is_restricted(#[case] server: TestServer) -> Result<(), Error> {
+    let test_file_name = "uploaded test file.txt";
+
+    // Then try to upload file to root directory (which is not the --allowed-upload-dir)
+    let form = multipart::Form::new();
+    let part = multipart::Part::text("this should not be uploaded")
+        .file_name(test_file_name)
+        .mime_str("text/plain")?;
+    let form = form.part("file_to_upload", part);
+
+    let client = Client::new();
+    // Ensure uploading fails and returns an error
+    assert_eq!(
+        403,
+        client
+            .post(server.url().join("/upload?path=/")?)
+            .multipart(form)
+            .send()?
+            .status()
+    );
+
+    // After uploading, check whether the uploaded file is NOT getting listed.
+    let body = reqwest::blocking::get(server.url())?;
+    let parsed = Document::from_read(body)?;
+    assert!(!parsed.find(Text).any(|x| x.text() == test_file_name));
+
+    Ok(())
+}
+
+/// This tests that we can upload files to the directory specified by --allow-upload-dir
+#[rstest]
+#[case(server(&["-u", "someDir"]), vec!["someDir"])]
+#[case(server(&["-u", "./-someDir"]), vec!["./-someDir"])]
+#[case(server(&["-u", Path::new("someDir/some_sub_dir").to_str().unwrap()]),
+  vec!["someDir/some_sub_dir"])]
+#[case(server(&["-u", Path::new("someDir/some_sub_dir").to_str().unwrap(), 
+                "-u", Path::new("someDir/some_other_dir").to_str().unwrap()]), 
+       vec!["someDir/some_sub_dir", "someDir/some_other_dir"])]
+fn uploading_files_to_allowed_dir_works(
+    #[case] server: TestServer,
+    #[case] upload_dirs: Vec<&str>,
+) -> Result<(), Error> {
+    let test_file_name = "uploaded test file.txt";
+
+    for upload_dir in upload_dirs {
+        // Create test directory
+        create_dir_all(server.path().join(Path::new(upload_dir))).unwrap();
+
+        // Before uploading, check whether the uploaded file does not yet exist.
+        let body = reqwest::blocking::get(server.url().join(upload_dir)?)?.error_for_status()?;
+        let parsed = Document::from_read(body)?;
+        assert!(parsed.find(Text).all(|x| x.text() != test_file_name));
+
+        // Perform the actual upload.
+        let upload_action = parsed
+            .find(Attr("id", "file_submit"))
+            .next()
+            .expect("Couldn't find element with id=file_submit")
+            .attr("action")
+            .expect("Upload form doesn't have action attribute");
+        let form = multipart::Form::new();
+        let part = multipart::Part::text("this should be uploaded")
+            .file_name(test_file_name)
+            .mime_str("text/plain")?;
+        let form = form.part("file_to_upload", part);
+
+        let client = Client::new();
+        client
+            .post(server.url().join(upload_action)?)
+            .multipart(form)
+            .send()?
+            .error_for_status()?;
+
+        // After uploading, check whether the uploaded file is now getting listed.
+        let body = reqwest::blocking::get(server.url().join(upload_dir)?)?;
+        let parsed = Document::from_read(body)?;
+        assert!(parsed.find(Text).any(|x| x.text() == test_file_name));
+    }
     Ok(())
 }
 
@@ -98,7 +186,6 @@ fn prevent_path_traversal_attacks(
     #[case] expected: &str,
 ) -> Result<(), Error> {
     // Create test directories
-    use std::fs::create_dir_all;
     create_dir_all(server.path().join("foo")).unwrap();
     if !cfg!(windows) {
         for dir in &["C:/foo/C:", r"C:\foo", r"\foo"] {

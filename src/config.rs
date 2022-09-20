@@ -16,6 +16,7 @@ use rustls_pemfile as pemfile;
 use crate::{
     args::{CliArgs, MediaType},
     auth::RequiredAuth,
+    file_upload::sanitize_path,
 };
 
 /// Possible characters for random routes
@@ -86,6 +87,9 @@ pub struct MiniserveConfig {
 
     /// Enable file upload
     pub file_upload: bool,
+
+    /// List of allowed upload directories
+    pub allowed_upload_dir: Vec<String>,
 
     /// HTML accept attribute value
     pub uploadable_media_type: Option<String>,
@@ -247,7 +251,19 @@ impl MiniserveConfig {
             overwrite_files: args.overwrite_files,
             show_qrcode: args.qrcode,
             mkdir_enabled: args.mkdir_enabled,
-            file_upload: args.file_upload,
+            file_upload: args.allowed_upload_dir.is_some(),
+            allowed_upload_dir: args
+                .allowed_upload_dir
+                .unwrap_or_default()
+                .iter()
+                .map(|x| {
+                    sanitize_path(x, false)
+                        .unwrap()
+                        .to_str()
+                        .unwrap()
+                        .replace('\\', "/")
+                })
+                .collect(),
             uploadable_media_type,
             tar_enabled: args.enable_tar,
             tar_gz_enabled: args.enable_tar_gz,

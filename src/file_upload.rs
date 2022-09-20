@@ -171,6 +171,17 @@ pub async fn upload_file(
         ContextualError::IoError("Failed to resolve path served by miniserve".to_string(), e)
     })?;
 
+    // Disallow paths outside of allowed directories
+    let upload_allowed = conf.allowed_upload_dir.is_empty()
+        || conf
+            .allowed_upload_dir
+            .iter()
+            .any(|s| upload_path.starts_with(s));
+
+    if !upload_allowed {
+        return Err(ContextualError::UploadForbiddenError);
+    }
+
     // Disallow the target path to go outside of the served directory
     // The target directory shouldn't be canonicalized when it gets passed to
     // handle_multipart so that it can check for symlinks if needed
@@ -207,7 +218,7 @@ pub async fn upload_file(
 /// and optionally prevent traversing hidden directories.
 ///
 /// See the unit tests tests::test_sanitize_path* for examples
-fn sanitize_path(path: &Path, traverse_hidden: bool) -> Option<PathBuf> {
+pub fn sanitize_path(path: &Path, traverse_hidden: bool) -> Option<PathBuf> {
     let mut buf = PathBuf::new();
 
     for comp in path.components() {

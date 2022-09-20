@@ -22,6 +22,10 @@ pub enum ContextualError {
     #[error("File already exists, and the overwrite_files option has not been set")]
     DuplicateFileError,
 
+    /// Upload not allowed
+    #[error("Upload not allowed to this directory")]
+    UploadForbiddenError,
+
     /// Any error related to an invalid path (failed to retrieve entry name, unexpected entry type, etc)
     #[error("Invalid path\ncaused by: {0}")]
     InvalidPathError(String),
@@ -88,6 +92,8 @@ impl ResponseError for ContextualError {
             Self::InsufficientPermissionsError(_) => StatusCode::FORBIDDEN,
             Self::InvalidHttpCredentials => StatusCode::UNAUTHORIZED,
             Self::InvalidHttpRequestError(_) => StatusCode::BAD_REQUEST,
+            Self::DuplicateFileError => StatusCode::FORBIDDEN,
+            Self::UploadForbiddenError => StatusCode::FORBIDDEN,
             _ => StatusCode::INTERNAL_SERVER_ERROR,
         }
     }
