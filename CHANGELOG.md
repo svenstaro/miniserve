@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+
+## [0.22.0] - 2022-09-20
 - Faster QR code generation [#848](https://github.com/svenstaro/miniserve/pull/848/files) (thanks @cyqsimon)
 - Make `--readme` support not only `README.md` but also `README` and `README.txt` rendered as
   plaintext [#911](https://github.com/svenstaro/miniserve/pull/911) (thanks @Atreyagaurav)
@@ -160,7 +162,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Some theme related bug fixes (thanks @boastful-squirrel)
 
 <!-- next-url -->
-[Unreleased]: https://github.com/svenstaro/miniserve/compare/v0.21.0...HEAD
+[Unreleased]: https://github.com/svenstaro/miniserve/compare/v0.22.0...HEAD
+[0.22.0]: https://github.com/svenstaro/miniserve/compare/v0.21.0...v0.22.0
 [0.21.0]: https://github.com/svenstaro/miniserve/compare/v0.20.0...v0.21.0
 [0.20.0]: https://github.com/svenstaro/miniserve/compare/v0.19.5...v0.20.0
 [0.19.5]: https://github.com/svenstaro/miniserve/compare/v0.19.4...v0.19.5

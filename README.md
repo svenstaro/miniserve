@@ -105,7 +105,7 @@ Some mobile browsers like Firefox on Android will offer to open the camera app w
 
 ## Usage
 
-    miniserve 0.21.0
+    miniserve 0.22.0
 
     Sven-Hendrik Haase <svenstaro@gmail.com>, Boastful Squirrel <boastful.squirrel@gmail.com>
 
