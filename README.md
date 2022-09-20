@@ -106,9 +106,7 @@ Some mobile browsers like Firefox on Android will offer to open the camera app w
 ## Usage
 
     miniserve 0.22.0
-
     Sven-Hendrik Haase <svenstaro@gmail.com>, Boastful Squirrel <boastful.squirrel@gmail.com>
-
     For when you really just want to serve some files over HTTP right now!
 
     USAGE:
@@ -167,7 +165,7 @@ Some mobile browsers like Firefox on Android will offer to open the camera app w
                 However, if a directory contains this file, miniserve will serve that file instead.
 
         -l, --show-symlink-info
-                Show symlink info
+                Visualize symlinks in directory listing
 
         -m, --media-type <MEDIA_TYPE>
                 Specify uploadable media types
@@ -186,7 +184,7 @@ Some mobile browsers like Firefox on Android will offer to open the camera app w
                 [default: 8080]
 
         -P, --no-symlinks
-                Do not follow symbolic links and prevent them from being followed
+                Hide symlinks in listing and prevent them from being followed
 
             --print-completions <shell>
                 Generate completion file for a shell
@@ -215,8 +213,8 @@ Some mobile browsers like Firefox on Android will offer to open the camera app w
                 Activate SPA (Single Page Application) mode
 
                 This will cause the file given by --index to be served for all non-existing file paths. In
-                effect, this will serve the index file whenever a 404 would otherwise occur in order to
-                allow the SPA router to handle the request instead.
+                effect, this will serve the index file whenever a 404 would otherwise occur in order to allow the
+                SPA router to handle the request instead.
 
         -t, --title <TITLE>
                 Shown instead of host in page title and heading
@@ -227,11 +225,11 @@ Some mobile browsers like Firefox on Android will offer to open the camera app w
             --tls-key <TLS_KEY>
                 TLS private key to use
 
-        -u, --upload-files
-                Enable file uploading
+        -u, --upload-files [<ALLOWED_UPLOAD_DIR>...]
+                Enable file uploading (and optionally specify for which directory)
 
-        -U  --mkdir
-                Enable directory creating
+        -U, --mkdir
+                Enable creating directories
 
         -v, --verbose
                 Be verbose, includes emitting access logs
@@ -244,9 +242,9 @@ Some mobile browsers like Firefox on Android will offer to open the camera app w
 
         -z, --enable-zip
                 Enable zip archive generation
-
-                WARNING: Zipping large directories can result in out-of-memory exception because zip
-                generation is done in memory and cannot be sent on the fly
+                
+                WARNING: Zipping large directories can result in out-of-memory exception because zip generation
+                is done in memory and cannot be sent on the fly
 
 ## How to install
 
@@ -353,6 +351,5 @@ This is mostly a note for me on how to release this thing:
 - Make sure `CHANGELOG.md` is up to date.
 - `cargo release <version>`
 - `cargo release --execute <version>`
-- Releases will automatically be deployed by Github Actions.
-- Docker images will automatically be built by Docker Hub.
+- Releases will automatically be deployed by GitHub Actions.
 - Update Arch package.
