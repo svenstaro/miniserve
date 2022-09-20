@@ -1,13 +1,12 @@
-use std::io;
-use std::io::Write;
+use std::io::{self, Write};
 use std::net::{IpAddr, SocketAddr, TcpListener};
 use std::thread;
 use std::time::Duration;
 
 use actix_files::NamedFile;
-use actix_web::web;
-use actix_web::{http::header::ContentType, Responder};
-use actix_web::{middleware, App, HttpRequest, HttpResponse};
+use actix_web::{
+    http::header::ContentType, middleware, web, App, HttpRequest, HttpResponse, Responder,
+};
 use actix_web_httpauth::middleware::HttpAuthentication;
 use anyhow::Result;
 use clap::{crate_version, IntoApp, Parser};

@@ -1,10 +1,10 @@
+use std::fs::File;
+use std::io::{Cursor, Read, Write};
+use std::path::{Path, PathBuf};
+
 use actix_web::http::header::ContentEncoding;
 use libflate::gzip::Encoder;
 use serde::Deserialize;
-use std::fs::File;
-use std::io::{Cursor, Read, Write};
-use std::path::Path;
-use std::path::PathBuf;
 use strum_macros::{Display, EnumIter, EnumString};
 use tar::Builder;
 use zip::{write, ZipWriter};

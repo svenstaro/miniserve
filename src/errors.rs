@@ -1,4 +1,3 @@
-use crate::{renderer::render_error, MiniserveConfig};
 use actix_web::{
     body::{BoxBody, MessageBody},
     dev::{ResponseHead, Service, ServiceRequest, ServiceResponse},
@@ -7,6 +6,8 @@ use actix_web::{
 };
 use futures::prelude::*;
 use thiserror::Error;
+
+use crate::{renderer::render_error, MiniserveConfig};
 
 #[derive(Debug, Error)]
 pub enum ContextualError {

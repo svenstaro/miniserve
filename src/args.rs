@@ -1,8 +1,9 @@
+use std::net::IpAddr;
+use std::path::PathBuf;
+
 use clap::{Parser, ValueHint};
 use clap_complete::Shell;
 use http::header::{HeaderMap, HeaderName, HeaderValue};
-use std::net::IpAddr;
-use std::path::PathBuf;
 
 use crate::auth;
 use crate::errors::ContextualError;

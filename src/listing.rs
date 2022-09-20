@@ -3,9 +3,7 @@ use std::io;
 use std::path::{Component, Path, PathBuf};
 use std::time::SystemTime;
 
-use actix_web::dev::ServiceResponse;
-use actix_web::web::Query;
-use actix_web::{HttpMessage, HttpRequest, HttpResponse};
+use actix_web::{dev::ServiceResponse, web::Query, HttpMessage, HttpRequest, HttpResponse};
 use bytesize::ByteSize;
 use comrak::{markdown_to_html, ComrakOptions};
 use percent_encoding::{percent_decode_str, utf8_percent_encode};

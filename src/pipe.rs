@@ -1,9 +1,10 @@
 //! Define an adapter to implement `std::io::Write` on `Sender<Bytes>`.
+use std::io::{self, Error, ErrorKind, Write};
+
 use actix_web::web::{Bytes, BytesMut};
 use futures::channel::mpsc::Sender;
 use futures::executor::block_on;
 use futures::sink::SinkExt;
-use std::io::{self, Error, ErrorKind, Write};
 
 /// Adapter to implement the `std::io::Write` trait on a `Sender<Bytes>` from a futures channel.
 ///

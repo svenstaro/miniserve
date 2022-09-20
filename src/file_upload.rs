@@ -1,12 +1,13 @@
-use actix_web::{http::header, HttpRequest, HttpResponse};
-use futures::TryStreamExt;
 use std::{
     io::Write,
     path::{Component, Path, PathBuf},
 };
 
+use actix_web::{http::header, HttpRequest, HttpResponse};
+use futures::TryStreamExt;
+
 use crate::errors::ContextualError;
-use crate::listing::{self};
+use crate::listing;
 
 /// Saves file data from a multipart form field (`field`) to `file_path`, optionally overwriting
 /// existing file.

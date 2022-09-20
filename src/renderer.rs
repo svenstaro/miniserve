@@ -1,12 +1,11 @@
+use std::time::SystemTime;
+
 use actix_web::http::StatusCode;
 use chrono::{DateTime, Utc};
 use chrono_humanize::Humanize;
 use clap::{crate_name, crate_version};
-use fast_qr::convert::svg::SvgBuilder;
-use fast_qr::qr::QRCodeError;
-use fast_qr::QRBuilder;
+use fast_qr::{convert::svg::SvgBuilder, qr::QRCodeError, QRBuilder};
 use maud::{html, Markup, PreEscaped, DOCTYPE};
-use std::time::SystemTime;
 use strum::IntoEnumIterator;
 
 use crate::auth::CurrentUser;
