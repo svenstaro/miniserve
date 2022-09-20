@@ -10,10 +10,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased] - ReleaseDate
 - Faster QR code generation [#848](https://github.com/svenstaro/miniserve/pull/848/files) (thanks @cyqsimon)
 - Make `--readme` support not only `README.md` but also `README` and `README.txt` rendered as
-  plaintext (thanks @Atreyagaurav)
+  plaintext [#911](https://github.com/svenstaro/miniserve/pull/911) (thanks @Atreyagaurav)
 - Change `-u/--upload-files` slightly in the sense that it can now either be provided by itself as
   before or receive a file path to restrict uploading to only that path. Can be provided multiple
-  times for multiple allowed paths.
+  times for multiple allowed paths [#858](https://github.com/svenstaro/miniserve/pull/858) (thanks
+  @jonasdiemer)
 
 ## [0.21.0] - 2022-09-15
 - Fix bug where static files would be served incorrectly when using `--random-route` [#835](https://github.com/svenstaro/miniserve/pull/835) (thanks @solarknight)
