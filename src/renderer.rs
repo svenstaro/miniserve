@@ -503,7 +503,7 @@ fn entry_row(
                         @if !raw {
                             @if let Some(size) = entry.size {
                                 span.mobile-info.size {
-                                    (size)
+                                    (maud::display(size))
                                 }
                             }
                         }
@@ -512,7 +512,7 @@ fn entry_row(
             }
             td.size-cell {
                 @if let Some(size) = entry.size {
-                    (size)
+                    (maud::display(size))
                 }
             }
             td.date-cell {
