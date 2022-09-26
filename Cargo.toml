@@ -83,4 +83,4 @@ url = "2"
 fake-tty = "0.3.1"
 
 [build-dependencies]
-grass = "0.11"
+grass = { version = "0.11", default-features = false }
