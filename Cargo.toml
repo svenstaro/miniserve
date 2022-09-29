@@ -29,7 +29,7 @@ bytesize = "1"
 chrono = "0.4"
 chrono-humanize = "0.2"
 clap = { version = "3.2", features = ["derive", "cargo", "wrap_help"] }
-clap_complete = "3.2.3"
+clap_complete = "4.0.1"
 clap_mangen = "0.1"
 comrak = { version = "0.14", default-features = false }
 fast_qr = "0.5.1"
