@@ -17,6 +17,7 @@ use crate::{
     args::{CliArgs, MediaType},
     auth::RequiredAuth,
     file_upload::sanitize_path,
+    renderer::ThemeSlug,
 };
 
 /// Possible characters for random routes
@@ -61,10 +62,10 @@ pub struct MiniserveConfig {
     pub css_route: String,
 
     /// Default color scheme
-    pub default_color_scheme: String,
+    pub default_color_scheme: ThemeSlug,
 
     /// Default dark mode color scheme
-    pub default_color_scheme_dark: String,
+    pub default_color_scheme_dark: ThemeSlug,
 
     /// The name of a directory index file to serve, like "index.html"
     ///

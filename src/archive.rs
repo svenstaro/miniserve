@@ -5,7 +5,7 @@ use std::path::{Path, PathBuf};
 use actix_web::http::header::ContentEncoding;
 use libflate::gzip::Encoder;
 use serde::Deserialize;
-use strum_macros::{Display, EnumIter, EnumString};
+use strum::{Display, EnumIter, EnumString};
 use tar::Builder;
 use zip::{write, ZipWriter};
 

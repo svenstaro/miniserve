@@ -9,7 +9,7 @@ use actix_web::{
 };
 use actix_web_httpauth::middleware::HttpAuthentication;
 use anyhow::Result;
-use clap::{crate_version, IntoApp, Parser};
+use clap::{crate_version, CommandFactory, Parser};
 use fast_qr::QRBuilder;
 use log::{error, warn};
 use yansi::{Color, Paint};
