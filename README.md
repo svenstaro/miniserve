@@ -64,11 +64,18 @@ Sometimes this is just a more practical and quick way than doing things properly
 ### Upload a file using `curl`:
 
     # in one terminal
-    miniserve -u .
+    miniserve -u -- .
     # in another terminal
     curl -F "path=@$FILE" http://localhost:8080/upload\?path\=/
 
 (where `$FILE` is the path to the file. This uses miniserve's default port of 8080)
+
+Note that for uploading, we have to use `--` to disambiguate the argument to `-u`.
+This is because `-u` can also take a path (or multiple). If a path argument to `-u` is given,
+uploading will only be possible to the provided paths as opposed to every path.
+
+Another effect of this is that you can't just combine flags like this `-uv` when `-u` is used. In
+this example, you'd need to use `-u -v`.
 
 ### Create a directory using `curl`:
 
