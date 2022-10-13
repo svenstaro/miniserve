@@ -1,5 +1,7 @@
 use std::io::{self, Write};
 use std::net::{IpAddr, SocketAddr, TcpListener};
+use std::os::unix::net::UnixListener;
+use std::path::PathBuf;
 use std::thread;
 use std::time::Duration;
 
@@ -200,10 +202,57 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
             .default_service(web::get().to(error_404))
     });
 
+    #[cfg(unix)]
+    let srv = {
+        use std::os::unix::fs::FileTypeExt;
+
+        // Actix web only has rustls functions for tcp listeners
+        if miniserve_config.unix_socket_path.is_some() {
+            let path = miniserve_config.unix_socket_path.as_ref().unwrap();
+
+            // FIXME: Maybe shouldn't use unwrap here
+            if path.exists() && !std::fs::metadata(path).unwrap().file_type().is_socket() {
+                return Err(ContextualError::UnixSocketAlreadyExists(path.display().to_string()));
+            }
+
+            let listener = create_unix_listener(path).map_err(|e| {
+                ContextualError::IoError(
+                    format!("Failed to bind unix listener to {}", path.display()),
+                    e,
+                )
+            })?;
+
+            srv.listen_uds(listener).map_err(|e| ContextualError::IoError(format!("Failed to bind server to {}", path.display()), e))?
+
+        } else {
+
+            socket_addresses.iter().try_fold(srv, |srv, addr| {
+                let listener = 
+                    create_tcp_listener(*addr).map_err(|e| {
+                        ContextualError::IoError(format!("Failed to bind tcp listener to {}", addr), e)
+                    })?;
+        
+                #[cfg(feature = "tls")]
+                let srv = match &miniserve_config.tls_rustls_config {
+                    Some(tls_config) => srv.listen_rustls(listener, tls_config.clone()),
+                    None => srv.listen(listener),
+                };
+        
+                #[cfg(not(feature = "tls"))]
+                let srv = srv.listen(listener);
+        
+                srv.map_err(|e| ContextualError::IoError(format!("Failed to bind server to {}", addr), e))
+            })?
+
+        }
+    };
+
+    #[cfg(not(unix))]
     let srv = socket_addresses.iter().try_fold(srv, |srv, addr| {
-        let listener = create_tcp_listener(*addr).map_err(|e| {
-            ContextualError::IoError(format!("Failed to bind server to {}", addr), e)
-        })?;
+        let listener = 
+            create_tcp_listener(*addr).map_err(|e| {
+                ContextualError::IoError(format!("Failed to bind tcp listener to {}", addr), e)
+            })?;
 
         #[cfg(feature = "tls")]
         let srv = match &miniserve_config.tls_rustls_config {
@@ -273,6 +322,13 @@ fn create_tcp_listener(addr: SocketAddr) -> io::Result<TcpListener> {
     socket.bind(&addr.into())?;
     socket.listen(1024 /* Default backlog */)?;
     Ok(TcpListener::from(socket))
+}
+
+#[cfg(unix)]
+fn create_unix_listener(path: &PathBuf) -> io::Result<UnixListener> {
+    // TODO: Check if path already exists
+    let socket = UnixListener::bind(path)?;
+    Ok(UnixListener::from(socket))
 }
 
 fn configure_header(conf: &MiniserveConfig) -> middleware::DefaultHeaders {

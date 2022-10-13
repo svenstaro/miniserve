@@ -42,9 +42,9 @@ pub struct CliArgs {
     #[clap(long, requires = "index_file")]
     pub spa: bool,
 
-    /// Port to use
+    /// Port or unix socket path to listen on
     #[clap(short = 'p', long = "port", default_value = "8080")]
-    pub port: u16,
+    pub port: String,
 
     /// Interface to listen on
     #[clap(
