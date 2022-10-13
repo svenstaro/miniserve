@@ -85,8 +85,8 @@ Please set an explicit serve path like: `miniserve /my/path`")]
     NoSymlinksOptionWithSymlinkServePath(String),
 
     /// Miniserve will not create a socket file if the file already exists
-    #[error("File at unix socket path already exists")]
-    UnixSocketAlreadyExists(String),
+    #[error("File at unix socket path already exists and is not a unix socket")]
+    UnixSocketFileAlreadyExists(String),
 }
 
 impl ResponseError for ContextualError {

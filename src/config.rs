@@ -14,7 +14,7 @@ use http::HeaderMap;
 use rustls_pemfile as pemfile;
 
 use crate::{
-    args::{CliArgs, MediaType},
+    args::{CliArgs, MediaType, Interface},
     auth::RequiredAuth,
     file_upload::sanitize_path,
 };
@@ -36,11 +36,8 @@ pub struct MiniserveConfig {
     /// Port on which miniserve will be listening
     pub port: u16,
 
-    /// Unix domain socket path miniserve will listen on
-    pub unix_socket_path: Option<std::path::PathBuf>,
-
-    /// IP address(es) on which miniserve will be available
-    pub interfaces: Vec<IpAddr>,
+    /// IP address(es) or unix domain sockets on which miniserve will be available
+    pub interfaces: Vec<Interface>,
 
     /// Enable HTTP basic authentication
     pub auth: Vec<RequiredAuth>,
@@ -148,8 +145,8 @@ impl MiniserveConfig {
             args.interfaces
         } else {
             vec![
-                IpAddr::V6(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0)),
-                IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)),
+                Interface::Address(IpAddr::V6(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0))),
+                Interface::Address(IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0))),
             ]
         };
 
@@ -181,26 +178,9 @@ impl MiniserveConfig {
 
         let path_explicitly_chosen = args.path.is_some() || args.index.is_some();
 
-        // Check if the first character in port is a digit
-        let (port, unix_socket_path) = match args.port.chars().next().unwrap().is_numeric()
-        {
-            true => match args.port.as_str() {
-                "0" => (
-                    port_check::free_local_port().context("No free ports available")?,
-                    None,
-                ),
-                _ => {
-                    use std::str::FromStr;
-                    let port = u16::from_str(&args.port)?;
-                    (port, None)
-                }
-            },
-
-            // Last character is not a number
-            false => {
-                let path = PathBuf::from(args.port);
-                (0, Some(path))
-            }
+        let port = match args.port {
+            0 => port_check::free_local_port().context("No free ports available")?,
+            _ => args.port,
         };
 
         #[cfg(feature = "tls")]
@@ -257,7 +237,6 @@ impl MiniserveConfig {
             path: args.path.unwrap_or_else(|| PathBuf::from(".")),
             port,
             interfaces,
-            unix_socket_path,
             auth: args.auth,
             path_explicitly_chosen,
             no_symlinks: args.no_symlinks,

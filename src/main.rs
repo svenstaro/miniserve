@@ -27,6 +27,7 @@ mod listing;
 mod pipe;
 mod renderer;
 
+use crate::args::Interface;
 use crate::config::MiniserveConfig;
 use crate::errors::ContextualError;
 
@@ -134,16 +135,32 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
     }
 
     let display_urls = {
-        let (mut ifaces, wildcard): (Vec<_>, Vec<_>) = miniserve_config
-            .interfaces
-            .clone()
-            .into_iter()
-            .partition(|addr| !addr.is_unspecified());
+        let (mut ifaces, wildcard): (Vec<_>, Vec<_>) =
+            miniserve_config.interfaces.clone().into_iter().partition(
+                |interface| match interface {
+                    Interface::Address(addr) => !addr.is_unspecified(),
+                    _ => false,
+                },
+            );
 
         // Replace wildcard addresses with local interface addresses
         if !wildcard.is_empty() {
-            let all_ipv4 = wildcard.iter().any(|addr| addr.is_ipv4());
-            let all_ipv6 = wildcard.iter().any(|addr| addr.is_ipv6());
+            let all_ipv4 = wildcard
+                .iter()
+                .filter_map(|interface| match interface {
+                    Interface::Address(addr) => Some(addr),
+                    _ => None,
+                })
+                .any(|addr| addr.is_ipv4());
+
+            let all_ipv6 = wildcard
+                .iter()
+                .filter_map(|interface| match interface {
+                    Interface::Address(addr) => Some(addr),
+                    _ => None,
+                })
+                .any(|addr| addr.is_ipv6());
+
             ifaces = get_if_addrs::get_if_addrs()
                 .unwrap_or_else(|e| {
                     error!("Failed to get local interface addresses: {}", e);
@@ -152,15 +169,19 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
                 .into_iter()
                 .map(|iface| iface.ip())
                 .filter(|ip| (all_ipv4 && ip.is_ipv4()) || (all_ipv6 && ip.is_ipv6()))
+                .map(|ip| Interface::Address(ip))
                 .collect();
             ifaces.sort();
         }
 
         ifaces
             .into_iter()
-            .map(|addr| match addr {
-                IpAddr::V4(_) => format!("{}:{}", addr, miniserve_config.port),
-                IpAddr::V6(_) => format!("[{}]:{}", addr, miniserve_config.port),
+            .map(|interface| match interface {
+                Interface::Address(addr) => match addr {
+                    IpAddr::V4(_) => format!("{}:{}", addr, miniserve_config.port),
+                    IpAddr::V6(_) => format!("[{}]:{}", addr, miniserve_config.port),
+                },
+                Interface::Path(path) => path.display().to_string(),
             })
             .map(|addr| match miniserve_config.tls_rustls_config {
                 Some(_) => format!("https://{}", addr),
@@ -173,13 +194,31 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
     let socket_addresses = miniserve_config
         .interfaces
         .iter()
-        .map(|&interface| SocketAddr::new(interface, miniserve_config.port))
+        .filter_map(|interface| match interface {
+            Interface::Address(addr) => Some(SocketAddr::new(*addr, miniserve_config.port)),
+            _ => None,
+        })
         .collect::<Vec<_>>();
 
-    let display_sockets = socket_addresses
+    #[cfg(unix)]
+    let unix_socket_paths = miniserve_config
+        .interfaces
+        .iter()
+        .filter_map(|interface| match interface {
+            Interface::Path(path) => Some(path),
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+
+    let mut display_sockets = socket_addresses
         .iter()
         .map(|sock| Color::Green.paint(sock.to_string()).bold().to_string())
         .collect::<Vec<_>>();
+
+    #[cfg(unix)]
+    unix_socket_paths
+        .iter()
+        .for_each(|path| display_sockets.push(Color::Green.paint(path.display()).bold().to_string()));
 
     let srv = actix_web::HttpServer::new(move || {
         App::new()
@@ -203,56 +242,32 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
     });
 
     #[cfg(unix)]
-    let srv = {
+    let srv = unix_socket_paths.iter().try_fold(srv, |srv, path| {
         use std::os::unix::fs::FileTypeExt;
 
-        // Actix web only has rustls functions for tcp listeners
-        if miniserve_config.unix_socket_path.is_some() {
-            let path = miniserve_config.unix_socket_path.as_ref().unwrap();
-
-            // FIXME: Maybe shouldn't use unwrap here
-            if path.exists() && !std::fs::metadata(path).unwrap().file_type().is_socket() {
-                return Err(ContextualError::UnixSocketAlreadyExists(path.display().to_string()));
-            }
-
-            let listener = create_unix_listener(path).map_err(|e| {
-                ContextualError::IoError(
-                    format!("Failed to bind unix listener to {}", path.display()),
-                    e,
-                )
-            })?;
-
-            srv.listen_uds(listener).map_err(|e| ContextualError::IoError(format!("Failed to bind server to {}", path.display()), e))?
-
-        } else {
-
-            socket_addresses.iter().try_fold(srv, |srv, addr| {
-                let listener = 
-                    create_tcp_listener(*addr).map_err(|e| {
-                        ContextualError::IoError(format!("Failed to bind tcp listener to {}", addr), e)
-                    })?;
-        
-                #[cfg(feature = "tls")]
-                let srv = match &miniserve_config.tls_rustls_config {
-                    Some(tls_config) => srv.listen_rustls(listener, tls_config.clone()),
-                    None => srv.listen(listener),
-                };
-        
-                #[cfg(not(feature = "tls"))]
-                let srv = srv.listen(listener);
-        
-                srv.map_err(|e| ContextualError::IoError(format!("Failed to bind server to {}", addr), e))
-            })?
-
+        // FIXME: Maybe shouldn't use unwrap here
+        if path.exists() && !std::fs::metadata(path).unwrap().file_type().is_socket() {
+            return Err(ContextualError::UnixSocketFileAlreadyExists(
+                path.display().to_string(),
+            ));
         }
-    };
 
-    #[cfg(not(unix))]
+        let listener = create_unix_listener(path).map_err(|e| {
+            ContextualError::IoError(
+                format!("Failed to bind unix listener to {}", path.display()),
+                e,
+            )
+        })?;
+
+        srv.listen_uds(listener).map_err(|e| {
+            ContextualError::IoError(format!("Failed to bind server to {}", path.display()), e)
+        })
+    })?;
+
     let srv = socket_addresses.iter().try_fold(srv, |srv, addr| {
-        let listener = 
-            create_tcp_listener(*addr).map_err(|e| {
-                ContextualError::IoError(format!("Failed to bind tcp listener to {}", addr), e)
-            })?;
+        let listener = create_tcp_listener(*addr).map_err(|e| {
+            ContextualError::IoError(format!("Failed to bind tcp listener to {}", addr), e)
+        })?;
 
         #[cfg(feature = "tls")]
         let srv = match &miniserve_config.tls_rustls_config {
