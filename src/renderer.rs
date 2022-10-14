@@ -3,10 +3,10 @@ use std::time::SystemTime;
 use actix_web::http::StatusCode;
 use chrono::{DateTime, Utc};
 use chrono_humanize::Humanize;
-use clap::{crate_name, crate_version};
+use clap::{crate_name, crate_version, ValueEnum};
 use fast_qr::{convert::svg::SvgBuilder, qr::QRCodeError, QRBuilder};
 use maud::{html, Markup, PreEscaped, DOCTYPE};
-use strum::IntoEnumIterator;
+use strum::{Display, IntoEnumIterator};
 
 use crate::auth::CurrentUser;
 use crate::consts;
@@ -318,7 +318,17 @@ const THEME_PICKER_CHOICES: &[(&str, &str)] = &[
     ("Monokai (dark)", "monokai"),
 ];
 
-pub const THEME_SLUGS: &[&str] = &["squirrel", "archlinux", "zenburn", "monokai"];
+#[derive(Debug, Clone, ValueEnum, Display)]
+pub enum ThemeSlug {
+    #[strum(serialize = "squirrel")]
+    Squirrel,
+    #[strum(serialize = "archlinux")]
+    Archlinux,
+    #[strum(serialize = "zenburn")]
+    Zenburn,
+    #[strum(serialize = "monokai")]
+    Monokai,
+}
 
 /// Partial: qr code spoiler
 fn qr_spoiler(show_qrcode: bool, content: impl AsRef<str>) -> Markup {
