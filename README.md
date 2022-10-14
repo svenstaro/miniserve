@@ -86,6 +86,12 @@ Sometimes this is just a more practical and quick way than doing things properly
 This uses the `--media-type` option, which sends a hint for the expected media type to the browser.
 Some mobile browsers like Firefox on Android will offer to open the camera app when seeing this.
 
+### Listen on a unix domain socket
+
+    miniserve -p /tmp/web.socket
+
+You can test access to this socket using curl: `curl -X GET --unix-socket /tmp/web.socket http:/localhost/index.html`
+
 ## Features
 
 - Easy to use
