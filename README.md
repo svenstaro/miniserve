@@ -112,146 +112,141 @@ Some mobile browsers like Firefox on Android will offer to open the camera app w
 
 ## Usage
 
-    miniserve 0.22.0
-    Sven-Hendrik Haase <svenstaro@gmail.com>, Boastful Squirrel <boastful.squirrel@gmail.com>
     For when you really just want to serve some files over HTTP right now!
 
-    USAGE:
-        miniserve [OPTIONS] [--] [PATH]
+    Usage: miniserve [OPTIONS] [PATH]
 
-    ARGS:
-        <PATH>
-                Which path to serve
+    Arguments:
+      [PATH]
+              Which path to serve
 
-    OPTIONS:
-        -a, --auth <AUTH>
-                Set authentication. Currently supported formats: username:password, username:sha256:hash,
-                username:sha512:hash (e.g. joe:123,
-                joe:sha256:a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3)
+    Options:
+      -v, --verbose
+              Be verbose, includes emitting access logs
 
-        -c, --color-scheme <COLOR_SCHEME>
-                Default color scheme
+          --index <INDEX>
+              The name of a directory index file to serve, like "index.html"
 
-                [default: squirrel]
-                [possible values: squirrel, archlinux, zenburn, monokai]
+              Normally, when miniserve serves a directory, it creates a listing for that directory. However, if a directory contains this
+              file, miniserve will serve that file instead.
 
-        -d, --color-scheme-dark <COLOR_SCHEME_DARK>
-                Default color scheme
+          --spa
+              Activate SPA (Single Page Application) mode
 
-                [default: archlinux]
-                [possible values: squirrel, archlinux, zenburn, monokai]
+              This will cause the file given by --index to be served for all non-existing file paths. In effect, this will serve the index
+              file whenever a 404 would otherwise occur in order to allow the SPA router to handle the request instead.
 
-        -D, --dirs-first
-                List directories first
+      -p, --port <PORT>
+              Port to use
 
-        -F, --hide-version-footer
-                Hide version footer
+              [default: 8080]
 
-        -g, --enable-tar-gz
-                Enable gz-compressed tar archive generation
+      -i, --interfaces <INTERFACES>...
+              Interface to listen on
 
-        -h, --help
-                Print help information
+      -a, --auth <AUTH>...
+              Set authentication. Currently supported formats: username:password, username:sha256:hash, username:sha512:hash (e.g. joe:123,
+              joe:sha256:a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3)
 
-        -H, --hidden
-                Show hidden files
+          --route-prefix <ROUTE_PREFIX>
+              Use a specific route prefix
 
-            --header <HEADER>
-                Set custom header for responses
+          --random-route
+              Generate a random 6-hexdigit route
 
-            --hide-theme-selector
-                Hide theme selector
+      -P, --no-symlinks
+              Hide symlinks in listing and prevent them from being followed
 
-        -i, --interfaces <INTERFACES>
-                Interface to listen on
+      -H, --hidden
+              Show hidden files
 
-            --index <index_file>
-                The name of a directory index file to serve, like "index.html"
+      -c, --color-scheme <COLOR_SCHEME>
+              Default color scheme
 
-                Normally, when miniserve serves a directory, it creates a listing for that directory.
-                However, if a directory contains this file, miniserve will serve that file instead.
+              [default: squirrel]
+              [possible values: squirrel, archlinux, zenburn, monokai]
 
-        -l, --show-symlink-info
-                Visualize symlinks in directory listing
+      -d, --color-scheme-dark <COLOR_SCHEME_DARK>
+              Default color scheme
 
-        -m, --media-type <MEDIA_TYPE>
-                Specify uploadable media types
+              [default: archlinux]
+              [possible values: squirrel, archlinux, zenburn, monokai]
 
-                [possible values: image, audio, video]
+      -q, --qrcode
+              Enable QR code display
 
-        -M, --raw-media-type <MEDIA_TYPE_RAW>
-                Directly specify the uploadable media type expression
+      -u, --upload-files [<ALLOWED_UPLOAD_DIR>]
+              Enable file uploading (and optionally specify for which directory)
 
-        -o, --overwrite-files
-                Enable overriding existing files during file upload
+      -U, --mkdir
+              Enable creating directories
 
-        -p, --port <PORT>
-                Port to use
+      -m, --media-type <MEDIA_TYPE>
+              Specify uploadable media types
 
-                [default: 8080]
+              [possible values: image, audio, video]
 
-        -P, --no-symlinks
-                Hide symlinks in listing and prevent them from being followed
+      -M, --raw-media-type <MEDIA_TYPE_RAW>
+              Directly specify the uploadable media type expression
 
-            --print-completions <shell>
-                Generate completion file for a shell
+      -o, --overwrite-files
+              Enable overriding existing files during file upload
 
-                [possible values: bash, elvish, fish, powershell, zsh]
+      -r, --enable-tar
+              Enable uncompressed tar archive generation
 
-            --print-manpage
-                Generate man page
+      -g, --enable-tar-gz
+              Enable gz-compressed tar archive generation
 
-        -q, --qrcode
-                Enable QR code display
+      -z, --enable-zip
+              Enable zip archive generation
 
-        -r, --enable-tar
-                Enable uncompressed tar archive generation
+              WARNING: Zipping large directories can result in out-of-memory exception because zip generation is done in memory and cannot
+              be sent on the fly
 
-            --random-route
-                Generate a random 6-hexdigit route
+      -D, --dirs-first
+              List directories first
 
-            --readme
-                Enable README.md rendering in directories
+      -t, --title <TITLE>
+              Shown instead of host in page title and heading
 
-            --route-prefix <ROUTE_PREFIX>
-                Use a specific route prefix
+          --header <HEADER>...
+              Set custom header for responses
 
-            --spa
-                Activate SPA (Single Page Application) mode
+      -l, --show-symlink-info
+              Visualize symlinks in directory listing
 
-                This will cause the file given by --index to be served for all non-existing file paths. In
-                effect, this will serve the index file whenever a 404 would otherwise occur in order to allow the
-                SPA router to handle the request instead.
+      -F, --hide-version-footer
+              Hide version footer
 
-        -t, --title <TITLE>
-                Shown instead of host in page title and heading
+          --hide-theme-selector
+              Hide theme selector
 
-            --tls-cert <TLS_CERT>
-                TLS certificate to use
+      -W, --show-wget-footer
+              If enabled, display a wget command to recursively download the current directory
 
-            --tls-key <TLS_KEY>
-                TLS private key to use
+          --print-completions <shell>
+              Generate completion file for a shell
 
-        -u, --upload-files [<ALLOWED_UPLOAD_DIR>...]
-                Enable file uploading (and optionally specify for which directory)
+              [possible values: bash, elvish, fish, powershell, zsh]
 
-        -U, --mkdir
-                Enable creating directories
+          --print-manpage
+              Generate man page
 
-        -v, --verbose
-                Be verbose, includes emitting access logs
+          --tls-cert <TLS_CERT>
+              TLS certificate to use
 
-        -V, --version
-                Print version information
+          --tls-key <TLS_KEY>
+              TLS private key to use
 
-        -W, --show-wget-footer
-                If enabled, display a wget command to recursively download the current directory
+          --readme
+              Enable README.md rendering in directories
 
-        -z, --enable-zip
-                Enable zip archive generation
-                
-                WARNING: Zipping large directories can result in out-of-memory exception because zip generation
-                is done in memory and cannot be sent on the fly
+      -h, --help
+              Print help information (use `-h` for a summary)
+
+      -V, --version
+              Print version information
 
 ## How to install
 

@@ -28,7 +28,7 @@ atty = "0.2"
 bytesize = "1"
 chrono = "0.4"
 chrono-humanize = "0.2"
-clap = { version = "4", features = ["derive", "cargo", "wrap_help"] }
+clap = { version = "4", features = ["derive", "cargo", "wrap_help", "deprecated"] }
 clap_complete = "4"
 clap_mangen = "0.2"
 comrak = { version = "0.14", default-features = false }
