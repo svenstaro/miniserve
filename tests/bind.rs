@@ -18,7 +18,29 @@ fn bind_fails(tmpdir: TempDir, port: u16, #[case] args: &[&str]) -> Result<(), E
         .arg(port.to_string())
         .args(args)
         .assert()
-        .stderr(predicates::str::contains("Failed to bind server to"))
+        .stderr(predicates::str::contains("Failed to bind tcp"))
+        .failure();
+
+    Ok(())
+}
+
+#[cfg(unix)]
+#[rstest]
+#[case(&[] as &[&str])]
+fn bind_uds_fails(tmpdir: TempDir, _port: u16, #[case] args: &[&str]) -> Result<(), Error> {
+    
+    // Make normal file at socket path
+    let mut socket_path = tmpdir.path().to_path_buf();
+    socket_path.push("socket");
+    std::fs::File::create(&socket_path)?;
+
+    Command::cargo_bin("miniserve")?
+        .arg(tmpdir.path())
+        .arg("-i")
+        .arg(socket_path)
+        .args(args)
+        .assert()
+        .stderr(predicates::str::contains("unix socket path already exists and is not a unix socket"))
         .failure();
 
     Ok(())
@@ -45,6 +67,32 @@ fn bind_ipv4_ipv6(
 
     Ok(())
 }
+
+// #[cfg(unix)]
+// #[rstest]
+// #[case(&[] as &[&str])]
+// fn bind_uds(tmpdir: TempDir, _port: u16, #[case] _args: &[&str]) -> Result<(), Error> {
+//     let mut socket_path = tmpdir.path().to_path_buf();
+//     socket_path.push("socket");
+
+//     let mut child = Command::cargo_bin("miniserve")?
+//         .arg(tmpdir.path())
+//         .arg("-i")
+//         .arg(&socket_path)
+//         .stdout(Stdio::piped())
+//         .spawn()?;
+
+//     Command::cargo_bin("curl")?
+//         .args(&["-X", "GET", "--unix-socket", socket_path.as_path().to_str().unwrap(), "http://localhost"])
+//         .unwrap()
+//         .assert()
+//         .success();
+    
+//     child.kill()?;
+
+    
+//     Ok(())
+// }
 
 #[rstest]
 #[case(&[] as &[&str])]
