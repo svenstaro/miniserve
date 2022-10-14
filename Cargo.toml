@@ -57,7 +57,7 @@ strum_macros = "0.24"
 tar = "0.4"
 thiserror = "1"
 yansi = "0.5"
-zip = { version = "0.6.2", default-features = false }
+zip = { version = "0.6.3", default-features = false }
 
 [features]
 default = ["tls"]
