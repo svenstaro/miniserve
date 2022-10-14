@@ -2,7 +2,6 @@ use std::net::IpAddr;
 use std::path::PathBuf;
 
 use clap::{Parser, ValueEnum, ValueHint};
-use clap_complete::Shell;
 use http::header::{HeaderMap, HeaderName, HeaderValue};
 
 use crate::auth;
@@ -178,7 +177,7 @@ pub struct CliArgs {
 
     /// Generate completion file for a shell
     #[arg(long = "print-completions", value_name = "shell")]
-    pub print_completions: Option<Shell>,
+    pub print_completions: Option<clap_complete::Shell>,
 
     /// Generate man page
     #[arg(long = "print-manpage")]
