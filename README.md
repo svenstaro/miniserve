@@ -127,14 +127,16 @@ Some mobile browsers like Firefox on Android will offer to open the camera app w
           --index <INDEX>
               The name of a directory index file to serve, like "index.html"
 
-              Normally, when miniserve serves a directory, it creates a listing for that directory. However, if a directory contains this
-              file, miniserve will serve that file instead.
+              Normally, when miniserve serves a directory, it creates a listing for that
+              directory. However, if a directory contains this file, miniserve will serve that
+              file instead.
 
           --spa
               Activate SPA (Single Page Application) mode
 
-              This will cause the file given by --index to be served for all non-existing file paths. In effect, this will serve the index
-              file whenever a 404 would otherwise occur in order to allow the SPA router to handle the request instead.
+              This will cause the file given by --index to be served for all non-existing file
+              paths. In effect, this will serve the index file whenever a 404 would otherwise
+              occur in order to allow the SPA router to handle the request instead.
 
       -p, --port <PORT>
               Port to use
@@ -145,7 +147,8 @@ Some mobile browsers like Firefox on Android will offer to open the camera app w
               Interface to listen on
 
       -a, --auth <AUTH>...
-              Set authentication. Currently supported formats: username:password, username:sha256:hash, username:sha512:hash (e.g. joe:123,
+              Set authentication. Currently supported formats: username:password,
+              username:sha256:hash, username:sha512:hash (e.g. joe:123,
               joe:sha256:a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3)
 
           --route-prefix <ROUTE_PREFIX>
@@ -201,8 +204,8 @@ Some mobile browsers like Firefox on Android will offer to open the camera app w
       -z, --enable-zip
               Enable zip archive generation
 
-              WARNING: Zipping large directories can result in out-of-memory exception because zip generation is done in memory and cannot
-              be sent on the fly
+              WARNING: Zipping large directories can result in out-of-memory exception because zip
+              generation is done in memory and cannot be sent on the fly
 
       -D, --dirs-first
               List directories first
