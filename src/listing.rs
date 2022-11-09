@@ -1,4 +1,5 @@
 #![allow(clippy::format_push_string)]
+use std::fmt::Display;
 use std::io;
 use std::path::{Component, Path, PathBuf};
 use std::time::SystemTime;
@@ -10,6 +11,7 @@ use percent_encoding::{percent_decode_str, utf8_percent_encode};
 use regex::Regex;
 use serde::Deserialize;
 use strum::{Display, EnumString};
+use walkdir::WalkDir;
 
 use crate::archive::ArchiveMethod;
 use crate::auth::CurrentUser;
@@ -78,6 +80,24 @@ pub enum EntryType {
     File,
 }
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+/// Possible entry size types
+pub enum EntrySize {
+    /// EntryCount is number of entries in a directory
+    EntryCount(usize),
+    /// Bytes is number of bytes in a file
+    Bytes(bytesize::ByteSize),
+}
+
+impl Display for EntrySize {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            EntrySize::EntryCount(count) => write!(f, "{}", count),
+            EntrySize::Bytes(bytes) => write!(f, "{}",  bytes),
+        }
+    }
+}
+
 /// Entry
 pub struct Entry {
     /// Name of the entry
@@ -89,8 +109,8 @@ pub struct Entry {
     /// URL of the entry
     pub link: String,
 
-    /// Size in byte of the entry. Only available for EntryType::File
-    pub size: Option<bytesize::ByteSize>,
+    /// Size of the entry
+    pub size: EntrySize,
 
     /// Last modification date
     pub last_modification_date: Option<SystemTime>,
@@ -104,7 +124,7 @@ impl Entry {
         name: String,
         entry_type: EntryType,
         link: String,
-        size: Option<bytesize::ByteSize>,
+        size: EntrySize,
         last_modification_date: Option<SystemTime>,
         symlink_info: Option<String>,
     ) -> Self {
@@ -256,12 +276,14 @@ pub fn directory_listing(
                     Err(_) => None,
                 };
 
+                let size = WalkDir::new(entry.path()).into_iter().count();
+
                 if metadata.is_dir() {
                     entries.push(Entry::new(
                         file_name,
                         EntryType::Directory,
                         file_url,
-                        None,
+                        EntrySize::EntryCount(size),
                         last_modification_date,
                         symlink_dest,
                     ));
@@ -270,7 +292,7 @@ pub fn directory_listing(
                         file_name.clone(),
                         EntryType::File,
                         file_url,
-                        Some(ByteSize::b(metadata.len())),
+                        EntrySize::Bytes(ByteSize::b(metadata.len())),
                         last_modification_date,
                         symlink_dest,
                     ));
@@ -302,9 +324,15 @@ pub fn directory_listing(
         SortingMethod::Size => entries.sort_by(|e1, e2| {
             // If we can't get the size of the entry (directory for instance)
             // let's consider it's 0b
-            e2.size
-                .unwrap_or_else(|| ByteSize::b(0))
-                .cmp(&e1.size.unwrap_or_else(|| ByteSize::b(0)))
+            match (e1.size, e2.size) {
+                (EntrySize::EntryCount(ref e1_count), EntrySize::EntryCount(ref e2_count)) => e2_count.cmp(e1_count),
+                (EntrySize::Bytes(ref e1_bytes), EntrySize::Bytes(ref e2_bytes)) => e2_bytes.cmp(e1_bytes),
+                (EntrySize::EntryCount(_), EntrySize::Bytes(_)) => std::cmp::Ordering::Greater,
+                (EntrySize::Bytes(_), EntrySize::EntryCount(_)) => std::cmp::Ordering::Less,
+            }
+            // e2.size
+            //     .unwrap_or_else(|| ByteSize::b(0))
+            //     .cmp(&e1.size.unwrap_or_else(|| ByteSize::b(0)))
         }),
         SortingMethod::Date => entries.sort_by(|e1, e2| {
             // If, for some reason, we can't get the last modification date of an entry

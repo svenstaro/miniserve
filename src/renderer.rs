@@ -511,19 +511,23 @@ fn entry_row(
                         }
 
                         @if !raw {
-                            @if let Some(size) = entry.size {
-                                span.mobile-info.size {
-                                    (maud::display(size))
-                                }
+                            span.mobile-info.size {
+                                (maud::display(&entry.size))
                             }
+                            // @if let size = entry.size {
+                            //     span.mobile-info.size {
+                            //         (maud::display(size))
+                            //     }
+                            // }
                         }
                     }
                 }
             }
             td.size-cell {
-                @if let Some(size) = entry.size {
-                    (maud::display(size))
-                }
+                (maud::display(&entry.size))
+                // @if let size = entry.size {
+                //     (maud::display(size))
+                // }
             }
             td.date-cell {
                 @if let Some(modification_date) = convert_to_utc(entry.last_modification_date) {
