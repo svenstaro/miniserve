@@ -55,6 +55,7 @@ socket2 = "0.4"
 strum = { version = "0.24", features = ["derive"] }
 tar = "0.4"
 thiserror = "1"
+walkdir = "2.3.2"
 yansi = "0.5"
 zip = { version = "0.6.2", default-features = false }
 

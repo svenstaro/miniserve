@@ -1604,6 +1604,7 @@ dependencies = [
  "tar",
  "thiserror",
  "url",
+ "walkdir",
  "yansi",
  "zip",
 ]
