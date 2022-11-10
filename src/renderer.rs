@@ -526,7 +526,7 @@ fn entry_row(
                 }
             }
             td.date-cell {
-                @if let Some(modification_date) = convert_to_utc(entry.last_modification_date) {
+                @if let Some(modification_date) = convert_to_local(entry.last_modification_date) {
                     span {
                         (modification_date) " "
                     }
@@ -618,9 +618,7 @@ fn page_header(title: &str, file_upload: bool, favicon_route: &str, css_route: &
 }
 
 /// Converts a SystemTime object to a strings tuple (date, time)
-/// Date is formatted as %e %b, e.g. Jul 12
-/// Time is formatted as %R, e.g. 22:34
-fn convert_to_utc(src_time: Option<SystemTime>) -> Option<String> {
+fn convert_to_local(src_time: Option<SystemTime>) -> Option<String> {
     src_time
         .map(DateTime::<Local>::from)
         .map(|date_time| date_time.format("%Y-%m-%d %H:%M:%S %:z").to_string())
