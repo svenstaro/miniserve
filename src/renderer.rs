@@ -623,7 +623,7 @@ fn page_header(title: &str, file_upload: bool, favicon_route: &str, css_route: &
 fn convert_to_utc(src_time: Option<SystemTime>) -> Option<String> {
     src_time
         .map(DateTime::<Local>::from)
-        .map(|date_time| date_time.format("%Y/%m/%d %H:%M:%S %:z").to_string())
+        .map(|date_time| date_time.format("%Y-%m-%d %H:%M:%S %:z").to_string())
 }
 
 /// Converts a SystemTime to a string readable by a human,
