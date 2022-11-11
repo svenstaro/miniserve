@@ -267,7 +267,7 @@ table thead th.size {
 }
 
 table thead th.date {
-    width: 15em;
+    width: 21em;
 }
 
 table tbody tr:nth-child(odd) {
@@ -293,10 +293,6 @@ td.size-cell {
 td.date-cell {
     display: flex;
     justify-content: space-between;
-}
-
-.at {
-    color: var(--at_color);
 }
 
 .history {
