@@ -4,7 +4,11 @@ use actix_web::http::StatusCode;
 use chrono::{DateTime, Local};
 use chrono_humanize::Humanize;
 use clap::{crate_name, crate_version, ValueEnum};
-use fast_qr::{convert::svg::SvgBuilder, qr::QRCodeError, QRBuilder};
+use fast_qr::{
+    convert::{svg::SvgBuilder, Builder},
+    qr::QRCodeError,
+    QRBuilder,
+};
 use maud::{html, Markup, PreEscaped, DOCTYPE};
 use strum::{Display, IntoEnumIterator};
 
