@@ -10,12 +10,12 @@ use select::{document::Document, node::Node};
 /// Can start the server with TLS and receive encrypted responses.
 #[rstest]
 #[case(server(&[
-        "--tls-cert", "tests/data/cert.pem",
-        "--tls-key", "tests/data/key_pkcs8.pem",
+        "--tls-cert", "cert.pem",
+        "--tls-key", "key_pkcs8.pem",
 ]))]
 #[case(server(&[
-        "--tls-cert", "tests/data/cert.pem",
-        "--tls-key", "tests/data/key_pkcs1.pem",
+        "--tls-cert", "cert.pem",
+        "--tls-key", "key_pkcs1.pem",
 ]))]
 fn tls_works(#[case] server: TestServer) -> Result<(), Error> {
     let client = ClientBuilder::new()
@@ -34,7 +34,7 @@ fn tls_works(#[case] server: TestServer) -> Result<(), Error> {
 #[rstest]
 fn wrong_path_cert() -> Result<(), Error> {
     Command::cargo_bin("miniserve")?
-        .args(&["--tls-cert", "wrong", "--tls-key", "tests/data/key.pem"])
+        .args(&["--tls-cert", "wrong", "--tls-key", "key.pem"])
         .assert()
         .failure()
         .stderr(contains("Error: Couldn't access TLS certificate \"wrong\""));

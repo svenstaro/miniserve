@@ -4,6 +4,8 @@ use assert_fs::prelude::*;
 use port_check::free_local_port;
 use reqwest::Url;
 use rstest::fixture;
+use std::fmt::Display;
+use std::path::Path;
 use std::process::{Child, Command, Stdio};
 use std::thread::sleep;
 use std::time::{Duration, Instant};
@@ -84,6 +86,24 @@ pub fn port() -> u16 {
     free_local_port().expect("Couldn't find a free local port")
 }
 
+fn copy_tls<P: Display>(path: P) {
+    std::fs::copy(
+        "tests/data/cert.pem",
+        &format!("{}/cert.pem", path),
+    )
+    .unwrap();
+    std::fs::copy(
+        "tests/data/key_pkcs1.pem",
+        &format!("{}/key_pkcs1.pem", path),
+    )
+    .unwrap();
+    std::fs::copy(
+        "tests/data/key_pkcs8.pem",
+        &format!("{}/key_pkcs8.pem", path),
+    )
+    .unwrap();
+}
+
 /// Run miniserve as a server; Start with a temporary directory, a free port and some
 /// optional arguments then wait for a while for the server setup to complete.
 #[fixture]
@@ -95,8 +115,15 @@ where
 {
     let port = port();
     let tmpdir = tmpdir();
+
+    copy_tls(tmpdir.path().display());
+
+    let mut socket_path = tmpdir.to_path_buf();
+    socket_path.push("miniserve.socket");
+
     let child = Command::cargo_bin("miniserve")
         .expect("Couldn't find test binary")
+        .current_dir(tmpdir.path())
         .arg(tmpdir.path())
         .arg("-p")
         .arg(port.to_string())
@@ -104,11 +131,12 @@ where
         .stdout(Stdio::null())
         .spawn()
         .expect("Couldn't run test binary");
+
     let is_tls = args
         .into_iter()
         .any(|x| x.as_ref().to_str().unwrap().contains("tls"));
 
-    wait_for_port(port);
+    wait_for(port, socket_path.as_path());
     TestServer::new(port, tmpdir, child, is_tls)
 }
 
@@ -122,8 +150,15 @@ where
 {
     let port = port();
     let tmpdir = tmpdir();
+    
+    copy_tls(tmpdir.path().display());
+
+    let mut socket_path = tmpdir.to_path_buf();
+    socket_path.push("miniserve.socket");
+
     let child = Command::cargo_bin("miniserve")
         .expect("Couldn't find test binary")
+        .current_dir(tmpdir.path())
         .arg(tmpdir.path())
         .arg("-p")
         .arg(port.to_string())
@@ -132,19 +167,23 @@ where
         .stderr(Stdio::null())
         .spawn()
         .expect("Couldn't run test binary");
+
     let is_tls = args
         .into_iter()
         .any(|x| x.as_ref().to_str().unwrap().contains("tls"));
 
-    wait_for_port(port);
+    wait_for(port, socket_path.as_path());
     TestServer::new(port, tmpdir, child, is_tls)
 }
 
 /// Wait a max of 1s for the port to become available.
-fn wait_for_port(port: u16) {
+fn wait_for(port: u16, socket: &Path) {
     let start_wait = Instant::now();
 
-    while !port_check::is_port_reachable(format!("localhost:{}", port)) {
+    while !port_check::is_port_reachable(format!("[::1]:{}", port))
+        && !port_check::is_port_reachable(format!("localhost:{}", port))
+        && !socket.exists()
+    {
         sleep(Duration::from_millis(100));
 
         if start_wait.elapsed().as_secs() > 1 {
