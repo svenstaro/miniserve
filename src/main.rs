@@ -1,5 +1,6 @@
 use std::io::{self, Write};
 use std::net::{IpAddr, SocketAddr, TcpListener};
+#[cfg(unix)]
 use std::os::unix::net::UnixListener;
 use std::path::PathBuf;
 use std::thread;
@@ -245,6 +246,7 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
     let srv = unix_socket_paths.iter().try_fold(srv, |srv, path| {
         use std::os::unix::fs::FileTypeExt;
 
+        // Error out if path already exists and is not a socket file
         // FIXME: Maybe shouldn't use unwrap here
         if path.exists() && !std::fs::metadata(path).unwrap().file_type().is_socket() {
             return Err(ContextualError::UnixSocketFileAlreadyExists(
@@ -341,7 +343,6 @@ fn create_tcp_listener(addr: SocketAddr) -> io::Result<TcpListener> {
 
 #[cfg(unix)]
 fn create_unix_listener(path: &PathBuf) -> io::Result<UnixListener> {
-    // TODO: Check if path already exists
     let socket = UnixListener::bind(path)?;
     Ok(UnixListener::from(socket))
 }
