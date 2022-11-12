@@ -1,15 +1,14 @@
 use std::net::IpAddr;
 use std::path::PathBuf;
 
-use clap::{Parser, ValueHint};
-use clap_complete::Shell;
+use clap::{Parser, ValueEnum, ValueHint};
 use http::header::{HeaderMap, HeaderName, HeaderValue};
 
 use crate::auth;
 use crate::errors::ContextualError;
-use crate::renderer;
+use crate::renderer::ThemeSlug;
 
-#[derive(clap::ArgEnum, Clone)]
+#[derive(ValueEnum, Clone)]
 pub enum MediaType {
     Image,
     Audio,
@@ -23,21 +22,21 @@ pub enum Interface {
 }
 
 #[derive(Parser)]
-#[clap(name = "miniserve", author, about, version)]
+#[command(name = "miniserve", author, about, version)]
 pub struct CliArgs {
     /// Be verbose, includes emitting access logs
-    #[clap(short = 'v', long = "verbose")]
+    #[arg(short = 'v', long = "verbose")]
     pub verbose: bool,
 
     /// Which path to serve
-    #[clap(name = "PATH", parse(from_os_str), value_hint = ValueHint::AnyPath)]
+    #[arg(value_hint = ValueHint::AnyPath)]
     pub path: Option<PathBuf>,
 
     /// The name of a directory index file to serve, like "index.html"
     ///
     /// Normally, when miniserve serves a directory, it creates a listing for that directory.
     /// However, if a directory contains this file, miniserve will serve that file instead.
-    #[clap(long, parse(from_os_str), name = "index_file", value_hint = ValueHint::FilePath)]
+    #[arg(long, value_hint = ValueHint::FilePath)]
     pub index: Option<PathBuf>,
 
     /// Activate SPA (Single Page Application) mode
@@ -45,173 +44,163 @@ pub struct CliArgs {
     /// This will cause the file given by --index to be served for all non-existing file paths. In
     /// effect, this will serve the index file whenever a 404 would otherwise occur in order to
     /// allow the SPA router to handle the request instead.
-    #[clap(long, requires = "index_file")]
+    #[arg(long, requires = "index")]
     pub spa: bool,
 
-    /// Port to listen on
-    #[clap(short = 'p', long = "port", default_value = "8080")]
+    /// Port to use
+    #[arg(short = 'p', long = "port", default_value = "8080")]
     pub port: u16,
 
-    /// Interface or unix socket path to listen on
-    #[clap(
+    /// Interface to listen on
+    #[arg(
         short = 'i',
         long = "interfaces",
-        parse(try_from_str = parse_interface),
-        multiple_occurrences(true),
-        number_of_values = 1,
+        value_parser(parse_interface),
+        num_args(1..),
     )]
     pub interfaces: Vec<Interface>,
 
     /// Set authentication. Currently supported formats:
     /// username:password, username:sha256:hash, username:sha512:hash
     /// (e.g. joe:123, joe:sha256:a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3)
-    #[clap(
+    #[arg(
         short = 'a',
         long = "auth",
-        parse(try_from_str = parse_auth),
-        multiple_occurrences(true),
-        number_of_values = 1,
+        value_parser(parse_auth),
+        num_args(1..)
     )]
     pub auth: Vec<auth::RequiredAuth>,
 
     /// Use a specific route prefix
-    #[clap(long = "route-prefix")]
+    #[arg(long = "route-prefix")]
     pub route_prefix: Option<String>,
 
     /// Generate a random 6-hexdigit route
-    #[clap(long = "random-route", conflicts_with("route-prefix"))]
+    #[arg(long = "random-route", conflicts_with("route_prefix"))]
     pub random_route: bool,
 
     /// Hide symlinks in listing and prevent them from being followed
-    #[clap(short = 'P', long = "no-symlinks")]
+    #[arg(short = 'P', long = "no-symlinks")]
     pub no_symlinks: bool,
 
     /// Show hidden files
-    #[clap(short = 'H', long = "hidden")]
+    #[arg(short = 'H', long = "hidden")]
     pub hidden: bool,
 
     /// Default color scheme
-    #[clap(
+    #[arg(
         short = 'c',
         long = "color-scheme",
         default_value = "squirrel",
-        possible_values = &*renderer::THEME_SLUGS,
-        ignore_case = true,
+        ignore_case = true
     )]
-    pub color_scheme: String,
+    pub color_scheme: ThemeSlug,
 
     /// Default color scheme
-    #[clap(
+    #[arg(
         short = 'd',
         long = "color-scheme-dark",
         default_value = "archlinux",
-        possible_values = &*renderer::THEME_SLUGS,
-        ignore_case = true,
+        ignore_case = true
     )]
-    pub color_scheme_dark: String,
+    pub color_scheme_dark: ThemeSlug,
 
     /// Enable QR code display
-    #[clap(short = 'q', long = "qrcode")]
+    #[arg(short = 'q', long = "qrcode")]
     pub qrcode: bool,
 
     /// Enable file uploading (and optionally specify for which directory)
-    #[clap(short = 'u', long = "upload-files", value_hint = ValueHint::FilePath, min_values = 0)]
+    #[arg(short = 'u', long = "upload-files", value_hint = ValueHint::FilePath, num_args(0..=1), value_delimiter(','))]
     pub allowed_upload_dir: Option<Vec<PathBuf>>,
 
     /// Enable creating directories
-    #[clap(short = 'U', long = "mkdir", requires = "allowed-upload-dir")]
+    #[arg(short = 'U', long = "mkdir", requires = "allowed_upload_dir")]
     pub mkdir_enabled: bool,
 
     /// Specify uploadable media types
-    #[clap(
-        arg_enum,
-        short = 'm',
-        long = "media-type",
-        requires = "allowed-upload-dir"
-    )]
+    #[arg(short = 'm', long = "media-type", requires = "allowed_upload_dir")]
     pub media_type: Option<Vec<MediaType>>,
 
     /// Directly specify the uploadable media type expression
-    #[clap(
+    #[arg(
         short = 'M',
         long = "raw-media-type",
-        requires = "allowed-upload-dir",
-        conflicts_with = "media-type"
+        requires = "allowed_upload_dir",
+        conflicts_with = "media_type"
     )]
     pub media_type_raw: Option<String>,
 
     /// Enable overriding existing files during file upload
-    #[clap(short = 'o', long = "overwrite-files")]
+    #[arg(short = 'o', long = "overwrite-files")]
     pub overwrite_files: bool,
 
     /// Enable uncompressed tar archive generation
-    #[clap(short = 'r', long = "enable-tar")]
+    #[arg(short = 'r', long = "enable-tar")]
     pub enable_tar: bool,
 
     /// Enable gz-compressed tar archive generation
-    #[clap(short = 'g', long = "enable-tar-gz")]
+    #[arg(short = 'g', long = "enable-tar-gz")]
     pub enable_tar_gz: bool,
 
     /// Enable zip archive generation
     ///
     /// WARNING: Zipping large directories can result in out-of-memory exception
     /// because zip generation is done in memory and cannot be sent on the fly
-    #[clap(short = 'z', long = "enable-zip")]
+    #[arg(short = 'z', long = "enable-zip")]
     pub enable_zip: bool,
 
     /// List directories first
-    #[clap(short = 'D', long = "dirs-first")]
+    #[arg(short = 'D', long = "dirs-first")]
     pub dirs_first: bool,
 
     /// Shown instead of host in page title and heading
-    #[clap(short = 't', long = "title")]
+    #[arg(short = 't', long = "title")]
     pub title: Option<String>,
 
     /// Set custom header for responses
-    #[clap(
+    #[arg(
         long = "header",
-        parse(try_from_str = parse_header),
-        multiple_occurrences(true),
-        number_of_values = 1
+        value_parser(parse_header),
+        num_args(1..),
     )]
     pub header: Vec<HeaderMap>,
 
     /// Visualize symlinks in directory listing
-    #[clap(short = 'l', long = "show-symlink-info")]
+    #[arg(short = 'l', long = "show-symlink-info")]
     pub show_symlink_info: bool,
 
     /// Hide version footer
-    #[clap(short = 'F', long = "hide-version-footer")]
+    #[arg(short = 'F', long = "hide-version-footer")]
     pub hide_version_footer: bool,
 
     /// Hide theme selector
-    #[clap(long = "hide-theme-selector")]
+    #[arg(long = "hide-theme-selector")]
     pub hide_theme_selector: bool,
 
     /// If enabled, display a wget command to recursively download the current directory
-    #[clap(short = 'W', long = "show-wget-footer")]
+    #[arg(short = 'W', long = "show-wget-footer")]
     pub show_wget_footer: bool,
 
     /// Generate completion file for a shell
-    #[clap(long = "print-completions", value_name = "shell", arg_enum)]
-    pub print_completions: Option<Shell>,
+    #[arg(long = "print-completions", value_name = "shell")]
+    pub print_completions: Option<clap_complete::Shell>,
 
     /// Generate man page
-    #[clap(long = "print-manpage")]
+    #[arg(long = "print-manpage")]
     pub print_manpage: bool,
 
     /// TLS certificate to use
     #[cfg(feature = "tls")]
-    #[clap(long = "tls-cert", requires = "tls-key", value_hint = ValueHint::FilePath)]
+    #[arg(long = "tls-cert", requires = "tls_key", value_hint = ValueHint::FilePath)]
     pub tls_cert: Option<PathBuf>,
 
     /// TLS private key to use
     #[cfg(feature = "tls")]
-    #[clap(long = "tls-key", requires = "tls-cert", value_hint = ValueHint::FilePath)]
+    #[arg(long = "tls-key", requires = "tls_cert", value_hint = ValueHint::FilePath)]
     pub tls_key: Option<PathBuf>,
 
     /// Enable README.md rendering in directories
-    #[clap(long)]
+    #[arg(long)]
     pub readme: bool,
 }
 

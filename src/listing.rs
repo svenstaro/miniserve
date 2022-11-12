@@ -9,7 +9,7 @@ use comrak::{markdown_to_html, ComrakOptions};
 use percent_encoding::{percent_decode_str, utf8_percent_encode};
 use regex::Regex;
 use serde::Deserialize;
-use strum_macros::{Display, EnumString};
+use strum::{Display, EnumString};
 
 use crate::archive::ArchiveMethod;
 use crate::auth::CurrentUser;

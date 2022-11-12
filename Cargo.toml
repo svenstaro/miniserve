@@ -28,9 +28,9 @@ atty = "0.2"
 bytesize = "1"
 chrono = "0.4"
 chrono-humanize = "0.2"
-clap = { version = "3.2", features = ["derive", "cargo", "wrap_help"] }
-clap_complete = "3.2.3"
-clap_mangen = "0.1"
+clap = { version = "4", features = ["derive", "cargo", "wrap_help", "deprecated"] }
+clap_complete = "4"
+clap_mangen = "0.2"
 comrak = { version = "0.14", default-features = false }
 fast_qr = "0.5.1"
 futures = "0.3"
@@ -52,8 +52,7 @@ serde = { version = "1", features = ["derive"] }
 sha2 = "0.10"
 simplelog = "0.12"
 socket2 = "0.4"
-strum = "0.24"
-strum_macros = "0.24"
+strum = { version = "0.24", features = ["derive"] }
 tar = "0.4"
 thiserror = "1"
 yansi = "0.5"
