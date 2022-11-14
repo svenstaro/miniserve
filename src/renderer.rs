@@ -1,10 +1,14 @@
 use std::time::SystemTime;
 
 use actix_web::http::StatusCode;
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Local};
 use chrono_humanize::Humanize;
 use clap::{crate_name, crate_version, ValueEnum};
-use fast_qr::{convert::svg::SvgBuilder, qr::QRCodeError, QRBuilder};
+use fast_qr::{
+    convert::{svg::SvgBuilder, Builder},
+    qr::QRCodeError,
+    QRBuilder,
+};
 use maud::{html, Markup, PreEscaped, DOCTYPE};
 use strum::{Display, IntoEnumIterator};
 
@@ -526,11 +530,9 @@ fn entry_row(
                 }
             }
             td.date-cell {
-                @if let Some(modification_date) = convert_to_utc(entry.last_modification_date) {
+                @if let Some(modification_date) = convert_to_local(entry.last_modification_date) {
                     span {
-                        (modification_date.0) " "
-                        span.at { " at " }
-                        (modification_date.1) " "
+                        (modification_date) " "
                     }
                 }
                 @if let Some(modification_timer) = humanize_systemtime(entry.last_modification_date) {
@@ -620,15 +622,10 @@ fn page_header(title: &str, file_upload: bool, favicon_route: &str, css_route: &
 }
 
 /// Converts a SystemTime object to a strings tuple (date, time)
-/// Date is formatted as %e %b, e.g. Jul 12
-/// Time is formatted as %R, e.g. 22:34
-fn convert_to_utc(src_time: Option<SystemTime>) -> Option<(String, String)> {
-    src_time.map(DateTime::<Utc>::from).map(|date_time| {
-        (
-            date_time.format("%b %e").to_string(),
-            date_time.format("%R").to_string(),
-        )
-    })
+fn convert_to_local(src_time: Option<SystemTime>) -> Option<String> {
+    src_time
+        .map(DateTime::<Local>::from)
+        .map(|date_time| date_time.format("%Y-%m-%d %H:%M:%S %:z").to_string())
 }
 
 /// Converts a SystemTime to a string readable by a human,
