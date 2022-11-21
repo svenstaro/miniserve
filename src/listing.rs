@@ -23,7 +23,6 @@ use crate::renderer;
 
 use self::percent_encode_sets::PATH_SEGMENT;
 
-
 static FILE_SIZE_CACHE: OnceCell<Arc<Mutex<HashMap<PathBuf, u64>>>> = OnceCell::new();
 
 /// "percent-encode sets" as defined by WHATWG specs:
@@ -282,14 +281,36 @@ pub fn directory_listing(
                     Err(_) => None,
                 };
 
-                let size = WalkDir::new(entry.path()).into_iter().count();
-
+                let cache_map = FILE_SIZE_CACHE
+                    .get_or_init(|| {
+                        println!("init cache_map");
+                        Arc::default()
+                    })
+                    .clone();
+                let size = {
+                    match fs_extra::dir::get_size(&entry.path()) {
+                        Err(_) => EntrySize::EntryCount({
+                            std::fs::read_dir(entry.path())
+                                .into_iter()
+                                .take(500_000)
+                                .count()
+                        }),
+                        Ok(result) => {
+                            if let Ok(mut lock) = cache_map.lock() {
+                                lock.insert(entry.path().to_path_buf(), result);
+                            } else {
+                                warn!("Failed to write to cache");
+                            };
+                            EntrySize::Bytes(ByteSize::b(result))
+                        }
+                    }
+                };
                 if metadata.is_dir() {
                     entries.push(Entry::new(
                         file_name,
                         EntryType::Directory,
                         file_url,
-                        EntrySize::EntryCount(size),
+                        size,
                         last_modification_date,
                         symlink_dest,
                     ));
@@ -331,8 +352,12 @@ pub fn directory_listing(
             // If we can't get the size of the entry (directory for instance)
             // let's consider it's 0b
             match (e1.size, e2.size) {
-                (EntrySize::EntryCount(ref e1_count), EntrySize::EntryCount(ref e2_count)) => e2_count.cmp(e1_count),
-                (EntrySize::Bytes(ref e1_bytes), EntrySize::Bytes(ref e2_bytes)) => e2_bytes.cmp(e1_bytes),
+                (EntrySize::EntryCount(ref e1_count), EntrySize::EntryCount(ref e2_count)) => {
+                    e2_count.cmp(e1_count)
+                }
+                (EntrySize::Bytes(ref e1_bytes), EntrySize::Bytes(ref e2_bytes)) => {
+                    e2_bytes.cmp(e1_bytes)
+                }
                 (EntrySize::EntryCount(_), EntrySize::Bytes(_)) => std::cmp::Ordering::Greater,
                 (EntrySize::Bytes(_), EntrySize::EntryCount(_)) => std::cmp::Ordering::Less,
             }
