@@ -1,17 +1,20 @@
 #![allow(clippy::format_push_string)]
+use std::collections::HashMap;
 use std::fmt::Display;
 use std::io;
 use std::path::{Component, Path, PathBuf};
+use std::sync::{Arc, Mutex};
 use std::time::SystemTime;
 
 use actix_web::{dev::ServiceResponse, web::Query, HttpMessage, HttpRequest, HttpResponse};
 use bytesize::ByteSize;
 use comrak::{markdown_to_html, ComrakOptions};
+use log::warn;
+use once_cell::sync::OnceCell;
 use percent_encoding::{percent_decode_str, utf8_percent_encode};
 use regex::Regex;
 use serde::Deserialize;
 use strum::{Display, EnumString};
-use walkdir::WalkDir;
 
 use crate::archive::ArchiveMethod;
 use crate::auth::CurrentUser;
@@ -19,6 +22,9 @@ use crate::errors::{self, ContextualError};
 use crate::renderer;
 
 use self::percent_encode_sets::PATH_SEGMENT;
+
+
+static FILE_SIZE_CACHE: OnceCell<Arc<Mutex<HashMap<PathBuf, u64>>>> = OnceCell::new();
 
 /// "percent-encode sets" as defined by WHATWG specs:
 /// https://url.spec.whatwg.org/#percent-encoded-bytes
@@ -93,7 +99,7 @@ impl Display for EntrySize {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             EntrySize::EntryCount(count) => write!(f, "{}", count),
-            EntrySize::Bytes(bytes) => write!(f, "{}",  bytes),
+            EntrySize::Bytes(bytes) => write!(f, "{}", bytes),
         }
     }
 }
