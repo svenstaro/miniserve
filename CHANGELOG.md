@@ -9,9 +9,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - ReleaseDate
 - Update to clap v4
+- Show localized datetime [#949](https://github.com/svenstaro/miniserve/pull/949) (thanks @IvkinStanislav)
 
 ## [0.22.0] - 2022-09-20
-- Faster QR code generation [#848](https://github.com/svenstaro/miniserve/pull/848/files) (thanks @cyqsimon)
+- Faster QR code generation [#848](https://github.com/svenstaro/miniserve/pull/848) (thanks @cyqsimon)
 - Make `--readme` support not only `README.md` but also `README` and `README.txt` rendered as
   plaintext [#911](https://github.com/svenstaro/miniserve/pull/911) (thanks @Atreyagaurav)
 - Change `-u/--upload-files` slightly in the sense that it can now either be provided by itself as

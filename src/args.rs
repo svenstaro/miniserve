@@ -50,19 +50,14 @@ pub struct CliArgs {
         short = 'i',
         long = "interfaces",
         value_parser(parse_interface),
-        num_args(1..),
+        num_args(1)
     )]
     pub interfaces: Vec<IpAddr>,
 
     /// Set authentication. Currently supported formats:
     /// username:password, username:sha256:hash, username:sha512:hash
     /// (e.g. joe:123, joe:sha256:a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3)
-    #[arg(
-        short = 'a',
-        long = "auth",
-        value_parser(parse_auth),
-        num_args(1..)
-    )]
+    #[arg(short = 'a', long = "auth", value_parser(parse_auth), num_args(1))]
     pub auth: Vec<auth::RequiredAuth>,
 
     /// Use a specific route prefix
@@ -152,11 +147,7 @@ pub struct CliArgs {
     pub title: Option<String>,
 
     /// Set custom header for responses
-    #[arg(
-        long = "header",
-        value_parser(parse_header),
-        num_args(1..),
-    )]
+    #[arg(long = "header", value_parser(parse_header), num_args(1))]
     pub header: Vec<HeaderMap>,
 
     /// Visualize symlinks in directory listing
