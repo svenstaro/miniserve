@@ -73,7 +73,7 @@ predicates = "2"
 pretty_assertions = "1.2"
 regex = "1"
 reqwest = { version = "0.11", features = ["blocking", "multipart", "rustls-tls"], default-features = false }
-rstest = "0.15"
+rstest = "0.16"
 select = "0.5"
 url = "2"
 
