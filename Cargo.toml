@@ -9,6 +9,7 @@ readme = "README.md"
 keywords = ["serve", "http-server", "static-files", "http", "server"]
 categories = ["command-line-utilities", "network-programming", "web-programming::http-server"]
 edition = "2021"
+resolver = "2"
 
 [profile.release]
 codegen-units = 1
