@@ -52,7 +52,7 @@ fn show_root_readme_contents(
         assert!(parsed.find(|x: &Node| x.text() == file).next().is_some());
     }
     // ...in addition to the readme contents below the file listing.
-    assert_readme_contents(&parsed, &readme_name);
+    assert_readme_contents(&parsed, readme_name);
     remove_file(readme_path).unwrap();
     Ok(())
 }
@@ -84,7 +84,7 @@ fn show_nested_readme_contents(
             assert!(parsed.find(|x: &Node| x.text() == file).next().is_some());
         }
         // ...in addition to the readme contents below the file listing.
-        assert_readme_contents(&parsed, &readme_name);
+        assert_readme_contents(&parsed, readme_name);
         remove_file(readme_path).unwrap();
     }
     Ok(())
@@ -94,7 +94,7 @@ fn write_readme_contents(path: PathBuf, filename: &str) -> PathBuf {
     let readme_path = path.join(filename);
     let mut readme_file = File::create(&readme_path).unwrap();
     readme_file
-        .write(format!("Contents of {}", filename).to_string().as_bytes())
+        .write(format!("Contents of {filename}").as_bytes())
         .expect("Couldn't write readme");
     readme_path
 }
@@ -123,5 +123,5 @@ fn assert_readme_contents(parsed_dom: &Document, filename: &str) {
         .unwrap()
         .text()
         .trim()
-        .contains(&format!("Contents of {}", filename)));
+        .contains(&format!("Contents of {filename}")));
 }

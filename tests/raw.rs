@@ -67,13 +67,11 @@ fn raw_mode_links_to_directories_end_with_raw_true(
                         "doesn't end with ?raw=true"
                     );
                 } else if class == "file" {
-                    assert!(true);
+                    return;
                 } else {
-                    println!(
-                        "This node is a link and neither of class directory, root or file: {:?}",
-                        node
+                    panic!(
+                        "This node is a link and neither of class directory, root or file: {node:?}"
                     );
-                    assert!(false);
                 }
             }
         }

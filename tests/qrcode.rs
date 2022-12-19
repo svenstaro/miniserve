@@ -46,7 +46,7 @@ fn run_in_faketty_kill_and_get_stdout(template: &Command) -> Result<String, Erro
             .map(|s| s.to_str().expect("not UTF8"))
             .collect::<Vec<_>>()
             .join(" ");
-        format!("{} {}", bin, args)
+        format!("{bin} {args}")
     };
     let mut child = bash_command(&cmd)?.stdin(Stdio::null()).spawn()?;
 

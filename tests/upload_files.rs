@@ -189,7 +189,7 @@ fn prevent_path_traversal_attacks(
     create_dir_all(server.path().join("foo")).unwrap();
     if !cfg!(windows) {
         for dir in &["C:/foo/C:", r"C:\foo", r"\foo"] {
-            create_dir_all(server.path().join(dir)).expect(&format!("failed to create: {:?}", dir));
+            create_dir_all(server.path().join(dir)).unwrap_or_else(|_| panic!("failed to create: {dir:?}"));
         }
     }
 
@@ -203,7 +203,7 @@ fn prevent_path_traversal_attacks(
     let form = multipart::Form::new().part("file_to_upload", part);
 
     Client::new()
-        .post(server.url().join(&format!("/upload?path={}", path))?)
+        .post(server.url().join(&format!("/upload?path={path}"))?)
         .multipart(form)
         .send()?
         .error_for_status()?;
@@ -243,7 +243,7 @@ fn upload_to_symlink_directory(
     let form = multipart::Form::new().part("file_to_upload", part);
 
     let status = Client::new()
-        .post(server.url().join(&format!("/upload?path={}", dir))?)
+        .post(server.url().join(&format!("/upload?path={dir}"))?)
         .multipart(form)
         .send()?
         .error_for_status();

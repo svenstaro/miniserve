@@ -66,14 +66,14 @@ pub fn tmpdir() -> TempDir {
     for directory in directories {
         for file in &files {
             tmpdir
-                .child(format!("{}{}", directory, file))
-                .write_str(&format!("This is {}{}", directory, file))
+                .child(format!("{directory}{file}"))
+                .write_str(&format!("This is {directory}{file}"))
                 .expect("Couldn't write to file");
         }
     }
 
     tmpdir
-        .child(&DEEPLY_NESTED_FILE)
+        .child(DEEPLY_NESTED_FILE)
         .write_str("File in a deeply nested directory.")
         .expect("Couldn't write to file");
     tmpdir
@@ -187,7 +187,7 @@ fn wait_for(port: u16, socket: &Path) {
         sleep(Duration::from_millis(100));
 
         if start_wait.elapsed().as_secs() > 1 {
-            panic!("timeout waiting for port {}", port);
+            panic!("timeout waiting for port {port}");
         }
     }
 }
