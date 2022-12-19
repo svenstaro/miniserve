@@ -217,9 +217,9 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
         .collect::<Vec<_>>();
 
     #[cfg(unix)]
-    unix_socket_paths
-        .iter()
-        .for_each(|path| display_sockets.push(Color::Green.paint(path.display()).bold().to_string()));
+    unix_socket_paths.iter().for_each(|path| {
+        display_sockets.push(Color::Green.paint(path.display()).bold().to_string())
+    });
 
     let srv = actix_web::HttpServer::new(move || {
         App::new()

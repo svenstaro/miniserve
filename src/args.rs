@@ -198,7 +198,7 @@ pub struct CliArgs {
 /// Checks whether an interface is valid, i.e. it can be parsed into an IP address
 fn parse_interface(src: &str) -> Result<Interface, std::net::AddrParseError> {
     let first_char = src.chars().next().unwrap();
-    
+
     if first_char == '.' || first_char == '/' {
         Ok(Interface::Path(PathBuf::from(src)))
     } else {

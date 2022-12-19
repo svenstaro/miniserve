@@ -87,11 +87,7 @@ pub fn port() -> u16 {
 }
 
 fn copy_tls<P: Display>(path: P) {
-    std::fs::copy(
-        "tests/data/cert.pem",
-        &format!("{}/cert.pem", path),
-    )
-    .unwrap();
+    std::fs::copy("tests/data/cert.pem", &format!("{}/cert.pem", path)).unwrap();
     std::fs::copy(
         "tests/data/key_pkcs1.pem",
         &format!("{}/key_pkcs1.pem", path),
@@ -150,7 +146,7 @@ where
 {
     let port = port();
     let tmpdir = tmpdir();
-    
+
     copy_tls(tmpdir.path().display());
 
     let mut socket_path = tmpdir.to_path_buf();
