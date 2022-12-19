@@ -47,7 +47,7 @@ pub fn page(
         || conf
             .allowed_upload_dir
             .iter()
-            .any(|x| encoded_dir.starts_with(&format!("/{}", x)));
+            .any(|x| encoded_dir.starts_with(&format!("/{x}")));
 
     html! {
         (DOCTYPE)
@@ -286,7 +286,7 @@ fn wget_footer(title_path: &str, current_user: Option<&CurrentUser>) -> Markup {
     html! {
         div.downloadDirectory {
             p { "Download folder:" }
-            div.cmd { (format!("wget -r -c -nH -np --cut-dirs={} -R \"index.html*\"{} \"http://{}/?raw=true\"", count, user_params, title_path)) }
+            div.cmd { (format!("wget -r -c -nH -np --cut-dirs={count} -R \"index.html*\"{user_params} \"http://{title_path}/?raw=true\"")) }
         }
     }
 }
@@ -298,7 +298,7 @@ fn build_upload_action(
     sort_method: Option<SortingMethod>,
     sort_order: Option<SortingOrder>,
 ) -> String {
-    let mut upload_action = format!("{}?path={}", upload_route, encoded_dir);
+    let mut upload_action = format!("{upload_route}?path={encoded_dir}");
     if let Some(sorting_method) = sort_method {
         upload_action = format!("{}&sort={}", upload_action, &sorting_method);
     }
@@ -311,7 +311,7 @@ fn build_upload_action(
 
 /// Build the action of the mkdir form
 fn build_mkdir_action(mkdir_route: &str, encoded_dir: &str) -> String {
-    format!("{}?path={}", mkdir_route, encoded_dir)
+    format!("{mkdir_route}?path={encoded_dir}")
 }
 
 const THEME_PICKER_CHOICES: &[(&str, &str)] = &[
@@ -345,7 +345,7 @@ fn qr_spoiler(show_qrcode: bool, content: impl AsRef<str>) -> Markup {
                 div.qrcode #qrcode title=(PreEscaped(content.as_ref())) {
                     @match qr_code_svg(content, consts::SVG_QR_MARGIN) {
                         Ok(svg) => (PreEscaped(svg)),
-                        Err(err) => (format!("QR generation error: {:?}", err)),
+                        Err(err) => (format!("QR generation error: {err:?}")),
                     }
                 }
             }
@@ -391,7 +391,7 @@ fn archive_button(
     sort_order: Option<SortingOrder>,
 ) -> Markup {
     let link = if sort_method.is_none() && sort_order.is_none() {
-        format!("?download={}", archive_method)
+        format!("?download={archive_method}")
     } else {
         format!(
             "{}&download={}",
@@ -414,7 +414,7 @@ fn make_link_with_trailing_slash(link: &str) -> String {
     if link.ends_with('/') {
         link.to_string()
     } else {
-        format!("{}/", link)
+        format!("{link}/")
     }
 }
 
@@ -452,8 +452,8 @@ fn build_link(
     sort_method: Option<SortingMethod>,
     sort_order: Option<SortingOrder>,
 ) -> Markup {
-    let mut link = format!("?sort={}&order=asc", name);
-    let mut help = format!("Sort by {} in ascending order", name);
+    let mut link = format!("?sort={name}&order=asc");
+    let mut help = format!("Sort by {name} in ascending order");
     let mut chevron = chevron_up();
     let mut class = "";
 
@@ -462,8 +462,8 @@ fn build_link(
             class = "active";
             if let Some(order) = sort_order {
                 if order.to_string() == "asc" {
-                    link = format!("?sort={}&order=desc", name);
-                    help = format!("Sort by {} in descending order", name);
+                    link = format!("?sort={name}&order=desc");
+                    help = format!("Sort by {name} in descending order");
                     chevron = chevron_down();
                 }
             }

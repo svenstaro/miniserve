@@ -368,7 +368,7 @@ pub fn directory_listing(
                 .append_header(("Content-Transfer-Encoding", "binary"))
                 .append_header((
                     "Content-Disposition",
-                    format!("attachment; filename={:?}", file_name),
+                    format!("attachment; filename={file_name:?}"),
                 ))
                 .body(actix_web::body::BodyStream::new(rx)),
         ))

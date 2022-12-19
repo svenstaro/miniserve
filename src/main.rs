@@ -123,7 +123,7 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
             .flush()
             .map_err(|e| ContextualError::IoError("Failed to write data".to_string(), e))?;
         for c in "3… 2… 1… \n".chars() {
-            print!("{}", c);
+            print!("{c}");
             io::stdout()
                 .flush()
                 .map_err(|e| ContextualError::IoError("Failed to write data".to_string(), e))?;
@@ -161,8 +161,8 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
                 IpAddr::V6(_) => format!("[{}]:{}", addr, miniserve_config.port),
             })
             .map(|addr| match miniserve_config.tls_rustls_config {
-                Some(_) => format!("https://{}", addr),
-                None => format!("http://{}", addr),
+                Some(_) => format!("https://{addr}"),
+                None => format!("http://{addr}"),
             })
             .map(|url| format!("{}{}", url, miniserve_config.route_prefix))
             .collect::<Vec<_>>()
@@ -202,7 +202,7 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
 
     let srv = socket_addresses.iter().try_fold(srv, |srv, addr| {
         let listener = create_tcp_listener(*addr).map_err(|e| {
-            ContextualError::IoError(format!("Failed to bind server to {}", addr), e)
+            ContextualError::IoError(format!("Failed to bind server to {addr}"), e)
         })?;
 
         #[cfg(feature = "tls")]
@@ -214,7 +214,7 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
         #[cfg(not(feature = "tls"))]
         let srv = srv.listen(listener);
 
-        srv.map_err(|e| ContextualError::IoError(format!("Failed to bind server to {}", addr), e))
+        srv.map_err(|e| ContextualError::IoError(format!("Failed to bind server to {addr}"), e))
     })?;
 
     let srv = srv.shutdown_timeout(0).run();
@@ -297,7 +297,7 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
             // Note: --spa requires --index in clap.
             if conf.spa {
                 files = files.default_handler(
-                    NamedFile::open(&conf.path.join(index_file))
+                    NamedFile::open(conf.path.join(index_file))
                         .expect("Can't open SPA index file."),
                 );
             }

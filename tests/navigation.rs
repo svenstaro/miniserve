@@ -34,7 +34,7 @@ fn cant_navigate_up_the_root(server: TestServer) -> Result<(), Error> {
         .arg("-s")
         .arg("--fail")
         .arg("--path-as-is")
-        .arg(format!("{}/../", base_url))
+        .arg(format!("{base_url}/../"))
         .stdout(Stdio::null())
         .status()?
         .success();
@@ -50,13 +50,13 @@ fn can_navigate_into_dirs_and_back(server: TestServer) -> Result<(), Error> {
     let initial_body = reqwest::blocking::get(base_url.as_str())?.error_for_status()?;
     let initial_parsed = Document::from_read(initial_body)?;
     for &directory in DIRECTORIES {
-        let dir_elem = get_link_from_text(&initial_parsed, &directory).expect("Dir not found.");
+        let dir_elem = get_link_from_text(&initial_parsed, directory).expect("Dir not found.");
         let body =
-            reqwest::blocking::get(&format!("{}{}", base_url, dir_elem))?.error_for_status()?;
+            reqwest::blocking::get(&format!("{base_url}{dir_elem}"))?.error_for_status()?;
         let parsed = Document::from_read(body)?;
         let back_link =
             get_link_from_text(&parsed, "Parent directory").expect("Back link not found.");
-        let resp = reqwest::blocking::get(&format!("{}{}", base_url, back_link))?;
+        let resp = reqwest::blocking::get(&format!("{base_url}{back_link}"))?;
 
         // Now check that we can actually get back to the original location we came from using the
         // link.
@@ -73,8 +73,8 @@ fn can_navigate_deep_into_dirs_and_back(server: TestServer) -> Result<(), Error>
     // remove that part.
     let dir_names = {
         let mut comps = DEEPLY_NESTED_FILE
-            .split("/")
-            .map(|d| format!("{}/", d))
+            .split('/')
+            .map(|d| format!("{d}/"))
             .collect::<Vec<String>>();
         comps.pop();
         comps
@@ -88,7 +88,7 @@ fn can_navigate_deep_into_dirs_and_back(server: TestServer) -> Result<(), Error>
         let resp = reqwest::blocking::get(next_url.as_str())?;
         let body = resp.error_for_status()?;
         let parsed = Document::from_read(body)?;
-        let dir_elem = get_link_from_text(&parsed, &dir_name).expect("Dir not found.");
+        let dir_elem = get_link_from_text(&parsed, dir_name).expect("Dir not found.");
         next_url = next_url.join(&dir_elem)?;
     }
     assert_ne!(base_url, next_url);
@@ -119,8 +119,8 @@ fn can_navigate_using_breadcrumbs(
     // remove that part.
     let dir: String = {
         let mut comps = DEEPLY_NESTED_FILE
-            .split("/")
-            .map(|d| format!("{}/", d))
+            .split('/')
+            .map(|d| format!("{d}/"))
             .collect::<Vec<String>>();
         comps.pop();
         comps.join("")

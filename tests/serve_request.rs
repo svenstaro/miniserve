@@ -51,7 +51,7 @@ fn serves_requests_with_non_default_port(server: TestServer) -> Result<(), Error
         let f = parsed.find(|x: &Node| x.text() == file).next().unwrap();
         reqwest::blocking::get(server.url().join(f.attr("href").unwrap())?)?.error_for_status()?;
         assert_eq!(
-            format!("/{}", file),
+            format!("/{file}"),
             percent_encoding::percent_decode_str(f.attr("href").unwrap()).decode_utf8_lossy(),
         );
     }
@@ -62,7 +62,7 @@ fn serves_requests_with_non_default_port(server: TestServer) -> Result<(), Error
             .next()
             .is_some());
         let dir_body =
-            reqwest::blocking::get(server.url().join(&directory)?)?.error_for_status()?;
+            reqwest::blocking::get(server.url().join(directory)?)?.error_for_status()?;
         let dir_body_parsed = Document::from_read(dir_body)?;
         for &file in FILES {
             assert!(dir_body_parsed
@@ -80,23 +80,23 @@ fn serves_requests_hidden_files(#[with(&["--hidden"])] server: TestServer) -> Re
     let body = reqwest::blocking::get(server.url())?.error_for_status()?;
     let parsed = Document::from_read(body)?;
 
-    for &file in FILES.into_iter().chain(HIDDEN_FILES) {
+    for &file in FILES.iter().chain(HIDDEN_FILES) {
         let f = parsed.find(|x: &Node| x.text() == file).next().unwrap();
         assert_eq!(
-            format!("/{}", file),
+            format!("/{file}"),
             percent_encoding::percent_decode_str(f.attr("href").unwrap()).decode_utf8_lossy(),
         );
     }
 
-    for &directory in DIRECTORIES.into_iter().chain(HIDDEN_DIRECTORIES) {
+    for &directory in DIRECTORIES.iter().chain(HIDDEN_DIRECTORIES) {
         assert!(parsed
             .find(|x: &Node| x.text() == directory)
             .next()
             .is_some());
         let dir_body =
-            reqwest::blocking::get(server.url().join(&directory)?)?.error_for_status()?;
+            reqwest::blocking::get(server.url().join(directory)?)?.error_for_status()?;
         let dir_body_parsed = Document::from_read(dir_body)?;
-        for &file in FILES.into_iter().chain(HIDDEN_FILES) {
+        for &file in FILES.iter().chain(HIDDEN_FILES) {
             assert!(dir_body_parsed
                 .find(|x: &Node| x.text() == file)
                 .next()
@@ -112,12 +112,12 @@ fn serves_requests_no_hidden_files_without_flag(server: TestServer) -> Result<()
     let body = reqwest::blocking::get(server.url())?.error_for_status()?;
     let parsed = Document::from_read(body)?;
 
-    for &hidden_item in HIDDEN_FILES.into_iter().chain(HIDDEN_DIRECTORIES) {
+    for &hidden_item in HIDDEN_FILES.iter().chain(HIDDEN_DIRECTORIES) {
         assert!(parsed
             .find(|x: &Node| x.text() == hidden_item)
             .next()
             .is_none());
-        let resp = reqwest::blocking::get(server.url().join(&hidden_item)?)?;
+        let resp = reqwest::blocking::get(server.url().join(hidden_item)?)?;
         assert_eq!(resp.status(), StatusCode::BAD_REQUEST);
     }
 
@@ -139,8 +139,8 @@ fn serves_requests_symlinks(
 
     // Set up some basic symlinks:
     // to dir, to file, to non-existent location
-    let orig = DIRECTORIES[0].strip_suffix("/").unwrap();
-    let link = server.path().join(dir.strip_suffix("/").unwrap());
+    let orig = DIRECTORIES[0].strip_suffix('/').unwrap();
+    let link = server.path().join(dir.strip_suffix('/').unwrap());
     symlink_dir(orig, link).expect("Couldn't create symlink");
     symlink_file(FILES[0], server.path().join(file)).expect("Couldn't create symlink");
     symlink_file("should-not-exist.xxx", server.path().join(broken))
@@ -150,7 +150,7 @@ fn serves_requests_symlinks(
     let parsed = Document::from_read(body)?;
 
     for &entry in &[file, dir] {
-        let status = reqwest::blocking::get(server.url().join(&entry)?)?.status();
+        let status = reqwest::blocking::get(server.url().join(entry)?)?.status();
         // We expect a 404 here for when `no_symlinks` is `true`.
         if no_symlinks {
             assert_eq!(status, StatusCode::NOT_FOUND);
@@ -175,8 +175,8 @@ fn serves_requests_symlinks(
         }
 
         let node = node.unwrap();
-        assert_eq!(node.attr("href").unwrap().strip_prefix("/").unwrap(), entry);
-        if entry.ends_with("/") {
+        assert_eq!(node.attr("href").unwrap().strip_prefix('/').unwrap(), entry);
+        if entry.ends_with('/') {
             let node = parsed
                 .find(|x: &Node| x.name().unwrap_or_default() == "a" && x.text() == DIRECTORIES[0])
                 .next();
@@ -198,7 +198,7 @@ fn serves_requests_with_randomly_assigned_port(tmpdir: TempDir) -> Result<(), Er
     let mut child = Command::cargo_bin("miniserve")?
         .arg(tmpdir.path())
         .arg("-p")
-        .arg("0".to_string())
+        .arg("0")
         .stdout(Stdio::piped())
         .spawn()?;
 

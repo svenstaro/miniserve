@@ -117,7 +117,7 @@ fn creating_directories_through_symlinks_is_prevented(
         .post(
             server
                 .url()
-                .join(format!("/upload?path=/{}", symlink_directory_str).as_str())?
+                .join(format!("/upload?path=/{symlink_directory_str}").as_str())?
         )
         .multipart(form)
         .send()?
@@ -153,7 +153,7 @@ fn prevent_path_transversal_attacks(
 
     // This should fail
     assert!(Client::new()
-        .post(server.url().join(&format!("/upload/path={}", path))?)
+        .post(server.url().join(&format!("/upload/path={path}"))?)
         .multipart(form)
         .send()?
         .error_for_status()

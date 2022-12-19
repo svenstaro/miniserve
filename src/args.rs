@@ -239,7 +239,7 @@ fn parse_auth(src: &str) -> Result<auth::RequiredAuth, ContextualError> {
 /// Custom header parser (allow multiple headers input)
 pub fn parse_header(src: &str) -> Result<HeaderMap, httparse::Error> {
     let mut headers = [httparse::EMPTY_HEADER; 1];
-    let header = format!("{}\n", src);
+    let header = format!("{src}\n");
     httparse::parse_headers(header.as_bytes(), &mut headers)?;
 
     let mut header_map = HeaderMap::new();
@@ -269,8 +269,8 @@ mod tests {
 
         let password = match encrypt {
             "plain" => Plain(password.to_owned()),
-            "sha256" => Sha256(hex::decode(password.to_owned()).unwrap()),
-            "sha512" => Sha512(hex::decode(password.to_owned()).unwrap()),
+            "sha256" => Sha256(hex::decode(password).unwrap()),
+            "sha512" => Sha512(hex::decode(password).unwrap()),
             _ => panic!("Unknown encryption type"),
         };
 
@@ -314,6 +314,6 @@ mod tests {
     )]
     fn parse_auth_invalid(auth_string: &str, err_msg: &str) {
         let err = parse_auth(auth_string).unwrap_err();
-        assert_eq!(format!("{}", err), err_msg.to_owned());
+        assert_eq!(format!("{err}"), err_msg.to_owned());
     }
 }

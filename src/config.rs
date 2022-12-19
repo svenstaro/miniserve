@@ -190,10 +190,10 @@ impl MiniserveConfig {
         {
             let cert_file = &mut BufReader::new(
                 File::open(&tls_cert)
-                    .context(format!("Couldn't access TLS certificate {:?}", tls_cert))?,
+                    .context(format!("Couldn't access TLS certificate {tls_cert:?}"))?,
             );
             let key_file = &mut BufReader::new(
-                File::open(&tls_key).context(format!("Couldn't access TLS key {:?}", tls_key))?,
+                File::open(&tls_key).context(format!("Couldn't access TLS key {tls_key:?}"))?,
             );
             let cert_chain = pemfile::certs(cert_file).context("Reading cert file")?;
             let key = pemfile::read_all(key_file)

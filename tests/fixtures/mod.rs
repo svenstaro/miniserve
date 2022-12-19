@@ -64,14 +64,14 @@ pub fn tmpdir() -> TempDir {
     for directory in directories {
         for file in &files {
             tmpdir
-                .child(format!("{}{}", directory, file))
-                .write_str(&format!("This is {}{}", directory, file))
+                .child(format!("{directory}{file}"))
+                .write_str(&format!("This is {directory}{file}"))
                 .expect("Couldn't write to file");
         }
     }
 
     tmpdir
-        .child(&DEEPLY_NESTED_FILE)
+        .child(DEEPLY_NESTED_FILE)
         .write_str("File in a deeply nested directory.")
         .expect("Couldn't write to file");
     tmpdir
@@ -144,11 +144,11 @@ where
 fn wait_for_port(port: u16) {
     let start_wait = Instant::now();
 
-    while !port_check::is_port_reachable(format!("localhost:{}", port)) {
+    while !port_check::is_port_reachable(format!("localhost:{port}")) {
         sleep(Duration::from_millis(100));
 
         if start_wait.elapsed().as_secs() > 1 {
-            panic!("timeout waiting for port {}", port);
+            panic!("timeout waiting for port {port}");
         }
     }
 }
