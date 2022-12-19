@@ -15,6 +15,12 @@ pub enum MediaType {
     Video,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Interface {
+    Address(IpAddr),
+    Path(PathBuf),
+}
+
 #[derive(Parser)]
 #[command(name = "miniserve", author, about, version)]
 pub struct CliArgs {
@@ -52,7 +58,7 @@ pub struct CliArgs {
         value_parser(parse_interface),
         num_args(1)
     )]
-    pub interfaces: Vec<IpAddr>,
+    pub interfaces: Vec<Interface>,
 
     /// Set authentication. Currently supported formats:
     /// username:password, username:sha256:hash, username:sha512:hash
@@ -190,8 +196,14 @@ pub struct CliArgs {
 }
 
 /// Checks whether an interface is valid, i.e. it can be parsed into an IP address
-fn parse_interface(src: &str) -> Result<IpAddr, std::net::AddrParseError> {
-    src.parse::<IpAddr>()
+fn parse_interface(src: &str) -> Result<Interface, std::net::AddrParseError> {
+    let first_char = src.chars().next().unwrap();
+
+    if first_char == '.' || first_char == '/' {
+        Ok(Interface::Path(PathBuf::from(src)))
+    } else {
+        Ok(Interface::Address(src.parse::<IpAddr>()?))
+    }
 }
 
 /// Parse authentication requirement

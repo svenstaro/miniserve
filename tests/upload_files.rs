@@ -189,7 +189,8 @@ fn prevent_path_traversal_attacks(
     create_dir_all(server.path().join("foo")).unwrap();
     if !cfg!(windows) {
         for dir in &["C:/foo/C:", r"C:\foo", r"\foo"] {
-            create_dir_all(server.path().join(dir)).unwrap_or_else(|_| panic!("failed to create: {dir:?}"));
+            create_dir_all(server.path().join(dir))
+                .unwrap_or_else(|_| panic!("failed to create: {dir:?}"));
         }
     }
 

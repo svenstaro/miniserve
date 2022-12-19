@@ -14,7 +14,7 @@ use http::HeaderMap;
 use rustls_pemfile as pemfile;
 
 use crate::{
-    args::{CliArgs, MediaType},
+    args::{CliArgs, Interface, MediaType},
     auth::RequiredAuth,
     file_upload::sanitize_path,
     renderer::ThemeSlug,
@@ -37,8 +37,8 @@ pub struct MiniserveConfig {
     /// Port on which miniserve will be listening
     pub port: u16,
 
-    /// IP address(es) on which miniserve will be available
-    pub interfaces: Vec<IpAddr>,
+    /// IP address(es) or unix domain sockets on which miniserve will be available
+    pub interfaces: Vec<Interface>,
 
     /// Enable HTTP basic authentication
     pub auth: Vec<RequiredAuth>,
@@ -146,8 +146,8 @@ impl MiniserveConfig {
             args.interfaces
         } else {
             vec![
-                IpAddr::V6(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0)),
-                IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)),
+                Interface::Address(IpAddr::V6(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0))),
+                Interface::Address(IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0))),
             ]
         };
 
@@ -185,36 +185,35 @@ impl MiniserveConfig {
         };
 
         #[cfg(feature = "tls")]
-        let tls_rustls_server_config = if let (Some(tls_cert), Some(tls_key)) =
-            (args.tls_cert, args.tls_key)
-        {
-            let cert_file = &mut BufReader::new(
-                File::open(&tls_cert)
-                    .context(format!("Couldn't access TLS certificate {tls_cert:?}"))?,
-            );
-            let key_file = &mut BufReader::new(
-                File::open(&tls_key).context(format!("Couldn't access TLS key {tls_key:?}"))?,
-            );
-            let cert_chain = pemfile::certs(cert_file).context("Reading cert file")?;
-            let key = pemfile::read_all(key_file)
-                .context("Reading private key file")?
-                .into_iter()
-                .find_map(|item| match item {
-                    pemfile::Item::RSAKey(key) | pemfile::Item::PKCS8Key(key) => Some(key),
-                    _ => None,
-                })
-                .ok_or_else(|| anyhow!("No supported private key in file"))?;
-            let server_config = rustls::ServerConfig::builder()
-                .with_safe_defaults()
-                .with_no_client_auth()
-                .with_single_cert(
-                    cert_chain.into_iter().map(rustls::Certificate).collect(),
-                    rustls::PrivateKey(key),
-                )?;
-            Some(server_config)
-        } else {
-            None
-        };
+        let tls_rustls_server_config =
+            if let (Some(tls_cert), Some(tls_key)) = (args.tls_cert, args.tls_key) {
+                let cert_file = &mut BufReader::new(
+                    File::open(&tls_cert)
+                        .context(format!("Couldn't access TLS certificate {tls_cert:?}"))?,
+                );
+                let key_file = &mut BufReader::new(
+                    File::open(&tls_key).context(format!("Couldn't access TLS key {tls_key:?}"))?,
+                );
+                let cert_chain = pemfile::certs(cert_file).context("Reading cert file")?;
+                let key = pemfile::read_all(key_file)
+                    .context("Reading private key file")?
+                    .into_iter()
+                    .find_map(|item| match item {
+                        pemfile::Item::RSAKey(key) | pemfile::Item::PKCS8Key(key) => Some(key),
+                        _ => None,
+                    })
+                    .ok_or_else(|| anyhow!("No supported private key in file"))?;
+                let server_config = rustls::ServerConfig::builder()
+                    .with_safe_defaults()
+                    .with_no_client_auth()
+                    .with_single_cert(
+                        cert_chain.into_iter().map(rustls::Certificate).collect(),
+                        rustls::PrivateKey(key),
+                    )?;
+                Some(server_config)
+            } else {
+                None
+            };
 
         #[cfg(not(feature = "tls"))]
         let tls_rustls_server_config = None;

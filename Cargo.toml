@@ -82,5 +82,9 @@ url = "2"
 # fake_tty does not support Windows for now
 fake-tty = "0.3.1"
 
+[target.'cfg(unix)'.dev-dependencies]
+# Only used to test unix sockets
+curl = "0.4"
+
 [build-dependencies]
 grass = { version = "0.11", default-features = false }
