@@ -757,7 +757,27 @@ th span.active span {
     --footer_color: #56c9df;
 }
 
+@mixin theme($name) {
+    @if $name == squirrel {
+        @include theme_squirrel();
+    }
 
+    @else if $name == archlinux {
+        @include theme_archlinux();
+    }
+
+    @else if $name == monokai {
+        @include theme_monokai();
+    }
+
+    @else if $name == zenburn {
+        @include theme_zenburn();
+    }
+
+    @else {
+        @error "Invalid theme: #{$name}";
+    }
+}
 
 // For each of the themes, define a placeholder selector containing
 // the themes variables. Then add selectors for body when the theme:
@@ -766,7 +786,7 @@ th span.active span {
 // to the placeholder selector list by means of @extend.
 @each $theme in $themes {
     %theme_#{$theme} {
-        @include theme_#{$theme};
+        @include theme($theme);
     }
 
     body.theme_#{$theme} {
@@ -785,7 +805,7 @@ th span.active span {
 @each $theme in $themes {
     @media (prefers-color-scheme: dark) {
         %theme_dark_#{$theme} {
-            @include theme_#{$theme};
+            @include theme($theme);
         }
     }
 
