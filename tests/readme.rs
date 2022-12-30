@@ -94,7 +94,7 @@ fn write_readme_contents(path: PathBuf, filename: &str) -> PathBuf {
     let readme_path = path.join(filename);
     let mut readme_file = File::create(&readme_path).unwrap();
     readme_file
-        .write(format!("Contents of {filename}").as_bytes())
+        .write_all(format!("Contents of {filename}").as_bytes())
         .expect("Couldn't write readme");
     readme_path
 }
