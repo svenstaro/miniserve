@@ -201,9 +201,8 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
     });
 
     let srv = socket_addresses.iter().try_fold(srv, |srv, addr| {
-        let listener = create_tcp_listener(*addr).map_err(|e| {
-            ContextualError::IoError(format!("Failed to bind server to {addr}"), e)
-        })?;
+        let listener = create_tcp_listener(*addr)
+            .map_err(|e| ContextualError::IoError(format!("Failed to bind server to {addr}"), e))?;
 
         #[cfg(feature = "tls")]
         let srv = match &miniserve_config.tls_rustls_config {

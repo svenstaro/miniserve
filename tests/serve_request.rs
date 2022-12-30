@@ -61,8 +61,7 @@ fn serves_requests_with_non_default_port(server: TestServer) -> Result<(), Error
             .find(|x: &Node| x.text() == directory)
             .next()
             .is_some());
-        let dir_body =
-            reqwest::blocking::get(server.url().join(directory)?)?.error_for_status()?;
+        let dir_body = reqwest::blocking::get(server.url().join(directory)?)?.error_for_status()?;
         let dir_body_parsed = Document::from_read(dir_body)?;
         for &file in FILES {
             assert!(dir_body_parsed
@@ -93,8 +92,7 @@ fn serves_requests_hidden_files(#[with(&["--hidden"])] server: TestServer) -> Re
             .find(|x: &Node| x.text() == directory)
             .next()
             .is_some());
-        let dir_body =
-            reqwest::blocking::get(server.url().join(directory)?)?.error_for_status()?;
+        let dir_body = reqwest::blocking::get(server.url().join(directory)?)?.error_for_status()?;
         let dir_body_parsed = Document::from_read(dir_body)?;
         for &file in FILES.iter().chain(HIDDEN_FILES) {
             assert!(dir_body_parsed

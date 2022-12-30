@@ -185,36 +185,35 @@ impl MiniserveConfig {
         };
 
         #[cfg(feature = "tls")]
-        let tls_rustls_server_config = if let (Some(tls_cert), Some(tls_key)) =
-            (args.tls_cert, args.tls_key)
-        {
-            let cert_file = &mut BufReader::new(
-                File::open(&tls_cert)
-                    .context(format!("Couldn't access TLS certificate {tls_cert:?}"))?,
-            );
-            let key_file = &mut BufReader::new(
-                File::open(&tls_key).context(format!("Couldn't access TLS key {tls_key:?}"))?,
-            );
-            let cert_chain = pemfile::certs(cert_file).context("Reading cert file")?;
-            let key = pemfile::read_all(key_file)
-                .context("Reading private key file")?
-                .into_iter()
-                .find_map(|item| match item {
-                    pemfile::Item::RSAKey(key) | pemfile::Item::PKCS8Key(key) => Some(key),
-                    _ => None,
-                })
-                .ok_or_else(|| anyhow!("No supported private key in file"))?;
-            let server_config = rustls::ServerConfig::builder()
-                .with_safe_defaults()
-                .with_no_client_auth()
-                .with_single_cert(
-                    cert_chain.into_iter().map(rustls::Certificate).collect(),
-                    rustls::PrivateKey(key),
-                )?;
-            Some(server_config)
-        } else {
-            None
-        };
+        let tls_rustls_server_config =
+            if let (Some(tls_cert), Some(tls_key)) = (args.tls_cert, args.tls_key) {
+                let cert_file = &mut BufReader::new(
+                    File::open(&tls_cert)
+                        .context(format!("Couldn't access TLS certificate {tls_cert:?}"))?,
+                );
+                let key_file = &mut BufReader::new(
+                    File::open(&tls_key).context(format!("Couldn't access TLS key {tls_key:?}"))?,
+                );
+                let cert_chain = pemfile::certs(cert_file).context("Reading cert file")?;
+                let key = pemfile::read_all(key_file)
+                    .context("Reading private key file")?
+                    .into_iter()
+                    .find_map(|item| match item {
+                        pemfile::Item::RSAKey(key) | pemfile::Item::PKCS8Key(key) => Some(key),
+                        _ => None,
+                    })
+                    .ok_or_else(|| anyhow!("No supported private key in file"))?;
+                let server_config = rustls::ServerConfig::builder()
+                    .with_safe_defaults()
+                    .with_no_client_auth()
+                    .with_single_cert(
+                        cert_chain.into_iter().map(rustls::Certificate).collect(),
+                        rustls::PrivateKey(key),
+                    )?;
+                Some(server_config)
+            } else {
+                None
+            };
 
         #[cfg(not(feature = "tls"))]
         let tls_rustls_server_config = None;
