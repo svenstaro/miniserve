@@ -242,7 +242,7 @@ pub fn directory_listing(
                 .and_then(|path| std::fs::read_link(path).ok())
                 .map(|path| path.to_string_lossy().into_owned());
             let file_url = base
-                .join(&utf8_percent_encode(&file_name, PATH_SEGMENT).to_string())
+                .join(utf8_percent_encode(&file_name, PATH_SEGMENT).to_string())
                 .to_string_lossy()
                 .to_string();
 
