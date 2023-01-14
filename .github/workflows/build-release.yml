@@ -49,7 +49,7 @@ jobs:
           - os: ubuntu-latest
             target: mips-unknown-linux-musl
             cross: true
-            compress: true
+            compress: false
             cargo_flags: "--no-default-features"
           - os: ubuntu-latest
             target: mipsel-unknown-linux-musl
