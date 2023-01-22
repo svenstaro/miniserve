@@ -241,7 +241,7 @@ pub fn raw(entries: Vec<Entry>, is_root: bool) -> Markup {
 
 /// Renders the QR code SVG
 fn qr_code_svg(url: impl AsRef<str>, margin: usize) -> Result<String, QRCodeError> {
-    let qr = QRBuilder::new(url.as_ref().into())
+    let qr = QRBuilder::new(url.as_ref().to_string())
         .ecl(consts::QR_EC_LEVEL)
         .build()?;
     let svg = SvgBuilder::default().margin(margin).to_str(&qr);

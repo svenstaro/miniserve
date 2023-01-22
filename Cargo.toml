@@ -20,7 +20,7 @@ strip = true
 
 [dependencies]
 actix-files = "0.6"
-actix-multipart = "0.4"
+actix-multipart = "0.5"
 actix-web = { version = "4", features = ["macros", "compress-brotli", "compress-gzip", "compress-zstd"], default-features = false }
 actix-web-httpauth = "0.8"
 alphanumeric-sort = "1"
@@ -33,7 +33,7 @@ clap = { version = "4", features = ["derive", "cargo", "wrap_help", "deprecated"
 clap_complete = "4"
 clap_mangen = "0.2"
 comrak = { version = "0.15", default-features = false }
-fast_qr = { version = "0.7", features = ["svg"] }
+fast_qr = { version = "0.8", features = ["svg"] }
 futures = "0.3"
 get_if_addrs = "0.5"
 hex = "0.4"

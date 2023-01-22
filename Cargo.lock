@@ -94,9 +94,9 @@ dependencies = [
 
 [[package]]
 name = "actix-multipart"
-version = "0.4.0"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c9edfb0e7663d7fe18c8d5b668c9c1bcf79176b1dcc9d4da9592503209a6bfb0"
+checksum = "5011f5be460e35a5b82e1745c0ea0c6293e8f8d38bbaa1f0455afcff5b454ad6"
 dependencies = [
  "actix-utils",
  "actix-web",
@@ -106,8 +106,8 @@ dependencies = [
  "httparse",
  "local-waker",
  "log",
+ "memchr",
  "mime",
- "twoway",
 ]
 
 [[package]]
@@ -813,9 +813,9 @@ checksum = "aa6c2a740a5d6940f90a0f13b5828440c2a7160bd1e235cf934d5df0e7a3e1ad"
 
 [[package]]
 name = "fast_qr"
-version = "0.7.1"
+version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3c3e1379c5c6098920f97d88bf8fc850ac3bbf5c5c61ca7da5389e3a26941849"
+checksum = "050c9452576300fd68b0c8b0f189dd7041e2594d42243e38ac33e81d6c984d5d"
 dependencies = [
  "wasm-bindgen",
 ]
@@ -2636,16 +2636,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3528ecfd12c466c6f163363caf2d02a71161dd5e1cc6ae7b34207ea2d42d81ed"
 
 [[package]]
-name = "twoway"
-version = "0.2.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c57ffb460d7c24cd6eda43694110189030a3d1dfe418416d9468fd1c1d290b47"
-dependencies = [
- "memchr",
- "unchecked-index",
-]
-
-[[package]]
 name = "typed-arena"
 version = "2.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2662,12 +2652,6 @@ name = "ucd-trie"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9e79c4d996edb816c91e4308506774452e55e95c3c9de07b6729e17e15a5ef81"
-
-[[package]]
-name = "unchecked-index"
-version = "0.2.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "eeba86d422ce181a719445e51872fa30f1f7413b62becb52e95ec91aa262d85c"
 
 [[package]]
 name = "unicase"
