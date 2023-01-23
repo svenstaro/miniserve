@@ -118,6 +118,9 @@ pub fn page(
                             "/"
                         }
                     }
+                    h3.title dir="ltr" {
+                        bdi { ("Disk space available: XXX MB") }
+                    }
                     div.toolbar {
                         @if conf.tar_enabled || conf.tar_gz_enabled || conf.zip_enabled {
                             div.download {

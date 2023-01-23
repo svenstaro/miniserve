@@ -14,6 +14,8 @@ use fast_qr::QRBuilder;
 use log::{error, warn};
 use yansi::{Color, Paint};
 
+use fs_extra::dir::get_size;
+
 mod archive;
 mod args;
 mod auth;
@@ -221,6 +223,11 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
     println!("Bound to {}", display_sockets.join(", "));
 
     println!("Serving path {}", Color::Yellow.paint(path_string).bold());
+
+    let folder_size = get_size(canon_path.as_path())?;
+    let kb_size = folder_size / 1024;
+    let mb_size = kb_size / 1024;
+    println!("Disk space available: {:?}MB", mb_size);
 
     println!(
         "Available at (non-exhaustive list):\n    {}\n",
