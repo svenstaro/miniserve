@@ -1069,25 +1069,24 @@ dependencies = [
 
 [[package]]
 name = "grass"
-version = "0.12.2"
+version = "0.12.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1bc8d495d643cc55c2f2f9437c5b9a493ea660dd75f7bbba76526c440b9c6d2c"
+checksum = "f4bfa010e6f9fe2f40727b4aedf67aa54e0439c57f855458efb1f43d730a028f"
 dependencies = [
  "grass_compiler",
 ]
 
 [[package]]
 name = "grass_compiler"
-version = "0.12.2"
+version = "0.12.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0b8adb5e6b31fe2ec6c94bd0d4d803de9ef4ea409cd75b2c4ad4db5c4a19d0ba"
+checksum = "abe05b48c9c96f5ec64ad9af20c9016a8d57ec8b979e0f6dbdd9747f32b16df3"
 dependencies = [
  "codemap",
  "indexmap",
  "lasso",
  "once_cell",
  "phf",
- "rand",
 ]
 
 [[package]]
