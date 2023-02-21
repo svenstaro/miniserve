@@ -411,7 +411,7 @@ fn archive_button(
 
 /// Ensure that there's always a trailing slash behind the `link`.
 fn make_link_with_trailing_slash(link: &str) -> String {
-    if link.ends_with('/') {
+    if link.is_empty() || link.ends_with('/') {
         link.to_string()
     } else {
         format!("{link}/")
