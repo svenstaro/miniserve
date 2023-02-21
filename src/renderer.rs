@@ -100,7 +100,7 @@ pub fn page(
                     }
                 }
                 nav {
-                    (qr_spoiler(conf.show_qrcode, abs_url))
+                    (qr_spoiler(conf.show_qrcode, abs_url.as_ref()))
                     (color_scheme_selector(conf.hide_theme_selector))
                 }
                 div.container {
@@ -193,7 +193,7 @@ pub fn page(
                     }
                     div.footer {
                         @if conf.show_wget_footer {
-                            (wget_footer(&title_path, current_user))
+                            (wget_footer(abs_url.as_ref(), current_user))
                         }
                         @if !conf.hide_version_footer {
                             (version_footer())
@@ -267,11 +267,15 @@ fn version_footer() -> Markup {
     }
 }
 
-fn wget_footer(title_path: &str, current_user: Option<&CurrentUser>) -> Markup {
+fn wget_footer(abs_path: &str, current_user: Option<&CurrentUser>) -> Markup {
+    // Bit of a botch, counts the slashes to determine how many directories
+    // we're in to set the --cut-dirs flag correctly and to avoid
+    // excessive wget putting the files in an excessive amount of
+    // subirectories. See man wget for details.
     let count = {
-        let count_slashes = title_path.matches('/').count();
-        if count_slashes > 0 {
-            count_slashes - 1
+        let count_slashes = abs_path.matches('/').count();
+        if count_slashes >= 4 {
+            count_slashes - 4
         } else {
             0
         }
@@ -286,7 +290,7 @@ fn wget_footer(title_path: &str, current_user: Option<&CurrentUser>) -> Markup {
     html! {
         div.downloadDirectory {
             p { "Download folder:" }
-            div.cmd { (format!("wget -r -c -nH -np --cut-dirs={count} -R \"index.html*\"{user_params} \"http://{title_path}/?raw=true\"")) }
+            div.cmd { (format!("wget -r -c -nH -np --cut-dirs={count} -R \"index.html*\"{user_params} \"{abs_path}?raw=true\"")) }
         }
     }
 }
