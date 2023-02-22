@@ -194,7 +194,7 @@ pub fn page(
                     }
                     div.footer {
                         @if conf.show_wget_footer {
-                            (wget_footer(abs_uri, breadcrumbs[0].name.as_str(), current_user))
+                            (wget_footer(abs_uri, conf.title.as_deref(), current_user.map(|x| &*x.name)))
                         }
                         @if !conf.hide_version_footer {
                             (version_footer())
@@ -268,11 +268,20 @@ fn version_footer() -> Markup {
     }
 }
 
-fn wget_footer(abs_path: &Uri, root_dir_name: &str, current_user: Option<&CurrentUser>) -> Markup {
+fn wget_footer(abs_path: &Uri, root_dir_name: Option<&str>, current_user: Option<&str>) -> Markup {
+    fn escape_apostrophes(x: &str) -> String {
+        x.replace('\'', "'\"'\"'")
+    }
+
     // Directory depth, 0 is root directory
     let cut_dirs = match abs_path.path().matches('/').count() - 1 {
         // Put all the files in a folder of this name
-        0 => format!(" -P {root_dir_name}"),
+        0 => format!(
+            " -P '{}'",
+            escape_apostrophes(
+                root_dir_name.unwrap_or_else(|| abs_path.authority().unwrap().as_str())
+            )
+        ),
         1 => String::new(),
         // Avoids putting the files in excessive directories
         x => format!(" --cut-dirs={}", x - 1),
@@ -280,12 +289,12 @@ fn wget_footer(abs_path: &Uri, root_dir_name: &str, current_user: Option<&Curren
 
     // Ask for password if authentication is required
     let user_params = match current_user {
-        Some(user) => format!(" --ask-password --user {}", user.name),
+        Some(user) => format!(" --ask-password --user '{}'", escape_apostrophes(user)),
         None => String::new(),
     };
 
     let command =
-        format!("wget -rcnHp{cut_dirs} -R 'index.html*'{user_params} '{abs_path}?raw=true'");
+        format!("wget -rcnHp -R 'index.html*'{cut_dirs}{user_params} '{abs_path}?raw=true'");
     let click_to_copy = format!("navigator.clipboard.writeText(\"{command}\")");
 
     html! {
@@ -686,5 +695,59 @@ pub fn render_error(
                 }
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use pretty_assertions::assert_eq;
+    #[test]
+    fn test_wget_footer() {
+        fn to_html(x: &str) -> String {
+            format!(
+                r#"<div class="downloadDirectory"><p>Download folder:</p><a class="cmd" title="Click to copy!" style="cursor: pointer;" onclick="navigator.clipboard.writeText(&quot;wget -rcnHp -R 'index.html*' {0}/?raw=true'&quot;)">wget -rcnHp -R 'index.html*' {0}/?raw=true'</a></div>"#,
+                x
+            )
+        }
+
+        fn uri(x: &str) -> Uri {
+            Uri::try_from(x).unwrap()
+        }
+
+        let to_be_tested: String = wget_footer(
+            &uri("https://github.com/svenstaro/miniserve/"),
+            Some("Miniserve"),
+            None,
+        )
+        .into();
+        let solution = to_html("--cut-dirs=1 'https://github.com/svenstaro/miniserve");
+        assert_eq!(to_be_tested, solution);
+
+        let to_be_tested: String = wget_footer(&uri("https://github.com/"), None, None).into();
+        let solution = to_html("-P 'github.com' 'https://github.com");
+        assert_eq!(to_be_tested, solution);
+
+        let to_be_tested: String = wget_footer(
+            &uri("http://1und1.de/"),
+            Some("1&1 - Willkommen!!!"),
+            Some("Marcell D'Avis"),
+        )
+        .into();
+        let solution = to_html("-P '1&amp;1 - Willkommen!!!' --ask-password --user 'Marcell D'&quot;'&quot;'Avis' 'http://1und1.de");
+        assert_eq!(to_be_tested, solution);
+
+        let to_be_tested: String = wget_footer(
+            &uri("http://127.0.0.1:1234/geheime_dokumente.php/"),
+            Some("Streng Geheim!!!"),
+            Some("uøý`¶'7ÅÛé"),
+        )
+        .into();
+        let solution = to_html("--ask-password --user 'uøý`¶'&quot;'&quot;'7ÅÛé' 'http://127.0.0.1:1234/geheime_dokumente.php");
+        assert_eq!(to_be_tested, solution);
+
+        let to_be_tested: String = wget_footer(&uri("http://127.0.0.1:420/"), None, None).into();
+        let solution = to_html("-P '127.0.0.1:420' 'http://127.0.0.1:420");
+        assert_eq!(to_be_tested, solution);
     }
 }
