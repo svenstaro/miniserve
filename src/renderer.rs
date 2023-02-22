@@ -283,10 +283,14 @@ fn wget_footer(abs_path: &str, root_dir_name: &str, current_user: Option<&Curren
         None => String::new(),
     };
 
+    let command =
+        format!("wget -rcnHp{cut_dirs} -R 'index.html*'{user_params} '{abs_path}?raw=true'");
+    let click_to_copy = format!("navigator.clipboard.writeText(\"{command}\")");
+
     html! {
         div.downloadDirectory {
             p { "Download folder:" }
-            div.cmd { (format!("wget -rcnHp{cut_dirs} -R \"index.html*\"{user_params} \"{abs_path}?raw=true\"")) }
+            a.cmd title="Click to copy!" style="cursor: pointer;" onclick=(click_to_copy) { (command) }
         }
     }
 }
