@@ -193,7 +193,7 @@ pub fn page(
                     }
                     div.footer {
                         @if conf.show_wget_footer {
-                            (wget_footer(abs_url.as_ref(), current_user))
+                            (wget_footer(abs_url.as_ref(), breadcrumbs[0].name.as_str(), current_user))
                         }
                         @if !conf.hide_version_footer {
                             (version_footer())
@@ -267,30 +267,26 @@ fn version_footer() -> Markup {
     }
 }
 
-fn wget_footer(abs_path: &str, current_user: Option<&CurrentUser>) -> Markup {
-    // Bit of a botch, counts the slashes to determine how many directories
-    // we're in to set the --cut-dirs flag correctly and to avoid
-    // excessive wget putting the files in an excessive amount of
-    // subirectories. See man wget for details.
-    let count = {
-        let count_slashes = abs_path.matches('/').count();
-        if count_slashes >= 4 {
-            count_slashes - 4
-        } else {
-            0
-        }
+fn wget_footer(abs_path: &str, root_dir_name: &str, current_user: Option<&CurrentUser>) -> Markup {
+    // Directory depth, 0 is root directory
+    let cut_dirs = match abs_path.matches('/').count() - 3 {
+        // Put all the files in a folder of this name
+        0 => format!(" -P {root_dir_name}"),
+        1 => String::new(),
+        // Avoids putting the files in excessive directories
+        x => format!(" --cut-dirs={}", x - 1),
     };
 
-    let user_params = if let Some(user) = current_user {
-        format!(" --ask-password --user {}", user.name)
-    } else {
-        "".to_string()
+    // Ask for password if authentication is required
+    let user_params = match current_user {
+        Some(user) => format!(" --ask-password --user {}", user.name),
+        None => String::new(),
     };
 
     html! {
         div.downloadDirectory {
             p { "Download folder:" }
-            div.cmd { (format!("wget -r -c -nH -np --cut-dirs={count} -R \"index.html*\"{user_params} \"{abs_path}?raw=true\"")) }
+            div.cmd { (format!("wget -rcnHp{cut_dirs} -R \"index.html*\"{user_params} \"{abs_path}?raw=true\"")) }
         }
     }
 }
