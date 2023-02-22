@@ -163,12 +163,12 @@ pub fn directory_listing(
 
     let base = Path::new(serve_path);
     let random_route_abs = format!("/{}", conf.route_prefix);
-    let abs_url = format!(
-        "{}://{}{}",
-        req.connection_info().scheme(),
-        req.connection_info().host(),
-        req.uri()
-    );
+    let abs_uri = http::Uri::builder()
+        .scheme(req.connection_info().scheme())
+        .authority(req.connection_info().host())
+        .path_and_query(req.uri().to_string())
+        .build()
+        .unwrap();
     let is_root = base.parent().is_none() || Path::new(&req.path()) == Path::new(&random_route_abs);
 
     let encoded_dir = match base.strip_prefix(random_route_abs) {
@@ -379,7 +379,7 @@ pub fn directory_listing(
                 renderer::page(
                     entries,
                     readme,
-                    abs_url,
+                    &abs_uri,
                     is_root,
                     query_params,
                     &breadcrumbs,

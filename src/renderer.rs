@@ -9,6 +9,7 @@ use fast_qr::{
     qr::QRCodeError,
     QRBuilder,
 };
+use http::Uri;
 use maud::{html, Markup, PreEscaped, DOCTYPE};
 use strum::{Display, IntoEnumIterator};
 
@@ -22,7 +23,7 @@ use crate::{archive::ArchiveMethod, MiniserveConfig};
 pub fn page(
     entries: Vec<Entry>,
     readme: Option<(String, String)>,
-    abs_url: impl AsRef<str>,
+    abs_uri: &Uri,
     is_root: bool,
     query_params: QueryParameters,
     breadcrumbs: &[Breadcrumb],
@@ -100,7 +101,7 @@ pub fn page(
                     }
                 }
                 nav {
-                    (qr_spoiler(conf.show_qrcode, abs_url.as_ref()))
+                    (qr_spoiler(conf.show_qrcode, abs_uri))
                     (color_scheme_selector(conf.hide_theme_selector))
                 }
                 div.container {
@@ -193,7 +194,7 @@ pub fn page(
                     }
                     div.footer {
                         @if conf.show_wget_footer {
-                            (wget_footer(abs_url.as_ref(), breadcrumbs[0].name.as_str(), current_user))
+                            (wget_footer(abs_uri, breadcrumbs[0].name.as_str(), current_user))
                         }
                         @if !conf.hide_version_footer {
                             (version_footer())
@@ -240,8 +241,8 @@ pub fn raw(entries: Vec<Entry>, is_root: bool) -> Markup {
 }
 
 /// Renders the QR code SVG
-fn qr_code_svg(url: impl AsRef<str>, margin: usize) -> Result<String, QRCodeError> {
-    let qr = QRBuilder::new(url.as_ref().to_string())
+fn qr_code_svg(url: &Uri, margin: usize) -> Result<String, QRCodeError> {
+    let qr = QRBuilder::new(url.to_string())
         .ecl(consts::QR_EC_LEVEL)
         .build()?;
     let svg = SvgBuilder::default().margin(margin).to_str(&qr);
@@ -267,9 +268,9 @@ fn version_footer() -> Markup {
     }
 }
 
-fn wget_footer(abs_path: &str, root_dir_name: &str, current_user: Option<&CurrentUser>) -> Markup {
+fn wget_footer(abs_path: &Uri, root_dir_name: &str, current_user: Option<&CurrentUser>) -> Markup {
     // Directory depth, 0 is root directory
-    let cut_dirs = match abs_path.matches('/').count() - 3 {
+    let cut_dirs = match abs_path.path().matches('/').count() - 1 {
         // Put all the files in a folder of this name
         0 => format!(" -P {root_dir_name}"),
         1 => String::new(),
@@ -339,14 +340,14 @@ pub enum ThemeSlug {
 }
 
 /// Partial: qr code spoiler
-fn qr_spoiler(show_qrcode: bool, content: impl AsRef<str>) -> Markup {
+fn qr_spoiler(show_qrcode: bool, content: &Uri) -> Markup {
     html! {
         @if show_qrcode {
             div {
                 p {
                     "QR code"
                 }
-                div.qrcode #qrcode title=(PreEscaped(content.as_ref())) {
+                div.qrcode #qrcode title=(PreEscaped(content.to_string())) {
                     @match qr_code_svg(content, consts::SVG_QR_MARGIN) {
                         Ok(svg) => (PreEscaped(svg)),
                         Err(err) => (format!("QR generation error: {err:?}")),
