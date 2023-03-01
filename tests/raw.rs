@@ -11,7 +11,16 @@ use select::predicate::Class;
 use select::predicate::Name;
 
 /// The footer displays the correct wget command to download the folder recursively
-#[rstest(depth, dir, case(0, ""), case(2, "very/deeply/nested/"))]
+// This test can't test all aspects of the wget footer,
+// a more detailed unit test is available
+#[rstest(
+    depth,
+    dir,
+    case(0, ""),
+    case(1, "dira/"),
+    case(2, "very/deeply/"),
+    case(3, "very/deeply/nested/")
+)]
 fn ui_displays_wget_element(
     depth: u8,
     dir: &str,
@@ -32,11 +41,18 @@ fn ui_displays_wget_element(
         .next()
         .unwrap()
         .text();
+    let cut_dirs = match depth {
+        // Put all the files in a folder of this name
+        0 => format!(" -P 'localhost:{}'", server.port()),
+        1 => String::new(),
+        // Avoids putting the files in excessive directories
+        x => format!(" --cut-dirs={}", x - 1),
+    };
     assert_eq!(
         wget_url,
         format!(
-            "wget -r -c -nH -np --cut-dirs={} -R \"index.html*\" \"{}{}?raw=true\"",
-            depth,
+            "wget -rcnHp -R 'index.html*'{} '{}{}?raw=true'",
+            cut_dirs,
             server.url(),
             dir
         )

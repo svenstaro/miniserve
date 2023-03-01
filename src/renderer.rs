@@ -9,6 +9,7 @@ use fast_qr::{
     qr::QRCodeError,
     QRBuilder,
 };
+use http::Uri;
 use maud::{html, Markup, PreEscaped, DOCTYPE};
 use strum::{Display, IntoEnumIterator};
 
@@ -22,7 +23,7 @@ use crate::{archive::ArchiveMethod, MiniserveConfig};
 pub fn page(
     entries: Vec<Entry>,
     readme: Option<(String, String)>,
-    abs_url: impl AsRef<str>,
+    abs_uri: &Uri,
     is_root: bool,
     query_params: QueryParameters,
     breadcrumbs: &[Breadcrumb],
@@ -100,7 +101,7 @@ pub fn page(
                     }
                 }
                 nav {
-                    (qr_spoiler(conf.show_qrcode, abs_url))
+                    (qr_spoiler(conf.show_qrcode, abs_uri))
                     (color_scheme_selector(conf.hide_theme_selector))
                 }
                 div.container {
@@ -193,7 +194,7 @@ pub fn page(
                     }
                     div.footer {
                         @if conf.show_wget_footer {
-                            (wget_footer(&title_path, current_user))
+                            (wget_footer(abs_uri, conf.title.as_deref(), current_user.map(|x| &*x.name)))
                         }
                         @if !conf.hide_version_footer {
                             (version_footer())
@@ -240,8 +241,8 @@ pub fn raw(entries: Vec<Entry>, is_root: bool) -> Markup {
 }
 
 /// Renders the QR code SVG
-fn qr_code_svg(url: impl AsRef<str>, margin: usize) -> Result<String, QRCodeError> {
-    let qr = QRBuilder::new(url.as_ref().to_string())
+fn qr_code_svg(url: &Uri, margin: usize) -> Result<String, QRCodeError> {
+    let qr = QRBuilder::new(url.to_string())
         .ecl(consts::QR_EC_LEVEL)
         .build()?;
     let svg = SvgBuilder::default().margin(margin).to_str(&qr);
@@ -267,26 +268,39 @@ fn version_footer() -> Markup {
     }
 }
 
-fn wget_footer(title_path: &str, current_user: Option<&CurrentUser>) -> Markup {
-    let count = {
-        let count_slashes = title_path.matches('/').count();
-        if count_slashes > 0 {
-            count_slashes - 1
-        } else {
-            0
-        }
+fn wget_footer(abs_path: &Uri, root_dir_name: Option<&str>, current_user: Option<&str>) -> Markup {
+    fn escape_apostrophes(x: &str) -> String {
+        x.replace('\'', "'\"'\"'")
+    }
+
+    // Directory depth, 0 is root directory
+    let cut_dirs = match abs_path.path().matches('/').count() - 1 {
+        // Put all the files in a folder of this name
+        0 => format!(
+            " -P '{}'",
+            escape_apostrophes(
+                root_dir_name.unwrap_or_else(|| abs_path.authority().unwrap().as_str())
+            )
+        ),
+        1 => String::new(),
+        // Avoids putting the files in excessive directories
+        x => format!(" --cut-dirs={}", x - 1),
     };
 
-    let user_params = if let Some(user) = current_user {
-        format!(" --ask-password --user {}", user.name)
-    } else {
-        "".to_string()
+    // Ask for password if authentication is required
+    let user_params = match current_user {
+        Some(user) => format!(" --ask-password --user '{}'", escape_apostrophes(user)),
+        None => String::new(),
     };
+
+    let command =
+        format!("wget -rcnHp -R 'index.html*'{cut_dirs}{user_params} '{abs_path}?raw=true'");
+    let click_to_copy = format!("navigator.clipboard.writeText(\"{command}\")");
 
     html! {
         div.downloadDirectory {
             p { "Download folder:" }
-            div.cmd { (format!("wget -r -c -nH -np --cut-dirs={count} -R \"index.html*\"{user_params} \"http://{title_path}/?raw=true\"")) }
+            a.cmd title="Click to copy!" style="cursor: pointer;" onclick=(click_to_copy) { (command) }
         }
     }
 }
@@ -335,14 +349,14 @@ pub enum ThemeSlug {
 }
 
 /// Partial: qr code spoiler
-fn qr_spoiler(show_qrcode: bool, content: impl AsRef<str>) -> Markup {
+fn qr_spoiler(show_qrcode: bool, content: &Uri) -> Markup {
     html! {
         @if show_qrcode {
             div {
                 p {
                     "QR code"
                 }
-                div.qrcode #qrcode title=(PreEscaped(content.as_ref())) {
+                div.qrcode #qrcode title=(PreEscaped(content.to_string())) {
                     @match qr_code_svg(content, consts::SVG_QR_MARGIN) {
                         Ok(svg) => (PreEscaped(svg)),
                         Err(err) => (format!("QR generation error: {err:?}")),
@@ -681,5 +695,59 @@ pub fn render_error(
                 }
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use pretty_assertions::assert_eq;
+    #[test]
+    fn test_wget_footer() {
+        fn to_html(x: &str) -> String {
+            format!(
+                r#"<div class="downloadDirectory"><p>Download folder:</p><a class="cmd" title="Click to copy!" style="cursor: pointer;" onclick="navigator.clipboard.writeText(&quot;wget -rcnHp -R 'index.html*' {0}/?raw=true'&quot;)">wget -rcnHp -R 'index.html*' {0}/?raw=true'</a></div>"#,
+                x
+            )
+        }
+
+        fn uri(x: &str) -> Uri {
+            Uri::try_from(x).unwrap()
+        }
+
+        let to_be_tested: String = wget_footer(
+            &uri("https://github.com/svenstaro/miniserve/"),
+            Some("Miniserve"),
+            None,
+        )
+        .into();
+        let solution = to_html("--cut-dirs=1 'https://github.com/svenstaro/miniserve");
+        assert_eq!(to_be_tested, solution);
+
+        let to_be_tested: String = wget_footer(&uri("https://github.com/"), None, None).into();
+        let solution = to_html("-P 'github.com' 'https://github.com");
+        assert_eq!(to_be_tested, solution);
+
+        let to_be_tested: String = wget_footer(
+            &uri("http://1und1.de/"),
+            Some("1&1 - Willkommen!!!"),
+            Some("Marcell D'Avis"),
+        )
+        .into();
+        let solution = to_html("-P '1&amp;1 - Willkommen!!!' --ask-password --user 'Marcell D'&quot;'&quot;'Avis' 'http://1und1.de");
+        assert_eq!(to_be_tested, solution);
+
+        let to_be_tested: String = wget_footer(
+            &uri("http://127.0.0.1:1234/geheime_dokumente.php/"),
+            Some("Streng Geheim!!!"),
+            Some("uøý`¶'7ÅÛé"),
+        )
+        .into();
+        let solution = to_html("--ask-password --user 'uøý`¶'&quot;'&quot;'7ÅÛé' 'http://127.0.0.1:1234/geheime_dokumente.php");
+        assert_eq!(to_be_tested, solution);
+
+        let to_be_tested: String = wget_footer(&uri("http://127.0.0.1:420/"), None, None).into();
+        let solution = to_html("-P '127.0.0.1:420' 'http://127.0.0.1:420");
+        assert_eq!(to_be_tested, solution);
     }
 }
