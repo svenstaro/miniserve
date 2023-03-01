@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+
+## [0.23.0] - 2023-03-01
 - Update to clap v4
 - Show localized datetime [#949](https://github.com/svenstaro/miniserve/pull/949) (thanks @IvkinStanislav)
 - Fix sorting breaks subdir downloading [#991](https://github.com/svenstaro/miniserve/pull/991) (thanks @Vam-Jam)
@@ -166,7 +168,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Some theme related bug fixes (thanks @boastful-squirrel)
 
 <!-- next-url -->
-[Unreleased]: https://github.com/svenstaro/miniserve/compare/v0.22.0...HEAD
+[Unreleased]: https://github.com/svenstaro/miniserve/compare/v0.23.0...HEAD
+[0.23.0]: https://github.com/svenstaro/miniserve/compare/v0.22.0...v0.23.0
 [0.22.0]: https://github.com/svenstaro/miniserve/compare/v0.21.0...v0.22.0
 [0.21.0]: https://github.com/svenstaro/miniserve/compare/v0.20.0...v0.21.0
 [0.20.0]: https://github.com/svenstaro/miniserve/compare/v0.19.5...v0.20.0

@@ -1570,7 +1570,7 @@ dependencies = [
 
 [[package]]
 name = "miniserve"
-version = "0.22.0"
+version = "0.23.0"
 dependencies = [
  "actix-files",
  "actix-multipart",
