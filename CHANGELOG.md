@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Update to clap v4
 - Show localized datetime [#949](https://github.com/svenstaro/miniserve/pull/949) (thanks @IvkinStanislav)
 - Fix sorting breaks subdir downloading [#991](https://github.com/svenstaro/miniserve/pull/991) (thanks @Vam-Jam)
+- Fix wget footer [#1043](https://github.com/svenstaro/miniserve/pull/1043) (thanks @Yusuto)
 
 ## [0.22.0] - 2022-09-20
 - Faster QR code generation [#848](https://github.com/svenstaro/miniserve/pull/848) (thanks @cyqsimon)
