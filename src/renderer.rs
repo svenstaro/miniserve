@@ -702,52 +702,64 @@ pub fn render_error(
 mod tests {
     use super::*;
     use pretty_assertions::assert_eq;
+
+    fn to_html(wget_part: &str) -> String {
+        format!(
+            r#"<div class="downloadDirectory"><p>Download folder:</p><a class="cmd" title="Click to copy!" style="cursor: pointer;" onclick="navigator.clipboard.writeText(&quot;wget -rcnHp -R 'index.html*' {wget_part}/?raw=true'&quot;)">wget -rcnHp -R 'index.html*' {wget_part}/?raw=true'</a></div>"#
+        )
+    }
+
+    fn uri(x: &str) -> Uri {
+        Uri::try_from(x).unwrap()
+    }
+
     #[test]
-    fn test_wget_footer() {
-        fn to_html(x: &str) -> String {
-            format!(
-                r#"<div class="downloadDirectory"><p>Download folder:</p><a class="cmd" title="Click to copy!" style="cursor: pointer;" onclick="navigator.clipboard.writeText(&quot;wget -rcnHp -R 'index.html*' {0}/?raw=true'&quot;)">wget -rcnHp -R 'index.html*' {0}/?raw=true'</a></div>"#,
-                x
-            )
-        }
+    fn test_wget_footer_trivial() {
+        let to_be_tested: String = wget_footer(&uri("https://github.com/"), None, None).into();
+        let expected = to_html("-P 'github.com' 'https://github.com");
+        assert_eq!(to_be_tested, expected);
+    }
 
-        fn uri(x: &str) -> Uri {
-            Uri::try_from(x).unwrap()
-        }
-
+    #[test]
+    fn test_wget_footer_with_root_dir() {
         let to_be_tested: String = wget_footer(
             &uri("https://github.com/svenstaro/miniserve/"),
             Some("Miniserve"),
             None,
         )
         .into();
-        let solution = to_html("--cut-dirs=1 'https://github.com/svenstaro/miniserve");
-        assert_eq!(to_be_tested, solution);
+        let expected = to_html("--cut-dirs=1 'https://github.com/svenstaro/miniserve");
+        assert_eq!(to_be_tested, expected);
+    }
 
-        let to_be_tested: String = wget_footer(&uri("https://github.com/"), None, None).into();
-        let solution = to_html("-P 'github.com' 'https://github.com");
-        assert_eq!(to_be_tested, solution);
-
+    #[test]
+    fn test_wget_footer_with_root_dir_and_user() {
         let to_be_tested: String = wget_footer(
             &uri("http://1und1.de/"),
             Some("1&1 - Willkommen!!!"),
             Some("Marcell D'Avis"),
         )
         .into();
-        let solution = to_html("-P '1&amp;1 - Willkommen!!!' --ask-password --user 'Marcell D'&quot;'&quot;'Avis' 'http://1und1.de");
-        assert_eq!(to_be_tested, solution);
+        let expected = to_html("-P '1&amp;1 - Willkommen!!!' --ask-password --user 'Marcell D'&quot;'&quot;'Avis' 'http://1und1.de");
+        assert_eq!(to_be_tested, expected);
+    }
 
+    #[test]
+    fn test_wget_footer_escaping() {
         let to_be_tested: String = wget_footer(
             &uri("http://127.0.0.1:1234/geheime_dokumente.php/"),
             Some("Streng Geheim!!!"),
             Some("uøý`¶'7ÅÛé"),
         )
         .into();
-        let solution = to_html("--ask-password --user 'uøý`¶'&quot;'&quot;'7ÅÛé' 'http://127.0.0.1:1234/geheime_dokumente.php");
-        assert_eq!(to_be_tested, solution);
+        let expected = to_html("--ask-password --user 'uøý`¶'&quot;'&quot;'7ÅÛé' 'http://127.0.0.1:1234/geheime_dokumente.php");
+        assert_eq!(to_be_tested, expected);
+    }
 
+    #[test]
+    fn test_wget_footer_ip() {
         let to_be_tested: String = wget_footer(&uri("http://127.0.0.1:420/"), None, None).into();
-        let solution = to_html("-P '127.0.0.1:420' 'http://127.0.0.1:420");
-        assert_eq!(to_be_tested, solution);
+        let expected = to_html("-P '127.0.0.1:420' 'http://127.0.0.1:420");
+        assert_eq!(to_be_tested, expected);
     }
 }
