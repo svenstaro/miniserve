@@ -21,6 +21,7 @@ mod config;
 mod consts;
 mod errors;
 mod file_upload;
+mod file_utils;
 mod listing;
 mod pipe;
 mod renderer;

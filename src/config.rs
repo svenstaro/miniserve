@@ -16,7 +16,7 @@ use rustls_pemfile as pemfile;
 use crate::{
     args::{CliArgs, MediaType},
     auth::RequiredAuth,
-    file_upload::sanitize_path,
+    file_utils::sanitize_path,
     renderer::ThemeSlug,
 };
 
