@@ -4,10 +4,10 @@ use std::path::{Component, Path, PathBuf};
 /// and optionally prevent traversing hidden directories.
 ///
 /// See the unit tests tests::test_sanitize_path* for examples
-pub fn sanitize_path(path: &Path, traverse_hidden: bool) -> Option<PathBuf> {
+pub fn sanitize_path(path: impl AsRef<Path>, traverse_hidden: bool) -> Option<PathBuf> {
     let mut buf = PathBuf::new();
 
-    for comp in path.components() {
+    for comp in path.as_ref().components() {
         match comp {
             Component::Normal(name) => buf.push(name),
             Component::ParentDir => {
@@ -30,9 +30,9 @@ pub fn sanitize_path(path: &Path, traverse_hidden: bool) -> Option<PathBuf> {
 }
 
 /// Returns if a path goes through a symbolic link
-pub fn contains_symlink(path: &PathBuf) -> bool {
+pub fn contains_symlink(path: impl AsRef<Path>) -> bool {
     let mut joined_path = PathBuf::new();
-    for path_slice in path {
+    for path_slice in path.as_ref().iter() {
         joined_path = joined_path.join(path_slice);
         if !joined_path.exists() {
             // On Windows, `\\?\` won't exist even though it's the root
