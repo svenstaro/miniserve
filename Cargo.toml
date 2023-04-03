@@ -32,7 +32,7 @@ chrono-humanize = "0.2"
 clap = { version = "4", features = ["derive", "cargo", "wrap_help", "deprecated"] }
 clap_complete = "4"
 clap_mangen = "0.2"
-comrak = { version = "0.17", default-features = false }
+comrak = { version = "0.18", default-features = false }
 fast_qr = { version = "0.8", features = ["svg"] }
 futures = "0.3"
 get_if_addrs = "0.5"
