@@ -1675,7 +1675,7 @@ dependencies = [
  "serde",
  "sha2",
  "simplelog",
- "socket2 0.5.1",
+ "socket2 0.5.2",
  "strum",
  "tar",
  "thiserror",
@@ -2390,12 +2390,12 @@ dependencies = [
 
 [[package]]
 name = "socket2"
-version = "0.5.1"
+version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bc8d618c6641ae355025c449427f9e96b98abf99a772be3cef6708d15c77147a"
+checksum = "6d283f86695ae989d1e18440a943880967156325ba025f05049946bff47bcc2b"
 dependencies = [
  "libc",
- "windows-sys 0.45.0",
+ "windows-sys 0.48.0",
 ]
 
 [[package]]
