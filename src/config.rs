@@ -199,7 +199,9 @@ impl MiniserveConfig {
                     .context("Reading private key file")?
                     .into_iter()
                     .find_map(|item| match item {
-                        pemfile::Item::RSAKey(key) | pemfile::Item::PKCS8Key(key) => Some(key),
+                        pemfile::Item::RSAKey(key)
+                        | pemfile::Item::PKCS8Key(key)
+                        | pemfile::Item::ECKey(key) => Some(key),
                         _ => None,
                     })
                     .ok_or_else(|| anyhow!("No supported private key in file"))?;

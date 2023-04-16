@@ -10,12 +10,16 @@ use select::{document::Document, node::Node};
 /// Can start the server with TLS and receive encrypted responses.
 #[rstest]
 #[case(server(&[
-        "--tls-cert", "tests/data/cert.pem",
+        "--tls-cert", "tests/data/cert_rsa.pem",
         "--tls-key", "tests/data/key_pkcs8.pem",
 ]))]
 #[case(server(&[
-        "--tls-cert", "tests/data/cert.pem",
+        "--tls-cert", "tests/data/cert_rsa.pem",
         "--tls-key", "tests/data/key_pkcs1.pem",
+]))]
+#[case(server(&[
+        "--tls-cert", "tests/data/cert_ec.pem",
+        "--tls-key", "tests/data/key_ec.pem",
 ]))]
 fn tls_works(#[case] server: TestServer) -> Result<(), Error> {
     let client = ClientBuilder::new()
