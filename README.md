@@ -109,6 +109,7 @@ Some mobile browsers like Firefox on Android will offer to open the camera app w
 - Sane and secure defaults
 - TLS (for supported architectures)
 - Supports README.md rendering like on GitHub
+- Range requests
 
 ## Usage
 
