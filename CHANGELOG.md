@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+- Add EC key support [#1080](https://github.com/svenstaro/miniserve/issues/1080)
 
 ## [0.23.0] - 2023-03-01
 - Update to clap v4
