@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+
+## [0.23.1] - 2023-04-17
 - Add EC key support [#1080](https://github.com/svenstaro/miniserve/issues/1080)
 
 ## [0.23.0] - 2023-03-01
@@ -169,7 +171,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Some theme related bug fixes (thanks @boastful-squirrel)
 
 <!-- next-url -->
-[Unreleased]: https://github.com/svenstaro/miniserve/compare/v0.23.0...HEAD
+[Unreleased]: https://github.com/svenstaro/miniserve/compare/v0.23.1...HEAD
+[0.23.1]: https://github.com/svenstaro/miniserve/compare/v0.23.0...v0.23.1
 [0.23.0]: https://github.com/svenstaro/miniserve/compare/v0.22.0...v0.23.0
 [0.22.0]: https://github.com/svenstaro/miniserve/compare/v0.21.0...v0.22.0
 [0.21.0]: https://github.com/svenstaro/miniserve/compare/v0.20.0...v0.21.0
