@@ -142,7 +142,7 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
         if !wildcard.is_empty() {
             let all_ipv4 = wildcard.iter().any(|addr| addr.is_ipv4());
             let all_ipv6 = wildcard.iter().any(|addr| addr.is_ipv6());
-            ifaces = get_if_addrs::get_if_addrs()
+            ifaces = if_addrs::get_if_addrs()
                 .unwrap_or_else(|e| {
                     error!("Failed to get local interface addresses: {}", e);
                     Default::default()
