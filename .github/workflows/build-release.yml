@@ -92,21 +92,18 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Setup Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          target: ${{ matrix.target }}
-          override: true
+        uses: dtolnay/rust-toolchain@stable
 
       - run: sudo apt install musl-tools
         if: startsWith(matrix.os, 'ubuntu')
 
       - name: cargo build
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --release --locked --target=${{ matrix.target }} ${{ matrix.cargo_flags }}
-          use-cross: ${{ matrix.cross }}
+        run: cargo build --release --locked --target=${{ matrix.target }} ${{ matrix.cargo_flags }}
+        if: ${{ matrix.cross }} == false
+
+      - name: cross build
+        run: cross build --release --locked --target=${{ matrix.target }} ${{ matrix.cargo_flags }}
+        if: ${{ matrix.cross }} == true
 
       - name: Set exe extension for Windows
         run: echo "EXE=.exe" >> $env:GITHUB_ENV
