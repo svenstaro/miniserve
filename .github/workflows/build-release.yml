@@ -13,77 +13,62 @@ jobs:
         include:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-musl
-            cross: true
             compress: true
             cargo_flags: ""
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            cross: true
             compress: true
             cargo_flags: ""
           - os: ubuntu-latest
             target: aarch64-unknown-linux-musl
-            cross: true
             compress: true
             cargo_flags: ""
           - os: ubuntu-latest
             target: aarch64-unknown-linux-gnu
-            cross: true
             compress: true
             cargo_flags: ""
           - os: ubuntu-latest
             target: armv7-unknown-linux-musleabihf
-            cross: true
             compress: true
             cargo_flags: ""
           - os: ubuntu-latest
             target: armv7-unknown-linux-gnueabihf
-            cross: true
             compress: true
             cargo_flags: ""
           - os: ubuntu-latest
             target: arm-unknown-linux-musleabihf
-            cross: true
             compress: true
             cargo_flags: ""
           - os: ubuntu-latest
             target: mips-unknown-linux-musl
-            cross: true
             compress: false
             cargo_flags: "--no-default-features"
           - os: ubuntu-latest
             target: mipsel-unknown-linux-musl
-            cross: true
             compress: true
             cargo_flags: "--no-default-features"
           - os: ubuntu-latest
             target: mips64-unknown-linux-gnuabi64
-            cross: true
             compress: false
             cargo_flags: "--no-default-features"
           - os: ubuntu-latest
             target: mips64el-unknown-linux-gnuabi64
-            cross: true
             compress: false
             cargo_flags: "--no-default-features"
           - os: ubuntu-latest
             target: riscv64gc-unknown-linux-gnu
-            cross: true
             compress: false
             cargo_flags: "--no-default-features"
           - os: windows-latest
             target: x86_64-pc-windows-msvc
-            cross: false
             compress: true
             cargo_flags: ""
           - os: macos-latest
             target: x86_64-apple-darwin
-            cross: false
             compress: true
             cargo_flags: ""
           - os: ubuntu-latest
             target: x86_64-unknown-freebsd
-            cross: true
             compress: false
             cargo_flags: ""
 
@@ -92,21 +77,17 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Setup Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          target: ${{ matrix.target }}
-          override: true
+        uses: dtolnay/rust-toolchain@stable
 
       - run: sudo apt install musl-tools
         if: startsWith(matrix.os, 'ubuntu')
 
       - name: cargo build
-        uses: actions-rs/cargo@v1
+        uses: houseabsolute/actions-rust-cross@v0
         with:
           command: build
-          args: --release --locked --target=${{ matrix.target }} ${{ matrix.cargo_flags }}
-          use-cross: ${{ matrix.cross }}
+          args: --release --locked ${{ matrix.cargo_flags }}
+          target: ${{ matrix.target }}
 
       - name: Set exe extension for Windows
         run: echo "EXE=.exe" >> $env:GITHUB_ENV
@@ -166,7 +147,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Download artifact aarch64-unknown-linux-gnu
         uses: actions/download-artifact@v3
