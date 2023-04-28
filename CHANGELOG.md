@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+- Build Windows build with static CRT [#1107](https://github.com/svenstaro/miniserve/pull/1107)
 
 ## [0.23.1] - 2023-04-17
 - Add EC key support [#1080](https://github.com/svenstaro/miniserve/issues/1080)
