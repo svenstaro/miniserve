@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+
+## [0.23.2] - 2023-04-28
 - Build Windows build with static CRT [#1107](https://github.com/svenstaro/miniserve/pull/1107)
 
 ## [0.23.1] - 2023-04-17
@@ -172,7 +174,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Some theme related bug fixes (thanks @boastful-squirrel)
 
 <!-- next-url -->
-[Unreleased]: https://github.com/svenstaro/miniserve/compare/v0.23.1...HEAD
+[Unreleased]: https://github.com/svenstaro/miniserve/compare/v0.23.2...HEAD
+[0.23.2]: https://github.com/svenstaro/miniserve/compare/v0.23.1...v0.23.2
 [0.23.1]: https://github.com/svenstaro/miniserve/compare/v0.23.0...v0.23.1
 [0.23.0]: https://github.com/svenstaro/miniserve/compare/v0.22.0...v0.23.0
 [0.22.0]: https://github.com/svenstaro/miniserve/compare/v0.21.0...v0.22.0
