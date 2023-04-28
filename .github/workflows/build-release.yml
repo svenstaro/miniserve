@@ -67,6 +67,10 @@ jobs:
             target: x86_64-apple-darwin
             compress: true
             cargo_flags: ""
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            compress: false
+            cargo_flags: ""
           - os: ubuntu-latest
             target: x86_64-unknown-freebsd
             compress: false
@@ -74,7 +78,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -96,7 +100,7 @@ jobs:
       - name: Compress binaries
         uses: svenstaro/upx-action@v2
         with:
-          file: target/${{ matrix.target }}/release/miniserve${{ env.EXE }}
+          files: target/${{ matrix.target }}/release/miniserve${{ env.EXE }}
           args: --best --lzma
           strip: false  # We're stripping already in Cargo.toml
         if: ${{ matrix.compress }}
@@ -110,7 +114,7 @@ jobs:
       - name: Get version from tag
         id: extract_version
         run: |
-          echo ::set-output name=version::${GITHUB_REF_NAME#v}
+          echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
         shell: bash
 
       - name: Install CHANGELOG parser
