@@ -896,9 +896,9 @@ checksum = "aa6c2a740a5d6940f90a0f13b5828440c2a7160bd1e235cf934d5df0e7a3e1ad"
 
 [[package]]
 name = "fast_qr"
-version = "0.8.5"
+version = "0.8.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2688af7b0627fca756414f1378bf1b2ab4418f541dda829514b2fcb4fa828eb9"
+checksum = "384b373fdbfe37320939c04845ff030e142dbfa1f4dc4857d1270b81c74025d8"
 dependencies = [
  "wasm-bindgen",
 ]
