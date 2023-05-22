@@ -33,7 +33,7 @@ clap = { version = "4", features = ["derive", "cargo", "wrap_help", "deprecated"
 clap_complete = "4"
 clap_mangen = "0.2"
 comrak = { version = "0.18", default-features = false }
-fast_qr = { version = "0.8", features = ["svg"] }
+fast_qr = { version = "0.9", features = ["svg"] }
 futures = "0.3"
 if-addrs = "0.10"
 hex = "0.4"
