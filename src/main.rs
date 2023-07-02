@@ -1,4 +1,4 @@
-use std::io::{self, Write};
+use std::io::{self, IsTerminal, Write};
 use std::net::{IpAddr, SocketAddr, TcpListener};
 use std::thread;
 use std::time::Duration;
@@ -110,7 +110,7 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
         // terminal, we should refuse to start for security reasons. This would be the case when
         // running miniserve as a service but forgetting to set the path. This could be pretty
         // dangerous if given with an undesired context path (for instance /root or /).
-        if !atty::is(atty::Stream::Stdout) {
+        if !io::stdout().is_terminal() {
             return Err(ContextualError::NoExplicitPathAndNoTerminal);
         }
 
@@ -232,7 +232,7 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
     );
 
     // print QR code to terminal
-    if miniserve_config.show_qrcode && atty::is(atty::Stream::Stdout) {
+    if miniserve_config.show_qrcode && io::stdout().is_terminal() {
         for url in display_urls
             .iter()
             .filter(|url| !url.contains("//127.0.0.1:") && !url.contains("//[::1]:"))
@@ -249,7 +249,7 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
         }
     }
 
-    if atty::is(atty::Stream::Stdout) {
+    if io::stdout().is_terminal() {
         println!("Quit by pressing CTRL-C");
     }
 
