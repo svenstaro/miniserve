@@ -53,7 +53,7 @@ serde = { version = "1", features = ["derive"] }
 sha2 = "0.10"
 simplelog = "0.12"
 socket2 = "0.5"
-strum = { version = "0.24", features = ["derive"] }
+strum = { version = "0.25", features = ["derive"] }
 tar = "0.4"
 thiserror = "1"
 yansi = "0.5"
