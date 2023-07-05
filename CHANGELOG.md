@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+- Allow parameters to be provided via environment variables [#1160](https://github.com/svenstaro/miniserve/pull/1160)
 
 ## [0.23.2] - 2023-04-28
 - Build Windows build with static CRT [#1107](https://github.com/svenstaro/miniserve/pull/1107)
