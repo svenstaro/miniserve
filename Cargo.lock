@@ -1604,7 +1604,7 @@ dependencies = [
  "regex",
  "reqwest",
  "rstest",
- "rustls 0.20.8",
+ "rustls 0.21.2",
  "rustls-pemfile",
  "select",
  "serde",
