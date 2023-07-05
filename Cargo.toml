@@ -31,13 +31,14 @@ chrono-humanize = "0.2"
 clap = { version = "4", features = ["derive", "cargo", "wrap_help", "deprecated", "env"] }
 clap_complete = "4"
 clap_mangen = "0.2"
+colored = "2"
 comrak = { version = "0.18", default-features = false }
 fast_qr = { version = "0.9", features = ["svg"] }
 futures = "0.3"
-if-addrs = "0.10"
 hex = "0.4"
 http = "0.2"
 httparse = "1"
+if-addrs = "0.10"
 libflate = "1"
 log = "0.4"
 maud = "0.25"
@@ -55,7 +56,6 @@ socket2 = "0.5"
 strum = { version = "0.25", features = ["derive"] }
 tar = "0.4"
 thiserror = "1"
-yansi = "0.5"
 zip = { version = "0.6.5", default-features = false }
 
 [features]

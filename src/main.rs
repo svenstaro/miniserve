@@ -10,9 +10,9 @@ use actix_web::{
 use actix_web_httpauth::middleware::HttpAuthentication;
 use anyhow::Result;
 use clap::{crate_version, CommandFactory, Parser};
+use colored::*;
 use fast_qr::QRBuilder;
 use log::{error, warn};
-use yansi::{Color, Paint};
 
 mod archive;
 mod args;
@@ -57,10 +57,6 @@ fn main() -> Result<()> {
 
 #[actix_web::main(miniserve)]
 async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
-    if cfg!(windows) && !Paint::enable_windows_ascii() {
-        Paint::disable();
-    }
-
     let log_level = if miniserve_config.verbose {
         simplelog::LevelFilter::Info
     } else {
@@ -69,9 +65,15 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
 
     simplelog::TermLogger::init(
         log_level,
-        simplelog::Config::default(),
+        simplelog::ConfigBuilder::new()
+            .set_time_format_rfc2822()
+            .build(),
         simplelog::TerminalMode::Mixed,
-        simplelog::ColorChoice::Auto,
+        if io::stdout().is_terminal() {
+            simplelog::ColorChoice::Auto
+        } else {
+            simplelog::ColorChoice::Never
+        },
     )
     .or_else(|_| simplelog::SimpleLogger::init(log_level, simplelog::Config::default()))
     .expect("Couldn't initialize logger");
@@ -102,7 +104,7 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
 
     println!(
         "{name} v{version}",
-        name = Paint::new("miniserve").bold(),
+        name = "miniserve".bold(),
         version = crate_version!()
     );
     if !miniserve_config.path_explicitly_chosen {
@@ -176,7 +178,7 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
 
     let display_sockets = socket_addresses
         .iter()
-        .map(|sock| Color::Green.paint(sock.to_string()).bold().to_string())
+        .map(|sock| sock.to_string().green().bold().to_string())
         .collect::<Vec<_>>();
 
     let srv = actix_web::HttpServer::new(move || {
@@ -220,13 +222,13 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
 
     println!("Bound to {}", display_sockets.join(", "));
 
-    println!("Serving path {}", Color::Yellow.paint(path_string).bold());
+    println!("Serving path {}", path_string.yellow().bold());
 
     println!(
         "Available at (non-exhaustive list):\n    {}\n",
         display_urls
             .iter()
-            .map(|url| Color::Green.paint(url).bold().to_string())
+            .map(|url| url.green().bold().to_string())
             .collect::<Vec<_>>()
             .join("\n    "),
     );
@@ -239,7 +241,7 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
         {
             match QRBuilder::new(url.clone()).ecl(consts::QR_EC_LEVEL).build() {
                 Ok(qr) => {
-                    println!("QR code for {}:", Color::Green.paint(url).bold());
+                    println!("QR code for {}:", url.green().bold());
                     qr.print();
                 }
                 Err(e) => {

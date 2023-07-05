@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+- Fix ANSI color codes are printed when not a tty [#1095](https://github.com/svenstaro/miniserve/pull/1095)
 - Allow parameters to be provided via environment variables [#1160](https://github.com/svenstaro/miniserve/pull/1160)
 
 ## [0.23.2] - 2023-04-28
