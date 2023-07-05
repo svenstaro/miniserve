@@ -121,86 +121,123 @@ Some mobile browsers like Firefox on Android will offer to open the camera app w
       [PATH]
               Which path to serve
 
+              [env: MINISERVE_PATH=]
+
     Options:
       -v, --verbose
               Be verbose, includes emitting access logs
 
+              [env: MINISERVE_VERBOSE=]
+
           --index <INDEX>
               The name of a directory index file to serve, like "index.html"
 
-              Normally, when miniserve serves a directory, it creates a listing for that
-              directory. However, if a directory contains this file, miniserve will serve that
-              file instead.
+              Normally, when miniserve serves a directory, it creates a listing for that directory.
+              However, if a directory contains this file, miniserve will serve that file instead.
+
+              [env: MINISERVE_INDEX=]
 
           --spa
               Activate SPA (Single Page Application) mode
 
-              This will cause the file given by --index to be served for all non-existing file
-              paths. In effect, this will serve the index file whenever a 404 would otherwise
-              occur in order to allow the SPA router to handle the request instead.
+              This will cause the file given by --index to be served for all non-existing file paths. In
+              effect, this will serve the index file whenever a 404 would otherwise occur in order to
+              allow the SPA router to handle the request instead.
+
+              [env: MINISERVE_SPA=]
 
       -p, --port <PORT>
               Port to use
 
+              [env: MINISERVE_PORT=]
               [default: 8080]
 
-      -i, --interfaces <INTERFACES>...
+      -i, --interfaces <INTERFACES>
               Interface to listen on
 
-      -a, --auth <AUTH>...
-              Set authentication. Currently supported formats: username:password,
-              username:sha256:hash, username:sha512:hash (e.g. joe:123,
+              [env: MINISERVE_INTERFACE=]
+
+      -a, --auth <AUTH>
+              Set authentication. Currently supported formats: username:password, username:sha256:hash,
+              username:sha512:hash (e.g. joe:123,
               joe:sha256:a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3)
+
+              [env: MINISERVE_AUTH=]
 
           --route-prefix <ROUTE_PREFIX>
               Use a specific route prefix
 
+              [env: MINISERVE_ROUTE_PREFIX=]
+
           --random-route
               Generate a random 6-hexdigit route
+
+              [env: MINISERVE_RANDOM_ROUTE=]
 
       -P, --no-symlinks
               Hide symlinks in listing and prevent them from being followed
 
+              [env: MINISERVE_NO_SYMLINKS=]
+
       -H, --hidden
               Show hidden files
+
+              [env: MINISERVE_HIDDEN=]
 
       -c, --color-scheme <COLOR_SCHEME>
               Default color scheme
 
+              [env: MINISERVE_COLOR_SCHEME=]
               [default: squirrel]
               [possible values: squirrel, archlinux, zenburn, monokai]
 
       -d, --color-scheme-dark <COLOR_SCHEME_DARK>
               Default color scheme
 
+              [env: MINISERVE_COLOR_SCHEME_DARK=]
               [default: archlinux]
               [possible values: squirrel, archlinux, zenburn, monokai]
 
       -q, --qrcode
               Enable QR code display
 
+              [env: MINISERVE_QRCODE=]
+
       -u, --upload-files [<ALLOWED_UPLOAD_DIR>]
               Enable file uploading (and optionally specify for which directory)
+
+              [env: MINISERVE_ALLOWED_UPLOAD_DIR=]
 
       -U, --mkdir
               Enable creating directories
 
+              [env: MINISERVE_MKDIR_ENABLED=]
+
       -m, --media-type <MEDIA_TYPE>
               Specify uploadable media types
 
+              [env: MINISERVE_MEDIA_TYPE=]
               [possible values: image, audio, video]
 
       -M, --raw-media-type <MEDIA_TYPE_RAW>
               Directly specify the uploadable media type expression
 
+              [env: MINISERVE_RAW_MEDIA_TYPE=]
+
       -o, --overwrite-files
               Enable overriding existing files during file upload
+
+              [env: OVERWRITE_FILES=]
 
       -r, --enable-tar
               Enable uncompressed tar archive generation
 
+              [env: MINISERVE_ENABLE_TAR=]
+
       -g, --enable-tar-gz
               Enable gz-compressed tar archive generation
+
+              [env: MINISERVE_ENABLE_TAR_GZ=]
 
       -z, --enable-zip
               Enable zip archive generation
@@ -208,26 +245,42 @@ Some mobile browsers like Firefox on Android will offer to open the camera app w
               WARNING: Zipping large directories can result in out-of-memory exception because zip
               generation is done in memory and cannot be sent on the fly
 
+              [env: MINISERVE_ENABLE_ZIP=]
+
       -D, --dirs-first
               List directories first
+
+              [env: MINISERVE_DIRS_FIRST=]
 
       -t, --title <TITLE>
               Shown instead of host in page title and heading
 
-          --header <HEADER>...
+              [env: MINISERVE_TITLE=]
+
+          --header <HEADER>
               Set custom header for responses
+
+              [env: MINISERVE_HEADER=]
 
       -l, --show-symlink-info
               Visualize symlinks in directory listing
 
+              [env: MINISERVE_SHOW_SYMLINK_INFO=]
+
       -F, --hide-version-footer
               Hide version footer
+
+              [env: MINISERVE_HIDE_VERSION_FOOTER=]
 
           --hide-theme-selector
               Hide theme selector
 
+              [env: MINISERVE_HIDE_THEME_SELECTOR=]
+
       -W, --show-wget-footer
               If enabled, display a wget command to recursively download the current directory
+
+              [env: MINISERVE_SHOW_WGET_FOOTER=]
 
           --print-completions <shell>
               Generate completion file for a shell
@@ -240,17 +293,23 @@ Some mobile browsers like Firefox on Android will offer to open the camera app w
           --tls-cert <TLS_CERT>
               TLS certificate to use
 
+              [env: MINISERVE_TLS_CERT=]
+
           --tls-key <TLS_KEY>
               TLS private key to use
+
+              [env: MINISERVE_TLS_KEY=]
 
           --readme
               Enable README.md rendering in directories
 
+              [env: MINISERVE_README=]
+
       -h, --help
-              Print help information (use `-h` for a summary)
+              Print help (see a summary with '-h')
 
       -V, --version
-              Print version information
+              Print version
 
 ## How to install
 
