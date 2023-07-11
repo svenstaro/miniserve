@@ -56,26 +56,24 @@ pub fn page(
             (page_header(&title_path, conf.file_upload, &conf.favicon_route, &conf.css_route))
 
             body #drop-container
-                .(format!("default_theme_{}", conf.default_color_scheme))
-                .(format!("default_theme_dark_{}", conf.default_color_scheme_dark)) {
+                // .(format!("default_theme_{}", conf.default_color_scheme))
+                // .(format!("default_theme_dark_{}", conf.default_color_scheme_dark)) {
+            {
 
                 (PreEscaped(r#"
                     <script>
                         // read theme from local storage and apply it to body
                         const body = document.body;
                         var theme = localStorage.getItem('theme');
-
-                        if (theme != null && theme != 'default') {
-                            body.classList.add('theme_' + theme);
-                        }
+                        updateColorScheme(theme)
 
                         // updates the color scheme by replacing the appropriate class
                         // on body and saving the new theme to local storage
                         function updateColorScheme(name) {
-                            body.classList.remove.apply(body.classList, Array.from(body.classList).filter(v=>v.startsWith("theme_")));
-
-                            if (name != "default") {
-                                body.classList.add('theme_' + name);
+                            if (name && name != "default") {
+                                body.setAttribute("data-theme", name)
+                            } else {
+                                body.removeAttribute("data-theme")
                             }
 
                             localStorage.setItem('theme', name);
@@ -377,7 +375,7 @@ fn color_scheme_selector(hide_theme_selector: bool) -> Markup {
                 }
                 ul.theme {
                     @for color_scheme in THEME_PICKER_CHOICES {
-                        li.(format!("theme_{}", color_scheme.1)) {
+                        li data-theme=(color_scheme.1) {
                             (color_scheme_link(color_scheme))
                         }
                     }
@@ -586,6 +584,7 @@ fn page_header(title: &str, file_upload: bool, favicon_route: &str, css_route: &
             meta charset="utf-8";
             meta http-equiv="X-UA-Compatible" content="IE=edge";
             meta name="viewport" content="width=device-width, initial-scale=1";
+            meta name="color-scheme" content="dark light";
 
             link rel="icon" type="image/svg+xml" href={ (favicon_route) };
             link rel="stylesheet" href={ (css_route) };
@@ -667,8 +666,8 @@ pub fn render_error(
                     <script>
                         // read theme from local storage and apply it to body
                         var theme = localStorage.getItem('theme');
-                        if (theme != null && theme != 'default') {
-                            document.body.classList.add('theme_' + theme);
+                        if (theme && theme != "default") {
+                            body.setAttribute("data-theme", name)
                         }
                     </script>
                     "#))

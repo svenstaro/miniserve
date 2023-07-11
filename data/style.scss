@@ -215,14 +215,14 @@ nav .theme li a:hover {
     color: var(--switch_theme_active);
 }
 
-@each $theme in $themes {
-    body.theme_#{$theme} nav .theme li.theme_#{$theme} a {
-        @extend %active_theme_link;
-    }
+body:not([data-theme]) nav .theme li[data-theme="default"] a {
+    @extend %active_theme_link;
 }
 
-#{body_not_themed()} nav .theme li.theme_default a {
-    @extend %active_theme_link;
+@each $theme in $themes {
+    body[data-theme="#{$theme}"] nav .theme li[data-theme="#{$theme}"] a {
+        @extend %active_theme_link;
+    }
 }
 
 p {
@@ -779,39 +779,23 @@ th span.active span {
     }
 }
 
+body:not([data-theme]) {
+    @include theme_squirrel();
+}
+
+@media (prefers-color-scheme: dark) {
+    body:not([data-theme]) {
+        @include theme_monokai();
+    }
+}
+
 // For each of the themes, define a placeholder selector containing
 // the themes variables. Then add selectors for body when the theme:
 // - has explicitly been activated by .theme_*
 // - is set as default theme by .default_theme_* and no other theme is active
 // to the placeholder selector list by means of @extend.
 @each $theme in $themes {
-    %theme_#{$theme} {
+    body[data-theme="#{$theme}"] {
         @include theme($theme);
-    }
-
-    body.theme_#{$theme} {
-        @extend %theme_#{$theme};
-    }
-
-    #{body_not_themed()}.default_theme_#{$theme} {
-        @extend %theme_#{$theme};
-    }
-}
-
-// Do the same thing again for the dark mode default.
-// Since the media query doesn't affect specificity, all dark mode
-// defaults need to come after all light mode defaults to override
-// them when dark mode is enabled.
-@each $theme in $themes {
-    @media (prefers-color-scheme: dark) {
-        %theme_dark_#{$theme} {
-            @include theme($theme);
-        }
-    }
-
-    // this extension will still end up inside the media query,
-    // because that is where %theme_dark_* was defined
-    #{body_not_themed()}.default_theme_dark_#{$theme} {
-        @extend %theme_dark_#{$theme};
     }
 }
