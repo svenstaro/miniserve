@@ -346,6 +346,21 @@ pub enum ThemeSlug {
     Monokai,
 }
 
+impl ThemeSlug {
+    pub fn css(&self) -> &str {
+        match self {
+            ThemeSlug::Squirrel => include_str!(concat!(env!("OUT_DIR"), "/theme-squirrel.css")),
+            ThemeSlug::Archlinux => include_str!(concat!(env!("OUT_DIR"), "/theme-archlinux.css")),
+            ThemeSlug::Zenburn => include_str!(concat!(env!("OUT_DIR"), "/theme-zenburn.css")),
+            ThemeSlug::Monokai => include_str!(concat!(env!("OUT_DIR"), "/theme-monokai.css")),
+        }
+    }
+
+    pub fn css_dark(&self) -> String {
+        format!("@media (prefers-color-scheme: dark) {{\n{}}}", self.css())
+    }
+}
+
 /// Partial: qr code spoiler
 fn qr_spoiler(show_qrcode: bool, content: &Uri) -> Markup {
     html! {
