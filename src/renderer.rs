@@ -56,8 +56,6 @@ pub fn page(
             (page_header(&title_path, conf.file_upload, &conf.favicon_route, &conf.css_route))
 
             body #drop-container
-                // .(format!("default_theme_{}", conf.default_color_scheme))
-                // .(format!("default_theme_dark_{}", conf.default_color_scheme_dark)) {
             {
 
                 (PreEscaped(r#"
