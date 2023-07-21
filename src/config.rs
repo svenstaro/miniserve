@@ -1,6 +1,7 @@
 #[cfg(feature = "tls")]
 use std::{fs::File, io::BufReader};
 use std::{
+    io::BufRead,
     net::{IpAddr, Ipv4Addr, Ipv6Addr},
     path::PathBuf,
 };
@@ -14,7 +15,7 @@ use http::HeaderMap;
 use rustls_pemfile as pemfile;
 
 use crate::{
-    args::{CliArgs, MediaType},
+    args::{parse_auth, CliArgs, MediaType},
     auth::RequiredAuth,
     file_upload::sanitize_path,
     renderer::ThemeSlug,
@@ -157,6 +158,17 @@ impl MiniserveConfig {
             _ => "".to_owned(),
         };
 
+        let mut auth = args.auth;
+
+        if let Some(path) = args.auth_file {
+            let file = File::open(path)?;
+            let lines = BufReader::new(file).lines();
+
+            for line in lines {
+                auth.push(parse_auth(line?.as_str())?);
+            }
+        }
+
         // Generate some random routes for the favicon and css so that they are very unlikely to conflict with
         // real files.
         // If --random-route is enabled , in order to not leak the random generated route, we must not use it
@@ -239,7 +251,7 @@ impl MiniserveConfig {
             path: args.path.unwrap_or_else(|| PathBuf::from(".")),
             port,
             interfaces,
-            auth: args.auth,
+            auth,
             path_explicitly_chosen,
             no_symlinks: args.no_symlinks,
             show_hidden: args.hidden,
