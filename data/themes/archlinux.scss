@@ -1,3 +1,5 @@
+$generate_default: true !default;
+
 @mixin theme {
   --background: #383c4a;
   --text_color: #fefefe;
@@ -43,4 +45,10 @@
   --size_text_color: #fefefe;
   --error_color: #e44b4b;
   --footer_color: #8eabcc;
+};
+
+@if $generate_default {
+  body {
+    @include theme;
+  }
 }

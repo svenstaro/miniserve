@@ -28,7 +28,7 @@ mod renderer;
 use crate::config::MiniserveConfig;
 use crate::errors::ContextualError;
 
-static STYLESHEET: &str = include_str!(concat!(env!("OUT_DIR"), "/style.css"));
+static STYLESHEET: &str = grass::include!("data/style.scss");
 
 fn main() -> Result<()> {
     let args = args::CliArgs::parse();

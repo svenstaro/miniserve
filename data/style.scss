@@ -1,8 +1,7 @@
-@use "sass:selector";
-@use "themes/archlinux";
-@use "themes/monokai";
-@use "themes/squirrel";
-@use "themes/zenburn";
+@use "themes/archlinux" with ($generate_default: false);
+@use "themes/monokai" with ($generate_default: false);
+@use "themes/squirrel" with ($generate_default: false);
+@use "themes/zenburn" with ($generate_default: false);
 
 // theme colors can be found at the bottom
 $themes: squirrel, archlinux, monokai, zenburn;
