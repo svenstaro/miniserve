@@ -5,6 +5,7 @@ use actix_web::{
     HttpRequest, HttpResponse, ResponseError,
 };
 use futures::prelude::*;
+use std::str::FromStr;
 use thiserror::Error;
 
 use crate::{renderer::render_error, MiniserveConfig};
@@ -131,8 +132,15 @@ where
         let res = fut.await?.map_into_boxed_body();
 
         if (res.status().is_client_error() || res.status().is_server_error())
-            && res.headers().get(header::CONTENT_TYPE).map(AsRef::as_ref)
-                == Some(mime::TEXT_PLAIN_UTF_8.essence_str().as_bytes())
+            && res
+                .headers()
+                .get(header::CONTENT_TYPE)
+                .map(AsRef::as_ref)
+                .and_then(|s| std::str::from_utf8(s).ok())
+                .and_then(|s| mime::Mime::from_str(s).ok())
+                .as_ref()
+                .map(mime::Mime::essence_str)
+                == Some(mime::TEXT_PLAIN.as_ref())
         {
             let req = res.request().clone();
             Ok(res.map_body(|head, body| map_error_page(&req, head, body)))
