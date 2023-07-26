@@ -199,15 +199,6 @@ nav .theme li a:hover {
     color: var(--change_theme_link_color_hover);
 }
 
-%active_theme_link {
-    font-weight: bold;
-    color: var(--switch_theme_active);
-}
-
-body:not([data-theme]) nav .theme li[data-theme="default"] a {
-    @extend %active_theme_link;
-}
-
 p {
     margin: 0;
     padding: 0;
@@ -572,9 +563,21 @@ th span.active span {
     }
 }
 
+%active_theme_link {
+    font-weight: bold;
+    color: var(--switch_theme_active);
+}
+
+// when no specific theme is applied, highlight the `default` theme button in
+// the theme menu
+body:not([data-theme]) nav .theme li[data-theme="default"] a {
+    @extend %active_theme_link;
+}
+
 @each $theme in $themes {
     body[data-theme="#{$theme}"] {
         @include theme($theme);
+        // highlight the currently active theme in the theme selection menu
         nav .theme li[data-theme="#{$theme}"] a {
             @extend %active_theme_link;
         }
