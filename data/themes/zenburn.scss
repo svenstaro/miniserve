@@ -1,0 +1,54 @@
+$generate_default: true !default;
+
+@mixin theme {
+  --background: #3f3f3f;
+  --text_color: #efefef;
+  --directory_link_color: #f0dfaf;
+  --directory_link_color_visited: #ebc390;
+  --file_link_color: #87d6d5;
+  --file_link_color_visited: #a7b9ec;
+  --symlink_color: #11a8cd;
+  --table_background: #4a4949;
+  --table_text_color: #efefef;
+  --table_header_background: #7f9f7f;
+  --table_header_text_color: #efefef;
+  --table_header_active_color: #efef8f;
+  --active_row_color: #7e9f7f9c;
+  --odd_row_background: #777777;
+  --even_row_background: #5a5a5a;
+  --root_link_color: #dca3a3;
+  --download_button_background: #cc9393;
+  --download_button_background_hover: #dca3a3;
+  --download_button_link_color: #efefef;
+  --download_button_link_color_hover: #efefef;
+  --back_button_background: #cc9393;
+  --back_button_background_hover: #cc9393;
+  --back_button_link_color: #efefef;
+  --back_button_link_color_hover: #efefef;
+  --date_text_color: #cfbfaf;
+  --at_color: #cfbfaf;
+  --switch_theme_background: #4a4949;
+  --switch_theme_link_color: #efefef;
+  --switch_theme_active: #efef8f;
+  --switch_theme_border: #5a5a5a;
+  --change_theme_link_color: #efefef;
+  --change_theme_link_color_hover: #efefef;
+  --upload_text_color: #efefef;
+  --upload_form_border_color: #4a4949;
+  --upload_form_background: #777777;
+  --upload_button_background: #cc9393;
+  --upload_button_text_color: #efefef;
+  --drag_background: #3333338f;
+  --drag_border_color: #efefef;
+  --drag_text_color: #efefef;
+  --size_background_color: #7f9f7f;
+  --size_text_color: #efefef;
+  --error_color: #d06565;
+  --footer_color: #bfaf9f;
+};
+
+@if $generate_default {
+  body {
+    @include theme;
+  }
+}

@@ -28,6 +28,8 @@ mod renderer;
 use crate::config::MiniserveConfig;
 use crate::errors::ContextualError;
 
+static STYLESHEET: &str = grass::include!("data/style.scss");
+
 fn main() -> Result<()> {
     let args = args::CliArgs::parse();
 
@@ -181,10 +183,20 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
         .map(|sock| sock.to_string().green().bold().to_string())
         .collect::<Vec<_>>();
 
+    let stylesheet = web::Data::new(
+        [
+            STYLESHEET,
+            inside_config.default_color_scheme.css(),
+            inside_config.default_color_scheme_dark.css_dark().as_str(),
+        ]
+        .join("\n"),
+    );
+
     let srv = actix_web::HttpServer::new(move || {
         App::new()
             .wrap(configure_header(&inside_config.clone()))
             .app_data(inside_config.clone())
+            .app_data(stylesheet.clone())
             .wrap_fn(errors::error_page_middleware)
             .wrap(middleware::Logger::default())
             .route(&inside_config.favicon_route, web::get().to(favicon))
@@ -345,9 +357,8 @@ async fn favicon() -> impl Responder {
         .body(logo)
 }
 
-async fn css() -> impl Responder {
-    let css = include_str!(concat!(env!("OUT_DIR"), "/style.css"));
+async fn css(stylesheet: web::Data<String>) -> impl Responder {
     HttpResponse::Ok()
         .insert_header(ContentType(mime::TEXT_CSS))
-        .body(css)
+        .body(stylesheet.to_string())
 }

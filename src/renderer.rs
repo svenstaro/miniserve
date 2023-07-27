@@ -56,33 +56,7 @@ pub fn page(
             (page_header(&title_path, conf.file_upload, &conf.favicon_route, &conf.css_route))
 
             body #drop-container
-                .(format!("default_theme_{}", conf.default_color_scheme))
-                .(format!("default_theme_dark_{}", conf.default_color_scheme_dark)) {
-
-                (PreEscaped(r#"
-                    <script>
-                        // read theme from local storage and apply it to body
-                        const body = document.body;
-                        var theme = localStorage.getItem('theme');
-
-                        if (theme != null && theme != 'default') {
-                            body.classList.add('theme_' + theme);
-                        }
-
-                        // updates the color scheme by replacing the appropriate class
-                        // on body and saving the new theme to local storage
-                        function updateColorScheme(name) {
-                            body.classList.remove.apply(body.classList, Array.from(body.classList).filter(v=>v.startsWith("theme_")));
-
-                            if (name != "default") {
-                                body.classList.add('theme_' + name);
-                            }
-
-                            localStorage.setItem('theme', name);
-                        }
-                    </script>
-                    "#))
-
+            {
                 div.toolbar_box_group {
                     @if conf.file_upload {
                         div.form {
@@ -348,6 +322,21 @@ pub enum ThemeSlug {
     Monokai,
 }
 
+impl ThemeSlug {
+    pub fn css(&self) -> &str {
+        match self {
+            ThemeSlug::Squirrel => grass::include!("data/themes/squirrel.scss"),
+            ThemeSlug::Archlinux => grass::include!("data/themes/archlinux.scss"),
+            ThemeSlug::Zenburn => grass::include!("data/themes/zenburn.scss"),
+            ThemeSlug::Monokai => grass::include!("data/themes/monokai.scss"),
+        }
+    }
+
+    pub fn css_dark(&self) -> String {
+        format!("@media (prefers-color-scheme: dark) {{\n{}}}", self.css())
+    }
+}
+
 /// Partial: qr code spoiler
 fn qr_spoiler(show_qrcode: bool, content: &Uri) -> Markup {
     html! {
@@ -377,7 +366,7 @@ fn color_scheme_selector(hide_theme_selector: bool) -> Markup {
                 }
                 ul.theme {
                     @for color_scheme in THEME_PICKER_CHOICES {
-                        li.(format!("theme_{}", color_scheme.1)) {
+                        li data-theme=(color_scheme.1) {
                             (color_scheme_link(color_scheme))
                         }
                     }
@@ -586,11 +575,39 @@ fn page_header(title: &str, file_upload: bool, favicon_route: &str, css_route: &
             meta charset="utf-8";
             meta http-equiv="X-UA-Compatible" content="IE=edge";
             meta name="viewport" content="width=device-width, initial-scale=1";
+            meta name="color-scheme" content="dark light";
 
             link rel="icon" type="image/svg+xml" href={ (favicon_route) };
             link rel="stylesheet" href={ (css_route) };
 
             title { (title) }
+
+            (PreEscaped(r#"
+                <script>
+                    // updates the color scheme by setting the theme data attribute
+                    // on body and saving the new theme to local storage
+                    function updateColorScheme(name) {
+                        if (name && name != "default") {
+                            localStorage.setItem('theme', name);
+                            document.body.setAttribute("data-theme", name)
+                        } else {
+                            localStorage.removeItem('theme');
+                            document.body.removeAttribute("data-theme")
+                        }
+                    }
+
+                    // read theme from local storage and apply it to body
+                    function loadColorScheme() {
+                        var name = localStorage.getItem('theme');
+                        updateColorScheme(name);
+                    }
+
+                    // load saved theme on page load
+                    addEventListener("load", loadColorScheme);
+                    // load saved theme when local storage is changed (synchronize between tabs)
+                    addEventListener("storage", loadColorScheme);
+                </script>
+            "#))
 
             @if file_upload {
                 (PreEscaped(r#"
@@ -660,19 +677,8 @@ pub fn render_error(
         html {
             (page_header(&error_code.to_string(), false, &conf.favicon_route, &conf.css_route))
 
-            body.(format!("default_theme_{}", conf.default_color_scheme))
-                .(format!("default_theme_dark_{}", conf.default_color_scheme_dark)) {
-
-                (PreEscaped(r#"
-                    <script>
-                        // read theme from local storage and apply it to body
-                        var theme = localStorage.getItem('theme');
-                        if (theme != null && theme != 'default') {
-                            document.body.classList.add('theme_' + theme);
-                        }
-                    </script>
-                    "#))
-
+            body
+            {
                 div.error {
                     p { (error_code.to_string()) }
                     @for error in error_description.lines() {
