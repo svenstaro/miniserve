@@ -267,8 +267,9 @@ fn wget_footer(abs_path: &Uri, root_dir_name: Option<&str>, current_user: Option
         None => String::new(),
     };
 
+    let encoded_abs_path = abs_path.to_string().replace("'", "%27");
     let command =
-        format!("wget -rcnHp -R 'index.html*'{cut_dirs}{user_params} '{abs_path}?raw=true'");
+        format!("wget -rcnHp -R 'index.html*'{cut_dirs}{user_params} '{encoded_abs_path}?raw=true'");
     let click_to_copy = format!("navigator.clipboard.writeText(\"{command}\")");
 
     html! {
