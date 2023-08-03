@@ -72,7 +72,11 @@ pub struct CliArgs {
     )]
     pub auth: Vec<auth::RequiredAuth>,
 
-    /// Read authentication values from a file
+    /// Read authentication values from a file. Example file content:
+    ///
+    /// joe:123
+    /// bob:sha256:a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3
+    /// bill:
     #[arg(long, value_hint = ValueHint::FilePath, env = "MINISERVE_AUTH_FILE")]
     pub auth_file: Option<PathBuf>,
 
