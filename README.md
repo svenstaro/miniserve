@@ -47,6 +47,10 @@ Sometimes this is just a more practical and quick way than doing things properly
 
     pw=$(echo -n "123" | sha256sum | cut -f 1 -d ' ')
     miniserve --auth joe:sha256:$pw unreleased-linux-distros/
+    
+### Require username/password from file (separate logins with new lines):
+
+    miniserve --auth-file auth.txt unreleased-linux-distros/
 
 ### Generate random 6-hexdigit URL:
 
