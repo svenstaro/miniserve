@@ -268,6 +268,24 @@ fn serve_index_instead_of_404_in_spa_mode(
 }
 
 #[rstest]
+#[case(server_no_stderr(&["--pretty-urls", "--index", FILES[1]]), "/")]
+#[case(server_no_stderr(&["--pretty-urls", "--index", FILES[1]]), "test.html")]
+#[case(server_no_stderr(&["--pretty-urls", "--index", FILES[1]]), "test")]
+fn serve_file_instead_of_404_in_pretty_urls_mode(
+    #[case] server: TestServer,
+    #[case] url: &str,
+) -> Result<(), Error> {
+    let body = reqwest::blocking::get(format!("{}{}", server.url(), url))?.error_for_status()?;
+    let parsed = Document::from_read(body)?;
+    assert!(parsed
+        .find(|x: &Node| x.text() == "Test Hello Yes")
+        .next()
+        .is_some());
+
+    Ok(())
+}
+
+#[rstest]
 #[case(server(&["--route-prefix", "foobar"]))]
 #[case(server(&["--route-prefix", "/foobar/"]))]
 fn serves_requests_with_route_prefix(#[case] server: TestServer) -> Result<(), Error> {

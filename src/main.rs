@@ -5,7 +5,9 @@ use std::time::Duration;
 
 use actix_files::NamedFile;
 use actix_web::{
-    http::header::ContentType, middleware, web, App, HttpRequest, HttpResponse, Responder,
+    dev::{fn_service, ServiceRequest, ServiceResponse},
+    http::header::ContentType,
+    middleware, web, App, HttpRequest, HttpResponse, Responder,
 };
 use actix_web_httpauth::middleware::HttpAuthentication;
 use anyhow::Result;
@@ -314,6 +316,26 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
                         .expect("Can't open SPA index file."),
                 );
             }
+        }
+
+        if conf.pretty_urls {
+            log::info!("Pretty URLs enabled.");
+            files = files.default_handler(fn_service(|req: ServiceRequest| async {
+                let (req, _) = req.into_parts();
+                let conf = req
+                    .app_data::<MiniserveConfig>()
+                    .expect("Could not get miniserve config");
+                let mut path_base = req.path()[1..].to_string();
+                if path_base.ends_with('/') {
+                    path_base.pop();
+                }
+                if !path_base.ends_with("html") {
+                    path_base = format!("{}.html", path_base);
+                }
+                let file = NamedFile::open_async(conf.path.join(path_base)).await?;
+                let res = file.into_response(&req);
+                Ok(ServiceResponse::new(req, res))
+            }));
         }
 
         if conf.show_hidden {

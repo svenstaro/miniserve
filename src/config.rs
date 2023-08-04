@@ -80,6 +80,13 @@ pub struct MiniserveConfig {
     /// allow the SPA router to handle the request instead.
     pub spa: bool,
 
+    /// Activate Pretty URLs mode
+    ///
+    /// This will cause the server to serve the equivalent `.html` file indicated by the path.
+    ///
+    /// `/about` will try to find `about.html` and serve it.
+    pub pretty_urls: bool,
+
     /// Enable QR code display
     pub show_qrcode: bool,
 
@@ -250,6 +257,7 @@ impl MiniserveConfig {
             default_color_scheme_dark,
             index: args.index,
             spa: args.spa,
+            pretty_urls: args.pretty_urls,
             overwrite_files: args.overwrite_files,
             show_qrcode: args.qrcode,
             mkdir_enabled: args.mkdir_enabled,

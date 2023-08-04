@@ -41,6 +41,14 @@ pub struct CliArgs {
     #[arg(long, requires = "index", env = "MINISERVE_SPA")]
     pub spa: bool,
 
+    /// Activate Pretty URLs mode
+    ///
+    /// This will cause the server to serve the equivalent `.html` file indicated by the path.
+    ///
+    /// `/about` will try to find `about.html` and serve it.
+    #[arg(long, env = "MINISERVE_PRETTY_URLS")]
+    pub pretty_urls: bool,
+
     /// Port to use
     #[arg(
         short = 'p',
