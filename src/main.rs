@@ -318,8 +318,13 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
             }
         }
 
+        // Handle --pretty-urls options.
+        //
+        // We rewrite the request to append ".html" to the path and serve the file. If the
+        // path ends with a `/`, we remove it before appending ".html".
+        //
+        // This is done to allow for pretty URLs, e.g. "/about" instead of "/about.html".
         if conf.pretty_urls {
-            log::info!("Pretty URLs enabled.");
             files = files.default_handler(fn_service(|req: ServiceRequest| async {
                 let (req, _) = req.into_parts();
                 let conf = req
