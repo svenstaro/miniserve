@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+- Add `--pretty-urls` [#1193](https://github.com/svenstaro/miniserve/pull/1193) (thanks @nlopes)
 - Fix single quote display with `--show-wget-footer` [#1191](https://github.com/svenstaro/miniserve/pull/1191) (thanks @d-air1)
 
 ## [0.24.0] - 2023-07-06
