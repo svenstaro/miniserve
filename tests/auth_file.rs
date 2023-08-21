@@ -8,15 +8,17 @@ use select::document::Document;
 use select::predicate::Text;
 
 #[rstest(
-    cli_auth_file_arg, client_username, client_password,
+    cli_auth_file_arg,
+    client_username,
+    client_password,
     case("tests/data/auth1.txt", "joe", "123"),
     case("tests/data/auth1.txt", "bob", "123"),
-    case("tests/data/auth1.txt", "bill", ""),
+    case("tests/data/auth1.txt", "bill", "")
 )]
 fn auth_file_accepts(
     cli_auth_file_arg: &str,
     client_username: &str,
-    client_password: &str
+    client_password: &str,
 ) -> Result<(), Error> {
     let server = server(&["--auth-file", cli_auth_file_arg]);
     let client = Client::new();
@@ -32,16 +34,18 @@ fn auth_file_accepts(
     let parsed = Document::from_read(body)?;
     for &file in FILES {
         assert!(parsed.find(Text).any(|x| x.text() == file));
-    } 
+    }
 
     Ok(())
 }
 
 #[rstest(
-    cli_auth_file_arg, client_username, client_password,
+    cli_auth_file_arg,
+    client_username,
+    client_password,
     case("tests/data/auth1.txt", "joe", "wrongpassword"),
     case("tests/data/auth1.txt", "bob", ""),
-    case("tests/data/auth1.txt", "nonexistentuser", "wrongpassword"),
+    case("tests/data/auth1.txt", "nonexistentuser", "wrongpassword")
 )]
 fn auth_file_rejects(
     cli_auth_file_arg: &str,
