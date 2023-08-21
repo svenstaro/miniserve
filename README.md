@@ -117,203 +117,224 @@ Some mobile browsers like Firefox on Android will offer to open the camera app w
 
 ## Usage
 
-    For when you really just want to serve some files over HTTP right now!
+```
+For when you really just want to serve some files over HTTP right now!
 
-    Usage: miniserve [OPTIONS] [PATH]
+Usage: miniserve [OPTIONS] [PATH]
 
-    Arguments:
-      [PATH]
-              Which path to serve
+Arguments:
+  [PATH]
+          Which path to serve
 
-              [env: MINISERVE_PATH=]
+          [env: MINISERVE_PATH=]
 
-    Options:
-      -v, --verbose
-              Be verbose, includes emitting access logs
+Options:
+  -v, --verbose
+          Be verbose, includes emitting access logs
 
-              [env: MINISERVE_VERBOSE=]
+          [env: MINISERVE_VERBOSE=]
 
-          --index <INDEX>
-              The name of a directory index file to serve, like "index.html"
+      --index <INDEX>
+          The name of a directory index file to serve, like "index.html"
 
-              Normally, when miniserve serves a directory, it creates a listing for that directory.
-              However, if a directory contains this file, miniserve will serve that file instead.
+          Normally, when miniserve serves a directory, it creates a listing for that directory. However, if a directory contains this file, miniserve will serve that file instead.
 
-              [env: MINISERVE_INDEX=]
+          [env: MINISERVE_INDEX=]
 
-          --spa
-              Activate SPA (Single Page Application) mode
+      --spa
+          Activate SPA (Single Page Application) mode
 
-              This will cause the file given by --index to be served for all non-existing file paths. In
-              effect, this will serve the index file whenever a 404 would otherwise occur in order to
-              allow the SPA router to handle the request instead.
+          This will cause the file given by --index to be served for all non-existing file paths. In effect, this will serve the index file whenever a 404 would otherwise occur in
+          order to allow the SPA router to handle the request instead.
 
-              [env: MINISERVE_SPA=]
+          [env: MINISERVE_SPA=]
 
-      -p, --port <PORT>
-              Port to use
+      --pretty-urls
+          Activate Pretty URLs mode
 
-              [env: MINISERVE_PORT=]
-              [default: 8080]
+          This will cause the server to serve the equivalent `.html` file indicated by the path.
 
-      -i, --interfaces <INTERFACES>
-              Interface to listen on
+          `/about` will try to find `about.html` and serve it.
 
-              [env: MINISERVE_INTERFACE=]
+          [env: MINISERVE_PRETTY_URLS=]
 
-      -a, --auth <AUTH>
-              Set authentication. Currently supported formats: username:password, username:sha256:hash,
-              username:sha512:hash (e.g. joe:123,
-              joe:sha256:a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3)
+  -p, --port <PORT>
+          Port to use
 
-              [env: MINISERVE_AUTH=]
+          [env: MINISERVE_PORT=]
+          [default: 8080]
 
-          --route-prefix <ROUTE_PREFIX>
-              Use a specific route prefix
+  -i, --interfaces <INTERFACES>
+          Interface to listen on
 
-              [env: MINISERVE_ROUTE_PREFIX=]
+          [env: MINISERVE_INTERFACE=]
 
-          --random-route
-              Generate a random 6-hexdigit route
+  -a, --auth <AUTH>
+          Set authentication
 
-              [env: MINISERVE_RANDOM_ROUTE=]
+          Currently supported formats:
+          username:password, username:sha256:hash, username:sha512:hash
+          (e.g. joe:123, joe:sha256:a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3)
 
-      -P, --no-symlinks
-              Hide symlinks in listing and prevent them from being followed
+          [env: MINISERVE_AUTH=]
 
-              [env: MINISERVE_NO_SYMLINKS=]
+      --auth-file <AUTH_FILE>
+          Read authentication values from a file
 
-      -H, --hidden
-              Show hidden files
+          Example file content:
 
-              [env: MINISERVE_HIDDEN=]
+          joe:123
+          bob:sha256:a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3
+          bill:
 
-      -c, --color-scheme <COLOR_SCHEME>
-              Default color scheme
+          [env: MINISERVE_AUTH_FILE=]
 
-              [env: MINISERVE_COLOR_SCHEME=]
-              [default: squirrel]
-              [possible values: squirrel, archlinux, zenburn, monokai]
+      --route-prefix <ROUTE_PREFIX>
+          Use a specific route prefix
 
-      -d, --color-scheme-dark <COLOR_SCHEME_DARK>
-              Default color scheme
+          [env: MINISERVE_ROUTE_PREFIX=]
 
-              [env: MINISERVE_COLOR_SCHEME_DARK=]
-              [default: archlinux]
-              [possible values: squirrel, archlinux, zenburn, monokai]
+      --random-route
+          Generate a random 6-hexdigit route
 
-      -q, --qrcode
-              Enable QR code display
+          [env: MINISERVE_RANDOM_ROUTE=]
 
-              [env: MINISERVE_QRCODE=]
+  -P, --no-symlinks
+          Hide symlinks in listing and prevent them from being followed
 
-      -u, --upload-files [<ALLOWED_UPLOAD_DIR>]
-              Enable file uploading (and optionally specify for which directory)
+          [env: MINISERVE_NO_SYMLINKS=]
 
-              [env: MINISERVE_ALLOWED_UPLOAD_DIR=]
+  -H, --hidden
+          Show hidden files
 
-      -U, --mkdir
-              Enable creating directories
+          [env: MINISERVE_HIDDEN=]
 
-              [env: MINISERVE_MKDIR_ENABLED=]
+  -c, --color-scheme <COLOR_SCHEME>
+          Default color scheme
 
-      -m, --media-type <MEDIA_TYPE>
-              Specify uploadable media types
+          [env: MINISERVE_COLOR_SCHEME=]
+          [default: squirrel]
+          [possible values: squirrel, archlinux, zenburn, monokai]
 
-              [env: MINISERVE_MEDIA_TYPE=]
-              [possible values: image, audio, video]
+  -d, --color-scheme-dark <COLOR_SCHEME_DARK>
+          Default color scheme
 
-      -M, --raw-media-type <MEDIA_TYPE_RAW>
-              Directly specify the uploadable media type expression
+          [env: MINISERVE_COLOR_SCHEME_DARK=]
+          [default: archlinux]
+          [possible values: squirrel, archlinux, zenburn, monokai]
 
-              [env: MINISERVE_RAW_MEDIA_TYPE=]
+  -q, --qrcode
+          Enable QR code display
 
-      -o, --overwrite-files
-              Enable overriding existing files during file upload
+          [env: MINISERVE_QRCODE=]
 
-              [env: OVERWRITE_FILES=]
+  -u, --upload-files [<ALLOWED_UPLOAD_DIR>]
+          Enable file uploading (and optionally specify for which directory)
 
-      -r, --enable-tar
-              Enable uncompressed tar archive generation
+          [env: MINISERVE_ALLOWED_UPLOAD_DIR=]
 
-              [env: MINISERVE_ENABLE_TAR=]
+  -U, --mkdir
+          Enable creating directories
 
-      -g, --enable-tar-gz
-              Enable gz-compressed tar archive generation
+          [env: MINISERVE_MKDIR_ENABLED=]
 
-              [env: MINISERVE_ENABLE_TAR_GZ=]
+  -m, --media-type <MEDIA_TYPE>
+          Specify uploadable media types
 
-      -z, --enable-zip
-              Enable zip archive generation
+          [env: MINISERVE_MEDIA_TYPE=]
+          [possible values: image, audio, video]
 
-              WARNING: Zipping large directories can result in out-of-memory exception because zip
-              generation is done in memory and cannot be sent on the fly
+  -M, --raw-media-type <MEDIA_TYPE_RAW>
+          Directly specify the uploadable media type expression
 
-              [env: MINISERVE_ENABLE_ZIP=]
+          [env: MINISERVE_RAW_MEDIA_TYPE=]
 
-      -D, --dirs-first
-              List directories first
+  -o, --overwrite-files
+          Enable overriding existing files during file upload
 
-              [env: MINISERVE_DIRS_FIRST=]
+          [env: OVERWRITE_FILES=]
 
-      -t, --title <TITLE>
-              Shown instead of host in page title and heading
+  -r, --enable-tar
+          Enable uncompressed tar archive generation
 
-              [env: MINISERVE_TITLE=]
+          [env: MINISERVE_ENABLE_TAR=]
 
-          --header <HEADER>
-              Set custom header for responses
+  -g, --enable-tar-gz
+          Enable gz-compressed tar archive generation
 
-              [env: MINISERVE_HEADER=]
+          [env: MINISERVE_ENABLE_TAR_GZ=]
 
-      -l, --show-symlink-info
-              Visualize symlinks in directory listing
+  -z, --enable-zip
+          Enable zip archive generation
 
-              [env: MINISERVE_SHOW_SYMLINK_INFO=]
+          WARNING: Zipping large directories can result in out-of-memory exception because zip generation is done in memory and cannot be sent on the fly
 
-      -F, --hide-version-footer
-              Hide version footer
+          [env: MINISERVE_ENABLE_ZIP=]
 
-              [env: MINISERVE_HIDE_VERSION_FOOTER=]
+  -D, --dirs-first
+          List directories first
 
-          --hide-theme-selector
-              Hide theme selector
+          [env: MINISERVE_DIRS_FIRST=]
 
-              [env: MINISERVE_HIDE_THEME_SELECTOR=]
+  -t, --title <TITLE>
+          Shown instead of host in page title and heading
 
-      -W, --show-wget-footer
-              If enabled, display a wget command to recursively download the current directory
+          [env: MINISERVE_TITLE=]
 
-              [env: MINISERVE_SHOW_WGET_FOOTER=]
+      --header <HEADER>
+          Set custom header for responses
 
-          --print-completions <shell>
-              Generate completion file for a shell
+          [env: MINISERVE_HEADER=]
 
-              [possible values: bash, elvish, fish, powershell, zsh]
+  -l, --show-symlink-info
+          Visualize symlinks in directory listing
 
-          --print-manpage
-              Generate man page
+          [env: MINISERVE_SHOW_SYMLINK_INFO=]
 
-          --tls-cert <TLS_CERT>
-              TLS certificate to use
+  -F, --hide-version-footer
+          Hide version footer
 
-              [env: MINISERVE_TLS_CERT=]
+          [env: MINISERVE_HIDE_VERSION_FOOTER=]
 
-          --tls-key <TLS_KEY>
-              TLS private key to use
+      --hide-theme-selector
+          Hide theme selector
 
-              [env: MINISERVE_TLS_KEY=]
+          [env: MINISERVE_HIDE_THEME_SELECTOR=]
 
-          --readme
-              Enable README.md rendering in directories
+  -W, --show-wget-footer
+          If enabled, display a wget command to recursively download the current directory
 
-              [env: MINISERVE_README=]
+          [env: MINISERVE_SHOW_WGET_FOOTER=]
 
-      -h, --help
-              Print help (see a summary with '-h')
+      --print-completions <shell>
+          Generate completion file for a shell
 
-      -V, --version
-              Print version
+          [possible values: bash, elvish, fish, powershell, zsh]
+
+      --print-manpage
+          Generate man page
+
+      --tls-cert <TLS_CERT>
+          TLS certificate to use
+
+          [env: MINISERVE_TLS_CERT=]
+
+      --tls-key <TLS_KEY>
+          TLS private key to use
+
+          [env: MINISERVE_TLS_KEY=]
+
+      --readme
+          Enable README.md rendering in directories
+
+          [env: MINISERVE_README=]
+
+  -h, --help
+          Print help (see a summary with '-h')
+
+  -V, --version
+          Print version
+```
 
 ## How to install
 
