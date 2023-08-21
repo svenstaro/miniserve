@@ -137,15 +137,16 @@ Options:
       --index <INDEX>
           The name of a directory index file to serve, like "index.html"
 
-          Normally, when miniserve serves a directory, it creates a listing for that directory. However, if a directory contains this file, miniserve will serve that file instead.
+          Normally, when miniserve serves a directory, it creates a listing for that directory. However, if a directory
+          contains this file, miniserve will serve that file instead.
 
           [env: MINISERVE_INDEX=]
 
       --spa
           Activate SPA (Single Page Application) mode
 
-          This will cause the file given by --index to be served for all non-existing file paths. In effect, this will serve the index file whenever a 404 would otherwise occur in
-          order to allow the SPA router to handle the request instead.
+          This will cause the file given by --index to be served for all non-existing file paths. In effect, this will serve
+          the index file whenever a 404 would otherwise occur in order to allow the SPA router to handle the request instead.
 
           [env: MINISERVE_SPA=]
 
@@ -267,7 +268,8 @@ Options:
   -z, --enable-zip
           Enable zip archive generation
 
-          WARNING: Zipping large directories can result in out-of-memory exception because zip generation is done in memory and cannot be sent on the fly
+          WARNING: Zipping large directories can result in out-of-memory exception because zip generation is done in memory
+          and cannot be sent on the fly
 
           [env: MINISERVE_ENABLE_ZIP=]
 
