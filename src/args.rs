@@ -68,7 +68,9 @@ pub struct CliArgs {
     )]
     pub interfaces: Vec<IpAddr>,
 
-    /// Set authentication. Currently supported formats:
+    /// Set authentication
+    ///
+    /// Currently supported formats:
     /// username:password, username:sha256:hash, username:sha512:hash
     /// (e.g. joe:123, joe:sha256:a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3)
     #[arg(
@@ -76,16 +78,19 @@ pub struct CliArgs {
         long = "auth",
         value_parser(parse_auth),
         num_args(1),
-        env = "MINISERVE_AUTH"
+        env = "MINISERVE_AUTH",
+        verbatim_doc_comment
     )]
     pub auth: Vec<auth::RequiredAuth>,
 
-    /// Read authentication values from a file. Example file content:
+    /// Read authentication values from a file
+    ///
+    /// Example file content:
     ///
     /// joe:123
     /// bob:sha256:a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3
     /// bill:
-    #[arg(long, value_hint = ValueHint::FilePath, env = "MINISERVE_AUTH_FILE")]
+    #[arg(long, value_hint = ValueHint::FilePath, env = "MINISERVE_AUTH_FILE", verbatim_doc_comment)]
     pub auth_file: Option<PathBuf>,
 
     /// Use a specific route prefix
