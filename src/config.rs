@@ -1,7 +1,6 @@
-#[cfg(feature = "tls")]
-use std::{fs::File, io::BufReader};
 use std::{
-    io::BufRead,
+    fs::File,
+    io::{BufRead, BufReader},
     net::{IpAddr, Ipv4Addr, Ipv6Addr},
     path::PathBuf,
 };
