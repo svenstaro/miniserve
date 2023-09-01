@@ -33,7 +33,7 @@ clap_complete = "4"
 clap_mangen = "0.2"
 colored = "2"
 comrak = { version = "0.18", default-features = false }
-fast_qr = { version = "0.9", features = ["svg"] }
+fast_qr = { version = "0.10", features = ["svg"] }
 futures = "0.3"
 grass = { version = "0.13", features = ["macro"] }
 hex = "0.4"
