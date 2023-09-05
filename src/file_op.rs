@@ -173,11 +173,11 @@ pub struct FileOpQueryParameters {
 /// invalid.
 /// This method returns future.
 pub async fn upload_file(
-    conf: web::Data<MiniserveConfig>,
     req: HttpRequest,
     query: web::Query<FileOpQueryParameters>,
     payload: web::Payload,
 ) -> Result<HttpResponse, ContextualError> {
+    let conf = req.app_data::<MiniserveConfig>().unwrap();
     let upload_path = sanitize_path(&query.path, conf.show_hidden).ok_or_else(|| {
         ContextualError::InvalidPathError("Invalid value for 'path' parameter".to_string())
     })?;
