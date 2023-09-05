@@ -110,10 +110,16 @@ async fn handle_multipart(
         })?;
 
         // Ensure there are no illegal symlinks
-        if !allow_symlinks && contains_symlink(&absolute_path) {
-            return Err(ContextualError::InsufficientPermissionsError(
-                user_given_path.display().to_string(),
-            ));
+        if !allow_symlinks {
+            match contains_symlink(&absolute_path) {
+                Err(err) => Err(ContextualError::InsufficientPermissionsError(
+                    err.to_string(),
+                ))?,
+                Ok(true) => Err(ContextualError::InsufficientPermissionsError(format!(
+                    "{user_given_path:?} traverses through a symlink"
+                )))?,
+                Ok(false) => (),
+            }
         }
 
         std::fs::create_dir_all(&absolute_path).map_err(|e| {
@@ -135,10 +141,16 @@ async fn handle_multipart(
     })?;
 
     // Ensure there are no illegal symlinks in the file upload path
-    if !allow_symlinks && contains_symlink(&path) {
-        return Err(ContextualError::InsufficientPermissionsError(
-            filename.to_string(),
-        ));
+    if !allow_symlinks {
+        match contains_symlink(&path) {
+            Err(err) => Err(ContextualError::InsufficientPermissionsError(
+                err.to_string(),
+            ))?,
+            Ok(true) => Err(ContextualError::InsufficientPermissionsError(format!(
+                "{path:?} traverses through a symlink"
+            )))?,
+            Ok(false) => (),
+        }
     }
 
     save_file(field, path.join(filename_path), overwrite_files).await

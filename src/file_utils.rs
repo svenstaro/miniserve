@@ -1,4 +1,7 @@
-use std::path::{Component, Path, PathBuf};
+use std::{
+    io,
+    path::{Component, Path, PathBuf},
+};
 
 /// Guarantee that the path is relative and cannot traverse back to parent directories
 /// and optionally prevent traversing hidden directories.
@@ -29,26 +32,23 @@ pub fn sanitize_path(path: impl AsRef<Path>, traverse_hidden: bool) -> Option<Pa
     Some(buf)
 }
 
-/// Returns if a path goes through a symbolic link
-pub fn contains_symlink(path: impl AsRef<Path>) -> bool {
-    let mut joined_path = PathBuf::new();
-    for path_slice in path.as_ref().iter() {
-        joined_path = joined_path.join(path_slice);
-        if !joined_path.exists() {
-            // On Windows, `\\?\` won't exist even though it's the root
-            // So, we can't just return here
-            // But we don't need to check if it's a symlink since it won't be
-            continue;
-        }
-        if joined_path
-            .symlink_metadata()
-            .map(|m| m.file_type().is_symlink())
-            .unwrap_or(false)
-        {
-            return true;
-        }
-    }
-    false
+/// Checks if any segment of the path is a symlink.
+///
+/// This function fails if [`std::fs::symlink_metadata`] fails, which usually
+/// means user has no permission to access the path.
+pub fn contains_symlink(path: impl AsRef<Path>) -> io::Result<bool> {
+    let contains_symlink = path
+        .as_ref()
+        .ancestors()
+        // On Windows, `\\?\` won't exist even though it's the root, but there's no need to check it
+        // So we filter it out
+        .filter(|p| p.exists())
+        .map(|p| p.symlink_metadata())
+        .collect::<Result<Vec<_>, _>>()?
+        .into_iter()
+        .any(|p| p.file_type().is_symlink());
+
+    Ok(contains_symlink)
 }
 
 #[cfg(test)]
