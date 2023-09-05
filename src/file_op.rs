@@ -5,11 +5,12 @@ use std::{
     path::{Component, Path, PathBuf},
 };
 
-use actix_web::{http::header, HttpRequest, HttpResponse};
+use actix_web::{http::header, web, HttpRequest, HttpResponse};
 use futures::TryStreamExt;
+use serde::Deserialize;
 
+use crate::file_utils::contains_symlink;
 use crate::{errors::ContextualError, file_utils::sanitize_path};
-use crate::{file_utils::contains_symlink, listing};
 
 /// Saves file data from a multipart form field (`field`) to `file_path`, optionally overwriting
 /// existing file.
@@ -158,6 +159,12 @@ async fn handle_multipart(
     save_file(field, path.join(filename_path), overwrite_files).await
 }
 
+/// Query parameters used by upload and rm APIs
+#[derive(Deserialize, Default)]
+pub struct FileOpQueryParameters {
+    path: PathBuf,
+}
+
 /// Handle incoming request to upload a file or create a directory.
 /// Target file path is expected as path parameter in URI and is interpreted as relative from
 /// server root directory. Any path which will go outside of this directory is considered
@@ -165,7 +172,8 @@ async fn handle_multipart(
 /// This method returns future.
 pub async fn upload_file(
     req: HttpRequest,
-    payload: actix_web::web::Payload,
+    query: web::Query<FileOpQueryParameters>,
+    payload: web::Payload,
 ) -> Result<HttpResponse, ContextualError> {
     let conf = req.app_data::<crate::MiniserveConfig>().unwrap();
     let return_path = if let Some(header) = req.headers().get(header::REFERER) {
@@ -174,14 +182,9 @@ pub async fn upload_file(
         "/".to_string()
     };
 
-    let query_params = listing::extract_query_parameters(&req);
-    let upload_path = query_params.path.as_ref().ok_or_else(|| {
-        ContextualError::InvalidHttpRequestError("Missing query parameter 'path'".to_string())
-    })?;
-    let upload_path = sanitize_path(upload_path, conf.show_hidden).ok_or_else(|| {
+    let upload_path = sanitize_path(&query.path, conf.show_hidden).ok_or_else(|| {
         ContextualError::InvalidPathError("Invalid value for 'path' parameter".to_string())
     })?;
-
     let app_root_dir = conf.path.canonicalize().map_err(|e| {
         ContextualError::IoError("Failed to resolve path served by miniserve".to_string(), e)
     })?;

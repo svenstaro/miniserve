@@ -15,7 +15,7 @@ use strum::{Display, IntoEnumIterator};
 
 use crate::auth::CurrentUser;
 use crate::consts;
-use crate::listing::{Breadcrumb, Entry, QueryParameters, SortingMethod, SortingOrder};
+use crate::listing::{Breadcrumb, Entry, ListingQueryParameters, SortingMethod, SortingOrder};
 use crate::{archive::ArchiveMethod, MiniserveConfig};
 
 #[allow(clippy::too_many_arguments)]
@@ -25,7 +25,7 @@ pub fn page(
     readme: Option<(String, String)>,
     abs_uri: &Uri,
     is_root: bool,
-    query_params: QueryParameters,
+    query_params: ListingQueryParameters,
     breadcrumbs: &[Breadcrumb],
     encoded_dir: &str,
     conf: &MiniserveConfig,
