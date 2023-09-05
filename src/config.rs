@@ -241,7 +241,7 @@ impl MiniserveConfig {
                 v.iter()
                     .map(|p| {
                         sanitize_path(p, false)
-                            .map(|p| p.display().to_string().replace("\\", "/"))
+                            .map(|p| p.display().to_string().replace('\\', "/"))
                             .ok_or(anyhow!("Illegal path {p:?}: upward traversal not allowed"))
                     })
                     .collect()
