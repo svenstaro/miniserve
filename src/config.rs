@@ -234,6 +234,21 @@ impl MiniserveConfig {
             })
         });
 
+        let allowed_upload_dir = args
+            .allowed_upload_dir
+            .as_ref()
+            .map(|v| {
+                v.iter()
+                    .map(|p| {
+                        sanitize_path(p, false)
+                            .map(|p| p.display().to_string().replace("\\", "/"))
+                            .ok_or(anyhow!("Illegal path {p:?}: upward traversal not allowed"))
+                    })
+                    .collect()
+            })
+            .transpose()?
+            .unwrap_or_default();
+
         Ok(MiniserveConfig {
             verbose: args.verbose,
             path: args.path.unwrap_or_else(|| PathBuf::from(".")),
@@ -254,18 +269,7 @@ impl MiniserveConfig {
             show_qrcode: args.qrcode,
             mkdir_enabled: args.mkdir_enabled,
             file_upload: args.allowed_upload_dir.is_some(),
-            allowed_upload_dir: args
-                .allowed_upload_dir
-                .unwrap_or_default()
-                .iter()
-                .map(|x| {
-                    sanitize_path(x, false)
-                        .unwrap()
-                        .to_str()
-                        .unwrap()
-                        .replace('\\', "/")
-                })
-                .collect(),
+            allowed_upload_dir,
             uploadable_media_type,
             tar_enabled: args.enable_tar,
             tar_gz_enabled: args.enable_tar_gz,

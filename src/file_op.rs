@@ -9,8 +9,10 @@ use actix_web::{http::header, web, HttpRequest, HttpResponse};
 use futures::TryStreamExt;
 use serde::Deserialize;
 
-use crate::file_utils::contains_symlink;
-use crate::{errors::ContextualError, file_utils::sanitize_path};
+use crate::{
+    config::MiniserveConfig, errors::ContextualError, file_utils::contains_symlink,
+    file_utils::sanitize_path,
+};
 
 /// Saves file data from a multipart form field (`field`) to `file_path`, optionally overwriting
 /// existing file.
@@ -171,17 +173,11 @@ pub struct FileOpQueryParameters {
 /// invalid.
 /// This method returns future.
 pub async fn upload_file(
+    conf: web::Data<MiniserveConfig>,
     req: HttpRequest,
     query: web::Query<FileOpQueryParameters>,
     payload: web::Payload,
 ) -> Result<HttpResponse, ContextualError> {
-    let conf = req.app_data::<crate::MiniserveConfig>().unwrap();
-    let return_path = if let Some(header) = req.headers().get(header::REFERER) {
-        header.to_str().unwrap_or("/").to_owned()
-    } else {
-        "/".to_string()
-    };
-
     let upload_path = sanitize_path(&query.path, conf.show_hidden).ok_or_else(|| {
         ContextualError::InvalidPathError("Invalid value for 'path' parameter".to_string())
     })?;
@@ -226,6 +222,12 @@ pub async fn upload_file(
         })
         .try_collect::<Vec<u64>>()
         .await?;
+
+    let return_path = req
+        .headers()
+        .get(header::REFERER)
+        .and_then(|h| h.to_str().ok())
+        .unwrap_or("/");
 
     Ok(HttpResponse::SeeOther()
         .append_header((header::LOCATION, return_path))
