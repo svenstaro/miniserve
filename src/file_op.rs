@@ -1,3 +1,5 @@
+//! Handlers for file upload and removal
+
 use std::{
     io::Write,
     path::{Component, Path, PathBuf},
