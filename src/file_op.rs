@@ -1,13 +1,18 @@
+//! Handlers for file upload and removal
+
 use std::{
     io::Write,
     path::{Component, Path, PathBuf},
 };
 
-use actix_web::{http::header, HttpRequest, HttpResponse};
+use actix_web::{http::header, web, HttpRequest, HttpResponse};
 use futures::TryStreamExt;
+use serde::Deserialize;
 
-use crate::errors::ContextualError;
-use crate::listing;
+use crate::{
+    config::MiniserveConfig, errors::ContextualError, file_utils::contains_symlink,
+    file_utils::sanitize_path,
+};
 
 /// Saves file data from a multipart form field (`field`) to `file_path`, optionally overwriting
 /// existing file.
@@ -110,10 +115,16 @@ async fn handle_multipart(
         })?;
 
         // Ensure there are no illegal symlinks
-        if !allow_symlinks && contains_symlink(&absolute_path) {
-            return Err(ContextualError::InsufficientPermissionsError(
-                user_given_path.display().to_string(),
-            ));
+        if !allow_symlinks {
+            match contains_symlink(&absolute_path) {
+                Err(err) => Err(ContextualError::InsufficientPermissionsError(
+                    err.to_string(),
+                ))?,
+                Ok(true) => Err(ContextualError::InsufficientPermissionsError(format!(
+                    "{user_given_path:?} traverses through a symlink"
+                )))?,
+                Ok(false) => (),
+            }
         }
 
         std::fs::create_dir_all(&absolute_path).map_err(|e| {
@@ -135,13 +146,25 @@ async fn handle_multipart(
     })?;
 
     // Ensure there are no illegal symlinks in the file upload path
-    if !allow_symlinks && contains_symlink(&path) {
-        return Err(ContextualError::InsufficientPermissionsError(
-            filename.to_string(),
-        ));
+    if !allow_symlinks {
+        match contains_symlink(&path) {
+            Err(err) => Err(ContextualError::InsufficientPermissionsError(
+                err.to_string(),
+            ))?,
+            Ok(true) => Err(ContextualError::InsufficientPermissionsError(format!(
+                "{path:?} traverses through a symlink"
+            )))?,
+            Ok(false) => (),
+        }
     }
 
     save_file(field, path.join(filename_path), overwrite_files).await
+}
+
+/// Query parameters used by upload and rm APIs
+#[derive(Deserialize, Default)]
+pub struct FileOpQueryParameters {
+    path: PathBuf,
 }
 
 /// Handle incoming request to upload a file or create a directory.
@@ -151,23 +174,13 @@ async fn handle_multipart(
 /// This method returns future.
 pub async fn upload_file(
     req: HttpRequest,
-    payload: actix_web::web::Payload,
+    query: web::Query<FileOpQueryParameters>,
+    payload: web::Payload,
 ) -> Result<HttpResponse, ContextualError> {
-    let conf = req.app_data::<crate::MiniserveConfig>().unwrap();
-    let return_path = if let Some(header) = req.headers().get(header::REFERER) {
-        header.to_str().unwrap_or("/").to_owned()
-    } else {
-        "/".to_string()
-    };
-
-    let query_params = listing::extract_query_parameters(&req);
-    let upload_path = query_params.path.as_ref().ok_or_else(|| {
-        ContextualError::InvalidHttpRequestError("Missing query parameter 'path'".to_string())
-    })?;
-    let upload_path = sanitize_path(upload_path, conf.show_hidden).ok_or_else(|| {
+    let conf = req.app_data::<MiniserveConfig>().unwrap();
+    let upload_path = sanitize_path(&query.path, conf.show_hidden).ok_or_else(|| {
         ContextualError::InvalidPathError("Invalid value for 'path' parameter".to_string())
     })?;
-
     let app_root_dir = conf.path.canonicalize().map_err(|e| {
         ContextualError::IoError("Failed to resolve path served by miniserve".to_string(), e)
     })?;
@@ -210,90 +223,13 @@ pub async fn upload_file(
         .try_collect::<Vec<u64>>()
         .await?;
 
+    let return_path = req
+        .headers()
+        .get(header::REFERER)
+        .and_then(|h| h.to_str().ok())
+        .unwrap_or("/");
+
     Ok(HttpResponse::SeeOther()
         .append_header((header::LOCATION, return_path))
         .finish())
-}
-
-/// Guarantee that the path is relative and cannot traverse back to parent directories
-/// and optionally prevent traversing hidden directories.
-///
-/// See the unit tests tests::test_sanitize_path* for examples
-pub fn sanitize_path(path: &Path, traverse_hidden: bool) -> Option<PathBuf> {
-    let mut buf = PathBuf::new();
-
-    for comp in path.components() {
-        match comp {
-            Component::Normal(name) => buf.push(name),
-            Component::ParentDir => {
-                buf.pop();
-            }
-            _ => (),
-        }
-    }
-
-    // Double-check that all components are Normal and check for hidden dirs
-    for comp in buf.components() {
-        match comp {
-            Component::Normal(_) if traverse_hidden => (),
-            Component::Normal(name) if !name.to_str()?.starts_with('.') => (),
-            _ => return None,
-        }
-    }
-
-    Some(buf)
-}
-
-/// Returns if a path goes through a symolic link
-fn contains_symlink(path: &PathBuf) -> bool {
-    let mut joined_path = PathBuf::new();
-    for path_slice in path {
-        joined_path = joined_path.join(path_slice);
-        if !joined_path.exists() {
-            // On Windows, `\\?\` won't exist even though it's the root
-            // So, we can't just return here
-            // But we don't need to check if it's a symlink since it won't be
-            continue;
-        }
-        if joined_path
-            .symlink_metadata()
-            .map(|m| m.file_type().is_symlink())
-            .unwrap_or(false)
-        {
-            return true;
-        }
-    }
-    false
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use pretty_assertions::assert_eq;
-    use rstest::rstest;
-
-    #[rstest]
-    #[case("/foo", "foo")]
-    #[case("////foo", "foo")]
-    #[case("C:/foo", if cfg!(windows) { "foo" } else { "C:/foo" })]
-    #[case("../foo", "foo")]
-    #[case("../foo/../bar/abc", "bar/abc")]
-    fn test_sanitize_path(#[case] input: &str, #[case] output: &str) {
-        assert_eq!(
-            sanitize_path(Path::new(input), true).unwrap(),
-            Path::new(output)
-        );
-        assert_eq!(
-            sanitize_path(Path::new(input), false).unwrap(),
-            Path::new(output)
-        );
-    }
-
-    #[rstest]
-    #[case(".foo")]
-    #[case("/.foo")]
-    #[case("foo/.bar/foo")]
-    fn test_sanitize_path_no_hidden_files(#[case] input: &str) {
-        assert_eq!(sanitize_path(Path::new(input), false), None);
-    }
 }

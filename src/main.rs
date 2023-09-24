@@ -22,7 +22,8 @@ mod auth;
 mod config;
 mod consts;
 mod errors;
-mod file_upload;
+mod file_op;
+mod file_utils;
 mod listing;
 mod pipe;
 mod renderer;
@@ -366,7 +367,7 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
     } else {
         if conf.file_upload {
             // Allow file upload
-            app.service(web::resource("/upload").route(web::post().to(file_upload::upload_file)));
+            app.service(web::resource("/upload").route(web::post().to(file_op::upload_file)));
         }
         // Handle directories
         app.service(dir_service());

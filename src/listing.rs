@@ -1,6 +1,6 @@
 #![allow(clippy::format_push_string)]
 use std::io;
-use std::path::{Component, Path, PathBuf};
+use std::path::{Component, Path};
 use std::time::SystemTime;
 
 use actix_web::{dev::ServiceResponse, web::Query, HttpMessage, HttpRequest, HttpResponse};
@@ -28,10 +28,9 @@ mod percent_encode_sets {
     pub const PATH_SEGMENT: &AsciiSet = &PATH.add(b'/').add(b'\\');
 }
 
-/// Query parameters
+/// Query parameters used by listing APIs
 #[derive(Deserialize, Default)]
-pub struct QueryParameters {
-    pub path: Option<PathBuf>,
+pub struct ListingQueryParameters {
     pub sort: Option<SortingMethod>,
     pub order: Option<SortingOrder>,
     pub raw: Option<bool>,
@@ -393,13 +392,13 @@ pub fn directory_listing(
     }
 }
 
-pub fn extract_query_parameters(req: &HttpRequest) -> QueryParameters {
-    match Query::<QueryParameters>::from_query(req.query_string()) {
+pub fn extract_query_parameters(req: &HttpRequest) -> ListingQueryParameters {
+    match Query::<ListingQueryParameters>::from_query(req.query_string()) {
         Ok(Query(query_params)) => query_params,
         Err(e) => {
             let err = ContextualError::ParseError("query parameters".to_string(), e.to_string());
             errors::log_error_chain(err.to_string());
-            QueryParameters::default()
+            ListingQueryParameters::default()
         }
     }
 }
