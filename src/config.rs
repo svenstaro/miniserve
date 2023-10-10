@@ -5,9 +5,7 @@ use std::{
     path::PathBuf,
 };
 
-#[cfg(feature = "tls")]
-use anyhow::anyhow;
-use anyhow::{Context, Result};
+use anyhow::{anyhow, Context, Result};
 use http::HeaderMap;
 
 #[cfg(feature = "tls")]
