@@ -254,6 +254,9 @@ pub struct CliArgs {
     /// Enable README.md rendering in directories
     #[arg(long, env = "MINISERVE_README")]
     pub readme: bool,
+
+    #[arg(long, default_value = "false", env = "MINISERVE_SHOW_SIZE_IN_BYTE")]
+    pub show_size_in_byte: bool,
 }
 
 /// Checks whether an interface is valid, i.e. it can be parsed into an IP address

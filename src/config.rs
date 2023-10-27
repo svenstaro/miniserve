@@ -136,6 +136,9 @@ pub struct MiniserveConfig {
     /// If enabled, render the readme from the current directory
     pub readme: bool,
 
+    /// If enabled, will show in exact byte size of the file
+    pub show_size_in_byte: bool,
+
     /// If set, use provided rustls config for TLS
     #[cfg(feature = "tls")]
     pub tls_rustls_config: Option<rustls::ServerConfig>,
@@ -300,6 +303,7 @@ impl MiniserveConfig {
             show_wget_footer: args.show_wget_footer,
             readme: args.readme,
             tls_rustls_config: tls_rustls_server_config,
+            show_size_in_byte: args.show_size_in_byte,
         })
     }
 }
