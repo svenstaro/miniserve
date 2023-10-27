@@ -350,6 +350,10 @@ pub struct CliArgs {
     /// Currently incompatible with -P|--no-symlinks (see https://github.com/messense/dav-server-rs/issues/37)
     #[arg(long, env = "MINISERVE_ENABLE_WEBDAV", conflicts_with = "no_symlinks")]
     pub enable_webdav: bool,
+
+    /// Show served file size in exact bytes.
+    #[arg(long, default_value = "false", env = "MINISERVE_SHOW_SIZE_IN_BYTE")]
+    pub show_size_in_byte: bool,
 }
 
 /// Checks whether an interface is valid, i.e. it can be parsed into an IP address
