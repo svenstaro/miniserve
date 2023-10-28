@@ -33,7 +33,7 @@ pub fn page(
 ) -> Markup {
     // If query_params.raw is true, we want render a minimal directory listing
     if query_params.raw.is_some() && query_params.raw.unwrap() {
-        return raw(entries, is_root);
+        return raw(entries, is_root, conf);
     }
 
     let upload_route = format!("{}/upload", &conf.route_prefix);
@@ -181,7 +181,7 @@ pub fn page(
 }
 
 /// Renders the file listing
-pub fn raw(entries: Vec<Entry>, is_root: bool) -> Markup {
+pub fn raw(entries: Vec<Entry>, is_root: bool, conf: &MiniserveConfig) -> Markup {
     html! {
         (DOCTYPE)
         html {
@@ -205,7 +205,7 @@ pub fn raw(entries: Vec<Entry>, is_root: bool) -> Markup {
                             }
                         }
                         @for entry in entries {
-                            (entry_row(entry, None, None, true, true))
+                            (entry_row(entry, None, None, true, conf.show_size_in_byte))
                         }
                     }
                 }
