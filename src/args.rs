@@ -255,6 +255,7 @@ pub struct CliArgs {
     #[arg(long, env = "MINISERVE_README")]
     pub readme: bool,
 
+    /// Show served file size in exact bytes.
     #[arg(long, default_value = "false", env = "MINISERVE_SHOW_SIZE_IN_BYTE")]
     pub show_size_in_byte: bool,
 }
