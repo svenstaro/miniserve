@@ -138,6 +138,11 @@ pub struct CliArgs {
     pub qrcode: bool,
 
     /// Enable file uploading (and optionally specify for which directory)
+    ///
+    /// The provided path is not a physical file system path. Instead, it's relative to the serve
+    /// dir. For instance, if the serve dir is '/home/hello', set this to '/upload' to allow
+    /// uploading to '/home/hello/upload'.
+    /// When specified via environment variable, a path always neesd to the specified.
     #[arg(short = 'u', long = "upload-files", value_hint = ValueHint::FilePath, num_args(0..=1), value_delimiter(','), env = "MINISERVE_ALLOWED_UPLOAD_DIR")]
     pub allowed_upload_dir: Option<Vec<PathBuf>>,
 
