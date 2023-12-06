@@ -162,12 +162,17 @@ pub fn directory_listing(
 
     let base = Path::new(serve_path);
     let random_route_abs = format!("/{}", conf.route_prefix);
-    let abs_uri = http::Uri::builder()
-        .scheme(req.connection_info().scheme())
-        .authority(req.connection_info().host())
-        .path_and_query(req.uri().to_string())
-        .build()
-        .unwrap();
+    let abs_uri = {
+        let res = http::Uri::builder()
+            .scheme(req.connection_info().scheme())
+            .authority(req.connection_info().host())
+            .path_and_query(req.uri().to_string())
+            .build();
+        match res {
+            Ok(uri) => uri,
+            Err(err) => return Ok(ServiceResponse::from_err(err, req.clone())),
+        }
+    };
     let is_root = base.parent().is_none() || Path::new(&req.path()) == Path::new(&random_route_abs);
 
     let encoded_dir = match base.strip_prefix(random_route_abs) {
