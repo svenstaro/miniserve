@@ -39,7 +39,7 @@ grass = { version = "0.13", features = ["macro"] }
 hex = "0.4"
 http = "0.2"
 httparse = "1"
-if-addrs = "0.10"
+if-addrs = "0.11"
 libflate = "2"
 log = "0.4"
 maud = "0.25"
