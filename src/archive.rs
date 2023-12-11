@@ -2,7 +2,6 @@ use std::fs::File;
 use std::io::{Cursor, Read, Write};
 use std::path::{Path, PathBuf};
 
-use actix_web::http::header::ContentEncoding;
 use libflate::gzip::Encoder;
 use serde::Deserialize;
 use strum::{Display, EnumIter, EnumString};
@@ -43,14 +42,6 @@ impl ArchiveMethod {
             ArchiveMethod::Zip => "application/zip",
         }
         .to_string()
-    }
-
-    pub fn content_encoding(self) -> ContentEncoding {
-        match self {
-            ArchiveMethod::TarGz => ContentEncoding::Gzip,
-            ArchiveMethod::Tar => ContentEncoding::Identity,
-            ArchiveMethod::Zip => ContentEncoding::Identity,
-        }
     }
 
     pub fn is_enabled(self, tar_enabled: bool, tar_gz_enabled: bool, zip_enabled: bool) -> bool {
