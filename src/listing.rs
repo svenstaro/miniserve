@@ -363,7 +363,6 @@ pub fn directory_listing(
             req.clone(),
             HttpResponse::Ok()
                 .content_type(archive_method.content_type())
-                .append_header(archive_method.content_encoding())
                 .append_header(("Content-Transfer-Encoding", "binary"))
                 .append_header((
                     "Content-Disposition",
