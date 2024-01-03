@@ -18,7 +18,7 @@ pub enum ContextualError {
 
     /// Might occur during file upload, when processing the multipart request fails
     #[error("Failed to process multipart request\ncaused by: {0}")]
-    MultipartError(actix_multipart::MultipartError),
+    MultipartError(String),
 
     /// Might occur during file upload
     #[error("File already exists, and the overwrite_files option has not been set")]

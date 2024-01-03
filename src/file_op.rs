@@ -32,7 +32,7 @@ async fn save_file(
     })?;
 
     let (_, written_len) = field
-        .map_err(ContextualError::MultipartError)
+        .map_err(|x| ContextualError::MultipartError(x.to_string()))
         .try_fold((file, 0u64), |(mut file, written_len), bytes| async move {
             file.write_all(bytes.as_ref())
                 .map_err(|e| ContextualError::IoError("Failed to write to file".to_string(), e))?;
@@ -209,7 +209,7 @@ pub async fn upload_file(
     }?;
 
     actix_multipart::Multipart::new(req.headers(), payload)
-        .map_err(ContextualError::MultipartError)
+        .map_err(|x| ContextualError::MultipartError(x.to_string()))
         .and_then(|field| {
             handle_multipart(
                 field,
