@@ -40,14 +40,6 @@ jobs:
             compress: true
             cargo_flags: ""
           - os: ubuntu-latest
-            target: mips-unknown-linux-musl
-            compress: false
-            cargo_flags: "--no-default-features"
-          - os: ubuntu-latest
-            target: mipsel-unknown-linux-musl
-            compress: true
-            cargo_flags: "--no-default-features"
-          - os: ubuntu-latest
             target: riscv64gc-unknown-linux-gnu
             compress: false
             cargo_flags: "--no-default-features"
