@@ -19,6 +19,7 @@ pub static FILES: &[&str] = &[
     "test.mkv",
     #[cfg(not(windows))]
     "test \" \' & < >.csv",
+    "new\nline",
     "😀.data",
     "⎙.mp4",
     "#[]{}()@!$&'`+,;= %20.test",
