@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Fix single quote display with `--show-wget-footer` [#1191](https://github.com/svenstaro/miniserve/pull/1191) (thanks @d-air1)
 - Remove header Content-Encoding when archiving [#1290](https://github.com/svenstaro/miniserve/pull/1290) (thanks @5long)
 - Prevent illegal request path from crashing program [#1285](https://github.com/svenstaro/miniserve/pull/1285) (thanks @cyqsimon)
+- Fixed issue where serving files with a newline would fail [#1294](https://github.com/svenstaro/miniserve/issues/1294)
 
 ## [0.24.0] - 2023-07-06
 - Fix ANSI color codes are printed when not a tty [#1095](https://github.com/svenstaro/miniserve/pull/1095)
