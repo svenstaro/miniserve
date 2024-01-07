@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+
+## [0.25.0] - 2024-01-07
 - Add `--pretty-urls` [#1193](https://github.com/svenstaro/miniserve/pull/1193) (thanks @nlopes)
 - Fix single quote display with `--show-wget-footer` [#1191](https://github.com/svenstaro/miniserve/pull/1191) (thanks @d-air1)
 - Remove header Content-Encoding when archiving [#1290](https://github.com/svenstaro/miniserve/pull/1290) (thanks @5long)
@@ -183,7 +185,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Some theme related bug fixes (thanks @boastful-squirrel)
 
 <!-- next-url -->
-[Unreleased]: https://github.com/svenstaro/miniserve/compare/v0.24.0...HEAD
+[Unreleased]: https://github.com/svenstaro/miniserve/compare/v0.25.0...HEAD
+[0.25.0]: https://github.com/svenstaro/miniserve/compare/v0.24.0...v0.25.0
 [0.24.0]: https://github.com/svenstaro/miniserve/compare/v0.23.2...v0.24.0
 [0.23.2]: https://github.com/svenstaro/miniserve/compare/v0.23.1...v0.23.2
 [0.23.1]: https://github.com/svenstaro/miniserve/compare/v0.23.0...v0.23.1
