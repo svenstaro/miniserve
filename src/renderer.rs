@@ -459,7 +459,7 @@ fn build_link(
 ) -> Markup {
     let mut link = format!("?sort={name}&order=asc");
     let mut help = format!("Sort by {name} in ascending order");
-    let mut chevron = chevron_up();
+    let mut chevron = chevron_down();
     let mut class = "";
 
     if let Some(method) = sort_method {
@@ -469,7 +469,7 @@ fn build_link(
                 if order.to_string() == "asc" {
                     link = format!("?sort={name}&order=desc");
                     help = format!("Sort by {name} in descending order");
-                    chevron = chevron_down();
+                    chevron = chevron_up();
                 }
             }
         }

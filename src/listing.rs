@@ -223,7 +223,7 @@ pub fn directory_listing(
         res
     };
 
-    let query_params = extract_query_parameters(req);
+    let mut query_params = extract_query_parameters(req);
 
     let mut entries: Vec<Entry> = Vec::new();
     let mut readme: Option<(String, String)> = None;
@@ -299,6 +299,14 @@ pub fn directory_listing(
         }
     }
 
+    if query_params.sort.is_none() {
+        query_params.sort = conf.default_sorting_method
+    }
+
+    if query_params.order.is_none() {
+        query_params.order = conf.default_sorting_order
+    }
+
     match query_params.sort.unwrap_or(SortingMethod::Name) {
         SortingMethod::Name => entries.sort_by(|e1, e2| {
             alphanumeric_sort::compare_str(e1.name.to_lowercase(), e2.name.to_lowercase())
@@ -319,7 +327,7 @@ pub fn directory_listing(
         }),
     };
 
-    if let Some(SortingOrder::Descending) = query_params.order {
+    if let Some(SortingOrder::Ascending) = query_params.order {
         entries.reverse()
     }
 
