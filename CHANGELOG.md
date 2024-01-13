@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+- Properly handle read-only errors on Windows [#1310](https://github.com/svenstaro/miniserve/pull/1310) (thanks @ViRb3)
 
 ## [0.25.0] - 2024-01-07
 - Add `--pretty-urls` [#1193](https://github.com/svenstaro/miniserve/pull/1193) (thanks @nlopes)
