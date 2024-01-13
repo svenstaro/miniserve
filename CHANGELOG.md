@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+
+## [0.26.0] - 2024-01-13
 - Properly handle read-only errors on Windows [#1310](https://github.com/svenstaro/miniserve/pull/1310) (thanks @ViRb3)
 - Use `tokio::fs` instead of `std::fs` to enable async file operations [#445](https://github.com/svenstaro/miniserve/issues/445)
 - Add `-S`/`--default-sorting-method` and `-O`/`--default-sorting-order` flags [#1308](https://github.com/svenstaro/miniserve/pull/1308) (thanks @ElliottLandsborough)
@@ -188,7 +190,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Some theme related bug fixes (thanks @boastful-squirrel)
 
 <!-- next-url -->
-[Unreleased]: https://github.com/svenstaro/miniserve/compare/v0.25.0...HEAD
+[Unreleased]: https://github.com/svenstaro/miniserve/compare/v0.26.0...HEAD
+[0.26.0]: https://github.com/svenstaro/miniserve/compare/v0.25.0...v0.26.0
 [0.25.0]: https://github.com/svenstaro/miniserve/compare/v0.24.0...v0.25.0
 [0.24.0]: https://github.com/svenstaro/miniserve/compare/v0.23.2...v0.24.0
 [0.23.2]: https://github.com/svenstaro/miniserve/compare/v0.23.1...v0.23.2
