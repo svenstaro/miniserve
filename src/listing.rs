@@ -194,9 +194,7 @@ pub fn directory_listing(
         let decoded = percent_decode_str(&encoded_dir).decode_utf8_lossy();
 
         let mut res: Vec<Breadcrumb> = Vec::new();
-
         let mut link_accumulator = format!("{}/", &conf.route_prefix);
-
         let mut components = Path::new(&*decoded).components().peekable();
 
         while let Some(c) = components.next() {
@@ -227,7 +225,6 @@ pub fn directory_listing(
     };
 
     let query_params = extract_query_parameters(req);
-
     let mut entries: Vec<Entry> = Vec::new();
     let mut readme: Option<(String, String)> = None;
     let readme_rx: Regex = Regex::new("^readme([.](md|txt))?$").unwrap();
