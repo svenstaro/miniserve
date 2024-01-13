@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased] - ReleaseDate
 - Properly handle read-only errors on Windows [#1310](https://github.com/svenstaro/miniserve/pull/1310) (thanks @ViRb3)
 - Use `tokio::fs` instead of `std::fs` to enable async file operations [#445](https://github.com/svenstaro/miniserve/issues/445)
+- Add `-S`/`--default-sorting-method` and `-O`/`--default-sorting-order` flags [#1308](https://github.com/svenstaro/miniserve/pull/1308) (thanks @ElliottLandsborough)
 
 ## [0.25.0] - 2024-01-07
 - Add `--pretty-urls` [#1193](https://github.com/svenstaro/miniserve/pull/1193) (thanks @nlopes)

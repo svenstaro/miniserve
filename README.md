@@ -214,6 +214,7 @@ Options:
           Default sorting method for file list
 
           [env: MINISERVE_DEFAULT_SORTING_METHOD=]
+          [default: name]
 
           Possible values:
           - name: Sort by name
@@ -224,10 +225,11 @@ Options:
           Default sorting order for file list
 
           [env: MINISERVE_DEFAULT_SORTING_ORDER=]
+          [default: desc]
 
           Possible values:
-          - ascending:  Ascending order
-          - descending: Descending order
+          - asc:  Ascending order
+          - desc: Descending order
 
   -c, --color-scheme <COLOR_SCHEME>
           Default color scheme
