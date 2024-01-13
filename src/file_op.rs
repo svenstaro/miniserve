@@ -1,10 +1,10 @@
 //! Handlers for file upload and removal
 
+use std::io::ErrorKind;
 use std::{
     io::Write,
     path::{Component, Path, PathBuf},
 };
-use std::io::ErrorKind;
 
 use actix_web::{http::header, web, HttpRequest, HttpResponse};
 use futures::TryStreamExt;
@@ -29,11 +29,14 @@ async fn save_file(
     }
 
     let file = match std::fs::File::create(&file_path) {
-        Err(err) if err.kind() == ErrorKind::PermissionDenied => Err(ContextualError::InsufficientPermissionsError(
-            file_path.display().to_string(),
+        Err(err) if err.kind() == ErrorKind::PermissionDenied => Err(
+            ContextualError::InsufficientPermissionsError(file_path.display().to_string()),
+        ),
+        Err(err) => Err(ContextualError::IoError(
+            format!("Failed to create {}", file_path.display()),
+            err,
         )),
-        Err(err) => Err(ContextualError::IoError(format!("Failed to create {}", file_path.display()), err)),
-        Ok(v) => Ok(v)
+        Ok(v) => Ok(v),
     }?;
 
     let (_, written_len) = field
@@ -130,10 +133,13 @@ async fn handle_multipart(
         }
 
         return match std::fs::create_dir_all(&absolute_path) {
-            Err(err) if err.kind() == ErrorKind::PermissionDenied => Err(ContextualError::InsufficientPermissionsError(
-                path.display().to_string(),
+            Err(err) if err.kind() == ErrorKind::PermissionDenied => Err(
+                ContextualError::InsufficientPermissionsError(path.display().to_string()),
+            ),
+            Err(err) => Err(ContextualError::IoError(
+                format!("Failed to create {}", user_given_path.display()),
+                err,
             )),
-            Err(err) => Err(ContextualError::IoError(format!("Failed to create {}", user_given_path.display()), err)),
             Ok(_) => Ok(0),
         };
     }
