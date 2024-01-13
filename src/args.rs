@@ -6,6 +6,7 @@ use http::header::{HeaderMap, HeaderName, HeaderValue};
 
 use crate::auth;
 use crate::errors::ContextualError;
+use crate::listing::{SortingMethod, SortingOrder};
 use crate::renderer::ThemeSlug;
 
 #[derive(ValueEnum, Clone)]
@@ -117,21 +118,21 @@ pub struct CliArgs {
     #[arg(
         short = 'S',
         long = "default-sorting-method",
-        default_value = "",
+        default_value = "name",
         ignore_case = true,
         env = "MINISERVE_DEFAULT_SORTING_METHOD"
     )]
-    pub default_sorting_method: String,
+    pub default_sorting_method: SortingMethod,
 
     /// Default sorting order for file list
     #[arg(
         short = 'O',
         long = "default-sorting-order",
-        default_value = "",
+        default_value = "desc",
         ignore_case = true,
         env = "MINISERVE_DEFAULT_SORTING_ORDER"
     )]
-    pub default_sorting_order: String,
+    pub default_sorting_order: SortingOrder,
 
     /// Default color scheme
     #[arg(

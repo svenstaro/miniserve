@@ -7,7 +7,7 @@ use rstest::rstest;
 use select::document::Document;
 use std::process::{Command, Stdio};
 use utils::get_link_from_text;
-use utils::get_link_hrefs_from_text_with_prefix;
+use utils::get_link_hrefs_with_prefix;
 
 #[rstest(
     input,
@@ -154,22 +154,18 @@ fn can_navigate_using_breadcrumbs(
 #[case(server(&["--default-sorting-method", "date", "--default-sorting-order", "asc"]))]
 /// We can specify the default sorting order
 fn can_specify_default_sorting_order(#[case] server: TestServer) -> Result<(), Error> {
-    let slash = String::from("/");
-    let base_url = server.url();
-    let nested_url = base_url.join(&slash)?;
-
-    let resp = reqwest::blocking::get(nested_url.as_str())?;
+    let resp = reqwest::blocking::get(server.url())?;
     let body = resp.error_for_status()?;
     let parsed = Document::from_read(body)?;
 
-    let links = get_link_hrefs_from_text_with_prefix(&parsed, "/");
-    let first_created_file = slash + FILES.first().unwrap();
+    let links = get_link_hrefs_with_prefix(&parsed, "/");
+    let first_created_file = FILES.first().unwrap();
 
-    if links.first().unwrap() == &first_created_file {
+    if links.first().unwrap() == first_created_file {
         assert_eq!("/very/?sort=date&order=asc", links.last().unwrap());
     }
 
-    if links.last().unwrap() == &first_created_file {
+    if links.last().unwrap() == first_created_file {
         assert_eq!("/very/?sort=date&order=desc", links.first().unwrap());
     }
 

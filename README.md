@@ -210,17 +210,24 @@ Options:
 
           [env: MINISERVE_HIDDEN=]
 
-  -S, --default-sorting-method
-          Default sort method for file list
+  -S, --default-sorting-method <DEFAULT_SORTING_METHOD>
+          Default sorting method for file list
 
           [env: MINISERVE_DEFAULT_SORTING_METHOD=]
-          [possible values: name, date, size]
 
-  -O, --default-sorting-order
-          Default sort order for file list
+          Possible values:
+          - name: Sort by name
+          - size: Sort by size
+          - date: Sort by last modification date (natural sort: follows alphanumerical order)
+
+  -O, --default-sorting-order <DEFAULT_SORTING_ORDER>
+          Default sorting order for file list
 
           [env: MINISERVE_DEFAULT_SORTING_ORDER=]
-          [possible values: asc, desc]
+
+          Possible values:
+          - ascending:  Ascending order
+          - descending: Descending order
 
   -c, --color-scheme <COLOR_SCHEME>
           Default color scheme
