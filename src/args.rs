@@ -113,6 +113,26 @@ pub struct CliArgs {
     #[arg(short = 'H', long = "hidden", env = "MINISERVE_HIDDEN")]
     pub hidden: bool,
 
+    /// Default sorting method for file list
+    #[arg(
+        short = 'S',
+        long = "default-sorting-method",
+        default_value = "",
+        ignore_case = true,
+        env = "MINISERVE_DEFAULT_SORTING_METHOD"
+    )]
+    pub default_sorting_method: String,
+
+    /// Default sorting order for file list
+    #[arg(
+        short = 'O',
+        long = "default-sorting-order",
+        default_value = "",
+        ignore_case = true,
+        env = "MINISERVE_DEFAULT_SORTING_ORDER"
+    )]
+    pub default_sorting_order: String,
+
     /// Default color scheme
     #[arg(
         short = 'c',
