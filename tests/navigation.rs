@@ -1,7 +1,7 @@
 mod fixtures;
 mod utils;
 
-use fixtures::{server, Error, TestServer, FILES, DEEPLY_NESTED_FILE, DIRECTORIES};
+use fixtures::{server, Error, TestServer, DEEPLY_NESTED_FILE, DIRECTORIES, FILES};
 use pretty_assertions::{assert_eq, assert_ne};
 use rstest::rstest;
 use select::document::Document;
