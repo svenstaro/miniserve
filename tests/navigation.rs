@@ -1,7 +1,7 @@
 mod fixtures;
 mod utils;
 
-use fixtures::{server, Error, TestServer, DEEPLY_NESTED_FILE, DIRECTORIES, FILES};
+use fixtures::{server, Error, TestServer, DEEPLY_NESTED_FILE, DIRECTORIES};
 use pretty_assertions::{assert_eq, assert_ne};
 use rstest::rstest;
 use select::document::Document;
@@ -150,23 +150,38 @@ fn can_navigate_using_breadcrumbs(
 }
 
 #[rstest]
-#[case(server(&["--default-sorting-method", "date", "--default-sorting-order", "desc"]))]
-#[case(server(&["--default-sorting-method", "date", "--default-sorting-order", "asc"]))]
+#[case(server(&["--default-sorting-method", "name", "--default-sorting-order", "asc"]), "name", "asc")]
+#[case(server(&["--default-sorting-method", "name", "--default-sorting-order", "desc"]), "name", "desc")]
 /// We can specify the default sorting order
-fn can_specify_default_sorting_order(#[case] server: TestServer) -> Result<(), Error> {
+fn can_specify_default_sorting_order(
+    #[case] server: TestServer,
+    #[case] method: String,
+    #[case] order: String,
+) -> Result<(), Error> {
     let resp = reqwest::blocking::get(server.url())?;
     let body = resp.error_for_status()?;
     let parsed = Document::from_read(body)?;
 
     let links = get_link_hrefs_with_prefix(&parsed, "/");
-    let first_created_file = FILES.first().unwrap();
+    let dir_iter = server.path();
+    let mut dir_entries = dir_iter
+        .read_dir()
+        .unwrap()
+        .map(|x| x.unwrap().file_name().into_string().unwrap())
+        .map(|x| format!("/{x}"))
+        .collect::<Vec<_>>();
+    dir_entries.sort();
 
-    if links.first().unwrap() == first_created_file {
-        assert_eq!("/very/?sort=date&order=asc", links.last().unwrap());
-    }
-
-    if links.last().unwrap() == first_created_file {
-        assert_eq!("/very/?sort=date&order=desc", links.first().unwrap());
+    if method == "name" && order == "asc" {
+        assert_eq!(
+            *dir_entries.last().unwrap(),
+            *percent_encoding::percent_decode_str(links.first().unwrap()).decode_utf8_lossy()
+        );
+    } else if method == "name" && order == "desc" {
+        assert_eq!(
+            *dir_entries.first().unwrap(),
+            *percent_encoding::percent_decode_str(links.first().unwrap()).decode_utf8_lossy()
+        );
     }
 
     Ok(())
