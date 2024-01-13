@@ -57,6 +57,7 @@ socket2 = "0.5"
 strum = { version = "0.25", features = ["derive"] }
 tar = "0.4"
 thiserror = "1"
+tokio = { version = "1.35.1", features = ["fs"] }
 zip = { version = "0.6.5", default-features = false }
 
 [features]

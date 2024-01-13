@@ -1769,6 +1769,7 @@ dependencies = [
  "strum",
  "tar",
  "thiserror",
+ "tokio",
  "url",
  "zip",
 ]

@@ -122,8 +122,8 @@ fn uploading_files_is_restricted(#[case] server: TestServer) -> Result<(), Error
 #[case(server(&["-u", "./-someDir"]), vec!["./-someDir"])]
 #[case(server(&["-u", Path::new("someDir/some_sub_dir").to_str().unwrap()]),
   vec!["someDir/some_sub_dir"])]
-#[case(server(&["-u", Path::new("someDir/some_sub_dir").to_str().unwrap(), 
-                "-u", Path::new("someDir/some_other_dir").to_str().unwrap()]), 
+#[case(server(&["-u", Path::new("someDir/some_sub_dir").to_str().unwrap(),
+                "-u", Path::new("someDir/some_other_dir").to_str().unwrap()]),
        vec!["someDir/some_sub_dir", "someDir/some_other_dir"])]
 fn uploading_files_to_allowed_dir_works(
     #[case] server: TestServer,
