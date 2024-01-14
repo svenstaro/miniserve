@@ -214,6 +214,18 @@ pub struct CliArgs {
     #[arg(short = 'z', long = "enable-zip", env = "MINISERVE_ENABLE_ZIP")]
     pub enable_zip: bool,
 
+    /// Enable compress response
+    ///
+    /// WARNING: Enabling this option may slow down transfers due to CPU overhead, so it is disabled by default.
+    ///
+    /// Only enable this option if you know that your users have slow connections or if you want to minimize your server's bandwidth usage.
+    #[arg(
+        short = 'C',
+        long = "compress-response",
+        env = "MINISERVE_COMPRESS_RESPONSE"
+    )]
+    pub compress_response: bool,
+
     /// List directories first
     #[arg(short = 'D', long = "dirs-first", env = "MINISERVE_DIRS_FIRST")]
     pub dirs_first: bool,
