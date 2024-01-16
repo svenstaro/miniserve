@@ -202,6 +202,10 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
             .app_data(stylesheet.clone())
             .wrap_fn(errors::error_page_middleware)
             .wrap(middleware::Logger::default())
+            .wrap(middleware::Condition::new(
+                miniserve_config.compress_response,
+                middleware::Compress::default(),
+            ))
             .route(&inside_config.favicon_route, web::get().to(favicon))
             .route(&inside_config.css_route, web::get().to(css))
             .service(

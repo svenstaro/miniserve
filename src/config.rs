@@ -119,6 +119,9 @@ pub struct MiniserveConfig {
     /// If false, creation of zip archives is disabled
     pub zip_enabled: bool,
 
+    /// Enable  compress response
+    pub compress_response: bool,
+
     /// If enabled, directories are listed first
     pub dirs_first: bool,
 
@@ -309,6 +312,7 @@ impl MiniserveConfig {
             show_wget_footer: args.show_wget_footer,
             readme: args.readme,
             tls_rustls_config: tls_rustls_server_config,
+            compress_response: args.compress_response,
         })
     }
 }
