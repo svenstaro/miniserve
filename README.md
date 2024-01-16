@@ -294,6 +294,15 @@ Options:
 
           [env: MINISERVE_ENABLE_ZIP=]
 
+  -C, --compress-response
+          Compress response
+
+          WARNING: Enabling this option may slow down transfers due to CPU overhead, so it is disabled by default.
+
+          Only enable this option if you know that your users have slow connections or if you want to minimize your server's bandwidth usage.
+
+          [env: MINISERVE_COMPRESS_RESPONSE=]
+
   -D, --dirs-first
           List directories first
 
