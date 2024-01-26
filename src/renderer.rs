@@ -502,7 +502,7 @@ fn rm_form(rm_route: &str, encoded_path: &str) -> Markup {
     let rm_action = format!("{rm_route}?path={encoded_path}");
     html! {
         form class="rm_form" action=(rm_action) method="POST" {
-            button type="submit" { "X" }
+            button type="submit" { "✗" }
         }
     }
 }
