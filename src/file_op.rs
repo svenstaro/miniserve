@@ -152,9 +152,10 @@ async fn handle_multipart(
         )
     })?;
 
-    let filename_path = sanitize_path(Path::new(&filename), false).ok_or_else(|| {
-        ContextualError::InvalidPathError("Invalid file name to upload".to_string())
-    })?;
+    let filename_path =
+        sanitize_path(Path::new(&filename), allow_hidden_paths).ok_or_else(|| {
+            ContextualError::InvalidPathError("Invalid file name to upload".to_string())
+        })?;
 
     // Ensure there are no illegal symlinks in the file upload path
     if !allow_symlinks {
