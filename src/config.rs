@@ -146,6 +146,9 @@ pub struct MiniserveConfig {
     /// If enabled, render the readme from the current directory
     pub readme: bool,
 
+    /// If enabled, indexing is disabled.
+    pub disable_indexing: bool,
+
     /// If set, use provided rustls config for TLS
     #[cfg(feature = "tls")]
     pub tls_rustls_config: Option<rustls::ServerConfig>,
@@ -311,6 +314,7 @@ impl MiniserveConfig {
             hide_theme_selector: args.hide_theme_selector,
             show_wget_footer: args.show_wget_footer,
             readme: args.readme,
+            disable_indexing: args.disable_indexing,
             tls_rustls_config: tls_rustls_server_config,
             compress_response: args.compress_response,
         })

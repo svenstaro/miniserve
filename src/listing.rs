@@ -376,6 +376,15 @@ pub fn directory_listing(
                 .body(actix_web::body::BodyStream::new(rx)),
         ))
     } else {
+        if conf.disable_indexing {
+            return Ok(ServiceResponse::new(
+                req.clone(),
+                HttpResponse::NotFound()
+                    .content_type(mime::TEXT_PLAIN_UTF_8)
+                    .body("File not found."),
+            ));
+        }
+
         Ok(ServiceResponse::new(
             req.clone(),
             HttpResponse::Ok().content_type(mime::TEXT_HTML_UTF_8).body(
