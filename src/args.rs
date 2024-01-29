@@ -202,7 +202,7 @@ pub struct CliArgs {
     #[arg(
         short = 'R',
         long = "rm-files",
-        value_hint = ValueHint::FilePath,
+        value_hint = ValueHint::DirPath,
         num_args(0..=1),
         value_delimiter(','),
         env = "MINISERVE_ALLOWED_RM_DIR"
