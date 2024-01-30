@@ -11,7 +11,7 @@ use thiserror::Error;
 use crate::{renderer::render_error, MiniserveConfig};
 
 #[derive(Debug, Error)]
-pub enum StartError {
+pub enum StartupError {
     /// Any kind of IO errors
     #[error("{0}\ncaused by: {1}")]
     IoError(String, std::io::Error),

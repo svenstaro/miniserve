@@ -29,7 +29,7 @@ mod pipe;
 mod renderer;
 
 use crate::config::MiniserveConfig;
-use crate::errors::{RuntimeError, StartError};
+use crate::errors::{RuntimeError, StartupError};
 
 static STYLESHEET: &str = grass::include!("data/style.scss");
 
@@ -61,7 +61,7 @@ fn main() -> Result<()> {
 }
 
 #[actix_web::main(miniserve)]
-async fn run(miniserve_config: MiniserveConfig) -> Result<(), StartError> {
+async fn run(miniserve_config: MiniserveConfig) -> Result<(), StartupError> {
     let log_level = if miniserve_config.verbose {
         simplelog::LevelFilter::Info
     } else {
@@ -84,7 +84,7 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), StartError> {
     .expect("Couldn't initialize logger");
 
     if miniserve_config.no_symlinks && miniserve_config.path.is_symlink() {
-        return Err(StartError::NoSymlinksOptionWithSymlinkServePath(
+        return Err(StartupError::NoSymlinksOptionWithSymlinkServePath(
             miniserve_config.path.to_string_lossy().to_string(),
         ));
     }
@@ -94,7 +94,7 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), StartError> {
     let canon_path = miniserve_config
         .path
         .canonicalize()
-        .map_err(|e| StartError::IoError("Failed to resolve path to be served".to_string(), e))?;
+        .map_err(|e| StartupError::IoError("Failed to resolve path to be served".to_string(), e))?;
 
     // warn if --index is specified but not found
     if let Some(ref index) = miniserve_config.index {
@@ -119,7 +119,7 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), StartError> {
         // running miniserve as a service but forgetting to set the path. This could be pretty
         // dangerous if given with an undesired context path (for instance /root or /).
         if !io::stdout().is_terminal() {
-            return Err(StartError::NoExplicitPathAndNoTerminal);
+            return Err(StartupError::NoExplicitPathAndNoTerminal);
         }
 
         warn!("miniserve has been invoked without an explicit path so it will serve the current directory after a short delay.");
@@ -129,12 +129,12 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), StartError> {
         print!("Starting server in ");
         io::stdout()
             .flush()
-            .map_err(|e| StartError::IoError("Failed to write data".to_string(), e))?;
+            .map_err(|e| StartupError::IoError("Failed to write data".to_string(), e))?;
         for c in "3… 2… 1… \n".chars() {
             print!("{c}");
             io::stdout()
                 .flush()
-                .map_err(|e| StartError::IoError("Failed to write data".to_string(), e))?;
+                .map_err(|e| StartupError::IoError("Failed to write data".to_string(), e))?;
             thread::sleep(Duration::from_millis(500));
         }
     }
@@ -224,7 +224,7 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), StartError> {
 
     let srv = socket_addresses.iter().try_fold(srv, |srv, addr| {
         let listener = create_tcp_listener(*addr)
-            .map_err(|e| StartError::IoError(format!("Failed to bind server to {addr}"), e))?;
+            .map_err(|e| StartupError::IoError(format!("Failed to bind server to {addr}"), e))?;
 
         #[cfg(feature = "tls")]
         let srv = match &miniserve_config.tls_rustls_config {
@@ -235,7 +235,7 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), StartError> {
         #[cfg(not(feature = "tls"))]
         let srv = srv.listen(listener);
 
-        srv.map_err(|e| StartError::IoError(format!("Failed to bind server to {addr}"), e))
+        srv.map_err(|e| StartupError::IoError(format!("Failed to bind server to {addr}"), e))
     })?;
 
     let srv = srv.shutdown_timeout(0).run();
@@ -275,7 +275,8 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), StartError> {
         println!("Quit by pressing CTRL-C");
     }
 
-    srv.await.map_err(|e| StartError::IoError("".to_owned(), e))
+    srv.await
+        .map_err(|e| StartupError::IoError("".to_owned(), e))
 }
 
 /// Allows us to set low-level socket options
