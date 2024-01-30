@@ -2,7 +2,7 @@ use actix_web::{dev::ServiceRequest, HttpMessage};
 use actix_web_httpauth::extractors::basic::BasicAuth;
 use sha2::{Digest, Sha256, Sha512};
 
-use crate::errors::ContextualError;
+use crate::errors::RuntimeError;
 
 #[derive(Clone, Debug)]
 /// HTTP Basic authentication parameters
@@ -86,7 +86,7 @@ pub async fn handle_auth(
     if match_auth(&cred.into(), required_auth) {
         Ok(req)
     } else {
-        Err((ContextualError::InvalidHttpCredentials.into(), req))
+        Err((RuntimeError::InvalidHttpCredentials.into(), req))
     }
 }
 

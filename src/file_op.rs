@@ -11,7 +11,7 @@ use tokio::fs::File;
 use tokio::io::AsyncWriteExt;
 
 use crate::{
-    config::MiniserveConfig, errors::ContextualError, file_utils::contains_symlink,
+    config::MiniserveConfig, errors::RuntimeError, file_utils::contains_symlink,
     file_utils::sanitize_path,
 };
 
@@ -23,16 +23,16 @@ async fn save_file(
     field: actix_multipart::Field,
     file_path: PathBuf,
     overwrite_files: bool,
-) -> Result<u64, ContextualError> {
+) -> Result<u64, RuntimeError> {
     if !overwrite_files && file_path.exists() {
-        return Err(ContextualError::DuplicateFileError);
+        return Err(RuntimeError::DuplicateFileError);
     }
 
     let file = match File::create(&file_path).await {
         Err(err) if err.kind() == ErrorKind::PermissionDenied => Err(
-            ContextualError::InsufficientPermissionsError(file_path.display().to_string()),
+            RuntimeError::InsufficientPermissionsError(file_path.display().to_string()),
         ),
-        Err(err) => Err(ContextualError::IoError(
+        Err(err) => Err(RuntimeError::IoError(
             format!("Failed to create {}", file_path.display()),
             err,
         )),
@@ -40,10 +40,10 @@ async fn save_file(
     }?;
 
     let (_, written_len) = field
-        .map_err(|x| ContextualError::MultipartError(x.to_string()))
+        .map_err(|x| RuntimeError::MultipartError(x.to_string()))
         .try_fold((file, 0u64), |(mut file, written_len), bytes| async move {
             file.write_all(bytes.as_ref())
-                .map_err(|e| ContextualError::IoError("Failed to write to file".to_string(), e))
+                .map_err(|e| RuntimeError::IoError("Failed to write to file".to_string(), e))
                 .await?;
             Ok((file, written_len + bytes.len() as u64))
         })
@@ -60,14 +60,14 @@ async fn handle_multipart(
     allow_mkdir: bool,
     allow_hidden_paths: bool,
     allow_symlinks: bool,
-) -> Result<u64, ContextualError> {
+) -> Result<u64, RuntimeError> {
     let field_name = field.name().to_string();
 
     match tokio::fs::metadata(&path).await {
-        Err(_) => Err(ContextualError::InsufficientPermissionsError(
+        Err(_) => Err(RuntimeError::InsufficientPermissionsError(
             path.display().to_string(),
         )),
-        Ok(metadata) if !metadata.is_dir() => Err(ContextualError::InvalidPathError(format!(
+        Ok(metadata) if !metadata.is_dir() => Err(RuntimeError::InvalidPathError(format!(
             "cannot upload file to {}, since it's not a directory",
             &path.display()
         ))),
@@ -76,7 +76,7 @@ async fn handle_multipart(
 
     if field_name == "mkdir" {
         if !allow_mkdir {
-            return Err(ContextualError::InsufficientPermissionsError(
+            return Err(RuntimeError::InsufficientPermissionsError(
                 path.display().to_string(),
             ));
         }
@@ -89,7 +89,7 @@ async fn handle_multipart(
         match mkdir_path_bytes {
             Ok(Some(mkdir_path_bytes)) => {
                 let mkdir_path = std::str::from_utf8(&mkdir_path_bytes).map_err(|e| {
-                    ContextualError::ParseError(
+                    RuntimeError::ParseError(
                         "Failed to parse 'mkdir' path".to_string(),
                         e.to_string(),
                     )
@@ -99,7 +99,7 @@ async fn handle_multipart(
                 user_given_path.push(&mkdir_path);
             }
             _ => {
-                return Err(ContextualError::ParseError(
+                return Err(RuntimeError::ParseError(
                     "Failed to parse 'mkdir' path".to_string(),
                     "".to_string(),
                 ))
@@ -111,22 +111,20 @@ async fn handle_multipart(
             .components()
             .any(|c| c == Component::ParentDir)
         {
-            return Err(ContextualError::InvalidPathError(
+            return Err(RuntimeError::InvalidPathError(
                 "Cannot use '..' in mkdir path".to_string(),
             ));
         }
         // Hidden paths check
         sanitize_path(&user_given_path, allow_hidden_paths).ok_or_else(|| {
-            ContextualError::InvalidPathError("Cannot use hidden paths in mkdir path".to_string())
+            RuntimeError::InvalidPathError("Cannot use hidden paths in mkdir path".to_string())
         })?;
 
         // Ensure there are no illegal symlinks
         if !allow_symlinks {
             match contains_symlink(&absolute_path) {
-                Err(err) => Err(ContextualError::InsufficientPermissionsError(
-                    err.to_string(),
-                ))?,
-                Ok(true) => Err(ContextualError::InsufficientPermissionsError(format!(
+                Err(err) => Err(RuntimeError::InsufficientPermissionsError(err.to_string()))?,
+                Ok(true) => Err(RuntimeError::InsufficientPermissionsError(format!(
                     "{user_given_path:?} traverses through a symlink"
                 )))?,
                 Ok(false) => (),
@@ -135,9 +133,9 @@ async fn handle_multipart(
 
         return match tokio::fs::create_dir_all(&absolute_path).await {
             Err(err) if err.kind() == ErrorKind::PermissionDenied => Err(
-                ContextualError::InsufficientPermissionsError(path.display().to_string()),
+                RuntimeError::InsufficientPermissionsError(path.display().to_string()),
             ),
-            Err(err) => Err(ContextualError::IoError(
+            Err(err) => Err(RuntimeError::IoError(
                 format!("Failed to create {}", user_given_path.display()),
                 err,
             )),
@@ -146,24 +144,20 @@ async fn handle_multipart(
     }
 
     let filename = field.content_disposition().get_filename().ok_or_else(|| {
-        ContextualError::ParseError(
+        RuntimeError::ParseError(
             "HTTP header".to_string(),
             "Failed to retrieve the name of the file to upload".to_string(),
         )
     })?;
 
-    let filename_path =
-        sanitize_path(Path::new(&filename), allow_hidden_paths).ok_or_else(|| {
-            ContextualError::InvalidPathError("Invalid file name to upload".to_string())
-        })?;
+    let filename_path = sanitize_path(Path::new(&filename), allow_hidden_paths)
+        .ok_or_else(|| RuntimeError::InvalidPathError("Invalid file name to upload".to_string()))?;
 
     // Ensure there are no illegal symlinks in the file upload path
     if !allow_symlinks {
         match contains_symlink(&path) {
-            Err(err) => Err(ContextualError::InsufficientPermissionsError(
-                err.to_string(),
-            ))?,
-            Ok(true) => Err(ContextualError::InsufficientPermissionsError(format!(
+            Err(err) => Err(RuntimeError::InsufficientPermissionsError(err.to_string()))?,
+            Ok(true) => Err(RuntimeError::InsufficientPermissionsError(format!(
                 "{path:?} traverses through a symlink"
             )))?,
             Ok(false) => (),
@@ -188,13 +182,13 @@ pub async fn upload_file(
     req: HttpRequest,
     query: web::Query<FileOpQueryParameters>,
     payload: web::Payload,
-) -> Result<HttpResponse, ContextualError> {
+) -> Result<HttpResponse, RuntimeError> {
     let conf = req.app_data::<MiniserveConfig>().unwrap();
     let upload_path = sanitize_path(&query.path, conf.show_hidden).ok_or_else(|| {
-        ContextualError::InvalidPathError("Invalid value for 'path' parameter".to_string())
+        RuntimeError::InvalidPathError("Invalid value for 'path' parameter".to_string())
     })?;
     let app_root_dir = conf.path.canonicalize().map_err(|e| {
-        ContextualError::IoError("Failed to resolve path served by miniserve".to_string(), e)
+        RuntimeError::IoError("Failed to resolve path served by miniserve".to_string(), e)
     })?;
 
     // Disallow paths outside of allowed directories
@@ -205,7 +199,7 @@ pub async fn upload_file(
             .any(|s| upload_path.starts_with(s));
 
     if !upload_allowed {
-        return Err(ContextualError::UploadForbiddenError);
+        return Err(RuntimeError::UploadForbiddenError);
     }
 
     // Disallow the target path to go outside of the served directory
@@ -215,13 +209,13 @@ pub async fn upload_file(
     match non_canonicalized_target_dir.canonicalize() {
         Ok(path) if !conf.no_symlinks => Ok(path),
         Ok(path) if path.starts_with(&app_root_dir) => Ok(path),
-        _ => Err(ContextualError::InvalidHttpRequestError(
+        _ => Err(RuntimeError::InvalidHttpRequestError(
             "Invalid value for 'path' parameter".to_string(),
         )),
     }?;
 
     actix_multipart::Multipart::new(req.headers(), payload)
-        .map_err(|x| ContextualError::MultipartError(x.to_string()))
+        .map_err(|x| RuntimeError::MultipartError(x.to_string()))
         .and_then(|field| {
             handle_multipart(
                 field,

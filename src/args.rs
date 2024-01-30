@@ -5,7 +5,6 @@ use clap::{Parser, ValueEnum, ValueHint};
 use http::header::{HeaderMap, HeaderName, HeaderValue};
 
 use crate::auth;
-use crate::errors::ContextualError;
 use crate::listing::{SortingMethod, SortingOrder};
 use crate::renderer::ThemeSlug;
 
@@ -301,10 +300,31 @@ fn parse_interface(src: &str) -> Result<IpAddr, std::net::AddrParseError> {
     src.parse::<IpAddr>()
 }
 
+#[derive(Clone, Debug, thiserror::Error)]
+pub enum AuthParseError {
+    /// Might occur if the HTTP credential string does not respect the expected format
+    #[error("Invalid format for credentials string. Expected username:password, username:sha256:hash or username:sha512:hash")]
+    InvalidAuthFormat,
+
+    /// Might occur if the hash method is neither sha256 nor sha512
+    #[error("{0} is not a valid hashing method. Expected sha256 or sha512")]
+    InvalidHashMethod(String),
+
+    /// Might occur if the HTTP auth hash password is not a valid hex code
+    #[error("Invalid format for password hash. Expected hex code")]
+    InvalidPasswordHash,
+
+    /// Might occur if the HTTP auth password exceeds 255 characters
+    #[error("HTTP password length exceeds 255 characters")]
+    PasswordTooLong,
+}
+
 /// Parse authentication requirement
-pub fn parse_auth(src: &str) -> Result<auth::RequiredAuth, ContextualError> {
+pub fn parse_auth(src: &str) -> Result<auth::RequiredAuth, AuthParseError> {
+    use AuthParseError as E;
+
     let mut split = src.splitn(3, ':');
-    let invalid_auth_format = Err(ContextualError::InvalidAuthFormat);
+    let invalid_auth_format = Err(E::InvalidAuthFormat);
 
     let username = match split.next() {
         Some(username) => username,
@@ -319,19 +339,19 @@ pub fn parse_auth(src: &str) -> Result<auth::RequiredAuth, ContextualError> {
     };
 
     let password = if let Some(hash_hex) = split.next() {
-        let hash_bin = hex::decode(hash_hex).map_err(|_| ContextualError::InvalidPasswordHash)?;
+        let hash_bin = hex::decode(hash_hex).map_err(|_| E::InvalidPasswordHash)?;
 
         match second_part {
             "sha256" => auth::RequiredAuthPassword::Sha256(hash_bin),
             "sha512" => auth::RequiredAuthPassword::Sha512(hash_bin),
-            _ => return Err(ContextualError::InvalidHashMethod(second_part.to_owned())),
+            _ => return Err(E::InvalidHashMethod(second_part.to_owned())),
         }
     } else {
         // To make it Windows-compatible, the password needs to be shorter than 255 characters.
         // After 255 characters, Windows will truncate the value.
         // As for the username, the spec does not mention a limit in length
         if second_part.len() > 255 {
-            return Err(ContextualError::PasswordTooLongError);
+            return Err(E::PasswordTooLong);
         }
 
         auth::RequiredAuthPassword::Plain(second_part.to_owned())

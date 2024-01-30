@@ -14,7 +14,7 @@ use strum::{Display, EnumString};
 
 use crate::archive::ArchiveMethod;
 use crate::auth::CurrentUser;
-use crate::errors::{self, ContextualError};
+use crate::errors::{self, RuntimeError};
 use crate::renderer;
 
 use self::percent_encode_sets::PATH_SEGMENT;
@@ -400,7 +400,7 @@ pub fn extract_query_parameters(req: &HttpRequest) -> ListingQueryParameters {
     match Query::<ListingQueryParameters>::from_query(req.query_string()) {
         Ok(Query(query_params)) => query_params,
         Err(e) => {
-            let err = ContextualError::ParseError("query parameters".to_string(), e.to_string());
+            let err = RuntimeError::ParseError("query parameters".to_string(), e.to_string());
             errors::log_error_chain(err.to_string());
             ListingQueryParameters::default()
         }

@@ -29,7 +29,7 @@ mod pipe;
 mod renderer;
 
 use crate::config::MiniserveConfig;
-use crate::errors::ContextualError;
+use crate::errors::{RuntimeError, StartupError};
 
 static STYLESHEET: &str = grass::include!("data/style.scss");
 
@@ -61,7 +61,7 @@ fn main() -> Result<()> {
 }
 
 #[actix_web::main(miniserve)]
-async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
+async fn run(miniserve_config: MiniserveConfig) -> Result<(), StartupError> {
     let log_level = if miniserve_config.verbose {
         simplelog::LevelFilter::Info
     } else {
@@ -84,16 +84,17 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
     .expect("Couldn't initialize logger");
 
     if miniserve_config.no_symlinks && miniserve_config.path.is_symlink() {
-        return Err(ContextualError::NoSymlinksOptionWithSymlinkServePath(
+        return Err(StartupError::NoSymlinksOptionWithSymlinkServePath(
             miniserve_config.path.to_string_lossy().to_string(),
         ));
     }
 
     let inside_config = miniserve_config.clone();
 
-    let canon_path = miniserve_config.path.canonicalize().map_err(|e| {
-        ContextualError::IoError("Failed to resolve path to be served".to_string(), e)
-    })?;
+    let canon_path = miniserve_config
+        .path
+        .canonicalize()
+        .map_err(|e| StartupError::IoError("Failed to resolve path to be served".to_string(), e))?;
 
     // warn if --index is specified but not found
     if let Some(ref index) = miniserve_config.index {
@@ -118,7 +119,7 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
         // running miniserve as a service but forgetting to set the path. This could be pretty
         // dangerous if given with an undesired context path (for instance /root or /).
         if !io::stdout().is_terminal() {
-            return Err(ContextualError::NoExplicitPathAndNoTerminal);
+            return Err(StartupError::NoExplicitPathAndNoTerminal);
         }
 
         warn!("miniserve has been invoked without an explicit path so it will serve the current directory after a short delay.");
@@ -128,12 +129,12 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
         print!("Starting server in ");
         io::stdout()
             .flush()
-            .map_err(|e| ContextualError::IoError("Failed to write data".to_string(), e))?;
+            .map_err(|e| StartupError::IoError("Failed to write data".to_string(), e))?;
         for c in "3… 2… 1… \n".chars() {
             print!("{c}");
             io::stdout()
                 .flush()
-                .map_err(|e| ContextualError::IoError("Failed to write data".to_string(), e))?;
+                .map_err(|e| StartupError::IoError("Failed to write data".to_string(), e))?;
             thread::sleep(Duration::from_millis(500));
         }
     }
@@ -223,7 +224,7 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
 
     let srv = socket_addresses.iter().try_fold(srv, |srv, addr| {
         let listener = create_tcp_listener(*addr)
-            .map_err(|e| ContextualError::IoError(format!("Failed to bind server to {addr}"), e))?;
+            .map_err(|e| StartupError::IoError(format!("Failed to bind server to {addr}"), e))?;
 
         #[cfg(feature = "tls")]
         let srv = match &miniserve_config.tls_rustls_config {
@@ -234,7 +235,7 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
         #[cfg(not(feature = "tls"))]
         let srv = srv.listen(listener);
 
-        srv.map_err(|e| ContextualError::IoError(format!("Failed to bind server to {addr}"), e))
+        srv.map_err(|e| StartupError::IoError(format!("Failed to bind server to {addr}"), e))
     })?;
 
     let srv = srv.shutdown_timeout(0).run();
@@ -275,7 +276,7 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), ContextualError> {
     }
 
     srv.await
-        .map_err(|e| ContextualError::IoError("".to_owned(), e))
+        .map_err(|e| StartupError::IoError("".to_owned(), e))
 }
 
 /// Allows us to set low-level socket options
@@ -378,8 +379,8 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
     }
 }
 
-async fn error_404(req: HttpRequest) -> Result<HttpResponse, ContextualError> {
-    Err(ContextualError::RouteNotFoundError(req.path().to_string()))
+async fn error_404(req: HttpRequest) -> Result<HttpResponse, RuntimeError> {
+    Err(RuntimeError::RouteNotFoundError(req.path().to_string()))
 }
 
 async fn favicon() -> impl Responder {
