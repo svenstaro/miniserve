@@ -3,7 +3,7 @@ use std::net::{IpAddr, SocketAddr, TcpListener};
 use std::thread;
 use std::time::Duration;
 
-use actix_files::NamedFile;
+use actix_files::{Directory, NamedFile};
 use actix_web::{
     dev::{fn_service, ServiceRequest, ServiceResponse},
     http::header::ContentType,
@@ -354,9 +354,21 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
 
         let base_path = conf.path.clone();
         let no_symlinks = conf.no_symlinks;
+        if !conf.disable_indexing {
+            files = files
+                .show_files_listing()
+                .files_listing_renderer(listing::directory_listing);
+        } else {
+            // If indexing is disabled, we return a 404 for any directory request so we don't
+            // leak the directory structure.
+            files = files.show_files_listing().files_listing_renderer(
+                |_dir: &Directory, req: &HttpRequest| {
+                    let res = HttpResponse::NotFound().body("File not found.");
+                    Ok(ServiceResponse::new(req.clone(), res))
+                },
+            );
+        }
         files
-            .show_files_listing()
-            .files_listing_renderer(listing::directory_listing)
             .prefer_utf8(true)
             .redirect_to_slash_directory()
             .path_filter(move |path, _| {
