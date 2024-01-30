@@ -338,6 +338,10 @@ fn serves_no_directory_if_indexing_disabled(#[case] server: TestServer) -> Resul
         .next()
         .is_none());
     assert!(parsed
+        .find(|x: &Node| x.text() == "404 Not Found")
+        .next()
+        .is_some());
+    assert!(parsed
         .find(|x: &Node| x.text() == "File not found.")
         .next()
         .is_some());
@@ -348,7 +352,7 @@ fn serves_no_directory_if_indexing_disabled(#[case] server: TestServer) -> Resul
 #[rstest]
 #[case(server(&["--disable-indexing"]))]
 fn serves_file_requests_when_indexing_disabled(#[case] server: TestServer) -> Result<(), Error> {
-    reqwest::blocking::get(format!("{}/{}", server.url(), FILES[0]))?.error_for_status()?;
+    reqwest::blocking::get(format!("{}{}", server.url(), FILES[0]))?.error_for_status()?;
 
     Ok(())
 }
