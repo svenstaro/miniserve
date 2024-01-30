@@ -296,9 +296,10 @@ pub struct CliArgs {
     pub readme: bool,
 
     /// Disable indexing
+    ///
     /// This will prevent miniserve from generating directory listings
     /// and will return a 404 instead.
-    #[arg(long, env = "MINISERVE_DISABLE_INDEXING")]
+    #[arg(short = 'I', long, env = "MINISERVE_DISABLE_INDEXING")]
     pub disable_indexing: bool,
 }
 
