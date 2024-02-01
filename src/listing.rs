@@ -161,6 +161,14 @@ pub fn directory_listing(
     let current_user: Option<&CurrentUser> = extensions.get::<CurrentUser>();
 
     let conf = req.app_data::<crate::MiniserveConfig>().unwrap();
+    if conf.disable_indexing {
+        return Ok(ServiceResponse::new(
+            req.clone(),
+            HttpResponse::NotFound()
+                .content_type(mime::TEXT_PLAIN_UTF_8)
+                .body("File not found."),
+        ));
+    }
     let serve_path = req.path();
 
     let base = Path::new(serve_path);

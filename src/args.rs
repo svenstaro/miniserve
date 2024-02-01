@@ -293,6 +293,13 @@ pub struct CliArgs {
     /// Enable README.md rendering in directories
     #[arg(long, env = "MINISERVE_README")]
     pub readme: bool,
+
+    /// Disable indexing
+    ///
+    /// This will prevent directory listings from being generated
+    /// and return an error instead.
+    #[arg(short = 'I', long, env = "MINISERVE_DISABLE_INDEXING")]
+    pub disable_indexing: bool,
 }
 
 /// Checks whether an interface is valid, i.e. it can be parsed into an IP address

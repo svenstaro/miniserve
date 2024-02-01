@@ -321,3 +321,38 @@ fn serves_requests_static_file_check(
 
     Ok(())
 }
+
+#[rstest]
+#[case(server(&["--disable-indexing"]))]
+fn serves_no_directory_if_indexing_disabled(#[case] server: TestServer) -> Result<(), Error> {
+    let body = reqwest::blocking::get(server.url())?;
+    assert_eq!(body.status(), StatusCode::NOT_FOUND);
+    let parsed = Document::from_read(body)?;
+
+    assert!(parsed
+        .find(|x: &Node| x.text() == FILES[0])
+        .next()
+        .is_none());
+    assert!(parsed
+        .find(|x: &Node| x.text() == DIRECTORIES[0])
+        .next()
+        .is_none());
+    assert!(parsed
+        .find(|x: &Node| x.text() == "404 Not Found")
+        .next()
+        .is_some());
+    assert!(parsed
+        .find(|x: &Node| x.text() == "File not found.")
+        .next()
+        .is_some());
+
+    Ok(())
+}
+
+#[rstest]
+#[case(server(&["--disable-indexing"]))]
+fn serves_file_requests_when_indexing_disabled(#[case] server: TestServer) -> Result<(), Error> {
+    reqwest::blocking::get(format!("{}{}", server.url(), FILES[0]))?.error_for_status()?;
+
+    Ok(())
+}

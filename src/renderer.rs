@@ -687,7 +687,7 @@ pub fn render_error(
                         p { (error) }
                     }
                     // WARN don't expose random route!
-                    @if conf.route_prefix.is_empty() {
+                    @if conf.route_prefix.is_empty() && !conf.disable_indexing {
                         div.error-nav {
                             a.error-back href=(return_address) {
                                 "Go back to file listing"
