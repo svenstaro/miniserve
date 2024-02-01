@@ -361,6 +361,13 @@ Options:
 
           [env: MINISERVE_README=]
 
+  -I, --disable-indexing
+          Disable indexing
+
+          This will prevent directory listings from being generated and return an error instead.
+
+          [env: MINISERVE_DISABLE_INDEXING=]
+
   -h, --help
           Print help (see a summary with '-h')
 
