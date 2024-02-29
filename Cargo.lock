@@ -990,9 +990,9 @@ checksum = "aa6c2a740a5d6940f90a0f13b5828440c2a7160bd1e235cf934d5df0e7a3e1ad"
 
 [[package]]
 name = "fast_qr"
-version = "0.11.0"
+version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f2013b346faa17813e7535e22c95afc9e93daadb1522437e406b046319f8d169"
+checksum = "ce8804b5d867486d5bc3bd29cb4ec90ab19eccfe54eca87795896bacbc45aeaf"
 
 [[package]]
 name = "fastrand"
