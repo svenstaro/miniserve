@@ -91,6 +91,14 @@ a.file,
     }
 }
 
+a.file::before {
+    content: "📃 ";
+}
+
+a.directory::before {
+    content: "📁 ";
+}
+
 a.directory:hover {
     color: var(--directory_link_color);
 }
