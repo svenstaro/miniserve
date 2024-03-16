@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+
+## [0.27.0] - 2024-03-16
 - Add `-C/--compress-response` to enable response compression [1315](https://github.com/svenstaro/miniserve/pull/1315) (thanks @zuisong)
 - Refactor errors [#1331](https://github.com/svenstaro/miniserve/pull/1331) (thanks @cyqsimon)
 - Add `-I/--disable-inexing` [#1329](https://github.com/svenstaro/miniserve/pull/1329) (thanks @dyc3)
@@ -194,7 +196,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Some theme related bug fixes (thanks @boastful-squirrel)
 
 <!-- next-url -->
-[Unreleased]: https://github.com/svenstaro/miniserve/compare/v0.26.0...HEAD
+[Unreleased]: https://github.com/svenstaro/miniserve/compare/v0.27.0...HEAD
+[0.27.0]: https://github.com/svenstaro/miniserve/compare/v0.26.0...v0.27.0
 [0.26.0]: https://github.com/svenstaro/miniserve/compare/v0.25.0...v0.26.0
 [0.25.0]: https://github.com/svenstaro/miniserve/compare/v0.24.0...v0.25.0
 [0.24.0]: https://github.com/svenstaro/miniserve/compare/v0.23.2...v0.24.0
