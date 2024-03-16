@@ -9,5 +9,5 @@ pre-release-replacements = [
 ]
 # Get rid of the default cargo-release "chore: " prefix in messages as we don't
 # use semantic commits in this repository.
-pre-release-message = "Release"
+pre-release-commit-message = "Release"
 tag-message = "Release {{crate_name}} version {{version}}"
