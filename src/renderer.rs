@@ -503,7 +503,7 @@ fn entry_row(
                             }
                         }@else {
                             a.directory href=(parametrized_link(&entry.link, sort_method, sort_order, raw)) {
-                                "📁 " (entry.name) "/"
+                                (entry.name) "/"
                             }
                         }
                     } @else if entry.is_file() {
@@ -515,7 +515,7 @@ fn entry_row(
                             }
                         }@else {
                             a.file href=(&entry.link) {
-                                "📃 " (entry.name)
+                                (entry.name)
                             }
                         }
 
