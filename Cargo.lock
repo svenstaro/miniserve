@@ -1943,9 +1943,9 @@ checksum = "d231b230927b5e4ad203db57bbcbee2802f6bce620b1e4a9024a07d94e2907ec"
 
 [[package]]
 name = "port_check"
-version = "0.1.5"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f6519412c9e0d4be579b9f0618364d19cb434b324fc6ddb1b27b1e682c7105ed"
+checksum = "e956b3af7a0107123acd498bc9dde7113e452e0c3b156ba97381291241b0943e"
 
 [[package]]
 name = "powerfmt"

@@ -46,7 +46,7 @@ maud = "0.25"
 mime = "0.3"
 nanoid = "0.4"
 percent-encoding = "2"
-port_check = "0.1"
+port_check = "0.2"
 regex = "1"
 rustls = { version = "0.20", optional = true }
 rustls-pemfile = { version = "1.0", optional = true }
