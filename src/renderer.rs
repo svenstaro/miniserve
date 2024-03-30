@@ -514,6 +514,7 @@ fn entry_row(
                                 a.file {(symlink_dest)}
                             }
                         }@else {
+                            a.file_download download href=(&entry.link) {" "}
                             a.file href=(&entry.link) {
                                 (entry.name)
                             }
