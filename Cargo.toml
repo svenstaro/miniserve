@@ -35,7 +35,7 @@ colored = "2"
 comrak = { version = "0.21", default-features = false }
 fast_qr = { version = "0.12", features = ["svg"] }
 futures = "0.3"
-grass = { version = "0.13", features = ["macro"] }
+grass = { version = "0.13", features = ["macro"], default-features = false }
 hex = "0.4"
 http = "0.2"
 httparse = "1"
