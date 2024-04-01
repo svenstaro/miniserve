@@ -37,7 +37,7 @@ fast_qr = { version = "0.12", features = ["svg"] }
 futures = "0.3"
 grass = { version = "0.13", features = ["macro"], default-features = false }
 hex = "0.4"
-http = "0.2"
+http = "1.1"
 httparse = "1"
 if-addrs = "0.11"
 libflate = "2"
