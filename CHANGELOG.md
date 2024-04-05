@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+- Fix wrapping text in mobile view when the file name too long [#1379](https://github.com/svenstaro/miniserve/pull/1379) (thanks @chaibiq)
 
 ## [0.27.1] - 2024-03-16
 - Add `Add file and folder symbols` [#1365](https://github.com/svenstaro/miniserve/pull/1365) (thanks @chaibiq)
