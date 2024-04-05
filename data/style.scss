@@ -282,6 +282,7 @@ td.date-cell {
 }
 
 span.size {
+    white-space: nowrap;
     border-radius: 1rem;
     background: var(--size_background_color);
     padding: 0 0.25rem;
