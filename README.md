@@ -66,8 +66,8 @@ Sometimes this is just a more practical and quick way than doing things properly
     miniserve --tls-cert my.cert --tls-key my.key /tmp/myshare
 
 ### Custom Headers
-    # If a header already exists, it will not be overwritten.
-    miniserve --header "Cache-Control: no-cache" --header "X-Custom-Header: custom-value" /tmp/myshare
+    # If a header is already set or previously inserted, it will not be overwritten.
+    miniserve --header "Cache-Control:no-cache" --header "X-Custom-Header:custom-value" /tmp/myshare
     # Detect headers
     curl -I http://localhost:8080
 
