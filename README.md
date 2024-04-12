@@ -313,7 +313,7 @@ Options:
 
           [env: MINISERVE_TITLE=]
 
-      --header <Header:Value>
+      --header <HEADER>
           Inserts custom headers into the responses. Specify each header as a 'Header:Value' pair.
           This parameter can be used multiple times to add multiple headers.
 
