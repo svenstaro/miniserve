@@ -65,6 +65,17 @@ Sometimes this is just a more practical and quick way than doing things properly
 
     miniserve --tls-cert my.cert --tls-key my.key /tmp/myshare
 
+### Custom Headers
+    # If a header already exists, it will not be overwritten.
+    miniserve --header "Cache-Control: no-cache" --header "X-Custom-Header: custom-value" /tmp/myshare
+    # Detect headers
+    curl -I http://localhost:8080
+
+### Start with TLS and Enable HTTP Strict Transport Security (HSTS):
+    miniserve --tls-cert my.cert --tls-key my.key /tmp/myshare --header "Strict-Transport-Security: max-age=31536000; includeSubDomains; preload"
+    # To achieve an A+ rating at https://www.ssllabs.com/ssltest/, enabling HSTS is necessary.
+
+
 ### Upload a file using `curl`:
 
     # in one terminal
