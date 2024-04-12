@@ -72,7 +72,7 @@ Sometimes this is just a more practical and quick way than doing things properly
     curl -I http://localhost:8080
 
 ### Start with TLS and Enable HTTP Strict Transport Security (HSTS):
-    miniserve --tls-cert my.cert --tls-key my.key /tmp/myshare --header "Strict-Transport-Security: max-age=31536000; includeSubDomains; preload"
+    miniserve --tls-cert my.cert --tls-key my.key --header "Strict-Transport-Security: max-age=31536000; includeSubDomains; preload" /tmp/myshare
     # To achieve an A+ rating at https://www.ssllabs.com/ssltest/, enabling HSTS is necessary.
 
 
