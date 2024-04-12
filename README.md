@@ -314,7 +314,9 @@ Options:
           [env: MINISERVE_TITLE=]
 
       --header <HEADER>
-          Set custom header for responses
+          Inserts custom headers in the responses.
+          Specify headers as 'Header1:Value1;Header2:Value2' for multiple headers in a single use,
+          or use --header multiple times, each with one 'Header:Value' pair.
 
           [env: MINISERVE_HEADER=]
 
