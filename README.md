@@ -313,10 +313,9 @@ Options:
 
           [env: MINISERVE_TITLE=]
 
-      --header <HEADER>
-          Inserts custom headers in the responses.
-          Specify headers as 'Header1:Value1;Header2:Value2' for multiple headers in a single use,
-          or use --header multiple times, each with one 'Header:Value' pair.
+      --header <Header:Value>
+          Inserts custom headers into the responses. Specify each header as a 'Header:Value' pair.
+          This parameter can be used multiple times to add multiple headers.
 
           [env: MINISERVE_HEADER=]
 

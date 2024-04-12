@@ -235,9 +235,8 @@ pub struct CliArgs {
     #[arg(short = 't', long = "title", env = "MINISERVE_TITLE")]
     pub title: Option<String>,
 
-    /// Inserts custom headers in the responses.
-    /// Specify headers as 'Header1:Value1;Header2:Value2' for multiple headers in a single use,
-    /// or use --header multiple times, each with one 'Header:Value' pair.
+    /// Inserts custom headers into the responses. Specify each header as a 'Header:Value' pair.
+    /// This parameter can be used multiple times to add multiple headers.
     #[arg(
         long = "header",
         value_parser(parse_header),
