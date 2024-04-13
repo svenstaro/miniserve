@@ -66,6 +66,7 @@ Sometimes this is just a more practical and quick way than doing things properly
     miniserve --header "Cache-Control:no-cache" --header "X-Custom-Header:custom-value" -p 8080 /tmp/myshare
     # Check headers in another terminal
     curl -I http://localhost:8080
+
 If a header is already set or previously inserted, it will not be overwritten.
 
 ### Start with TLS:
@@ -75,6 +76,7 @@ If a header is already set or previously inserted, it will not be overwritten.
 ### Start with TLS and Enable HTTP Strict Transport Security (HSTS):
 
     miniserve --tls-cert my.cert --tls-key my.key --header "Strict-Transport-Security: max-age=31536000; includeSubDomains; preload" /tmp/myshare
+
 If the parameter value has spaces, be sure to wrap it in quotes.  
 (To achieve an A+ rating at https://www.ssllabs.com/ssltest/, enabling HSTS is necessary)
 
