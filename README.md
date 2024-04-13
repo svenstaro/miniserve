@@ -72,9 +72,7 @@ If a header is already set or previously inserted, it will not be overwritten.
 ### Start with TLS:
 
     miniserve --tls-cert my.cert --tls-key my.key /tmp/myshare
-
-### Start with fullchain TLS and Enable HTTP Strict Transport Security (HSTS):
-
+    # Fullchain TLS and HTTP Strict Transport Security (HSTS)
     miniserve --tls-cert fullchain.pem --tls-key my.key --header "Strict-Transport-Security: max-age=31536000; includeSubDomains; preload" /tmp/myshare
 
 If the parameter value has spaces, be sure to wrap it in quotes.  
