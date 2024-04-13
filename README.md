@@ -73,12 +73,12 @@ If a header is already set or previously inserted, it will not be overwritten.
 
     miniserve --tls-cert my.cert --tls-key my.key /tmp/myshare
 
-### Start with TLS and Enable HTTP Strict Transport Security (HSTS):
+### Start with fullchain TLS and Enable HTTP Strict Transport Security (HSTS):
 
-    miniserve --tls-cert my.cert --tls-key my.key --header "Strict-Transport-Security: max-age=31536000; includeSubDomains; preload" /tmp/myshare
+    miniserve --tls-cert fullchain.pem --tls-key my.key --header "Strict-Transport-Security: max-age=31536000; includeSubDomains; preload" /tmp/myshare
 
 If the parameter value has spaces, be sure to wrap it in quotes.  
-(To achieve an A+ rating at https://www.ssllabs.com/ssltest/, enabling HSTS is necessary)
+(To achieve an A+ rating at https://www.ssllabs.com/ssltest/, enabling both fullchain TLS and HSTS is necessary.)
 
 ### Upload a file using `curl`:
 
@@ -334,7 +334,7 @@ Options:
 
           Example:
           --header "Header1:Value1" --header "Header2:Value2"
-          (If a header is already set or previously inserted, it will not be overwritten)
+          (If a header is already set or previously inserted, it will not be overwritten.)
 
           [env: MINISERVE_HEADER=]
 

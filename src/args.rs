@@ -240,7 +240,7 @@ pub struct CliArgs {
     ///
     /// Example:
     /// --header "Header1:Value1" --header "Header2:Value2"
-    /// (If a header is already set or previously inserted, it will not be overwritten)
+    /// (If a header is already set or previously inserted, it will not be overwritten.)
     #[arg(
         long = "header",
         value_parser(parse_header),
