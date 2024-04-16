@@ -59,7 +59,7 @@ pub fn page(
             {
                 div.toolbar_box_group {
                     @if conf.file_upload {
-                        div.form {
+                        div.drag-form {
                             div.form_title {
                                 h1 { "Drop your file here to upload it" }
                             }

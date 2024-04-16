@@ -420,7 +420,7 @@ th span.active span {
     justify-content: space-between;
 }
 
-.form {
+.form, .drag-form {
     display: none;
     background: var(--drag_background);
     position: absolute;
