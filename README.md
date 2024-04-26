@@ -61,9 +61,22 @@ Sometimes this is just a more practical and quick way than doing things properly
 
     miniserve -i 192.168.0.1 -i 10.13.37.10 -i ::1 /tmp/myshare
 
+### Insert custom headers
+
+    miniserve --header "Cache-Control:no-cache" --header "X-Custom-Header:custom-value" -p 8080 /tmp/myshare
+    # Check headers in another terminal
+    curl -I http://localhost:8080
+
+If a header is already set or previously inserted, it will not be overwritten.
+
 ### Start with TLS:
 
     miniserve --tls-cert my.cert --tls-key my.key /tmp/myshare
+    # Fullchain TLS and HTTP Strict Transport Security (HSTS)
+    miniserve --tls-cert fullchain.pem --tls-key my.key --header "Strict-Transport-Security: max-age=31536000; includeSubDomains; preload" /tmp/myshare
+
+If the parameter value has spaces, be sure to wrap it in quotes.  
+(To achieve an A+ rating at https://www.ssllabs.com/ssltest/, enabling both fullchain TLS and HSTS is necessary.)
 
 ### Upload a file using `curl`:
 
@@ -314,7 +327,12 @@ Options:
           [env: MINISERVE_TITLE=]
 
       --header <HEADER>
-          Set custom header for responses
+          Inserts custom headers into the responses. Specify each header as a 'Header:Value' pair.
+          This parameter can be used multiple times to add multiple headers.
+
+          Example:
+          --header "Header1:Value1" --header "Header2:Value2"
+          (If a header is already set or previously inserted, it will not be overwritten.)
 
           [env: MINISERVE_HEADER=]
 
