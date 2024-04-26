@@ -201,7 +201,8 @@ fn create_zip_from_directory<W>(
 where
     W: std::io::Write + std::io::Seek,
 {
-    let options = write::FileOptions::default().compression_method(zip::CompressionMethod::Stored);
+    let options =
+        write::SimpleFileOptions::default().compression_method(zip::CompressionMethod::Stored);
     let mut paths_queue: Vec<PathBuf> = vec![directory.to_path_buf()];
     let zip_root_folder_name = directory.file_name().ok_or_else(|| {
         RuntimeError::InvalidPathError("Directory name terminates in \"..\"".to_string())
