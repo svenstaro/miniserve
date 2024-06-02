@@ -53,7 +53,7 @@ jobs:
             cargo_flags: ""
           - os: macos-latest
             target: x86_64-apple-darwin
-            compress: true
+            compress: false
             cargo_flags: ""
           - os: macos-latest
             target: aarch64-apple-darwin
