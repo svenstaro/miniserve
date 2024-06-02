@@ -32,7 +32,7 @@ clap = { version = "4", features = ["derive", "cargo", "wrap_help", "deprecated"
 clap_complete = "4"
 clap_mangen = "0.2"
 colored = "2"
-comrak = { version = "0.23", default-features = false }
+comrak = { version = "0.24", default-features = false }
 fast_qr = { version = "0.12", features = ["svg"] }
 futures = "0.3"
 grass = { version = "0.13", features = ["macro"], default-features = false }
@@ -42,7 +42,7 @@ httparse = "1"
 if-addrs = "0.12"
 libflate = "2"
 log = "0.4"
-maud = "0.25"
+maud = "0.26"
 mime = "0.3"
 nanoid = "0.4"
 percent-encoding = "2"
@@ -75,7 +75,7 @@ predicates = "3"
 pretty_assertions = "1.2"
 regex = "1"
 reqwest = { version = "0.11", features = ["blocking", "multipart", "rustls-tls"], default-features = false }
-rstest = "0.19"
+rstest = "0.21"
 select = "0.6"
 url = "2"
 
