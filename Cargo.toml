@@ -37,7 +37,7 @@ fast_qr = { version = "0.12", features = ["svg"] }
 futures = "0.3"
 grass = { version = "0.13", features = ["macro"], default-features = false }
 hex = "0.4"
-http = "0.2"
+http = "1.1"
 httparse = "1"
 if-addrs = "0.12"
 libflate = "2"
@@ -48,8 +48,8 @@ nanoid = "0.4"
 percent-encoding = "2"
 port_check = "0.2"
 regex = "1"
-rustls = { version = "0.20", optional = true }
-rustls-pemfile = { version = "1.0", optional = true }
+rustls = { version = "0.21", optional = true }
+rustls-pemfile = { version = "2.1", optional = true }
 serde = { version = "1", features = ["derive"] }
 sha2 = "0.10"
 simplelog = "0.12"
@@ -74,7 +74,7 @@ assert_fs = "1"
 predicates = "3"
 pretty_assertions = "1.2"
 regex = "1"
-reqwest = { version = "0.11", features = ["blocking", "multipart", "rustls-tls"], default-features = false }
+reqwest = { version = "0.12", features = ["blocking", "multipart", "rustls-tls"], default-features = false }
 rstest = "0.21"
 select = "0.6"
 url = "2"
