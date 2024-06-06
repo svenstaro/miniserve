@@ -702,8 +702,8 @@ fn page_header(title: &str, file_upload: bool, web_file_concurrency: usize, favi
                             uploadFiles()
                         })
 
-                        const queryLength = (state) => document.querySelectorAll(`[data-state='${state}']`).length;
                         function updateUploadText() {
+                            const queryLength = (state) => document.querySelectorAll(`[data-state='${state}']`).length;
                             const total = document.querySelectorAll("[data-state]").length;
                             const uploads = queryLength(UPLOADING);
                             const pending = queryLength(PENDING);
@@ -731,7 +731,7 @@ fn page_header(title: &str, file_upload: bool, web_file_concurrency: usize, favi
 
                             // Update list of uploads
                             Array.from(uploadList.querySelectorAll('li'))
-                                .sort(({dataset: { state: a }}, {dataset: { state: b}}) => UPLOAD_ITEM_ORDER[a] >= UPLOAD_ITEM_ORDER[b])
+                                .sort(({ dataset: { state: a }}, {dataset: { state: b }}) => UPLOAD_ITEM_ORDER[a] >= UPLOAD_ITEM_ORDER[b])
                                 .forEach((item) => item.parentNode.appendChild(item))
                         }
 
@@ -748,7 +748,7 @@ fn page_header(title: &str, file_upload: bool, web_file_concurrency: usize, favi
                             const iterator = callbacks.entries();
                             const concurrency = CONCURRENCY === 0 ? callbacks.length : CONCURRENCY;
                             const workers = Array(concurrency).fill(iterator).map(doWork)
-                            Promise.allSettled(workers).then(console.log.bind(null, 'done'))
+                            Promise.allSettled(workers)
                                 .finally(() => {
                                     updateUploadText();
                                     form.reset();
@@ -794,7 +794,6 @@ fn page_header(title: &str, file_upload: bool, web_file_concurrency: usize, favi
                                     formData.append('file', file);
 
                                     function onReadyStateChange(e) {
-                                        console.log('readystatechange', e)
                                         if (e.target.readyState == 4) {
                                             if (e.target.status == 200) {
                                                 completeSuccess()
