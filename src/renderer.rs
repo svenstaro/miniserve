@@ -53,7 +53,7 @@ pub fn page(
     html! {
         (DOCTYPE)
         html {
-            (page_header(&title_path, conf.file_upload, &conf.favicon_route, &conf.css_route))
+            (page_header(&title_path, conf.file_upload, conf.web_upload_concurrency, &conf.favicon_route, &conf.css_route))
 
             body #drop-container
             {
@@ -172,6 +172,37 @@ pub fn page(
                         }
                         @if !conf.hide_version_footer {
                             (version_footer())
+                        }
+                    }
+                }
+                div.upload_area id="upload_area" {
+                    template id="upload_file_item" {
+                        li.upload_file_item {
+                            div.upload_file_container {
+                                div.upload_file_text {
+                                    span.file_upload_percent { "" }
+                                    {" - "}
+                                    span.file_size { "" }
+                                    {" - "}
+                                    span.file_name { "" }
+                                }
+                                button.file_cancel_upload { "✖" }
+                            }
+                            div.file_progress_bar {}
+                        }
+                    }
+                    div.upload_container {
+                        div.upload_header {
+                            h4 style="margin:0px" id="upload_title" {}
+                        }
+                        div.upload_action {
+                            p id="upload_action_text" { "Starting upload..." }
+                            button.upload_cancel id="upload_cancel" { "CANCEL" }
+                        }
+                        div.upload_files {
+                            ul.upload_file_list id="upload_file_list" {
+
+                            }
                         }
                     }
                 }
@@ -571,7 +602,7 @@ fn chevron_down() -> Markup {
 }
 
 /// Partial: page header
-fn page_header(title: &str, file_upload: bool, favicon_route: &str, css_route: &str) -> Markup {
+fn page_header(title: &str, file_upload: bool, web_file_concurrency: usize, favicon_route: &str, css_route: &str) -> Markup {
     html! {
         head {
             meta charset="utf-8";
@@ -612,9 +643,23 @@ fn page_header(title: &str, file_upload: bool, favicon_route: &str, css_route: &
             "#))
 
             @if file_upload {
-                (PreEscaped(r#"
-                <script>
+                script {
+                    (format!("const CONCURRENCY = {web_file_concurrency};"))
+                    (PreEscaped(r#"
                     window.onload = function() {
+                        // Constants
+                        const UPLOADING = 'uploading', PENDING = 'pending', COMPLETE = 'complete', CANCELLED = 'cancelled', FAILED = 'failed'
+                        const UPLOAD_ITEM_ORDER = { UPLOADING: 0, PENDING: 1, COMPLETE: 2, CANCELLED: 3, FAILED: 4 }
+                        let CANCEL_UPLOAD = false;
+                        // File Upload
+                        const form = document.querySelector('#file_submit');
+                        const uploadArea = document.querySelector('#upload_area');
+                        const uploadTitle = document.querySelector('#upload_title');
+                        const uploadActionText = document.querySelector('#upload_action_text');
+                        const uploadCancelButton = document.querySelector('#upload_cancel');
+                        const uploadList = document.querySelector('#upload_file_list');
+                        const fileUploadItemTemplate = document.querySelector('#upload_file_item');
+
                         const dropContainer = document.querySelector('#drop-container');
                         const dragForm = document.querySelector('.drag-form');
                         const fileInput = document.querySelector('#file-input');
@@ -643,12 +688,194 @@ fn page_header(title: &str, file_upload: bool, favicon_route: &str, css_route: &
                         dropContainer.ondrop = function(e) {
                             e.preventDefault();
                             fileInput.files = e.dataTransfer.files;
-                            file_submit.submit();
+                            form.requestSubmit();
                             dragForm.style.display = 'none';
                         };
+
+                        uploadCancelButton.addEventListener('click', function (e) {
+                            e.preventDefault();
+                            CANCEL_UPLOAD = true;
+                        })
+
+                        form.addEventListener('submit', function (e) {
+                            e.preventDefault()
+                            uploadFiles()
+                        })
+
+                        const queryLength = (state) => document.querySelectorAll(`[data-state='${state}']`).length;
+                        function updateUploadText() {
+                            const total = document.querySelectorAll("[data-state]").length;
+                            const uploads = queryLength(UPLOADING);
+                            const pending = queryLength(PENDING);
+                            const completed = queryLength(COMPLETE);
+                            const cancelled = queryLength(CANCELLED);
+                            const failed = queryLength(FAILED);
+                            const allCompleted = completed + cancelled + failed;
+
+                            // Update header
+                            let headerText = `${total - allCompleted} uploads remaining...`;
+                            if (total === allCompleted) {
+                                headerText = `Complete! Reloading Page!`
+                            }
+
+                            // Update sub header
+                            const statuses = []
+                            if (uploads > 0) { statuses.push(`Uploading ${uploads}`) }
+                            if (pending > 0) { statuses.push(`Pending ${pending}`) }
+                            if (completed > 0) { statuses.push(`Complete ${completed}`) }
+                            if (cancelled > 0) { statuses.push(`Cancelled ${cancelled}`) }
+                            if (failed > 0) { statuses.push(`Failed ${failed}`) }
+
+                            uploadTitle.textContent = headerText
+                            uploadActionText.textContent = statuses.join(', ')
+
+                            // Update list of uploads
+                            Array.from(uploadList.querySelectorAll('li'))
+                                .sort(({dataset: { state: a }}, {dataset: { state: b}}) => UPLOAD_ITEM_ORDER[a] >= UPLOAD_ITEM_ORDER[b])
+                                .forEach((item) => item.parentNode.appendChild(item))
+                        }
+
+                        async function doWork(iterator, i) {
+                            for (let [index, item] of iterator) {
+                                await item();
+                                updateUploadText();
+                            }
+                        }
+
+                        function uploadFiles() {
+                            fileInput.disabled = true;
+                            const callbacks = Array.from(fileInput.files).map(uploadFile);
+                            const iterator = callbacks.entries();
+                            const concurrency = CONCURRENCY === 0 ? callbacks.length : CONCURRENCY;
+                            const workers = Array(concurrency).fill(iterator).map(doWork)
+                            Promise.allSettled(workers).then(console.log.bind(null, 'done'))
+                                .finally(() => {
+                                    updateUploadText();
+                                    form.reset();
+                                    setTimeout(() => { uploadArea.classList.remove('active'); }, 1000)
+                                    setTimeout(() => { window.location.reload(); }, 1500)
+                                })
+
+                            updateUploadText();
+                            uploadArea.classList.add('active')
+                            uploadList.scrollTo(0, 0)
+                        }
+                        
+                        function formatBytes(bytes, decimals) {
+                            if (bytes == 0) return '0 Bytes';
+                            var k = 1024,
+                                dm = decimals || 2,
+                                sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'],
+                                i = Math.floor(Math.log(bytes) / Math.log(k));
+                            return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+                        }
+
+                        function uploadFile(file) {
+                            const fileUploadItem = fileUploadItemTemplate.content.cloneNode(true)
+                            const itemContainer = fileUploadItem.querySelector(".upload_file_item")
+                            const itemText = fileUploadItem.querySelector(".upload_file_text")
+                            const size = fileUploadItem.querySelector(".file_size")
+                            const name = fileUploadItem.querySelector(".file_name")
+                            const percentText = fileUploadItem.querySelector(".file_upload_percent")
+                            const bar = fileUploadItem.querySelector(".file_progress_bar")
+                            const cancel = fileUploadItem.querySelector(".file_cancel_upload")
+
+                            itemContainer.dataset.state = 'pending'
+                            name.textContent = file.name
+                            size.textContent = formatBytes(file.size)
+                            percentText.textContent = "0%"
+                            
+                            uploadList.append(fileUploadItem)
+
+                            return async () => {
+                                return new Promise((resolve, reject) => {
+                                    const xhr = new XMLHttpRequest();
+                                    const formData = new FormData();
+                                    formData.append('file', file);
+
+                                    function onReadyStateChange(e) {
+                                        console.log('readystatechange', e)
+                                        if (e.target.readyState == 4) {
+                                            if (e.target.status == 200) {
+                                                completeSuccess()
+                                            } else {
+                                                failedUpload(e.target.status)
+                                            }
+                                        }
+                                    }
+
+                                    function onError(e) {
+                                        failedUpload()
+                                    }
+
+                                    function onAbort(e) {
+                                        cancelUpload()
+                                    }
+
+                                    function onProgress (e) {
+                                        update(Math.round((e.loaded / e.total) * 100));
+                                    }
+
+                                    function update(uploadPercent) {
+                                        let wholeNumber = Math.floor(uploadPercent)
+                                        percentText.textContent = `${wholeNumber}%`
+                                        bar.style.width = `${wholeNumber}%`
+                                    }
+
+                                    function completeSuccess() {
+                                        cancel.textContent = '✔';
+                                        cancel.classList.add(COMPLETE);
+                                        bar.classList.add(COMPLETE);
+                                        cleanUp(COMPLETE)
+                                    }
+
+                                    function failedUpload(statusCode) {
+                                        cancel.textContent = `${statusCode} ⚠`;
+                                        itemText.classList.add(FAILED);
+                                        bar.classList.add(FAILED);
+                                        cleanUp(FAILED);
+                                    }
+
+                                    function cancelUpload() {
+                                        xhr.abort()
+                                        itemText.classList.add(CANCELLED);
+                                        bar.classList.add(CANCELLED);
+                                        cleanUp(CANCELLED);
+                                    }
+
+                                    function cleanUp(state) {
+                                        itemContainer.dataset.state = state;
+                                        itemContainer.style.background = 'var(--upload_modal_file_upload_complete_background)';
+                                        cancel.disabled = true;
+                                        cancel.removeEventListener("click", cancelUpload)
+                                        uploadCancelButton.removeEventListener("click", cancelUpload)
+                                        xhr.removeEventListener('readystatechange', onReadyStateChange);
+                                        xhr.removeEventListener("error", onError);
+                                        xhr.removeEventListener("abort", onAbort);
+                                        xhr.upload.removeEventListener('progress', onProgress);
+                                        resolve()
+                                    }
+
+                                    uploadCancelButton.addEventListener("click", cancelUpload)
+                                    cancel.addEventListener("click", cancelUpload)
+
+                                    if (CANCEL_UPLOAD) {
+                                        cancelUpload()
+                                    } else {
+                                        itemContainer.dataset.state = 'uploading'
+                                        xhr.addEventListener('readystatechange', onReadyStateChange);
+                                        xhr.addEventListener("error", onError);
+                                        xhr.addEventListener("abort", onAbort);
+                                        xhr.upload.addEventListener('progress', onProgress);
+                                        xhr.open('post', form.getAttribute("action"), true);
+                                        xhr.send(formData);
+                                    }
+                                })
+                            }
+                        }
                     }
-                </script>
-                "#))
+                    "#))
+                }
             }
         }
     }
@@ -677,7 +904,7 @@ pub fn render_error(
     html! {
         (DOCTYPE)
         html {
-            (page_header(&error_code.to_string(), false, &conf.favicon_route, &conf.css_route))
+            (page_header(&error_code.to_string(), false, conf.web_upload_concurrency, &conf.favicon_route, &conf.css_route))
 
             body
             {

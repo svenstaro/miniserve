@@ -101,6 +101,9 @@ pub struct MiniserveConfig {
     /// Enable file upload
     pub file_upload: bool,
 
+    /// Max amount of concurrency when uploading multiple files
+    pub web_upload_concurrency: usize,
+
     /// List of allowed upload directories
     pub allowed_upload_dir: Vec<String>,
 
@@ -301,6 +304,7 @@ impl MiniserveConfig {
             show_qrcode: args.qrcode,
             mkdir_enabled: args.mkdir_enabled,
             file_upload: args.allowed_upload_dir.is_some(),
+            web_upload_concurrency: args.web_upload_concurrency,
             allowed_upload_dir,
             uploadable_media_type,
             tar_enabled: args.enable_tar,

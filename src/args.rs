@@ -165,6 +165,14 @@ pub struct CliArgs {
     /// When specified via environment variable, a path always neesd to the specified.
     #[arg(short = 'u', long = "upload-files", value_hint = ValueHint::FilePath, num_args(0..=1), value_delimiter(','), env = "MINISERVE_ALLOWED_UPLOAD_DIR")]
     pub allowed_upload_dir: Option<Vec<PathBuf>>,
+    
+    /// Configure amount of concurrent uploads when visiting the website. Must have
+    /// upload-files option enabled for this setting to matter.
+    /// 
+    /// For example, a value of 4 would mean that the web browser will only upload
+    /// 4 files at a time to the web server when using the web browser interface.
+    #[arg(long = "web-upload-files-concurrency", env = "MINISERVE_WEB_UPLOAD_CONCURRENCY", default_value = "0")]
+    pub web_upload_concurrency: usize,
 
     /// Enable creating directories
     #[arg(
