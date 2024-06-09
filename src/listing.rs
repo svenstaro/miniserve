@@ -3,7 +3,9 @@ use std::io;
 use std::path::{Component, Path};
 use std::time::SystemTime;
 
-use actix_web::{dev::ServiceResponse, web::Query, HttpMessage, HttpRequest, HttpResponse};
+use actix_web::{
+    dev::ServiceResponse, http::Uri, web::Query, HttpMessage, HttpRequest, HttpResponse,
+};
 use bytesize::ByteSize;
 use clap::ValueEnum;
 use comrak::{markdown_to_html, ComrakOptions};
@@ -173,7 +175,7 @@ pub fn directory_listing(
     let base = Path::new(serve_path);
     let random_route_abs = format!("/{}", conf.route_prefix);
     let abs_uri = {
-        let res = http::Uri::builder()
+        let res = Uri::builder()
             .scheme(req.connection_info().scheme())
             .authority(req.connection_info().host())
             .path_and_query(req.uri().to_string())

@@ -1,12 +1,12 @@
 mod fixtures;
 
+use actix_web::http::StatusCode;
 use assert_cmd::prelude::*;
 use assert_fs::fixture::TempDir;
 use fixtures::{
     port, server, server_no_stderr, tmpdir, Error, TestServer, DIRECTORIES, FILES,
     HIDDEN_DIRECTORIES, HIDDEN_FILES,
 };
-use http::StatusCode;
 use regex::Regex;
 use rstest::rstest;
 use select::{document::Document, node::Node, predicate::Attr};

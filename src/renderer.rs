@@ -1,6 +1,6 @@
 use std::time::SystemTime;
 
-use actix_web::http::StatusCode;
+use actix_web::http::{StatusCode, Uri};
 use chrono::{DateTime, Local};
 use chrono_humanize::Humanize;
 use clap::{crate_name, crate_version, ValueEnum};
@@ -9,7 +9,6 @@ use fast_qr::{
     qr::QRCodeError,
     QRBuilder,
 };
-use http::Uri;
 use maud::{html, Markup, PreEscaped, DOCTYPE};
 use strum::{Display, IntoEnumIterator};
 

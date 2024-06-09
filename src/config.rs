@@ -5,8 +5,8 @@ use std::{
     path::PathBuf,
 };
 
+use actix_web::http::header::HeaderMap;
 use anyhow::{anyhow, Context, Result};
-use http::HeaderMap;
 
 #[cfg(feature = "tls")]
 use rustls_pemfile as pemfile;

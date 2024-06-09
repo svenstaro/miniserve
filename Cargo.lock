@@ -1703,7 +1703,6 @@ dependencies = [
  "futures",
  "grass",
  "hex",
- "http",
  "httparse",
  "if-addrs",
  "libflate",

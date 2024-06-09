@@ -1,8 +1,8 @@
 use std::net::IpAddr;
 use std::path::PathBuf;
 
+use actix_web::http::header::{HeaderMap, HeaderName, HeaderValue};
 use clap::{Parser, ValueEnum, ValueHint};
-use http::header::{HeaderMap, HeaderName, HeaderValue};
 
 use crate::auth;
 use crate::listing::{SortingMethod, SortingOrder};
