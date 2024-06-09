@@ -228,7 +228,7 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), StartupError> {
 
         #[cfg(feature = "tls")]
         let srv = match &miniserve_config.tls_rustls_config {
-            Some(tls_config) => srv.listen_rustls(listener, tls_config.clone()),
+            Some(tls_config) => srv.listen_rustls_0_23(listener, tls_config.clone()),
             None => srv.listen(listener),
         };
 

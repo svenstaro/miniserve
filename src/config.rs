@@ -223,24 +223,15 @@ impl MiniserveConfig {
                 let key_file = &mut BufReader::new(
                     File::open(&tls_key).context(format!("Couldn't access TLS key {tls_key:?}"))?,
                 );
-                let cert_chain = pemfile::certs(cert_file).context("Reading cert file")?;
-                let key = pemfile::read_all(key_file)
+                let cert_chain = pemfile::certs(cert_file)
+                    .map(|cert| cert.expect("Invalid certificate in certificate chain"))
+                    .collect();
+                let private_key = pemfile::private_key(key_file)
                     .context("Reading private key file")?
-                    .into_iter()
-                    .find_map(|item| match item {
-                        pemfile::Item::RSAKey(key)
-                        | pemfile::Item::PKCS8Key(key)
-                        | pemfile::Item::ECKey(key) => Some(key),
-                        _ => None,
-                    })
-                    .ok_or_else(|| anyhow!("No supported private key in file"))?;
+                    .expect("No private key found");
                 let server_config = rustls::ServerConfig::builder()
-                    .with_safe_defaults()
                     .with_no_client_auth()
-                    .with_single_cert(
-                        cert_chain.into_iter().map(rustls::Certificate).collect(),
-                        rustls::PrivateKey(key),
-                    )?;
+                    .with_single_cert(cert_chain, private_key)?;
                 Some(server_config)
             } else {
                 None
