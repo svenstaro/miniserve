@@ -1754,8 +1754,8 @@ dependencies = [
  "regex",
  "reqwest",
  "rstest",
- "rustls 0.20.9",
- "rustls-pemfile 1.0.4",
+ "rustls 0.22.4",
+ "rustls-pemfile",
  "select",
  "serde",
  "sha2",
@@ -2248,7 +2248,7 @@ dependencies = [
  "percent-encoding",
  "pin-project-lite",
  "rustls 0.22.4",
- "rustls-pemfile 2.1.2",
+ "rustls-pemfile",
  "rustls-pki-types",
  "serde",
  "serde_json",
@@ -2389,15 +2389,6 @@ dependencies = [
  "rustls-webpki",
  "subtle",
  "zeroize",
-]
-
-[[package]]
-name = "rustls-pemfile"
-version = "1.0.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1c74cae0a4cf6ccbbf5f359f08efdf8ee7e1dc532573bf0db71968cb56b1448c"
-dependencies = [
- "base64 0.21.7",
 ]
 
 [[package]]
