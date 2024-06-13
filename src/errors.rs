@@ -129,6 +129,7 @@ where
         let res = fut.await?.map_into_boxed_body();
 
         if (res.status().is_client_error() || res.status().is_server_error())
+            && res.request().path() != "/upload"
             && res
                 .headers()
                 .get(header::CONTENT_TYPE)

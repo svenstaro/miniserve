@@ -4,7 +4,7 @@ use std::io::ErrorKind;
 use std::path::{Component, Path, PathBuf};
 
 use actix_web::{http::header, web, HttpRequest, HttpResponse};
-use futures::TryFutureExt;
+use futures::{StreamExt, TryFutureExt};
 use futures::TryStreamExt;
 use serde::Deserialize;
 use tokio::fs::File;
@@ -20,7 +20,7 @@ use crate::{
 ///
 /// Returns total bytes written to file.
 async fn save_file(
-    field: actix_multipart::Field,
+    field: &mut actix_multipart::Field,
     file_path: PathBuf,
     overwrite_files: bool,
 ) -> Result<u64, RuntimeError> {
@@ -33,8 +33,8 @@ async fn save_file(
             RuntimeError::InsufficientPermissionsError(file_path.display().to_string()),
         ),
         Err(err) => Err(RuntimeError::IoError(
-            format!("Failed to create {}", file_path.display()),
-            err,
+                format!("Failed to create {}", file_path.display()),
+                err,
         )),
         Ok(v) => Ok(v),
     }?;
@@ -164,7 +164,15 @@ async fn handle_multipart(
         }
     }
 
-    save_file(field, path.join(filename_path), overwrite_files).await
+    match save_file(&mut field, path.join(filename_path), overwrite_files).await {
+        Ok(bytes) => Ok(bytes),
+        Err(err) => {
+            // Required for file upload. If entire stream is not consumed, javascript
+            // XML HTTP Request will never complete.
+            while field.next().await.is_some() {}
+            Err(err)
+        },
+    }
 }
 
 /// Query parameters used by upload and rm APIs
