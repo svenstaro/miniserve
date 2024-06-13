@@ -47,7 +47,7 @@ nanoid = "0.4"
 percent-encoding = "2"
 port_check = "0.2"
 regex = "1"
-rustls = { version = "0.23", optional = true }
+rustls = { version = "0.23", features = ["ring"], optional = true, default-features = false }
 rustls-pemfile = { version = "2", optional = true }
 serde = { version = "1", features = ["derive"] }
 sha2 = "0.10"
