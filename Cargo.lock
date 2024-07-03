@@ -1451,9 +1451,9 @@ dependencies = [
 
 [[package]]
 name = "if-addrs"
-version = "0.12.0"
+version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bb2a33e9c38988ecbda730c85b0fd9ddcdf83c0305ac7fd21c8bb9f57f2f0cc8"
+checksum = "fc8e9b9a293a79d8206f1aad35c6bb9adadf19c916f4f3545ba77406fd4cab52"
 dependencies = [
  "libc",
  "windows-sys 0.52.0",
