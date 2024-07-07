@@ -42,6 +42,11 @@ pub static DIRECTORIES: &[&str] = &["dira/", "dirb/", "dirc/"];
 #[allow(dead_code)]
 pub static HIDDEN_DIRECTORIES: &[&str] = &[".hidden_dir1/", ".hidden_dir2/"];
 
+/// Files nested at different levels under the same root directory
+#[allow(dead_code)]
+pub static NESTED_FILES_UNDER_SINGLE_ROOT: &[&str] =
+    &["someDir/alpha", "someDir/some_sub_dir/bravo"];
+
 /// Name of a deeply nested file
 #[allow(dead_code)]
 pub static DEEPLY_NESTED_FILE: &str = "very/deeply/nested/test.rs";
@@ -72,10 +77,14 @@ pub fn tmpdir() -> TempDir {
         }
     }
 
-    tmpdir
-        .child(DEEPLY_NESTED_FILE)
-        .write_str("File in a deeply nested directory.")
-        .expect("Couldn't write to file");
+    let mut nested_files = NESTED_FILES_UNDER_SINGLE_ROOT.to_vec();
+    nested_files.push(DEEPLY_NESTED_FILE);
+    for file in nested_files {
+        tmpdir
+            .child(file)
+            .write_str("File in a deeply nested directory.")
+            .expect("Couldn't write to file");
+    }
     tmpdir
 }
 
