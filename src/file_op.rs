@@ -61,7 +61,7 @@ async fn handle_multipart(
     allow_hidden_paths: bool,
     allow_symlinks: bool,
 ) -> Result<u64, RuntimeError> {
-    let field_name = field.name().to_string();
+    let field_name = field.name().expect("No name field found").to_string();
 
     match tokio::fs::metadata(&path).await {
         Err(_) => Err(RuntimeError::InsufficientPermissionsError(
@@ -143,12 +143,16 @@ async fn handle_multipart(
         };
     }
 
-    let filename = field.content_disposition().get_filename().ok_or_else(|| {
-        RuntimeError::ParseError(
-            "HTTP header".to_string(),
-            "Failed to retrieve the name of the file to upload".to_string(),
-        )
-    })?;
+    let filename = field
+        .content_disposition()
+        .expect("No content-disposition field found")
+        .get_filename()
+        .ok_or_else(|| {
+            RuntimeError::ParseError(
+                "HTTP header".to_string(),
+                "Failed to retrieve the name of the file to upload".to_string(),
+            )
+        })?;
 
     let filename_path = sanitize_path(Path::new(&filename), allow_hidden_paths)
         .ok_or_else(|| RuntimeError::InvalidPathError("Invalid file name to upload".to_string()))?;
