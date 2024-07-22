@@ -117,7 +117,7 @@ pub fn page(
                                     }
                                 }
                             }
-                            @if conf.mkdir_enabled {
+                            @if conf.mkdir_enabled && upload_allowed {
                                 div.toolbar_box {
                                     form id="mkdir" action=(mkdir_action) method="POST" enctype="multipart/form-data" {
                                         p { "Specify a directory name to create" }
