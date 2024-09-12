@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+
+## [0.28.0] - 2024-09-12
 - Fix wrapping text in mobile view when the file name too long [#1379](https://github.com/svenstaro/miniserve/pull/1379) (thanks @chaibiq)
 - Fix missing drag-form when dragging file in to browser [#1390](https://github.com/svenstaro/miniserve/pull/1390) (thanks @chaibiq)
 - Improve documentation for the --header parameter [#1389](https://github.com/svenstaro/miniserve/pull/1389) (thanks @orwithout)
@@ -202,7 +204,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Some theme related bug fixes (thanks @boastful-squirrel)
 
 <!-- next-url -->
-[Unreleased]: https://github.com/svenstaro/miniserve/compare/v0.27.1...HEAD
+[Unreleased]: https://github.com/svenstaro/miniserve/compare/v0.28.0...HEAD
+[0.28.0]: https://github.com/svenstaro/miniserve/compare/v0.27.1...v0.28.0
 [0.27.1]: https://github.com/svenstaro/miniserve/compare/v0.27.0...v0.27.1
 [0.27.0]: https://github.com/svenstaro/miniserve/compare/v0.26.0...v0.27.0
 [0.26.0]: https://github.com/svenstaro/miniserve/compare/v0.25.0...v0.26.0
