@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Fix wrapping text in mobile view when the file name too long [#1379](https://github.com/svenstaro/miniserve/pull/1379) (thanks @chaibiq)
 - Fix missing drag-form when dragging file in to browser [#1390](https://github.com/svenstaro/miniserve/pull/1390) (thanks @chaibiq)
 - Improve documentation for the --header parameter [#1389](https://github.com/svenstaro/miniserve/pull/1389) (thanks @orwithout)
+- Don't show mkdir option when the directory is not upload allowed [#1442](https://github.com/svenstaro/miniserve/pull/1442) (thanks @Atreyagaurav)
 
 ## [0.27.1] - 2024-03-16
 - Add `Add file and folder symbols` [#1365](https://github.com/svenstaro/miniserve/pull/1365) (thanks @chaibiq)
