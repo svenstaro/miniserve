@@ -26,5 +26,5 @@ pub fn get_link_hrefs_with_prefix(document: &Document, prefix: &str) -> Vec<Stri
         }
     }
 
-    return vec;
+    vec
 }

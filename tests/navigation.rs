@@ -52,11 +52,11 @@ fn can_navigate_into_dirs_and_back(server: TestServer) -> Result<(), Error> {
     let initial_parsed = Document::from_read(initial_body)?;
     for &directory in DIRECTORIES {
         let dir_elem = get_link_from_text(&initial_parsed, directory).expect("Dir not found.");
-        let body = reqwest::blocking::get(&format!("{base_url}{dir_elem}"))?.error_for_status()?;
+        let body = reqwest::blocking::get(format!("{base_url}{dir_elem}"))?.error_for_status()?;
         let parsed = Document::from_read(body)?;
         let back_link =
             get_link_from_text(&parsed, "Parent directory").expect("Back link not found.");
-        let resp = reqwest::blocking::get(&format!("{base_url}{back_link}"))?;
+        let resp = reqwest::blocking::get(format!("{base_url}{back_link}"))?;
 
         // Now check that we can actually get back to the original location we came from using the
         // link.

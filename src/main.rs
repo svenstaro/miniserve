@@ -52,9 +52,8 @@ fn main() -> Result<()> {
 
     let miniserve_config = MiniserveConfig::try_from_args(args)?;
 
-    run(miniserve_config).map_err(|e| {
+    run(miniserve_config).inspect_err(|e| {
         errors::log_error_chain(e.to_string());
-        e
     })?;
 
     Ok(())
