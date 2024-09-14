@@ -110,6 +110,9 @@ pub struct MiniserveConfig {
     /// Enable upload to override existing files
     pub overwrite_files: bool,
 
+    /// Enable renaming files during file upload if duplicate exists
+    pub rename_duplicate: bool,
+
     /// If false, creation of uncompressed tar archives is disabled
     pub tar_enabled: bool,
 
@@ -289,6 +292,7 @@ impl MiniserveConfig {
             spa: args.spa,
             pretty_urls: args.pretty_urls,
             overwrite_files: args.overwrite_files,
+            rename_duplicate: args.rename_duplicate,
             show_qrcode: args.qrcode,
             mkdir_enabled: args.mkdir_enabled,
             file_upload: args.allowed_upload_dir.is_some(),

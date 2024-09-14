@@ -21,11 +21,34 @@ use crate::{
 /// Returns total bytes written to file.
 async fn save_file(
     field: actix_multipart::Field,
-    file_path: PathBuf,
+    mut file_path: PathBuf,
     overwrite_files: bool,
+    rename_duplicate: bool,
 ) -> Result<u64, RuntimeError> {
-    if !overwrite_files && file_path.exists() {
-        return Err(RuntimeError::DuplicateFileError);
+    if file_path.exists() {
+        // clap makes sure both overwrite_files and rename_duplicate cannot be true
+        if rename_duplicate {
+            // optionally should we use Path::file_prefix, which
+            // extracts the portion of the file name before the
+            // first .?
+            let file_name = file_path.file_stem().unwrap_or_default().to_string_lossy();
+            let file_ext = file_path.extension().map(|s| s.to_string_lossy());
+            let filepaths = (1..).map(|i| {
+                if let Some(ext) = &file_ext {
+                    file_path.with_file_name(format!("{}-{}.{}", file_name, i, ext))
+                } else {
+                    file_path.with_file_name(format!("{}-{}", file_name, i))
+                }
+            });
+            for fp in filepaths {
+                if !fp.exists() {
+                    file_path = fp;
+                    break;
+                }
+            }
+        } else if !overwrite_files {
+            return Err(RuntimeError::DuplicateFileError);
+        }
     }
 
     let file = match File::create(&file_path).await {
@@ -57,6 +80,7 @@ async fn handle_multipart(
     mut field: actix_multipart::Field,
     path: PathBuf,
     overwrite_files: bool,
+    rename_duplicate: bool,
     allow_mkdir: bool,
     allow_hidden_paths: bool,
     allow_symlinks: bool,
@@ -168,7 +192,13 @@ async fn handle_multipart(
         }
     }
 
-    save_file(field, path.join(filename_path), overwrite_files).await
+    save_file(
+        field,
+        path.join(filename_path),
+        overwrite_files,
+        rename_duplicate,
+    )
+    .await
 }
 
 /// Query parameters used by upload and rm APIs
@@ -225,6 +255,7 @@ pub async fn upload_file(
                 field,
                 non_canonicalized_target_dir.clone(),
                 conf.overwrite_files,
+                conf.rename_duplicate,
                 conf.mkdir_enabled,
                 conf.show_hidden,
                 !conf.no_symlinks,

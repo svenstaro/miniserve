@@ -198,6 +198,15 @@ pub struct CliArgs {
     #[arg(short = 'o', long = "overwrite-files", env = "OVERWRITE_FILES")]
     pub overwrite_files: bool,
 
+    /// Enable renaming files during file upload if duplicate exists
+    #[arg(
+        short = 'R',
+        long = "rename-duplicate",
+        env = "RENAME_DUPLICATE_FILES",
+        conflicts_with = "overwrite_files"
+    )]
+    pub rename_duplicate: bool,
+
     /// Enable uncompressed tar archive generation
     #[arg(short = 'r', long = "enable-tar", env = "MINISERVE_ENABLE_TAR")]
     pub enable_tar: bool,
