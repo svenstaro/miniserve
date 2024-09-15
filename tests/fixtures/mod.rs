@@ -4,7 +4,9 @@ use assert_fs::prelude::*;
 use port_check::free_local_port;
 use reqwest::Url;
 use rstest::fixture;
+use std::path::Path;
 use std::process::{Child, Command, Stdio};
+use std::sync::LazyLock;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
 
@@ -43,13 +45,24 @@ pub static DIRECTORIES: &[&str] = &["dira/", "dirb/", "dirc/"];
 pub static HIDDEN_DIRECTORIES: &[&str] = &[".hidden_dir1/", ".hidden_dir2/"];
 
 /// Files nested at different levels under the same root directory
+///
+/// This is not a `&[&str]` because in percent-encoding, path segments and full paths
+/// are encoded differently.
 #[allow(dead_code)]
-pub static NESTED_FILES_UNDER_SINGLE_ROOT: &[&str] =
-    &["someDir/alpha", "someDir/some_sub_dir/bravo"];
+pub static NESTED_FILES_UNDER_SINGLE_ROOT: LazyLock<Vec<&Path>> = LazyLock::new(|| {
+    vec![
+        Path::new("someDir/alpha"),
+        Path::new("someDir/some_sub_dir/bravo"),
+    ]
+});
 
-/// Name of a deeply nested file
+/// Path to a deeply nested file
+///
+/// This is not a `&str` because in percent-encoding, path segments and full paths
+/// are encoded differently.
 #[allow(dead_code)]
-pub static DEEPLY_NESTED_FILE: &str = "very/deeply/nested/test.rs";
+pub static DEEPLY_NESTED_FILE: LazyLock<&Path> =
+    LazyLock::new(|| Path::new("very/deeply/nested/test.rs"));
 
 /// Test fixture which creates a temporary directory with a few files and directories inside.
 /// The directories also contain files.
@@ -77,8 +90,8 @@ pub fn tmpdir() -> TempDir {
         }
     }
 
-    let mut nested_files = NESTED_FILES_UNDER_SINGLE_ROOT.to_vec();
-    nested_files.push(DEEPLY_NESTED_FILE);
+    let mut nested_files = NESTED_FILES_UNDER_SINGLE_ROOT.clone();
+    nested_files.push(&DEEPLY_NESTED_FILE);
     for file in nested_files {
         tmpdir
             .child(file)

@@ -3,10 +3,14 @@ mod fixtures;
 use anyhow::bail;
 use assert_fs::fixture::TempDir;
 use fixtures::{server, server_no_stderr, tmpdir, TestServer};
+use percent_encoding::utf8_percent_encode;
 use reqwest::blocking::Client;
 use reqwest::StatusCode;
 use rstest::rstest;
-use std::path::Path;
+use std::{
+    iter,
+    path::{Component, Path},
+};
 use url::Url;
 
 use crate::fixtures::{
@@ -14,25 +18,54 @@ use crate::fixtures::{
     NESTED_FILES_UNDER_SINGLE_ROOT,
 };
 
-fn assert_rm_ok(base_url: Url, paths: &[impl AsRef<str>]) -> anyhow::Result<()> {
+include!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/",
+    "src/path_utils.rs"
+));
+
+/// Construct a path for a GET request,
+/// with each path component being separately encoded.
+fn make_get_path(unencoded_path: impl AsRef<Path>) -> String {
+    unencoded_path
+        .as_ref()
+        .components()
+        .map(|comp| match comp {
+            Component::Prefix(_) | Component::RootDir => unreachable!("Not currently used"),
+            Component::CurDir => ".",
+            Component::ParentDir => "..",
+            Component::Normal(comp) => comp.to_str().unwrap(),
+        })
+        .map(|comp| utf8_percent_encode(comp, percent_encode_sets::COMPONENT).to_string())
+        .collect::<Vec<_>>()
+        .join("/")
+}
+
+/// Construct a path for a deletion POST request without any further encoding.
+///
+/// This should be kept consistent with implementation.
+fn make_del_path(unencoded_path: impl AsRef<Path>) -> String {
+    format!("rm?path=/{}", make_get_path(unencoded_path))
+}
+
+fn assert_rm_ok(base_url: Url, unencoded_paths: &[impl AsRef<Path>]) -> anyhow::Result<()> {
     let client = Client::new();
 
-    for path in paths.iter().map(AsRef::as_ref) {
+    for file_path in unencoded_paths.iter().map(AsRef::as_ref) {
+        // encode
+        let get_url = base_url.join(&make_get_path(file_path))?;
+        let del_url = base_url.join(&make_del_path(file_path))?;
+        println!("===== {file_path:?} =====");
+        println!("{get_url}, {del_url}");
+
         // check path exists
-        let _get_res = client
-            .get(base_url.join(path)?)
-            .send()?
-            .error_for_status()?;
+        let _get_res = client.get(get_url.clone()).send()?.error_for_status()?;
 
         // delete
-        let req_path = format!("rm?path=/{path}");
-        let _del_res = client
-            .post(base_url.join(&req_path)?)
-            .send()?
-            .error_for_status()?;
+        let _del_res = client.post(del_url).send()?.error_for_status()?;
 
         // check path is gone
-        let get_res = client.get(base_url.join(path)?).send()?;
+        let get_res = client.get(get_url).send()?;
         if get_res.status() != StatusCode::NOT_FOUND {
             bail!("Unexpected status code: {}", get_res.status());
         }
@@ -45,33 +78,32 @@ fn assert_rm_ok(base_url: Url, paths: &[impl AsRef<str>]) -> anyhow::Result<()> 
 /// the deletion attempt in case these paths should be inaccessible via GET.
 fn assert_rm_err(
     base_url: Url,
-    paths: &[impl AsRef<str>],
+    unencoded_paths: &[impl AsRef<Path>],
     check_paths_exist: bool,
 ) -> anyhow::Result<()> {
     let client = Client::new();
 
-    for path in paths.iter().map(AsRef::as_ref) {
+    for file_path in unencoded_paths.iter().map(AsRef::as_ref) {
+        // encode
+        let get_url = base_url.join(&make_get_path(file_path))?;
+        let del_url = base_url.join(&make_del_path(file_path))?;
+        println!("===== {file_path:?} =====");
+        println!("{get_url}, {del_url}");
+
         // check path exists
         if check_paths_exist {
-            let _get_res = client
-                .get(base_url.join(path)?)
-                .send()?
-                .error_for_status()?;
+            let _get_res = client.get(get_url.clone()).send()?.error_for_status()?;
         }
 
         // delete
-        let req_path = format!("rm?path=/{path}");
-        let del_res = client.post(base_url.join(&req_path)?).send()?;
+        let del_res = client.post(del_url).send()?;
         if !del_res.status().is_client_error() {
             bail!("Unexpected status code: {}", del_res.status());
         }
 
         // check path still exists
         if check_paths_exist {
-            let _get_res = client
-                .get(base_url.join(path)?)
-                .send()?
-                .error_for_status()?;
+            let _get_res = client.get(get_url).send()?.error_for_status()?;
         }
     }
 
@@ -80,26 +112,35 @@ fn assert_rm_err(
 
 #[rstest]
 fn rm_disabled_by_default(server: TestServer) -> anyhow::Result<()> {
-    assert_rm_err(
-        server.url(),
-        &[
-            FILES,
-            HIDDEN_FILES,
-            DIRECTORIES,
-            HIDDEN_DIRECTORIES,
-            &[DEEPLY_NESTED_FILE],
-        ]
-        .concat(),
-        true,
-    )
+    let paths = [FILES, DIRECTORIES]
+        .concat()
+        .into_iter()
+        .map(Path::new)
+        .chain(iter::once(DEEPLY_NESTED_FILE.as_ref()))
+        .collect::<Vec<_>>();
+    assert_rm_err(server.url(), &paths, true)
+}
+
+#[rstest]
+fn rm_disabled_by_default_with_hidden(#[with(&["-H"])] server: TestServer) -> anyhow::Result<()> {
+    let paths = [FILES, HIDDEN_FILES, DIRECTORIES, HIDDEN_DIRECTORIES]
+        .concat()
+        .into_iter()
+        .map(Path::new)
+        .chain(iter::once(DEEPLY_NESTED_FILE.as_ref()))
+        .collect::<Vec<_>>();
+    assert_rm_err(server.url(), &paths, true)
 }
 
 #[rstest]
 fn rm_works(#[with(&["-R"])] server: TestServer) -> anyhow::Result<()> {
-    assert_rm_ok(
-        server.url(),
-        &[FILES, DIRECTORIES, &[DEEPLY_NESTED_FILE]].concat(),
-    )
+    let paths = [FILES, DIRECTORIES]
+        .concat()
+        .into_iter()
+        .map(Path::new)
+        .chain(iter::once(DEEPLY_NESTED_FILE.as_ref()))
+        .collect::<Vec<_>>();
+    assert_rm_ok(server.url(), &paths)
 }
 
 #[rstest]
@@ -129,7 +170,7 @@ fn can_rm_hidden_when_allowed(
 #[case(server_no_stderr(&["-R", "someOtherDir"]))]
 #[case(server_no_stderr(&["-R", "someDir/some_other_sub_dir"]))]
 fn rm_is_restricted(#[case] server: TestServer) -> anyhow::Result<()> {
-    assert_rm_err(server.url(), NESTED_FILES_UNDER_SINGLE_ROOT, true)
+    assert_rm_err(server.url(), &NESTED_FILES_UNDER_SINGLE_ROOT, true)
 }
 
 /// This test runs the server with --allowed-rm-dir argument and checks that
@@ -177,17 +218,17 @@ fn rm_from_symlinked_dir(
     use std::os::windows::fs::symlink_dir;
 
     // create symlink
-    const LINK_NAME: &str = "linked";
-    symlink_dir(target.path(), server.path().join(LINK_NAME))?;
+    let link: &Path = Path::new("linked");
+    symlink_dir(target.path(), server.path().join(link))?;
 
-    let files_through_link = &[FILES, DIRECTORIES]
+    let files_through_link = [FILES, DIRECTORIES]
         .concat()
         .iter()
-        .map(|name| format!("{LINK_NAME}/{name}"))
+        .map(|name| link.join(name))
         .collect::<Vec<_>>();
     if should_succeed {
-        assert_rm_ok(server.url(), files_through_link)
+        assert_rm_ok(server.url(), &files_through_link)
     } else {
-        assert_rm_err(server.url(), files_through_link, false)
+        assert_rm_err(server.url(), &files_through_link, false)
     }
 }
