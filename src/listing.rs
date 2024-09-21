@@ -19,16 +19,26 @@ use crate::auth::CurrentUser;
 use crate::errors::{self, RuntimeError};
 use crate::renderer;
 
-use self::percent_encode_sets::PATH_SEGMENT;
+use self::percent_encode_sets::COMPONENT;
 
 /// "percent-encode sets" as defined by WHATWG specs:
 /// https://url.spec.whatwg.org/#percent-encoded-bytes
 mod percent_encode_sets {
     use percent_encoding::{AsciiSet, CONTROLS};
-    const BASE: &AsciiSet = &CONTROLS.add(b'%');
-    pub const QUERY: &AsciiSet = &BASE.add(b' ').add(b'"').add(b'#').add(b'<').add(b'>');
+    pub const QUERY: &AsciiSet = &CONTROLS.add(b' ').add(b'"').add(b'#').add(b'<').add(b'>');
     pub const PATH: &AsciiSet = &QUERY.add(b'?').add(b'`').add(b'{').add(b'}');
-    pub const PATH_SEGMENT: &AsciiSet = &PATH.add(b'/').add(b'\\');
+    pub const USERINFO: &AsciiSet = &PATH
+        .add(b'/')
+        .add(b':')
+        .add(b';')
+        .add(b'=')
+        .add(b'@')
+        .add(b'[')
+        .add(b'\\')
+        .add(b']')
+        .add(b'^')
+        .add(b'|');
+    pub const COMPONENT: &AsciiSet = &USERINFO.add(b'$').add(b'%').add(b'&').add(b'+').add(b',');
 }
 
 /// Query parameters used by listing APIs
@@ -216,7 +226,7 @@ pub fn directory_listing(
                 Component::Normal(s) => {
                     name = s.to_string_lossy().to_string();
                     link_accumulator
-                        .push_str(&(utf8_percent_encode(&name, PATH_SEGMENT).to_string() + "/"));
+                        .push_str(&(utf8_percent_encode(&name, COMPONENT).to_string() + "/"));
                 }
                 _ => name = "".to_string(),
             };
@@ -255,7 +265,7 @@ pub fn directory_listing(
                 .and_then(|path| std::fs::read_link(path).ok())
                 .map(|path| path.to_string_lossy().into_owned());
             let file_url = base
-                .join(utf8_percent_encode(&file_name, PATH_SEGMENT).to_string())
+                .join(utf8_percent_encode(&file_name, COMPONENT).to_string())
                 .to_string_lossy()
                 .to_string();
 
