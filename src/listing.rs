@@ -36,7 +36,8 @@ mod percent_encode_sets {
         .add(b'[')
         .add(b'\\')
         .add(b']')
-        .add(b'^');
+        .add(b'^')
+        .add(b'|');
     pub const COMPONENT: &AsciiSet = &USERINFO.add(b'$').add(b'%').add(b'&').add(b'+').add(b',');
 }
 
