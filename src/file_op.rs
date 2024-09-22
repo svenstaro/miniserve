@@ -28,19 +28,18 @@ async fn save_file(
     if file_path.exists() {
         // clap makes sure both overwrite_files and rename_duplicate cannot be true
         if rename_duplicate {
-            // optionally should we use Path::file_prefix, which
-            // extracts the portion of the file name before the
-            // first .?
+            // extract extension of the file and the file stem without extension
+            // file.txt => (file, txt)
             let file_name = file_path.file_stem().unwrap_or_default().to_string_lossy();
             let file_ext = file_path.extension().map(|s| s.to_string_lossy());
-            let filepaths = (1..).map(|i| {
-                if let Some(ext) = &file_ext {
+            for i in 1.. {
+                // increment the number N in {file_name}-{N}.{file_ext}
+                // format until available name is found (e.g. file-1.txt, file-2.txt, etc)
+                let fp = if let Some(ext) = &file_ext {
                     file_path.with_file_name(format!("{}-{}.{}", file_name, i, ext))
                 } else {
                     file_path.with_file_name(format!("{}-{}", file_name, i))
-                }
-            });
-            for fp in filepaths {
+                };
                 if !fp.exists() {
                     file_path = fp;
                     break;
