@@ -75,7 +75,7 @@ If a header is already set or previously inserted, it will not be overwritten.
     # Fullchain TLS and HTTP Strict Transport Security (HSTS)
     miniserve --tls-cert fullchain.pem --tls-key my.key --header "Strict-Transport-Security: max-age=31536000; includeSubDomains; preload" /tmp/myshare
 
-If the parameter value has spaces, be sure to wrap it in quotes.  
+If the parameter value has spaces, be sure to wrap it in quotes.
 (To achieve an A+ rating at https://www.ssllabs.com/ssltest/, enabling both fullchain TLS and HSTS is necessary.)
 
 ### Upload a file using `curl`:
@@ -291,6 +291,9 @@ Options:
 
   -R, --rename-duplicate
           Enable renaming files during file upload if duplicate exists
+
+          The renaming will occur by adding numerical suffix to the filename before the final extension. For example file.txt will be uploaded as file-1.txt, the number will
+          be increased untill a available slot is found.
 
           [env: RENAME_DUPLICATE_FILES=]
 

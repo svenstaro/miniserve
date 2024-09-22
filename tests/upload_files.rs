@@ -284,17 +284,17 @@ fn uploading_duplicate_file_is_prevented(#[with(&["-u"])] server: TestServer) ->
     let test_file_name = "duplicate test file.txt";
     let test_file_contents = "Test File Contents";
 
-    // Before uploading, check whether the uploaded file does not yet exist.
-    let body = reqwest::blocking::get(server.url())?.error_for_status()?;
-    let parsed = Document::from_read(body)?;
-    assert!(parsed.find(Text).all(|x| x.text() != test_file_name));
-
     // create the file
     let test_file_path = write_file_contents(
         server.path().to_path_buf(),
         test_file_name,
         test_file_contents,
     );
+
+    // Before uploading, make sure the file is there.
+    let body = reqwest::blocking::get(server.url())?.error_for_status()?;
+    let parsed = Document::from_read(body)?;
+    assert!(parsed.find(Text).any(|x| x.text() == test_file_name));
 
     // Perform the actual upload.
     let upload_action = parsed
@@ -337,17 +337,17 @@ fn overwrite_duplicate_file(
     let test_file_contents = "Test File Contents";
     let test_file_contents_new = "New Uploaded Test File Contents";
 
-    // Before uploading, check whether the uploaded file does not yet exist.
-    let body = reqwest::blocking::get(server.url())?.error_for_status()?;
-    let parsed = Document::from_read(body)?;
-    assert!(parsed.find(Text).all(|x| x.text() != test_file_name));
-
     // create the file
     let test_file_path = write_file_contents(
         server.path().to_path_buf(),
         test_file_name,
         test_file_contents,
     );
+
+    // Before uploading, make sure the file is there.
+    let body = reqwest::blocking::get(server.url())?.error_for_status()?;
+    let parsed = Document::from_read(body)?;
+    assert!(parsed.find(Text).any(|x| x.text() == test_file_name));
 
     // Perform the actual upload.
     let upload_action = parsed
@@ -389,17 +389,17 @@ fn rename_duplicate_file(
     let test_file_contents = "Test File Contents";
     let test_file_contents_new = "New Uploaded Test File Contents";
 
-    // Before uploading, check whether the uploaded file does not yet exist.
-    let body = reqwest::blocking::get(server.url())?.error_for_status()?;
-    let parsed = Document::from_read(body)?;
-    assert!(parsed.find(Text).all(|x| x.text() != test_file_name));
-
     // create the file
     let test_file_path = write_file_contents(
         server.path().to_path_buf(),
         test_file_name,
         test_file_contents,
     );
+
+    // Before uploading, make sure the file is there.
+    let body = reqwest::blocking::get(server.url())?.error_for_status()?;
+    let parsed = Document::from_read(body)?;
+    assert!(parsed.find(Text).any(|x| x.text() == test_file_name));
 
     // Perform the actual upload.
     let upload_action = parsed
