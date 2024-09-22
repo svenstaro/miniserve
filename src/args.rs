@@ -199,6 +199,11 @@ pub struct CliArgs {
     pub overwrite_files: bool,
 
     /// Enable renaming files during file upload if duplicate exists
+    ///
+    /// The renaming will occur by adding numerical suffix to the
+    /// filename before the final extension. For example file.txt will
+    /// be uploaded as file-1.txt, the number will be increased untill
+    /// a available slot is found.
     #[arg(
         short = 'R',
         long = "rename-duplicate",
