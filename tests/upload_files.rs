@@ -280,7 +280,10 @@ fn set_media_type(
 }
 
 #[rstest]
-fn uploading_duplicate_file_is_prevented(#[with(&["-u"])] server: TestServer) -> Result<(), Error> {
+#[case(server(&["-u"]))]
+#[case(server(&["-u", "-o", "error"]))]
+#[case(server(&["-u", "--on-duplicate-files", "error"]))]
+fn uploading_duplicate_file_is_prevented(#[case] server: TestServer) -> Result<(), Error> {
     let test_file_name = "duplicate test file.txt";
     let test_file_contents = "Test File Contents";
 
@@ -331,7 +334,7 @@ fn uploading_duplicate_file_is_prevented(#[with(&["-u"])] server: TestServer) ->
 
 #[rstest]
 fn overwrite_duplicate_file(
-    #[with(&["--overwrite-files", "-u"])] server: TestServer,
+    #[with(&["-u", "--on-duplicate-files", "overwrite"])] server: TestServer,
 ) -> Result<(), Error> {
     let test_file_name = "duplicate test file.txt";
     let test_file_contents = "Test File Contents";
@@ -382,7 +385,7 @@ fn overwrite_duplicate_file(
 
 #[rstest]
 fn rename_duplicate_file(
-    #[with(&["--rename-duplicate", "-u"])] server: TestServer,
+    #[with(&["-u", "--on-duplicate-files", "rename"])] server: TestServer,
 ) -> Result<(), Error> {
     let test_file_name = "duplicate test file.txt";
     let test_file_name_new = "duplicate test file-1.txt";

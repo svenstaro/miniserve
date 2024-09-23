@@ -37,9 +37,7 @@ pub enum RuntimeError {
     MultipartError(String),
 
     /// Might occur during file upload
-    #[error(
-        "File already exists, and the overwrite_files or rename_duplicate option has not been set"
-    )]
+    #[error("File already exists, and the on_duplicate_files option is set to error out")]
     DuplicateFileError,
 
     /// Upload not allowed

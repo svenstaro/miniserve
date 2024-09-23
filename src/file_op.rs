@@ -10,6 +10,7 @@ use serde::Deserialize;
 use tokio::fs::File;
 use tokio::io::AsyncWriteExt;
 
+use crate::args::DuplicateFile;
 use crate::{
     config::MiniserveConfig, errors::RuntimeError, file_utils::contains_symlink,
     file_utils::sanitize_path,
@@ -22,31 +23,31 @@ use crate::{
 async fn save_file(
     field: actix_multipart::Field,
     mut file_path: PathBuf,
-    overwrite_files: bool,
-    rename_duplicate: bool,
+    on_duplicate_files: DuplicateFile,
 ) -> Result<u64, RuntimeError> {
     if file_path.exists() {
-        // clap makes sure both overwrite_files and rename_duplicate cannot be true
-        if rename_duplicate {
-            // extract extension of the file and the file stem without extension
-            // file.txt => (file, txt)
-            let file_name = file_path.file_stem().unwrap_or_default().to_string_lossy();
-            let file_ext = file_path.extension().map(|s| s.to_string_lossy());
-            for i in 1.. {
-                // increment the number N in {file_name}-{N}.{file_ext}
-                // format until available name is found (e.g. file-1.txt, file-2.txt, etc)
-                let fp = if let Some(ext) = &file_ext {
-                    file_path.with_file_name(format!("{}-{}.{}", file_name, i, ext))
-                } else {
-                    file_path.with_file_name(format!("{}-{}", file_name, i))
-                };
-                if !fp.exists() {
-                    file_path = fp;
-                    break;
+        match on_duplicate_files {
+            DuplicateFile::Error => return Err(RuntimeError::DuplicateFileError),
+            DuplicateFile::Overwrite => (),
+            DuplicateFile::Rename => {
+                // extract extension of the file and the file stem without extension
+                // file.txt => (file, txt)
+                let file_name = file_path.file_stem().unwrap_or_default().to_string_lossy();
+                let file_ext = file_path.extension().map(|s| s.to_string_lossy());
+                for i in 1.. {
+                    // increment the number N in {file_name}-{N}.{file_ext}
+                    // format until available name is found (e.g. file-1.txt, file-2.txt, etc)
+                    let fp = if let Some(ext) = &file_ext {
+                        file_path.with_file_name(format!("{}-{}.{}", file_name, i, ext))
+                    } else {
+                        file_path.with_file_name(format!("{}-{}", file_name, i))
+                    };
+                    if !fp.exists() {
+                        file_path = fp;
+                        break;
+                    }
                 }
             }
-        } else if !overwrite_files {
-            return Err(RuntimeError::DuplicateFileError);
         }
     }
 
@@ -78,8 +79,7 @@ async fn save_file(
 async fn handle_multipart(
     mut field: actix_multipart::Field,
     path: PathBuf,
-    overwrite_files: bool,
-    rename_duplicate: bool,
+    on_duplicate_files: DuplicateFile,
     allow_mkdir: bool,
     allow_hidden_paths: bool,
     allow_symlinks: bool,
@@ -191,13 +191,7 @@ async fn handle_multipart(
         }
     }
 
-    save_file(
-        field,
-        path.join(filename_path),
-        overwrite_files,
-        rename_duplicate,
-    )
-    .await
+    save_file(field, path.join(filename_path), on_duplicate_files).await
 }
 
 /// Query parameters used by upload and rm APIs
@@ -253,8 +247,7 @@ pub async fn upload_file(
             handle_multipart(
                 field,
                 non_canonicalized_target_dir.clone(),
-                conf.overwrite_files,
-                conf.rename_duplicate,
+                conf.on_duplicate_files,
                 conf.mkdir_enabled,
                 conf.show_hidden,
                 !conf.no_symlinks,

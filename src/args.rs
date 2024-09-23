@@ -15,6 +15,14 @@ pub enum MediaType {
     Video,
 }
 
+#[derive(ValueEnum, Clone, Default, Copy)]
+pub enum DuplicateFile {
+    #[default]
+    Error,
+    Overwrite,
+    Rename,
+}
+
 #[derive(Parser)]
 #[command(name = "miniserve", author, about, version)]
 pub struct CliArgs {
@@ -194,23 +202,20 @@ pub struct CliArgs {
     )]
     pub media_type_raw: Option<String>,
 
-    /// Enable overriding existing files during file upload
-    #[arg(short = 'o', long = "overwrite-files", env = "OVERWRITE_FILES")]
-    pub overwrite_files: bool,
-
-    /// Enable renaming files during file upload if duplicate exists
+    /// What to do if existing files with same name is present during file upload
     ///
-    /// The renaming will occur by adding numerical suffix to the
-    /// filename before the final extension. For example file.txt will
-    /// be uploaded as file-1.txt, the number will be increased untill
-    /// a available slot is found.
+    /// If you enable renaming files, the renaming will occur by
+    /// adding numerical suffix to the filename before the final
+    /// extension. For example file.txt will be uploaded as
+    /// file-1.txt, the number will be increased untill a available
+    /// slot is found.
     #[arg(
-        short = 'R',
-        long = "rename-duplicate",
-        env = "RENAME_DUPLICATE_FILES",
-        conflicts_with = "overwrite_files"
+        short = 'o',
+        long = "on-duplicate-files",
+        env = "ON_DUPLICATE_FILES",
+        default_value = "error"
     )]
-    pub rename_duplicate: bool,
+    pub on_duplicate_files: DuplicateFile,
 
     /// Enable uncompressed tar archive generation
     #[arg(short = 'r', long = "enable-tar", env = "MINISERVE_ENABLE_TAR")]
