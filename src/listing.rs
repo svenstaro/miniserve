@@ -17,29 +17,8 @@ use strum::{Display, EnumString};
 use crate::archive::ArchiveMethod;
 use crate::auth::CurrentUser;
 use crate::errors::{self, RuntimeError};
+use crate::path_utils::percent_encode_sets::COMPONENT;
 use crate::renderer;
-
-use self::percent_encode_sets::COMPONENT;
-
-/// "percent-encode sets" as defined by WHATWG specs:
-/// https://url.spec.whatwg.org/#percent-encoded-bytes
-mod percent_encode_sets {
-    use percent_encoding::{AsciiSet, CONTROLS};
-    pub const QUERY: &AsciiSet = &CONTROLS.add(b' ').add(b'"').add(b'#').add(b'<').add(b'>');
-    pub const PATH: &AsciiSet = &QUERY.add(b'?').add(b'`').add(b'{').add(b'}');
-    pub const USERINFO: &AsciiSet = &PATH
-        .add(b'/')
-        .add(b':')
-        .add(b';')
-        .add(b'=')
-        .add(b'@')
-        .add(b'[')
-        .add(b'\\')
-        .add(b']')
-        .add(b'^')
-        .add(b'|');
-    pub const COMPONENT: &AsciiSet = &USERINFO.add(b'$').add(b'%').add(b'&').add(b'+').add(b',');
-}
 
 /// Query parameters used by listing APIs
 #[derive(Deserialize, Default)]
