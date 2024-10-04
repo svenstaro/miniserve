@@ -12,7 +12,7 @@ use anyhow::{anyhow, Context, Result};
 use rustls_pemfile as pemfile;
 
 use crate::{
-    args::{parse_auth, CliArgs, MediaType},
+    args::{parse_auth, CliArgs, DuplicateFile, MediaType},
     auth::RequiredAuth,
     file_utils::sanitize_path,
     listing::{SortingMethod, SortingOrder},
@@ -107,8 +107,8 @@ pub struct MiniserveConfig {
     /// HTML accept attribute value
     pub uploadable_media_type: Option<String>,
 
-    /// Enable upload to override existing files
-    pub overwrite_files: bool,
+    /// What to do on upload if filename already exists
+    pub on_duplicate_files: DuplicateFile,
 
     /// If false, creation of uncompressed tar archives is disabled
     pub tar_enabled: bool,
@@ -288,7 +288,7 @@ impl MiniserveConfig {
             index: args.index,
             spa: args.spa,
             pretty_urls: args.pretty_urls,
-            overwrite_files: args.overwrite_files,
+            on_duplicate_files: args.on_duplicate_files,
             show_qrcode: args.qrcode,
             mkdir_enabled: args.mkdir_enabled,
             file_upload: args.allowed_upload_dir.is_some(),

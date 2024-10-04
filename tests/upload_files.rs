@@ -7,7 +7,10 @@ use rstest::rstest;
 use select::document::Document;
 use select::predicate::{Attr, Text};
 use std::fs::create_dir_all;
+use std::fs::File;
+use std::io::Write;
 use std::path::Path;
+use std::path::PathBuf;
 
 #[rstest]
 fn uploading_files_works(#[with(&["-u"])] server: TestServer) -> Result<(), Error> {
@@ -274,4 +277,178 @@ fn set_media_type(
     assert_eq!(input.attr("accept"), expected_accept_value);
 
     Ok(())
+}
+
+#[rstest]
+#[case(server(&["-u"]))]
+#[case(server(&["-u", "-o", "error"]))]
+#[case(server(&["-u", "--on-duplicate-files", "error"]))]
+fn uploading_duplicate_file_is_prevented(#[case] server: TestServer) -> Result<(), Error> {
+    let test_file_name = "duplicate test file.txt";
+    let test_file_contents = "Test File Contents";
+
+    // create the file
+    let test_file_path = write_file_contents(
+        server.path().to_path_buf(),
+        test_file_name,
+        test_file_contents,
+    );
+
+    // Before uploading, make sure the file is there.
+    let body = reqwest::blocking::get(server.url())?.error_for_status()?;
+    let parsed = Document::from_read(body)?;
+    assert!(parsed.find(Text).any(|x| x.text() == test_file_name));
+
+    // Perform the actual upload.
+    let upload_action = parsed
+        .find(Attr("id", "file_submit"))
+        .next()
+        .expect("Couldn't find element with id=file_submit")
+        .attr("action")
+        .expect("Upload form doesn't have action attribute");
+    // Then try to upload anyway
+    let form = multipart::Form::new();
+    let part = multipart::Part::text("this should not be uploaded")
+        .file_name(test_file_name)
+        .mime_str("text/plain")?;
+    let form = form.part("file_to_upload", part);
+
+    let client = Client::new();
+    // Ensure uploading fails and returns an error
+    assert!(client
+        .post(server.url().join(upload_action)?)
+        .multipart(form)
+        .send()?
+        .error_for_status()
+        .is_err());
+
+    // After uploading, uploaded file is still getting listed.
+    let body = reqwest::blocking::get(server.url())?;
+    let parsed = Document::from_read(body)?;
+    assert!(parsed.find(Text).any(|x| x.text() == test_file_name));
+    // and assert the contents is the same as before
+    assert_file_contents(test_file_path, test_file_contents);
+
+    Ok(())
+}
+
+#[rstest]
+fn overwrite_duplicate_file(
+    #[with(&["-u", "--on-duplicate-files", "overwrite"])] server: TestServer,
+) -> Result<(), Error> {
+    let test_file_name = "duplicate test file.txt";
+    let test_file_contents = "Test File Contents";
+    let test_file_contents_new = "New Uploaded Test File Contents";
+
+    // create the file
+    let test_file_path = write_file_contents(
+        server.path().to_path_buf(),
+        test_file_name,
+        test_file_contents,
+    );
+
+    // Before uploading, make sure the file is there.
+    let body = reqwest::blocking::get(server.url())?.error_for_status()?;
+    let parsed = Document::from_read(body)?;
+    assert!(parsed.find(Text).any(|x| x.text() == test_file_name));
+
+    // Perform the actual upload.
+    let upload_action = parsed
+        .find(Attr("id", "file_submit"))
+        .next()
+        .expect("Couldn't find element with id=file_submit")
+        .attr("action")
+        .expect("Upload form doesn't have action attribute");
+    // Then try to upload anyway
+    let form = multipart::Form::new();
+    let part = multipart::Part::text(test_file_contents_new)
+        .file_name(test_file_name)
+        .mime_str("text/plain")?;
+    let form = form.part("file_to_upload", part);
+
+    let client = Client::new();
+    client
+        .post(server.url().join(upload_action)?)
+        .multipart(form)
+        .send()?
+        .error_for_status()?;
+
+    // After uploading, uploaded file is still getting listed.
+    let body = reqwest::blocking::get(server.url())?;
+    let parsed = Document::from_read(body)?;
+    assert!(parsed.find(Text).any(|x| x.text() == test_file_name));
+    // and assert the contents is different one from before
+    assert_file_contents(test_file_path, test_file_contents_new);
+
+    Ok(())
+}
+
+#[rstest]
+fn rename_duplicate_file(
+    #[with(&["-u", "--on-duplicate-files", "rename"])] server: TestServer,
+) -> Result<(), Error> {
+    let test_file_name = "duplicate test file.txt";
+    let test_file_name_new = "duplicate test file-1.txt";
+    let test_file_contents = "Test File Contents";
+    let test_file_contents_new = "New Uploaded Test File Contents";
+
+    // create the file
+    let test_file_path = write_file_contents(
+        server.path().to_path_buf(),
+        test_file_name,
+        test_file_contents,
+    );
+
+    // Before uploading, make sure the file is there.
+    let body = reqwest::blocking::get(server.url())?.error_for_status()?;
+    let parsed = Document::from_read(body)?;
+    assert!(parsed.find(Text).any(|x| x.text() == test_file_name));
+
+    // Perform the actual upload.
+    let upload_action = parsed
+        .find(Attr("id", "file_submit"))
+        .next()
+        .expect("Couldn't find element with id=file_submit")
+        .attr("action")
+        .expect("Upload form doesn't have action attribute");
+    // Then try to upload anyway
+    let form = multipart::Form::new();
+    let part = multipart::Part::text(test_file_contents_new)
+        .file_name(test_file_name)
+        .mime_str("text/plain")?;
+    let form = form.part("file_to_upload", part);
+
+    let client = Client::new();
+    client
+        .post(server.url().join(upload_action)?)
+        .multipart(form)
+        .send()?
+        .error_for_status()?;
+
+    // After uploading, make sure old and new files are both listed.
+    let body = reqwest::blocking::get(server.url())?;
+    let parsed = Document::from_read(body)?;
+    assert!(parsed.find(Text).any(|x| x.text() == test_file_name));
+    assert!(parsed.find(Text).any(|x| x.text() == test_file_name_new));
+    // and assert the contents is same for old and new files
+    assert_file_contents(server.path().join(&test_file_path), test_file_contents);
+    assert_file_contents(
+        server.path().join(&test_file_name_new),
+        test_file_contents_new,
+    );
+
+    Ok(())
+}
+
+fn write_file_contents(path: PathBuf, filename: &str, contents: &str) -> PathBuf {
+    let file_path = path.join(filename);
+    let mut file = File::create(&file_path).unwrap();
+    file.write_all(contents.as_bytes())
+        .expect("Couldn't write file");
+    file_path
+}
+
+fn assert_file_contents(file_path: PathBuf, contents: &str) {
+    let file_contents = std::fs::read_to_string(&file_path).unwrap();
+    assert!(file_contents == contents)
 }
