@@ -476,8 +476,16 @@ and set the `[Service]` part in the resulting `override.conf` file. For instance
     ExecStart=
     ExecStart=/usr/bin/miniserve --enable-tar --enable-zip --no-symlinks --verbose -i ::1 -p 1234 --title hello --color-scheme monokai --color-scheme-dark monokai -- %I
 
-Make sure to leave the `%I` at the very end in place or the wrong path might be served. You
-might additionally have to override `IPAddressAllow` and `IPAddressDeny` if you plan on making
+Make sure to leave the `%I` at the very end in place or the wrong path might be served.
+Alternatively, you can configure the service via environment variables:
+
+    [Service]
+    Environment=MINISERVE_ENABLE_TAR=true
+    Environment=MINISERVE_ENABLE_ZIP=true
+    Environment="MINISERVE_TITLE=hello world"
+    ...
+
+You might additionally have to override `IPAddressAllow` and `IPAddressDeny` if you plan on making
 miniserve directly available on a public interface.
 
 ## Binding behavior
