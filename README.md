@@ -287,7 +287,7 @@ Options:
   -o, --overwrite-files
           Enable overriding existing files during file upload
 
-          [env: OVERWRITE_FILES=]
+          [env: MINISERVE_OVERWRITE_FILES=]
 
   -r, --enable-tar
           Enable uncompressed tar archive generation
