@@ -195,7 +195,11 @@ pub struct CliArgs {
     pub media_type_raw: Option<String>,
 
     /// Enable overriding existing files during file upload
-    #[arg(short = 'o', long = "overwrite-files", env = "MINISERVE_OVERWRITE_FILES")]
+    #[arg(
+        short = 'o',
+        long = "overwrite-files",
+        env = "MINISERVE_OVERWRITE_FILES"
+    )]
     pub overwrite_files: bool,
 
     /// Enable uncompressed tar archive generation
