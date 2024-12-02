@@ -309,6 +309,10 @@ pub struct CliArgs {
     /// and return an error instead.
     #[arg(short = 'I', long, env = "MINISERVE_DISABLE_INDEXING")]
     pub disable_indexing: bool,
+
+    /// Show served file size in exact bytes.
+    #[arg(long, default_value = "false", env = "MINISERVE_SHOW_SIZE_IN_BYTE")]
+    pub show_size_in_byte: bool,
 }
 
 /// Checks whether an interface is valid, i.e. it can be parsed into an IP address
