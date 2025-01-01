@@ -32,7 +32,7 @@ clap = { version = "4", features = ["derive", "cargo", "wrap_help", "deprecated"
 clap_complete = "4"
 clap_mangen = "0.2"
 colored = "2"
-comrak = { version = "0.31", default-features = false }
+comrak = { version = "0.32", default-features = false }
 fast_qr = { version = "0.12", features = ["svg"] }
 futures = "0.3"
 grass = { version = "0.13", features = ["macro"], default-features = false }
@@ -56,7 +56,7 @@ socket2 = "0.5"
 strum = { version = "0.26", features = ["derive"] }
 tar = "0.4"
 thiserror = "2"
-tokio = { version = "1.41.0", features = ["fs"] }
+tokio = { version = "1.42.0", features = ["fs"] }
 zip = { version = "2", default-features = false }
 
 [features]
