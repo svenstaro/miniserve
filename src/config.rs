@@ -269,7 +269,7 @@ impl MiniserveConfig {
             .transpose()?
             .unwrap_or_default();
 
-        Ok(MiniserveConfig {
+        Ok(Self {
             verbose: args.verbose,
             path: args.path.unwrap_or_else(|| PathBuf::from(".")),
             port,

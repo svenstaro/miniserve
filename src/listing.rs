@@ -121,7 +121,7 @@ impl Entry {
         last_modification_date: Option<SystemTime>,
         symlink_info: Option<String>,
     ) -> Self {
-        Entry {
+        Self {
             name,
             entry_type,
             link,
@@ -153,7 +153,7 @@ pub struct Breadcrumb {
 
 impl Breadcrumb {
     fn new(name: String, link: String) -> Self {
-        Breadcrumb { name, link }
+        Self { name, link }
     }
 }
 
