@@ -28,27 +28,27 @@ pub enum ArchiveMethod {
 impl ArchiveMethod {
     pub fn extension(self) -> String {
         match self {
-            ArchiveMethod::TarGz => "tar.gz",
-            ArchiveMethod::Tar => "tar",
-            ArchiveMethod::Zip => "zip",
+            Self::TarGz => "tar.gz",
+            Self::Tar => "tar",
+            Self::Zip => "zip",
         }
         .to_string()
     }
 
     pub fn content_type(self) -> String {
         match self {
-            ArchiveMethod::TarGz => "application/gzip",
-            ArchiveMethod::Tar => "application/tar",
-            ArchiveMethod::Zip => "application/zip",
+            Self::TarGz => "application/gzip",
+            Self::Tar => "application/tar",
+            Self::Zip => "application/zip",
         }
         .to_string()
     }
 
     pub fn is_enabled(self, tar_enabled: bool, tar_gz_enabled: bool, zip_enabled: bool) -> bool {
         match self {
-            ArchiveMethod::TarGz => tar_gz_enabled,
-            ArchiveMethod::Tar => tar_enabled,
-            ArchiveMethod::Zip => zip_enabled,
+            Self::TarGz => tar_gz_enabled,
+            Self::Tar => tar_enabled,
+            Self::Zip => zip_enabled,
         }
     }
 
@@ -69,9 +69,9 @@ impl ArchiveMethod {
     {
         let dir = dir.as_ref();
         match self {
-            ArchiveMethod::TarGz => tar_gz(dir, skip_symlinks, out),
-            ArchiveMethod::Tar => tar_dir(dir, skip_symlinks, out),
-            ArchiveMethod::Zip => zip_dir(dir, skip_symlinks, out),
+            Self::TarGz => tar_gz(dir, skip_symlinks, out),
+            Self::Tar => tar_dir(dir, skip_symlinks, out),
+            Self::Zip => zip_dir(dir, skip_symlinks, out),
         }
     }
 }
