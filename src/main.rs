@@ -25,6 +25,7 @@ mod errors;
 mod file_op;
 mod file_utils;
 mod listing;
+mod path_utils;
 mod pipe;
 mod renderer;
 
@@ -372,6 +373,10 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
         if conf.file_upload {
             // Allow file upload
             app.service(web::resource("/upload").route(web::post().to(file_op::upload_file)));
+        }
+        if conf.rm_enabled {
+            // Allow file and directory deletion
+            app.service(web::resource("/rm").route(web::post().to(file_op::rm_file)));
         }
         // Handle directories
         app.service(dir_service());
