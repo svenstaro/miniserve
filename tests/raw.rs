@@ -1,14 +1,14 @@
-mod fixtures;
-mod utils;
-
-use crate::fixtures::TestServer;
-use fixtures::{server, Error};
 use pretty_assertions::assert_eq;
 use reqwest::blocking::Client;
 use rstest::rstest;
-use select::document::Document;
-use select::predicate::Class;
-use select::predicate::Name;
+use select::{
+    document::Document,
+    predicate::{Class, Name},
+};
+
+mod fixtures;
+
+use crate::fixtures::{server, Error, TestServer};
 
 /// The footer displays the correct wget command to download the folder recursively
 // This test can't test all aspects of the wget footer,

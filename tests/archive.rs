@@ -1,10 +1,10 @@
-﻿mod fixtures;
-
-use fixtures::{server, Error, TestServer};
-use reqwest::StatusCode;
+﻿use reqwest::StatusCode;
 use rstest::rstest;
-use select::document::Document;
-use select::predicate::Text;
+use select::{document::Document, predicate::Text};
+
+mod fixtures;
+
+use crate::fixtures::{server, Error, TestServer};
 
 #[rstest]
 fn archives_are_disabled(server: TestServer) -> Result<(), Error> {

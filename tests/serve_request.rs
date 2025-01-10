@@ -1,18 +1,20 @@
-mod fixtures;
+use std::process::{Command, Stdio};
+use std::thread::sleep;
+use std::time::Duration;
 
 use assert_cmd::prelude::*;
 use assert_fs::fixture::TempDir;
-use fixtures::{
-    port, server, server_no_stderr, tmpdir, Error, TestServer, DIRECTORIES, FILES,
-    HIDDEN_DIRECTORIES, HIDDEN_FILES,
-};
 use regex::Regex;
 use reqwest::StatusCode;
 use rstest::rstest;
 use select::{document::Document, node::Node, predicate::Attr};
-use std::process::{Command, Stdio};
-use std::thread::sleep;
-use std::time::Duration;
+
+mod fixtures;
+
+use crate::fixtures::{
+    port, server, server_no_stderr, tmpdir, Error, TestServer, DIRECTORIES, FILES,
+    HIDDEN_DIRECTORIES, HIDDEN_FILES,
+};
 
 #[cfg(unix)]
 use std::os::unix::fs::{symlink as symlink_dir, symlink as symlink_file};

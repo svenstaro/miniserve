@@ -1,12 +1,14 @@
-mod fixtures;
-
-use fixtures::{server, Error, TestServer, DIRECTORIES, FILES};
-use rstest::rstest;
-use select::predicate::Attr;
-use select::{document::Document, node::Node};
 use std::fs::{remove_file, File};
 use std::io::Write;
 use std::path::PathBuf;
+
+use rstest::rstest;
+use select::predicate::Attr;
+use select::{document::Document, node::Node};
+
+mod fixtures;
+
+use fixtures::{server, Error, TestServer, DIRECTORIES, FILES};
 
 fn write_readme_contents(path: PathBuf, filename: &str) -> PathBuf {
     let readme_path = path.join(filename);

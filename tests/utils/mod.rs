@@ -4,7 +4,6 @@ use select::predicate::Name;
 use select::predicate::Predicate;
 
 /// Return the href attribute content for the closest anchor found by `text`.
-#[allow(dead_code)]
 pub fn get_link_from_text(document: &Document, text: &str) -> Option<String> {
     let a_elem = document
         .find(Name("a").and(|x: &Node| x.children().any(|x| x.text() == text)))
@@ -13,7 +12,6 @@ pub fn get_link_from_text(document: &Document, text: &str) -> Option<String> {
 }
 
 /// Return the href attributes of all links that start with the specified `prefix`.
-#[allow(dead_code)]
 pub fn get_link_hrefs_with_prefix(document: &Document, prefix: &str) -> Vec<String> {
     let mut vec: Vec<String> = Vec::new();
 

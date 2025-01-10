@@ -1,11 +1,10 @@
+use reqwest::{blocking::Client, StatusCode};
+use rstest::rstest;
+use select::{document::Document, predicate::Text};
+
 mod fixtures;
 
-use fixtures::{server, server_no_stderr, Error, FILES};
-use reqwest::blocking::Client;
-use reqwest::StatusCode;
-use rstest::rstest;
-use select::document::Document;
-use select::predicate::Text;
+use crate::fixtures::{server, server_no_stderr, Error, FILES};
 
 #[rstest(
     cli_auth_file_arg,

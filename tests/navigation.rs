@@ -1,13 +1,14 @@
-mod fixtures;
-mod utils;
+use std::process::{Command, Stdio};
 
-use fixtures::{server, Error, TestServer, DEEPLY_NESTED_FILE, DIRECTORIES};
 use pretty_assertions::{assert_eq, assert_ne};
 use rstest::rstest;
 use select::document::Document;
-use std::process::{Command, Stdio};
-use utils::get_link_from_text;
-use utils::get_link_hrefs_with_prefix;
+
+mod fixtures;
+mod utils;
+
+use crate::fixtures::{server, Error, TestServer, DEEPLY_NESTED_FILE, DIRECTORIES};
+use crate::utils::{get_link_from_text, get_link_hrefs_with_prefix};
 
 #[rstest(
     input,

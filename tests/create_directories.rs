@@ -1,14 +1,18 @@
-mod fixtures;
-
-use fixtures::{server, Error, TestServer, DIRECTORIES};
-use reqwest::blocking::{multipart, Client};
-use rstest::rstest;
-use select::document::Document;
-use select::predicate::{Attr, Text};
 #[cfg(unix)]
 use std::os::unix::fs::symlink as symlink_dir;
 #[cfg(windows)]
 use std::os::windows::fs::symlink_dir;
+
+use reqwest::blocking::{multipart, Client};
+use rstest::rstest;
+use select::{
+    document::Document,
+    predicate::{Attr, Text},
+};
+
+mod fixtures;
+
+use crate::fixtures::{server, Error, TestServer, DIRECTORIES};
 
 /// This should work because the flags for uploading files and creating directories
 /// are set, and the directory name and path are valid.

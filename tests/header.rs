@@ -1,7 +1,8 @@
+use rstest::rstest;
+
 mod fixtures;
 
-use fixtures::{server, Error};
-use rstest::rstest;
+use crate::fixtures::{server, Error};
 
 #[rstest(headers,
     case(vec!["x-info: 123".to_string()]),

@@ -1,13 +1,15 @@
-mod fixtures;
+use std::fs::create_dir_all;
+use std::path::Path;
 
 use assert_fs::fixture::TempDir;
-use fixtures::{server, server_no_stderr, tmpdir, Error, TestServer};
 use reqwest::blocking::{multipart, Client};
 use rstest::rstest;
 use select::document::Document;
 use select::predicate::{Attr, Text};
-use std::fs::create_dir_all;
-use std::path::Path;
+
+mod fixtures;
+
+use crate::fixtures::{server, server_no_stderr, tmpdir, Error, TestServer};
 
 #[rstest]
 fn uploading_files_works(#[with(&["-u"])] server: TestServer) -> Result<(), Error> {
