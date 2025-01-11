@@ -149,6 +149,9 @@ pub struct MiniserveConfig {
     /// If enabled, indexing is disabled.
     pub disable_indexing: bool,
 
+    /// If enabled, will show in exact byte size of the file
+    pub show_size_in_byte: bool,
+
     /// If set, use provided rustls config for TLS
     #[cfg(feature = "tls")]
     pub tls_rustls_config: Option<rustls::ServerConfig>,
@@ -308,6 +311,7 @@ impl MiniserveConfig {
             disable_indexing: args.disable_indexing,
             tls_rustls_config: tls_rustls_server_config,
             compress_response: args.compress_response,
+            show_size_in_byte: args.show_size_in_byte,
         })
     }
 }
