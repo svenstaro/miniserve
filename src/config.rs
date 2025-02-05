@@ -149,6 +149,9 @@ pub struct MiniserveConfig {
     /// If enabled, indexing is disabled.
     pub disable_indexing: bool,
 
+    /// If enabled, respond to WebDAV requests (read-only).
+    pub webdav_enabled: bool,
+
     /// If set, use provided rustls config for TLS
     #[cfg(feature = "tls")]
     pub tls_rustls_config: Option<rustls::ServerConfig>,
@@ -306,6 +309,7 @@ impl MiniserveConfig {
             show_wget_footer: args.show_wget_footer,
             readme: args.readme,
             disable_indexing: args.disable_indexing,
+            webdav_enabled: args.enable_webdav,
             tls_rustls_config: tls_rustls_server_config,
             compress_response: args.compress_response,
         })
