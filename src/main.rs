@@ -6,13 +6,18 @@ use std::time::Duration;
 use actix_files::NamedFile;
 use actix_web::{
     dev::{fn_service, ServiceRequest, ServiceResponse},
-    http::header::ContentType,
+    guard,
+    http::{header::ContentType, Method},
     middleware, web, App, HttpRequest, HttpResponse, Responder,
 };
 use actix_web_httpauth::middleware::HttpAuthentication;
 use anyhow::Result;
 use clap::{crate_version, CommandFactory, Parser};
 use colored::*;
+use dav_server::{
+    actix::{DavRequest, DavResponse},
+    DavConfig, DavHandler, DavMethodSet,
+};
 use fast_qr::QRBuilder;
 use log::{error, warn};
 
@@ -27,9 +32,11 @@ mod file_utils;
 mod listing;
 mod pipe;
 mod renderer;
+mod webdav_fs;
 
 use crate::config::MiniserveConfig;
 use crate::errors::{RuntimeError, StartupError};
+use crate::webdav_fs::RestrictedFs;
 
 static STYLESHEET: &str = grass::include!("data/style.scss");
 
@@ -84,6 +91,12 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), StartupError> {
 
     if miniserve_config.no_symlinks && miniserve_config.path.is_symlink() {
         return Err(StartupError::NoSymlinksOptionWithSymlinkServePath(
+            miniserve_config.path.to_string_lossy().to_string(),
+        ));
+    }
+
+    if miniserve_config.webdav_enabled && miniserve_config.path.is_file() {
+        return Err(StartupError::WebdavWithFileServePath(
             miniserve_config.path.to_string_lossy().to_string(),
         ));
     }
@@ -307,7 +320,9 @@ fn configure_header(conf: &MiniserveConfig) -> middleware::DefaultHeaders {
 /// This is where we configure the app to serve an index file, the file listing, or a single file.
 fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
     let dir_service = || {
-        let mut files = actix_files::Files::new("", &conf.path);
+        // use routing guard so propfind and options requests fall through to the webdav handler
+        let mut files = actix_files::Files::new("", &conf.path)
+            .guard(guard::Any(guard::Get()).or(guard::Head()));
 
         // Use specific index file if one was provided.
         if let Some(ref index_file) = conf.index {
@@ -375,6 +390,38 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
         }
         // Handle directories
         app.service(dir_service());
+    }
+
+    if conf.webdav_enabled {
+        let fs = RestrictedFs::new(&conf.path, conf.show_hidden);
+
+        let dav_server = DavHandler::builder()
+            .filesystem(fs)
+            .methods(DavMethodSet::WEBDAV_RO)
+            .hide_symlinks(conf.no_symlinks)
+            .strip_prefix(conf.route_prefix.to_owned())
+            .build_handler();
+
+        app.app_data(web::Data::new(dav_server.clone()));
+
+        app.service(
+            // actix requires tail segment to be named, even if unused
+            web::resource("/{tail}*")
+                .guard(
+                    guard::Any(guard::Options())
+                        .or(guard::Method(Method::from_bytes(b"PROPFIND").unwrap())),
+                )
+                .to(dav_handler),
+        );
+    }
+}
+
+async fn dav_handler(req: DavRequest, davhandler: web::Data<DavHandler>) -> DavResponse {
+    if let Some(prefix) = req.prefix() {
+        let config = DavConfig::new().strip_prefix(prefix);
+        davhandler.handle_with(config, req.request).await.into()
+    } else {
+        davhandler.handle(req.request).await.into()
     }
 }
 

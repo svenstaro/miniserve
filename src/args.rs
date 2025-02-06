@@ -309,6 +309,12 @@ pub struct CliArgs {
     /// and return an error instead.
     #[arg(short = 'I', long, env = "MINISERVE_DISABLE_INDEXING")]
     pub disable_indexing: bool,
+
+    /// Enable read-only WebDAV support (PROPFIND requests)
+    ///
+    /// Currently incompatible with -P|--no-symlinks (see https://github.com/messense/dav-server-rs/issues/37)
+    #[arg(long, env = "MINISERVE_ENABLE_WEBDAV", conflicts_with = "no_symlinks")]
+    pub enable_webdav: bool,
 }
 
 /// Checks whether an interface is valid, i.e. it can be parsed into an IP address
