@@ -83,7 +83,7 @@ pub fn tmpdir() -> TempDir {
 
     tmpdir
         .child(DIRECTORY_SYMLINK.strip_suffix("/").unwrap())
-        .symlink_to_dir(DIRECTORIES[0])
+        .symlink_to_dir(DIRECTORIES[0].strip_suffix("/").unwrap())
         .expect("Couldn't create symlink to dir");
 
     tmpdir
