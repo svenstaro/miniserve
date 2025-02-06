@@ -4,6 +4,7 @@ use std::time::Duration;
 
 use assert_cmd::prelude::*;
 use assert_fs::fixture::TempDir;
+use fixtures::BROKEN_SYMLINK;
 use regex::Regex;
 use reqwest::StatusCode;
 use rstest::rstest;
@@ -12,14 +13,9 @@ use select::{document::Document, node::Node, predicate::Attr};
 mod fixtures;
 
 use crate::fixtures::{
-    port, server, server_no_stderr, tmpdir, Error, TestServer, DIRECTORIES, FILES,
-    HIDDEN_DIRECTORIES, HIDDEN_FILES,
+    port, server, server_no_stderr, tmpdir, Error, TestServer, DIRECTORIES, DIRECTORY_SYMLINK,
+    FILES, FILE_SYMLINK, HIDDEN_DIRECTORIES, HIDDEN_FILES,
 };
-
-#[cfg(unix)]
-use std::os::unix::fs::{symlink as symlink_dir, symlink as symlink_file};
-#[cfg(windows)]
-use std::os::windows::fs::{symlink_dir, symlink_file};
 
 #[rstest]
 fn serves_requests_with_no_options(tmpdir: TempDir) -> Result<(), Error> {
@@ -133,23 +129,10 @@ fn serves_requests_symlinks(
     #[case] show_symlink_info: bool,
     #[case] server: TestServer,
 ) -> Result<(), Error> {
-    let file = "symlink-file.html";
-    let dir = "symlink-dir/";
-    let broken = "symlink broken";
-
-    // Set up some basic symlinks:
-    // to dir, to file, to non-existent location
-    let orig = DIRECTORIES[0].strip_suffix('/').unwrap();
-    let link = server.path().join(dir.strip_suffix('/').unwrap());
-    symlink_dir(orig, link).expect("Couldn't create symlink");
-    symlink_file(FILES[0], server.path().join(file)).expect("Couldn't create symlink");
-    symlink_file("should-not-exist.xxx", server.path().join(broken))
-        .expect("Couldn't create symlink");
-
     let body = reqwest::blocking::get(server.url())?.error_for_status()?;
     let parsed = Document::from_read(body)?;
 
-    for &entry in &[file, dir] {
+    for &entry in &[FILE_SYMLINK, DIRECTORY_SYMLINK] {
         let status = reqwest::blocking::get(server.url().join(entry)?)?.status();
         // We expect a 404 here for when `no_symlinks` is `true`.
         if no_symlinks {
@@ -163,6 +146,7 @@ fn serves_requests_symlinks(
             .next();
 
         // If symlinks are deactivated, none should be shown in the listing.
+        dbg!(&node);
         assert_eq!(node.is_none(), no_symlinks);
         if node.is_some() && show_symlink_info {
             assert_eq!(node.unwrap().attr("class").unwrap(), "symlink");
@@ -188,7 +172,10 @@ fn serves_requests_symlinks(
             assert_eq!(node.unwrap().attr("class").unwrap(), "file");
         }
     }
-    assert!(parsed.find(|x: &Node| x.text() == broken).next().is_none());
+    assert!(parsed
+        .find(|x: &Node| x.text() == BROKEN_SYMLINK)
+        .next()
+        .is_none());
 
     Ok(())
 }

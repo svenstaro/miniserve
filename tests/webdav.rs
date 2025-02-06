@@ -1,7 +1,3 @@
-#[cfg(unix)]
-use std::os::unix::fs::{symlink as symlink_dir, symlink as symlink_file};
-#[cfg(windows)]
-use std::os::windows::fs::{symlink_dir, symlink_file};
 use std::process::Command;
 
 use assert_cmd::prelude::*;
@@ -17,7 +13,8 @@ use rstest::rstest;
 mod fixtures;
 
 use crate::fixtures::{
-    server, tmpdir, Error, TestServer, DIRECTORIES, FILES, HIDDEN_DIRECTORIES, HIDDEN_FILES,
+    server, server_no_stderr, tmpdir, Error, TestServer, DIRECTORIES, DIRECTORY_SYMLINK, FILES,
+    FILE_SYMLINK, HIDDEN_DIRECTORIES, HIDDEN_FILES,
 };
 
 #[rstest]
@@ -93,36 +90,25 @@ fn webdav_respects_hidden_flag(
 #[rstest]
 #[case(server(&["--enable-webdav"]), true)]
 #[should_panic]
-#[case(server(&["--enable-webdav", "--no-symlinks"]), false)]
+#[case(server_no_stderr(&["--enable-webdav", "--no-symlinks"]), false)]
 fn webdav_respects_no_symlink_flag(#[case] server: TestServer, #[case] symlinks_should_show: bool) {
-    // Make symlinks
-    let symlink_directory_str = "symlink_directory";
-    let symlink_directory = server.path().join(symlink_directory_str);
-    let symlinked_direcotry = server.path().join(DIRECTORIES[0]);
-    symlink_dir(symlinked_direcotry, symlink_directory).unwrap();
-
-    let symlink_filename_str = "symlink_file";
-    let symlink_filename = server.path().join(symlink_filename_str);
-    let symlinked_file = server.path().join(FILES[0]);
-    symlink_file(symlinked_file, symlink_filename).unwrap();
-
     let list = list_webdav(server.url(), "/").unwrap();
 
     assert_eq!(
         symlinks_should_show,
         list.iter().any(|el|
-            matches!(el, ListEntity::File(ListFile { href, .. }) if href.contains(symlink_filename_str))
+            matches!(el, ListEntity::File(ListFile { href, .. }) if href.contains(FILE_SYMLINK))
         ),
     );
 
     assert_eq!(
         symlinks_should_show,
         list.iter().any(|el|
-            matches!(el, ListEntity::Folder(ListFolder { href, .. }) if href.contains(symlink_directory_str))
+            matches!(el, ListEntity::Folder(ListFolder { href, .. }) if href.contains(DIRECTORY_SYMLINK))
         ),
     );
 
-    let list_linked = list_webdav(server.url(), &format!("/{}", symlink_directory_str));
+    let list_linked = list_webdav(server.url(), &format!("/{}", DIRECTORY_SYMLINK));
 
     assert_eq!(symlinks_should_show, list_linked.is_ok());
 }

@@ -1,12 +1,13 @@
+use std::process::{Child, Command, Stdio};
+use std::thread::sleep;
+use std::time::{Duration, Instant};
+
 use assert_cmd::prelude::*;
 use assert_fs::fixture::TempDir;
 use assert_fs::prelude::*;
 use port_check::free_local_port;
 use reqwest::Url;
 use rstest::fixture;
-use std::process::{Child, Command, Stdio};
-use std::thread::sleep;
-use std::time::{Duration, Instant};
 
 /// Error type used by tests
 pub type Error = Box<dyn std::error::Error>;
@@ -41,6 +42,15 @@ pub static HIDDEN_DIRECTORIES: &[&str] = &[".hidden_dir1/", ".hidden_dir2/"];
 /// Name of a deeply nested file
 pub static DEEPLY_NESTED_FILE: &str = "very/deeply/nested/test.rs";
 
+/// Name of a symlink pointing to a directory
+pub static DIRECTORY_SYMLINK: &str = "dir_symlink/";
+
+/// Name of a symlink pointing to a file
+pub static FILE_SYMLINK: &str = "file_symlink";
+
+/// Name of a symlink pointing to a path that doesn't exist
+pub static BROKEN_SYMLINK: &str = "broken_symlink";
+
 /// Test fixture which creates a temporary directory with a few files and directories inside.
 /// The directories also contain files.
 #[fixture]
@@ -70,6 +80,22 @@ pub fn tmpdir() -> TempDir {
         .child(DEEPLY_NESTED_FILE)
         .write_str("File in a deeply nested directory.")
         .expect("Couldn't write to file");
+
+    tmpdir
+        .child(DIRECTORY_SYMLINK.strip_suffix("/").unwrap())
+        .symlink_to_dir(DIRECTORIES[0])
+        .expect("Couldn't create symlink to dir");
+
+    tmpdir
+        .child(FILE_SYMLINK)
+        .symlink_to_file(FILES[0])
+        .expect("Couldn't create symlink to file");
+
+    tmpdir
+        .child(BROKEN_SYMLINK)
+        .symlink_to_file("broken_symlink")
+        .expect("Couldn't create broken symlink");
+
     tmpdir
 }
 
