@@ -4,7 +4,7 @@ use select::{document::Document, predicate::Text};
 
 mod fixtures;
 
-use crate::fixtures::{server, server_no_stderr, Error, FILES};
+use crate::fixtures::{server, Error, FILES};
 
 #[rstest(
     cli_auth_file_arg,
@@ -51,7 +51,7 @@ fn auth_file_rejects(
     client_username: &str,
     client_password: &str,
 ) -> Result<(), Error> {
-    let server = server_no_stderr(&["--auth-file", cli_auth_file_arg]);
+    let server = server(&["--auth-file", cli_auth_file_arg]);
     let client = Client::new();
     let status = client
         .get(server.url())

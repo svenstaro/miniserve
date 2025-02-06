@@ -13,8 +13,8 @@ use select::{document::Document, node::Node, predicate::Attr};
 mod fixtures;
 
 use crate::fixtures::{
-    port, server, server_no_stderr, tmpdir, Error, TestServer, DIRECTORIES, DIRECTORY_SYMLINK,
-    FILES, FILE_SYMLINK, HIDDEN_DIRECTORIES, HIDDEN_FILES,
+    port, server, tmpdir, Error, TestServer, DIRECTORIES, DIRECTORY_SYMLINK, FILES, FILE_SYMLINK,
+    HIDDEN_DIRECTORIES, HIDDEN_FILES,
 };
 
 #[rstest]
@@ -229,8 +229,8 @@ fn serves_requests_custom_index_notice(tmpdir: TempDir, port: u16) -> Result<(),
 }
 
 #[rstest]
-#[case(server_no_stderr(&["--index", FILES[0]]))]
-#[case(server_no_stderr(&["--index", "does-not-exist.html"]))]
+#[case(server(&["--index", FILES[0]]))]
+#[case(server(&["--index", "does-not-exist.html"]))]
 fn index_fallback_to_listing(#[case] server: TestServer) -> Result<(), Error> {
     // If index file is not found, show directory listing instead both cases should return `Ok`
     reqwest::blocking::get(server.url())?.error_for_status()?;
@@ -239,9 +239,9 @@ fn index_fallback_to_listing(#[case] server: TestServer) -> Result<(), Error> {
 }
 
 #[rstest]
-#[case(server_no_stderr(&["--spa", "--index", FILES[0]]), "/")]
-#[case(server_no_stderr(&["--spa", "--index", FILES[0]]), "/spa-route")]
-#[case(server_no_stderr(&["--index", FILES[0]]), "/")]
+#[case(server(&["--spa", "--index", FILES[0]]), "/")]
+#[case(server(&["--spa", "--index", FILES[0]]), "/spa-route")]
+#[case(server(&["--index", FILES[0]]), "/")]
 fn serve_index_instead_of_404_in_spa_mode(
     #[case] server: TestServer,
     #[case] url: &str,
@@ -257,9 +257,9 @@ fn serve_index_instead_of_404_in_spa_mode(
 }
 
 #[rstest]
-#[case(server_no_stderr(&["--pretty-urls", "--index", FILES[1]]), "/")]
-#[case(server_no_stderr(&["--pretty-urls", "--index", FILES[1]]), "test.html")]
-#[case(server_no_stderr(&["--pretty-urls", "--index", FILES[1]]), "test")]
+#[case(server(&["--pretty-urls", "--index", FILES[1]]), "/")]
+#[case(server(&["--pretty-urls", "--index", FILES[1]]), "test.html")]
+#[case(server(&["--pretty-urls", "--index", FILES[1]]), "test")]
 fn serve_file_instead_of_404_in_pretty_urls_mode(
     #[case] server: TestServer,
     #[case] url: &str,
@@ -290,9 +290,9 @@ fn serves_requests_with_route_prefix(#[case] server: TestServer) -> Result<(), E
 }
 
 #[rstest]
-#[case(server_no_stderr(&[] as &[&str]), "/[a-f0-9]+")]
-#[case(server_no_stderr(&["--random-route"]), "/[a-f0-9]+")]
-#[case(server_no_stderr(&["--route-prefix", "foobar"]), "/foobar/[a-f0-9]+")]
+#[case(server(&[] as &[&str]), "/[a-f0-9]+")]
+#[case(server(&["--random-route"]), "/[a-f0-9]+")]
+#[case(server(&["--route-prefix", "foobar"]), "/foobar/[a-f0-9]+")]
 fn serves_requests_static_file_check(
     #[case] server: TestServer,
     #[case] static_file_pattern: String,

@@ -121,34 +121,8 @@ where
         .arg("-p")
         .arg(port.to_string())
         .args(args.clone())
-        .stdout(Stdio::null())
-        .spawn()
-        .expect("Couldn't run test binary");
-    let is_tls = args
-        .into_iter()
-        .any(|x| x.as_ref().to_str().unwrap().contains("tls"));
-
-    wait_for_port(port);
-    TestServer::new(port, tmpdir, child, is_tls)
-}
-
-/// Same as `server()` but ignore stderr
-#[fixture]
-pub fn server_no_stderr<I>(#[default(&[] as &[&str])] args: I) -> TestServer
-where
-    I: IntoIterator + Clone,
-    I::Item: AsRef<std::ffi::OsStr>,
-{
-    let port = port();
-    let tmpdir = tmpdir();
-    let child = Command::cargo_bin("miniserve")
-        .expect("Couldn't find test binary")
-        .arg(tmpdir.path())
-        .arg("-p")
-        .arg(port.to_string())
-        .args(args.clone())
-        .stdout(Stdio::null())
-        .stderr(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
         .spawn()
         .expect("Couldn't run test binary");
     let is_tls = args

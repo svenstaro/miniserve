@@ -5,7 +5,7 @@ use select::{document::Document, predicate::Text};
 
 mod fixtures;
 
-use crate::fixtures::{server, server_no_stderr, Error, FILES};
+use crate::fixtures::{server, Error, FILES};
 
 #[rstest(
     cli_auth_arg, client_username, client_password,
@@ -75,7 +75,7 @@ fn auth_rejects(
     client_username: &str,
     client_password: &str,
 ) -> Result<(), Error> {
-    let server = server_no_stderr(&["-a", cli_auth_arg]);
+    let server = server(&["-a", cli_auth_arg]);
     let client = Client::new();
     let status = client
         .get(server.url())
@@ -138,7 +138,7 @@ fn auth_multiple_accounts_pass(username: &str, password: &str) -> Result<(), Err
 
 #[rstest]
 fn auth_multiple_accounts_wrong_username() -> Result<(), Error> {
-    let server = server_no_stderr(ACCOUNTS);
+    let server = server(ACCOUNTS);
     let client = Client::new();
 
     let status = client
@@ -163,7 +163,7 @@ fn auth_multiple_accounts_wrong_username() -> Result<(), Error> {
     case("usr5", "pwd0")
 )]
 fn auth_multiple_accounts_wrong_password(username: &str, password: &str) -> Result<(), Error> {
-    let server = server_no_stderr(ACCOUNTS);
+    let server = server(ACCOUNTS);
     let client = Client::new();
 
     let status = client

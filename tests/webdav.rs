@@ -13,8 +13,8 @@ use rstest::rstest;
 mod fixtures;
 
 use crate::fixtures::{
-    server, server_no_stderr, tmpdir, Error, TestServer, DIRECTORIES, DIRECTORY_SYMLINK, FILES,
-    FILE_SYMLINK, HIDDEN_DIRECTORIES, HIDDEN_FILES,
+    server, tmpdir, Error, TestServer, DIRECTORIES, DIRECTORY_SYMLINK, FILES, FILE_SYMLINK,
+    HIDDEN_DIRECTORIES, HIDDEN_FILES,
 };
 
 #[rstest]
@@ -90,7 +90,7 @@ fn webdav_respects_hidden_flag(
 #[rstest]
 #[case(server(&["--enable-webdav"]), true)]
 #[should_panic]
-#[case(server_no_stderr(&["--enable-webdav", "--no-symlinks"]), false)]
+#[case(server(&["--enable-webdav", "--no-symlinks"]), false)]
 fn webdav_respects_no_symlink_flag(#[case] server: TestServer, #[case] symlinks_should_show: bool) {
     let list = list_webdav(server.url(), "/").unwrap();
 

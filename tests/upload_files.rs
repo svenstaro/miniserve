@@ -9,7 +9,7 @@ use select::predicate::{Attr, Text};
 
 mod fixtures;
 
-use crate::fixtures::{server, server_no_stderr, tmpdir, Error, TestServer};
+use crate::fixtures::{server, tmpdir, Error, TestServer};
 
 #[rstest]
 fn uploading_files_works(#[with(&["-u"])] server: TestServer) -> Result<(), Error> {
@@ -87,8 +87,8 @@ fn uploading_files_is_prevented(server: TestServer) -> Result<(), Error> {
 /// This test runs the server with --allowed-upload-dir argument and
 /// checks that file upload to a different directory is actually prevented.
 #[rstest]
-#[case(server_no_stderr(&["-u", "someDir"]))]
-#[case(server_no_stderr(&["-u", "someDir/some_sub_dir"]))]
+#[case(server(&["-u", "someDir"]))]
+#[case(server(&["-u", "someDir/some_sub_dir"]))]
 fn uploading_files_is_restricted(#[case] server: TestServer) -> Result<(), Error> {
     let test_file_name = "uploaded test file.txt";
 
@@ -221,7 +221,7 @@ fn prevent_path_traversal_attacks(
 /// See https://github.com/svenstaro/miniserve/issues/466
 #[rstest]
 #[case(server(&["-u"]), true)]
-#[case(server_no_stderr(&["-u", "--no-symlinks"]), false)]
+#[case(server(&["-u", "--no-symlinks"]), false)]
 fn upload_to_symlink_directory(
     #[case] server: TestServer,
     #[case] ok: bool,
