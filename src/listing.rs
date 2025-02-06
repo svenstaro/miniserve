@@ -274,10 +274,7 @@ pub fn directory_listing(
                 if conf.no_symlinks && is_symlink {
                     continue;
                 }
-                let last_modification_date = match metadata.modified() {
-                    Ok(date) => Some(date),
-                    Err(_) => None,
-                };
+                let last_modification_date = metadata.modified().ok();
 
                 if metadata.is_dir() {
                     entries.push(Entry::new(
@@ -298,7 +295,7 @@ pub fn directory_listing(
                         symlink_dest,
                     ));
                     if conf.readme && readme_rx.is_match(&file_name.to_lowercase()) {
-                        let ext = file_name.split('.').last().unwrap().to_lowercase();
+                        let ext = file_name.split('.').next_back().unwrap().to_lowercase();
                         readme = Some((
                             file_name.to_string(),
                             if ext == "md" {

@@ -25,7 +25,7 @@ impl RestrictedFs {
 /// true if any normal component of path either starts with dot or can't be turned into a str
 fn path_has_hidden_components(path: &DavPath) -> bool {
     path.as_pathbuf().components().any(|c| match c {
-        Component::Normal(name) => name.to_str().map_or(true, |s| s.starts_with('.')),
+        Component::Normal(name) => name.to_str().is_none_or(|s| s.starts_with('.')),
         _ => false,
     })
 }
