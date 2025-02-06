@@ -4,11 +4,10 @@ mod fixtures;
 
 use crate::fixtures::{server, Error};
 
-#[rstest(headers,
-    case(vec!["x-info: 123".to_string()]),
-    case(vec!["x-info1: 123".to_string(), "x-info2: 345".to_string()])
-)]
-fn custom_header_set(headers: Vec<String>) -> Result<(), Error> {
+#[rstest]
+#[case(vec!["x-info: 123".to_string()])]
+#[case(vec!["x-info1: 123".to_string(), "x-info2: 345".to_string()])]
+fn custom_header_set(#[case] headers: Vec<String>) -> Result<(), Error> {
     let server = server(headers.iter().flat_map(|h| vec!["--header", h]));
     let resp = reqwest::blocking::get(server.url())?;
 

@@ -10,16 +10,17 @@ mod utils;
 use crate::fixtures::{server, Error, TestServer, DEEPLY_NESTED_FILE, DIRECTORIES};
 use crate::utils::{get_link_from_text, get_link_hrefs_with_prefix};
 
-#[rstest(
-    input,
-    expected,
-    case("", "/"),
-    case("/dira", "/dira/"),
-    case("/dirb/", "/dirb/"),
-    case("/very/deeply/nested", "/very/deeply/nested/")
-)]
+#[rstest]
+#[case("", "/")]
+#[case("/dira", "/dira/")]
+#[case("/dirb/", "/dirb/")]
+#[case("/very/deeply/nested", "/very/deeply/nested/")]
 /// Directories get a trailing slash.
-fn index_gets_trailing_slash(server: TestServer, input: &str, expected: &str) -> Result<(), Error> {
+fn index_gets_trailing_slash(
+    server: TestServer,
+    #[case] input: &str,
+    #[case] expected: &str,
+) -> Result<(), Error> {
     let resp = reqwest::blocking::get(server.url().join(input)?)?;
     assert!(resp.url().as_str().ends_with(expected));
 

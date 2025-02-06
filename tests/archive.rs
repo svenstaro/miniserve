@@ -58,8 +58,10 @@ fn test_tar_archives(#[with(&["-g"])] server: TestServer) -> Result<(), Error> {
 }
 
 #[rstest]
-#[case(server(&["--disable-indexing", "--enable-tar-gz", "--enable-tar", "--enable-zip"]))]
-fn archives_are_disabled_when_indexing_disabled(#[case] server: TestServer) -> Result<(), Error> {
+fn archives_are_disabled_when_indexing_disabled(
+    #[with(&["--disable-indexing", "--enable-tar-gz", "--enable-tar", "--enable-zip"])]
+    server: TestServer,
+) -> Result<(), Error> {
     // Ensure the links to the archives are not present
     let body = reqwest::blocking::get(server.url())?;
     let parsed = Document::from_read(body)?;

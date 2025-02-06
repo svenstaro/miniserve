@@ -69,17 +69,15 @@ fn no_readme_contents(server: TestServer) -> Result<(), Error> {
 }
 
 /// Show readme contents when told to if there is a readme file in the root
-#[rstest(
-    readme_name,
-    case("Readme.md"),
-    case("readme.md"),
-    case("README.md"),
-    case("README.MD"),
-    case("ReAdMe.Md")
-)]
+#[rstest]
+#[case("Readme.md")]
+#[case("readme.md")]
+#[case("README.md")]
+#[case("README.MD")]
+#[case("ReAdMe.Md")]
 fn show_root_readme_contents(
     #[with(&["--readme"])] server: TestServer,
-    readme_name: &str,
+    #[case] readme_name: &str,
 ) -> Result<(), Error> {
     let readme_path = write_readme_contents(server.path().to_path_buf(), readme_name);
     let body = reqwest::blocking::get(server.url())?.error_for_status()?;
@@ -96,21 +94,19 @@ fn show_root_readme_contents(
 }
 
 /// Show readme contents when told to if there is a readme file in any of the directories
-#[rstest(
-    readme_name,
-    case("Readme.md"),
-    case("readme.md"),
-    case("README.md"),
-    case("README.MD"),
-    case("ReAdMe.Md"),
-    case("Readme.txt"),
-    case("README.txt"),
-    case("README"),
-    case("ReAdMe")
-)]
+#[rstest]
+#[case("Readme.md")]
+#[case("readme.md")]
+#[case("README.md")]
+#[case("README.MD")]
+#[case("ReAdMe.Md")]
+#[case("Readme.txt")]
+#[case("README.txt")]
+#[case("README")]
+#[case("ReAdMe")]
 fn show_nested_readme_contents(
     #[with(&["--readme"])] server: TestServer,
-    readme_name: &str,
+    #[case] readme_name: &str,
 ) -> Result<(), Error> {
     for dir in DIRECTORIES {
         let readme_path = write_readme_contents(server.path().join(dir), readme_name);
