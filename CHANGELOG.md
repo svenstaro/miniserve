@@ -10,7 +10,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased] - ReleaseDate
 - Make URL encoding fully WHATWG-compliant [#1454](https://github.com/svenstaro/miniserve/pull/1454) (thanks @cyqsimon)
 - Fix `OVERWRITE_FILES` env var not being prefixed by `MINISERVE_` [#1457](https://github.com/svenstaro/miniserve/issues/1457)
-- Change `font-weight` of regular files to be `normal` to improve readability (thanks @shaicoleman)
+- Change `font-weight` of regular files to be `normal` to improve readability [#1471](https://github.com/svenstaro/miniserve/pull/1471) (thanks @shaicoleman)
+- Add webdav support [#1415](https://github.com/svenstaro/miniserve/pull/1415) (thanks @ahti)
 
 ## [0.28.0] - 2024-09-12
 - Fix wrapping text in mobile view when the file name too long [#1379](https://github.com/svenstaro/miniserve/pull/1379) (thanks @chaibiq)
