@@ -196,13 +196,13 @@ impl MiniserveConfig {
         // Otherwise, we should apply route_prefix to static files.
         let (favicon_route, css_route) = if args.random_route {
             (
-                format!("/{}", nanoid::nanoid!(10, &ROUTE_ALPHABET)),
-                format!("/{}", nanoid::nanoid!(10, &ROUTE_ALPHABET)),
+                "/__miniserve_internal/favicon.svg".into(),
+                "/__miniserve_internal/style.css".into(),
             )
         } else {
             (
-                format!("{}/{}", route_prefix, nanoid::nanoid!(10, &ROUTE_ALPHABET)),
-                format!("{}/{}", route_prefix, nanoid::nanoid!(10, &ROUTE_ALPHABET)),
+                format!("{}/{}", route_prefix, "__miniserve_internal/favicon.ico"),
+                format!("{}/{}", route_prefix, "__miniserve_internal/style.css"),
             )
         };
 

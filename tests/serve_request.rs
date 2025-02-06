@@ -290,9 +290,9 @@ fn serves_requests_with_route_prefix(#[case] server: TestServer) -> Result<(), E
 }
 
 #[rstest]
-#[case(server(&[] as &[&str]), "/[a-f0-9]+")]
-#[case(server(&["--random-route"]), "/[a-f0-9]+")]
-#[case(server(&["--route-prefix", "foobar"]), "/foobar/[a-f0-9]+")]
+#[case(server(&[] as &[&str]), "/__miniserve_internal/[a-z.]+")]
+#[case(server(&["--random-route"]), "/__miniserve_internal/[a-z.]+")]
+#[case(server(&["--route-prefix", "foobar"]), "/foobar/__miniserve_internal/[a-z.]+")]
 fn serves_requests_static_file_check(
     #[case] server: TestServer,
     #[case] static_file_pattern: String,
