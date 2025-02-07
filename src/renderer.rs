@@ -521,7 +521,12 @@ fn entry_row(
                         @if !raw {
                             @if let Some(size) = entry.size {
                                 span.mobile-info.size {
-                                    (maud::display(size))
+                                    (build_link("size", &format!("{}", size), sort_method, sort_order))
+                                }
+                            }
+                            @if let Some(modification_timer) = humanize_systemtime(entry.last_modification_date) {
+                                span.mobile-info.history {
+                                    (build_link("date", &modification_timer, sort_method, sort_order))
                                 }
                             }
                         }

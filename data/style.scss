@@ -281,17 +281,22 @@ td.date-cell {
     color: var(--date_text_color);
 }
 
-span.size {
+span.size, span.mobile-info.history {
     white-space: nowrap;
     border-radius: 1rem;
     background: var(--size_background_color);
     padding: 0 0.25rem;
+    margin: 0 0.25rem;
     font-size: 0.7rem;
     color: var(--size_text_color);
 }
 
 .mobile-info {
     display: none;
+}
+
+.mobile-info a, .mobile-info a:visited {
+    color: var(--size_text_color);
 }
 
 th a,
