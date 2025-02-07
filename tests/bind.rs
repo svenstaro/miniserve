@@ -1,12 +1,14 @@
-mod fixtures;
+use std::io::{BufRead, BufReader};
+use std::process::{Command, Stdio};
 
 use assert_cmd::prelude::*;
 use assert_fs::fixture::TempDir;
-use fixtures::{port, server, tmpdir, Error, TestServer};
 use regex::Regex;
 use rstest::rstest;
-use std::io::{BufRead, BufReader};
-use std::process::{Command, Stdio};
+
+mod fixtures;
+
+use crate::fixtures::{port, server, tmpdir, Error, TestServer};
 
 #[rstest]
 #[case(&["-i", "12.123.234.12"])]

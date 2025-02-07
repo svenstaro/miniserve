@@ -3,7 +3,9 @@ use std::io;
 use std::path::{Component, Path};
 use std::time::SystemTime;
 
-use actix_web::{dev::ServiceResponse, web::Query, HttpMessage, HttpRequest, HttpResponse};
+use actix_web::{
+    dev::ServiceResponse, http::Uri, web::Query, HttpMessage, HttpRequest, HttpResponse,
+};
 use bytesize::ByteSize;
 use clap::ValueEnum;
 use comrak::{markdown_to_html, ComrakOptions};
@@ -17,16 +19,26 @@ use crate::auth::CurrentUser;
 use crate::errors::{self, RuntimeError};
 use crate::renderer;
 
-use self::percent_encode_sets::PATH_SEGMENT;
+use self::percent_encode_sets::COMPONENT;
 
 /// "percent-encode sets" as defined by WHATWG specs:
 /// https://url.spec.whatwg.org/#percent-encoded-bytes
 mod percent_encode_sets {
     use percent_encoding::{AsciiSet, CONTROLS};
-    const BASE: &AsciiSet = &CONTROLS.add(b'%');
-    pub const QUERY: &AsciiSet = &BASE.add(b' ').add(b'"').add(b'#').add(b'<').add(b'>');
+    pub const QUERY: &AsciiSet = &CONTROLS.add(b' ').add(b'"').add(b'#').add(b'<').add(b'>');
     pub const PATH: &AsciiSet = &QUERY.add(b'?').add(b'`').add(b'{').add(b'}');
-    pub const PATH_SEGMENT: &AsciiSet = &PATH.add(b'/').add(b'\\');
+    pub const USERINFO: &AsciiSet = &PATH
+        .add(b'/')
+        .add(b':')
+        .add(b';')
+        .add(b'=')
+        .add(b'@')
+        .add(b'[')
+        .add(b'\\')
+        .add(b']')
+        .add(b'^')
+        .add(b'|');
+    pub const COMPONENT: &AsciiSet = &USERINFO.add(b'$').add(b'%').add(b'&').add(b'+').add(b',');
 }
 
 /// Query parameters used by listing APIs
@@ -109,7 +121,7 @@ impl Entry {
         last_modification_date: Option<SystemTime>,
         symlink_info: Option<String>,
     ) -> Self {
-        Entry {
+        Self {
             name,
             entry_type,
             link,
@@ -141,7 +153,7 @@ pub struct Breadcrumb {
 
 impl Breadcrumb {
     fn new(name: String, link: String) -> Self {
-        Breadcrumb { name, link }
+        Self { name, link }
     }
 }
 
@@ -173,7 +185,7 @@ pub fn directory_listing(
     let base = Path::new(serve_path);
     let random_route_abs = format!("/{}", conf.route_prefix);
     let abs_uri = {
-        let res = http::Uri::builder()
+        let res = Uri::builder()
             .scheme(req.connection_info().scheme())
             .authority(req.connection_info().host())
             .path_and_query(req.uri().to_string())
@@ -214,7 +226,7 @@ pub fn directory_listing(
                 Component::Normal(s) => {
                     name = s.to_string_lossy().to_string();
                     link_accumulator
-                        .push_str(&(utf8_percent_encode(&name, PATH_SEGMENT).to_string() + "/"));
+                        .push_str(&(utf8_percent_encode(&name, COMPONENT).to_string() + "/"));
                 }
                 _ => name = "".to_string(),
             };
@@ -253,7 +265,7 @@ pub fn directory_listing(
                 .and_then(|path| std::fs::read_link(path).ok())
                 .map(|path| path.to_string_lossy().into_owned());
             let file_url = base
-                .join(utf8_percent_encode(&file_name, PATH_SEGMENT).to_string())
+                .join(utf8_percent_encode(&file_name, COMPONENT).to_string())
                 .to_string_lossy()
                 .to_string();
 
@@ -262,10 +274,7 @@ pub fn directory_listing(
                 if conf.no_symlinks && is_symlink {
                     continue;
                 }
-                let last_modification_date = match metadata.modified() {
-                    Ok(date) => Some(date),
-                    Err(_) => None,
-                };
+                let last_modification_date = metadata.modified().ok();
 
                 if metadata.is_dir() {
                     entries.push(Entry::new(
@@ -286,7 +295,7 @@ pub fn directory_listing(
                         symlink_dest,
                     ));
                     if conf.readme && readme_rx.is_match(&file_name.to_lowercase()) {
-                        let ext = file_name.split('.').last().unwrap().to_lowercase();
+                        let ext = file_name.split('.').next_back().unwrap().to_lowercase();
                         readme = Some((
                             file_name.to_string(),
                             if ext == "md" {

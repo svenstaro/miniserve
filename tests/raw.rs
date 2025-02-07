@@ -1,30 +1,27 @@
-mod fixtures;
-mod utils;
-
-use crate::fixtures::TestServer;
-use fixtures::{server, Error};
 use pretty_assertions::assert_eq;
 use reqwest::blocking::Client;
 use rstest::rstest;
-use select::document::Document;
-use select::predicate::Class;
-use select::predicate::Name;
+use select::{
+    document::Document,
+    predicate::{Class, Name},
+};
+
+mod fixtures;
+
+use crate::fixtures::{server, Error, TestServer};
 
 /// The footer displays the correct wget command to download the folder recursively
 // This test can't test all aspects of the wget footer,
 // a more detailed unit test is available
-#[rstest(
-    depth,
-    dir,
-    case(0, ""),
-    case(1, "dira/"),
-    case(2, "very/deeply/"),
-    case(3, "very/deeply/nested/")
-)]
+#[rstest]
+#[case(0, "")]
+#[case(1, "dira/")]
+#[case(2, "very/deeply/")]
+#[case(3, "very/deeply/nested/")]
 fn ui_displays_wget_element(
-    depth: u8,
-    dir: &str,
-    #[with(&["-W"])] server: TestServer,
+    #[case] depth: u8,
+    #[case] dir: &str,
+    #[with(&["--show-wget-footer"])] server: TestServer,
 ) -> Result<(), Error> {
     let client = Client::new();
 
@@ -62,16 +59,14 @@ fn ui_displays_wget_element(
 }
 
 /// All hrefs in raw mode are links to directories or files & directories end with ?raw=true
-#[rstest(
-    dir,
-    case(""),
-    case("very/"),
-    case("very/deeply/"),
-    case("very/deeply/nested/")
-)]
+#[rstest]
+#[case("")]
+#[case("very/")]
+#[case("very/deeply/")]
+#[case("very/deeply/nested/")]
 fn raw_mode_links_to_directories_end_with_raw_true(
-    dir: &str,
-    #[with(&["-W"])] server: TestServer,
+    #[case] dir: &str,
+    #[with(&["--show-wget-footer"])] server: TestServer,
 ) -> Result<(), Error> {
     fn verify_a_tags(parsed: Document) {
         // Ensure all links end with ?raw=true or are files

@@ -1,14 +1,13 @@
-mod fixtures;
-
-use fixtures::{server, Error, TestServer, DIRECTORIES};
 use reqwest::blocking::{multipart, Client};
 use rstest::rstest;
-use select::document::Document;
-use select::predicate::{Attr, Text};
-#[cfg(unix)]
-use std::os::unix::fs::symlink as symlink_dir;
-#[cfg(windows)]
-use std::os::windows::fs::symlink_dir;
+use select::{
+    document::Document,
+    predicate::{Attr, Text},
+};
+
+mod fixtures;
+
+use crate::fixtures::{server, Error, TestServer, DIRECTORY_SYMLINK};
 
 /// This should work because the flags for uploading files and creating directories
 /// are set, and the directory name and path are valid.
@@ -96,20 +95,14 @@ fn creating_directories_is_prevented(server: TestServer) -> Result<(), Error> {
 fn creating_directories_through_symlinks_is_prevented(
     #[with(&["--upload-files", "--mkdir", "--no-symlinks"])] server: TestServer,
 ) -> Result<(), Error> {
-    // Make symlinks
-    let symlink_directory_str = "symlink";
-    let symlink_directory = server.path().join(symlink_directory_str);
-    let symlinked_direcotry = server.path().join(DIRECTORIES[0]);
-    symlink_dir(symlinked_direcotry, symlink_directory).unwrap();
-
     // Before attempting to create, ensure the symlink does not exist.
     let body = reqwest::blocking::get(server.url())?.error_for_status()?;
     let parsed = Document::from_read(body)?;
-    assert!(parsed.find(Text).all(|x| x.text() != symlink_directory_str));
+    assert!(parsed.find(Text).all(|x| x.text() != DIRECTORY_SYMLINK));
 
     // Attempt to perform directory creation.
     let form = multipart::Form::new();
-    let part = multipart::Part::text(symlink_directory_str);
+    let part = multipart::Part::text(DIRECTORY_SYMLINK);
     let form = form.part("mkdir", part);
 
     // This should fail
@@ -117,7 +110,7 @@ fn creating_directories_through_symlinks_is_prevented(
         .post(
             server
                 .url()
-                .join(format!("/upload?path=/{symlink_directory_str}").as_str())?
+                .join(format!("/upload?path=/{DIRECTORY_SYMLINK}").as_str())?
         )
         .multipart(form)
         .send()?

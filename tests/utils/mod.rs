@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use select::document::Document;
 use select::node::Node;
 use select::predicate::Name;
@@ -26,5 +24,5 @@ pub fn get_link_hrefs_with_prefix(document: &Document, prefix: &str) -> Vec<Stri
         }
     }
 
-    return vec;
+    vec
 }

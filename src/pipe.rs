@@ -17,7 +17,7 @@ pub struct Pipe {
 impl Pipe {
     /// Wrap the given sender in a `Pipe`.
     pub fn new(destination: Sender<io::Result<Bytes>>) -> Self {
-        Pipe {
+        Self {
             dest: destination,
             bytes: BytesMut::new(),
         }

@@ -1,11 +1,12 @@
-mod fixtures;
-
 use assert_cmd::Command;
-use fixtures::{server, Error, TestServer, FILES};
 use predicates::str::contains;
 use reqwest::blocking::ClientBuilder;
 use rstest::rstest;
 use select::{document::Document, node::Node};
+
+mod fixtures;
+
+use crate::fixtures::{server, Error, TestServer, FILES};
 
 /// Can start the server with TLS and receive encrypted responses.
 #[rstest]

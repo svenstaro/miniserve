@@ -1,6 +1,6 @@
 use std::time::SystemTime;
 
-use actix_web::http::StatusCode;
+use actix_web::http::{StatusCode, Uri};
 use chrono::{DateTime, Local};
 use chrono_humanize::Humanize;
 use clap::{crate_name, crate_version, ValueEnum};
@@ -9,7 +9,6 @@ use fast_qr::{
     qr::QRCodeError,
     QRBuilder,
 };
-use http::Uri;
 use maud::{html, Markup, PreEscaped, DOCTYPE};
 use strum::{Display, IntoEnumIterator};
 
@@ -118,7 +117,7 @@ pub fn page(
                                     }
                                 }
                             }
-                            @if conf.mkdir_enabled {
+                            @if conf.mkdir_enabled && upload_allowed {
                                 div.toolbar_box {
                                     form id="mkdir" action=(mkdir_action) method="POST" enctype="multipart/form-data" {
                                         p { "Specify a directory name to create" }
@@ -358,10 +357,10 @@ pub enum ThemeSlug {
 impl ThemeSlug {
     pub fn css(&self) -> &str {
         match self {
-            ThemeSlug::Squirrel => grass::include!("data/themes/squirrel.scss"),
-            ThemeSlug::Archlinux => grass::include!("data/themes/archlinux.scss"),
-            ThemeSlug::Zenburn => grass::include!("data/themes/zenburn.scss"),
-            ThemeSlug::Monokai => grass::include!("data/themes/monokai.scss"),
+            Self::Squirrel => grass::include!("data/themes/squirrel.scss"),
+            Self::Archlinux => grass::include!("data/themes/archlinux.scss"),
+            Self::Zenburn => grass::include!("data/themes/zenburn.scss"),
+            Self::Monokai => grass::include!("data/themes/monokai.scss"),
         }
     }
 
@@ -553,7 +552,12 @@ fn entry_row(
                         @if !raw {
                             @if let Some(size) = entry.size {
                                 span.mobile-info.size {
-                                    (maud::display(size))
+                                    (build_link("size", &format!("{}", size), sort_method, sort_order))
+                                }
+                            }
+                            @if let Some(modification_timer) = humanize_systemtime(entry.last_modification_date) {
+                                span.mobile-info.history {
+                                    (build_link("date", &modification_timer, sort_method, sort_order))
                                 }
                             }
                         }

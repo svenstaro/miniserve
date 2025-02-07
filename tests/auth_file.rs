@@ -1,26 +1,20 @@
+use reqwest::{blocking::Client, StatusCode};
+use rstest::rstest;
+use select::{document::Document, predicate::Text};
+
 mod fixtures;
 
-use fixtures::{server, server_no_stderr, Error, FILES};
-use http::StatusCode;
-use reqwest::blocking::Client;
-use rstest::rstest;
-use select::document::Document;
-use select::predicate::Text;
+use crate::fixtures::{server, Error, TestServer, FILES};
 
-#[rstest(
-    cli_auth_file_arg,
-    client_username,
-    client_password,
-    case("tests/data/auth1.txt", "joe", "123"),
-    case("tests/data/auth1.txt", "bob", "123"),
-    case("tests/data/auth1.txt", "bill", "")
-)]
+#[rstest]
+#[case("joe", "123")]
+#[case("bob", "123")]
+#[case("bill", "")]
 fn auth_file_accepts(
-    cli_auth_file_arg: &str,
-    client_username: &str,
-    client_password: &str,
+    #[with(&["--auth-file", "tests/data/auth1.txt"])] server: TestServer,
+    #[case] client_username: &str,
+    #[case] client_password: &str,
 ) -> Result<(), Error> {
-    let server = server(&["--auth-file", cli_auth_file_arg]);
     let client = Client::new();
     let response = client
         .get(server.url())
@@ -39,20 +33,15 @@ fn auth_file_accepts(
     Ok(())
 }
 
-#[rstest(
-    cli_auth_file_arg,
-    client_username,
-    client_password,
-    case("tests/data/auth1.txt", "joe", "wrongpassword"),
-    case("tests/data/auth1.txt", "bob", ""),
-    case("tests/data/auth1.txt", "nonexistentuser", "wrongpassword")
-)]
+#[rstest]
+#[case("joe", "wrongpassword")]
+#[case("bob", "")]
+#[case("nonexistentuser", "wrongpassword")]
 fn auth_file_rejects(
-    cli_auth_file_arg: &str,
-    client_username: &str,
-    client_password: &str,
+    #[with(&["--auth-file", "tests/data/auth1.txt"])] server: TestServer,
+    #[case] client_username: &str,
+    #[case] client_password: &str,
 ) -> Result<(), Error> {
-    let server = server_no_stderr(&["--auth-file", cli_auth_file_arg]);
     let client = Client::new();
     let status = client
         .get(server.url())

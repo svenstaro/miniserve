@@ -1,10 +1,10 @@
-﻿mod fixtures;
-
-use fixtures::{server, Error, TestServer};
-use reqwest::StatusCode;
+﻿use reqwest::StatusCode;
 use rstest::rstest;
-use select::document::Document;
-use select::predicate::Text;
+use select::{document::Document, predicate::Text};
+
+mod fixtures;
+
+use crate::fixtures::{server, Error, TestServer};
 
 #[rstest]
 fn archives_are_disabled(server: TestServer) -> Result<(), Error> {
@@ -58,8 +58,10 @@ fn test_tar_archives(#[with(&["-g"])] server: TestServer) -> Result<(), Error> {
 }
 
 #[rstest]
-#[case(server(&["--disable-indexing", "--enable-tar-gz", "--enable-tar", "--enable-zip"]))]
-fn archives_are_disabled_when_indexing_disabled(#[case] server: TestServer) -> Result<(), Error> {
+fn archives_are_disabled_when_indexing_disabled(
+    #[with(&["--disable-indexing", "--enable-tar-gz", "--enable-tar", "--enable-zip"])]
+    server: TestServer,
+) -> Result<(), Error> {
     // Ensure the links to the archives are not present
     let body = reqwest::blocking::get(server.url())?;
     let parsed = Document::from_read(body)?;

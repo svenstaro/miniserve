@@ -1,8 +1,8 @@
 use std::net::IpAddr;
 use std::path::PathBuf;
 
+use actix_web::http::header::{HeaderMap, HeaderName, HeaderValue};
 use clap::{Parser, ValueEnum, ValueHint};
-use http::header::{HeaderMap, HeaderName, HeaderValue};
 
 use crate::auth;
 use crate::listing::{SortingMethod, SortingOrder};
@@ -162,7 +162,7 @@ pub struct CliArgs {
     /// The provided path is not a physical file system path. Instead, it's relative to the serve
     /// dir. For instance, if the serve dir is '/home/hello', set this to '/upload' to allow
     /// uploading to '/home/hello/upload'.
-    /// When specified via environment variable, a path always needs to the specified.
+    /// When specified via environment variable, a path always needs to be specified.
     #[arg(short = 'u', long = "upload-files", value_hint = ValueHint::FilePath, num_args(0..=1), value_delimiter(','), env = "MINISERVE_ALLOWED_UPLOAD_DIR")]
     pub allowed_upload_dir: Option<Vec<PathBuf>>,
     
@@ -203,7 +203,11 @@ pub struct CliArgs {
     pub media_type_raw: Option<String>,
 
     /// Enable overriding existing files during file upload
-    #[arg(short = 'o', long = "overwrite-files", env = "OVERWRITE_FILES")]
+    #[arg(
+        short = 'o',
+        long = "overwrite-files",
+        env = "MINISERVE_OVERWRITE_FILES"
+    )]
     pub overwrite_files: bool,
 
     /// Enable uncompressed tar archive generation
@@ -313,6 +317,12 @@ pub struct CliArgs {
     /// and return an error instead.
     #[arg(short = 'I', long, env = "MINISERVE_DISABLE_INDEXING")]
     pub disable_indexing: bool,
+
+    /// Enable read-only WebDAV support (PROPFIND requests)
+    ///
+    /// Currently incompatible with -P|--no-symlinks (see https://github.com/messense/dav-server-rs/issues/37)
+    #[arg(long, env = "MINISERVE_ENABLE_WEBDAV", conflicts_with = "no_symlinks")]
+    pub enable_webdav: bool,
 }
 
 /// Checks whether an interface is valid, i.e. it can be parsed into an IP address

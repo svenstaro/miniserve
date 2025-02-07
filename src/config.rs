@@ -5,8 +5,8 @@ use std::{
     path::PathBuf,
 };
 
+use actix_web::http::header::HeaderMap;
 use anyhow::{anyhow, Context, Result};
-use http::HeaderMap;
 
 #[cfg(feature = "tls")]
 use rustls_pemfile as pemfile;
@@ -152,6 +152,9 @@ pub struct MiniserveConfig {
     /// If enabled, indexing is disabled.
     pub disable_indexing: bool,
 
+    /// If enabled, respond to WebDAV requests (read-only).
+    pub webdav_enabled: bool,
+
     /// If set, use provided rustls config for TLS
     #[cfg(feature = "tls")]
     pub tls_rustls_config: Option<rustls::ServerConfig>,
@@ -196,13 +199,13 @@ impl MiniserveConfig {
         // Otherwise, we should apply route_prefix to static files.
         let (favicon_route, css_route) = if args.random_route {
             (
-                format!("/{}", nanoid::nanoid!(10, &ROUTE_ALPHABET)),
-                format!("/{}", nanoid::nanoid!(10, &ROUTE_ALPHABET)),
+                "/__miniserve_internal/favicon.svg".into(),
+                "/__miniserve_internal/style.css".into(),
             )
         } else {
             (
-                format!("{}/{}", route_prefix, nanoid::nanoid!(10, &ROUTE_ALPHABET)),
-                format!("{}/{}", route_prefix, nanoid::nanoid!(10, &ROUTE_ALPHABET)),
+                format!("{}/{}", route_prefix, "__miniserve_internal/favicon.ico"),
+                format!("{}/{}", route_prefix, "__miniserve_internal/style.css"),
             )
         };
 
@@ -226,24 +229,15 @@ impl MiniserveConfig {
                 let key_file = &mut BufReader::new(
                     File::open(&tls_key).context(format!("Couldn't access TLS key {tls_key:?}"))?,
                 );
-                let cert_chain = pemfile::certs(cert_file).context("Reading cert file")?;
-                let key = pemfile::read_all(key_file)
+                let cert_chain = pemfile::certs(cert_file)
+                    .map(|cert| cert.expect("Invalid certificate in certificate chain"))
+                    .collect();
+                let private_key = pemfile::private_key(key_file)
                     .context("Reading private key file")?
-                    .into_iter()
-                    .find_map(|item| match item {
-                        pemfile::Item::RSAKey(key)
-                        | pemfile::Item::PKCS8Key(key)
-                        | pemfile::Item::ECKey(key) => Some(key),
-                        _ => None,
-                    })
-                    .ok_or_else(|| anyhow!("No supported private key in file"))?;
+                    .expect("No private key found");
                 let server_config = rustls::ServerConfig::builder()
-                    .with_safe_defaults()
                     .with_no_client_auth()
-                    .with_single_cert(
-                        cert_chain.into_iter().map(rustls::Certificate).collect(),
-                        rustls::PrivateKey(key),
-                    )?;
+                    .with_single_cert(cert_chain, private_key)?;
                 Some(server_config)
             } else {
                 None
@@ -281,7 +275,7 @@ impl MiniserveConfig {
             .transpose()?
             .unwrap_or_default();
 
-        Ok(MiniserveConfig {
+        Ok(Self {
             verbose: args.verbose,
             path: args.path.unwrap_or_else(|| PathBuf::from(".")),
             port,
@@ -319,6 +313,7 @@ impl MiniserveConfig {
             show_wget_footer: args.show_wget_footer,
             readme: args.readme,
             disable_indexing: args.disable_indexing,
+            webdav_enabled: args.enable_webdav,
             tls_rustls_config: tls_rustls_server_config,
             compress_response: args.compress_response,
         })

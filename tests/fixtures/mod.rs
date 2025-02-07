@@ -1,18 +1,18 @@
+use std::process::{Child, Command, Stdio};
+use std::thread::sleep;
+use std::time::{Duration, Instant};
+
 use assert_cmd::prelude::*;
 use assert_fs::fixture::TempDir;
 use assert_fs::prelude::*;
 use port_check::free_local_port;
 use reqwest::Url;
 use rstest::fixture;
-use std::process::{Child, Command, Stdio};
-use std::thread::sleep;
-use std::time::{Duration, Instant};
 
 /// Error type used by tests
 pub type Error = Box<dyn std::error::Error>;
 
 /// File names for testing purpose
-#[allow(dead_code)]
 pub static FILES: &[&str] = &[
     "test.txt",
     "test.html",
@@ -31,25 +31,29 @@ pub static FILES: &[&str] = &[
 ];
 
 /// Hidden files for testing purpose
-#[allow(dead_code)]
 pub static HIDDEN_FILES: &[&str] = &[".hidden_file1", ".hidden_file2"];
 
 /// Directory names for testing purpose
-#[allow(dead_code)]
 pub static DIRECTORIES: &[&str] = &["dira/", "dirb/", "dirc/"];
 
 /// Hidden directories for testing purpose
-#[allow(dead_code)]
 pub static HIDDEN_DIRECTORIES: &[&str] = &[".hidden_dir1/", ".hidden_dir2/"];
 
 /// Name of a deeply nested file
-#[allow(dead_code)]
 pub static DEEPLY_NESTED_FILE: &str = "very/deeply/nested/test.rs";
+
+/// Name of a symlink pointing to a directory
+pub static DIRECTORY_SYMLINK: &str = "dir_symlink/";
+
+/// Name of a symlink pointing to a file
+pub static FILE_SYMLINK: &str = "file_symlink";
+
+/// Name of a symlink pointing to a path that doesn't exist
+pub static BROKEN_SYMLINK: &str = "broken_symlink";
 
 /// Test fixture which creates a temporary directory with a few files and directories inside.
 /// The directories also contain files.
 #[fixture]
-#[allow(dead_code)]
 pub fn tmpdir() -> TempDir {
     let tmpdir = assert_fs::TempDir::new().expect("Couldn't create a temp dir for tests");
     let mut files = FILES.to_vec();
@@ -76,12 +80,27 @@ pub fn tmpdir() -> TempDir {
         .child(DEEPLY_NESTED_FILE)
         .write_str("File in a deeply nested directory.")
         .expect("Couldn't write to file");
+
+    tmpdir
+        .child(DIRECTORY_SYMLINK.strip_suffix("/").unwrap())
+        .symlink_to_dir(DIRECTORIES[0].strip_suffix("/").unwrap())
+        .expect("Couldn't create symlink to dir");
+
+    tmpdir
+        .child(FILE_SYMLINK)
+        .symlink_to_file(FILES[0])
+        .expect("Couldn't create symlink to file");
+
+    tmpdir
+        .child(BROKEN_SYMLINK)
+        .symlink_to_file("broken_symlink")
+        .expect("Couldn't create broken symlink");
+
     tmpdir
 }
 
 /// Get a free port.
 #[fixture]
-#[allow(dead_code)]
 pub fn port() -> u16 {
     free_local_port().expect("Couldn't find a free local port")
 }
@@ -89,7 +108,6 @@ pub fn port() -> u16 {
 /// Run miniserve as a server; Start with a temporary directory, a free port and some
 /// optional arguments then wait for a while for the server setup to complete.
 #[fixture]
-#[allow(dead_code)]
 pub fn server<I>(#[default(&[] as &[&str])] args: I) -> TestServer
 where
     I: IntoIterator + Clone,
@@ -103,35 +121,8 @@ where
         .arg("-p")
         .arg(port.to_string())
         .args(args.clone())
-        .stdout(Stdio::null())
-        .spawn()
-        .expect("Couldn't run test binary");
-    let is_tls = args
-        .into_iter()
-        .any(|x| x.as_ref().to_str().unwrap().contains("tls"));
-
-    wait_for_port(port);
-    TestServer::new(port, tmpdir, child, is_tls)
-}
-
-/// Same as `server()` but ignore stderr
-#[fixture]
-#[allow(dead_code)]
-pub fn server_no_stderr<I>(#[default(&[] as &[&str])] args: I) -> TestServer
-where
-    I: IntoIterator + Clone,
-    I::Item: AsRef<std::ffi::OsStr>,
-{
-    let port = port();
-    let tmpdir = tmpdir();
-    let child = Command::cargo_bin("miniserve")
-        .expect("Couldn't find test binary")
-        .arg(tmpdir.path())
-        .arg("-p")
-        .arg(port.to_string())
-        .args(args.clone())
-        .stdout(Stdio::null())
-        .stderr(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
         .spawn()
         .expect("Couldn't run test binary");
     let is_tls = args
@@ -155,7 +146,6 @@ fn wait_for_port(port: u16) {
     }
 }
 
-#[allow(dead_code)]
 pub struct TestServer {
     port: u16,
     tmpdir: TempDir,

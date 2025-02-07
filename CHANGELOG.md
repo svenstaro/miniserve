@@ -8,9 +8,20 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+- Add date pill and sort links for mobile views [#1473](https://github.com/svenstaro/miniserve/pull/1473) (thanks @Flat)
+
+## [0.29.0] - 2025-02-06
+- Make URL encoding fully WHATWG-compliant [#1454](https://github.com/svenstaro/miniserve/pull/1454) (thanks @cyqsimon)
+- Fix `OVERWRITE_FILES` env var not being prefixed by `MINISERVE_` [#1457](https://github.com/svenstaro/miniserve/issues/1457)
+- Change `font-weight` of regular files to be `normal` to improve readability [#1471](https://github.com/svenstaro/miniserve/pull/1471) (thanks @shaicoleman)
+- Add webdav support [#1415](https://github.com/svenstaro/miniserve/pull/1415) (thanks @ahti)
+- Move favicon and css to stable, non-random routes [#1472](https://github.com/svenstaro/miniserve/pull/1472) (thanks @ahti)
+
+## [0.28.0] - 2024-09-12
 - Fix wrapping text in mobile view when the file name too long [#1379](https://github.com/svenstaro/miniserve/pull/1379) (thanks @chaibiq)
 - Fix missing drag-form when dragging file in to browser [#1390](https://github.com/svenstaro/miniserve/pull/1390) (thanks @chaibiq)
 - Improve documentation for the --header parameter [#1389](https://github.com/svenstaro/miniserve/pull/1389) (thanks @orwithout)
+- Don't show mkdir option when the directory is not upload allowed [#1442](https://github.com/svenstaro/miniserve/pull/1442) (thanks @Atreyagaurav)
 
 ## [0.27.1] - 2024-03-16
 - Add `Add file and folder symbols` [#1365](https://github.com/svenstaro/miniserve/pull/1365) (thanks @chaibiq)
@@ -201,7 +212,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Some theme related bug fixes (thanks @boastful-squirrel)
 
 <!-- next-url -->
-[Unreleased]: https://github.com/svenstaro/miniserve/compare/v0.27.1...HEAD
+[Unreleased]: https://github.com/svenstaro/miniserve/compare/v0.29.0...HEAD
+[0.29.0]: https://github.com/svenstaro/miniserve/compare/v0.28.0...v0.29.0
+[0.28.0]: https://github.com/svenstaro/miniserve/compare/v0.27.1...v0.28.0
 [0.27.1]: https://github.com/svenstaro/miniserve/compare/v0.27.0...v0.27.1
 [0.27.0]: https://github.com/svenstaro/miniserve/compare/v0.26.0...v0.27.0
 [0.26.0]: https://github.com/svenstaro/miniserve/compare/v0.25.0...v0.26.0

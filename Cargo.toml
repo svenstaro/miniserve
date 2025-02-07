@@ -1,6 +1,6 @@
 [package]
 name = "miniserve"
-version = "0.27.1"
+version = "0.29.0"
 description = "For when you really just want to serve some files over HTTP right now!"
 authors = ["Sven-Hendrik Haase <svenstaro@gmail.com>", "Boastful Squirrel <boastful.squirrel@gmail.com>"]
 repository = "https://github.com/svenstaro/miniserve"
@@ -20,7 +20,7 @@ strip = true
 
 [dependencies]
 actix-files = "0.6.5"
-actix-multipart = "0.6"
+actix-multipart = "0.7"
 actix-web = { version = "4", features = ["macros", "compress-brotli", "compress-gzip", "compress-zstd"], default-features = false }
 actix-web-httpauth = "0.8"
 alphanumeric-sort = "1"
@@ -31,15 +31,15 @@ chrono-humanize = "0.2"
 clap = { version = "4", features = ["derive", "cargo", "wrap_help", "deprecated", "env"] }
 clap_complete = "4"
 clap_mangen = "0.2"
-colored = "2"
-comrak = { version = "0.24", default-features = false }
+colored = "3"
+comrak = { version = "0.35", default-features = false }
+dav-server = { version = "0.7", features = ["actix-compat"] }
 fast_qr = { version = "0.12", features = ["svg"] }
 futures = "0.3"
 grass = { version = "0.13", features = ["macro"], default-features = false }
 hex = "0.4"
-http = "0.2"
 httparse = "1"
-if-addrs = "0.12"
+if-addrs = "0.13"
 libflate = "2"
 log = "0.4"
 maud = "0.26"
@@ -48,16 +48,16 @@ nanoid = "0.4"
 percent-encoding = "2"
 port_check = "0.2"
 regex = "1"
-rustls = { version = "0.20", optional = true }
-rustls-pemfile = { version = "1.0", optional = true }
+rustls = { version = "0.23", features = ["ring"], optional = true, default-features = false }
+rustls-pemfile = { version = "2", optional = true }
 serde = { version = "1", features = ["derive"] }
 sha2 = "0.10"
 simplelog = "0.12"
 socket2 = "0.5"
 strum = { version = "0.26", features = ["derive"] }
 tar = "0.4"
-thiserror = "1"
-tokio = { version = "1.35.1", features = ["fs"] }
+thiserror = "2"
+tokio = { version = "1.42.0", features = ["fs"] }
 zip = { version = "2", default-features = false }
 
 [features]
@@ -66,7 +66,7 @@ default = ["tls"]
 # See also https://github.com/briansmith/ring/issues/1182
 # and https://github.com/briansmith/ring/issues/562
 # and https://github.com/briansmith/ring/issues/1367
-tls = ["rustls", "rustls-pemfile", "actix-web/rustls"]
+tls = ["rustls", "rustls-pemfile", "actix-web/rustls-0_23"]
 
 [dev-dependencies]
 assert_cmd = "2"
@@ -74,8 +74,9 @@ assert_fs = "1"
 predicates = "3"
 pretty_assertions = "1.2"
 regex = "1"
-reqwest = { version = "0.11", features = ["blocking", "multipart", "rustls-tls"], default-features = false }
-rstest = "0.21"
+reqwest = { version = "0.12", features = ["blocking", "multipart", "rustls-tls"], default-features = false }
+reqwest_dav = "0.1"
+rstest = "0.24"
 select = "0.6"
 url = "2"
 

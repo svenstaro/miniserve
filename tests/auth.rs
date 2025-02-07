@@ -1,31 +1,28 @@
+use pretty_assertions::assert_eq;
+use reqwest::{blocking::Client, StatusCode};
+use rstest::rstest;
+use select::{document::Document, predicate::Text};
+
 mod fixtures;
 
-use fixtures::{server, server_no_stderr, Error, FILES};
-use pretty_assertions::assert_eq;
-use reqwest::blocking::Client;
-use reqwest::StatusCode;
-use rstest::rstest;
-use select::document::Document;
-use select::predicate::Text;
+use crate::fixtures::{server, Error, FILES};
 
-#[rstest(
-    cli_auth_arg, client_username, client_password,
-    case("testuser:testpassword", "testuser", "testpassword"),
-    case(
-        "testuser:sha256:9f735e0df9a1ddc702bf0a1a7b83033f9f7153a00c29de82cedadc9957289b05",
-        "testuser",
-        "testpassword"
-    ),
-    case(
-        "testuser:sha512:e9e633097ab9ceb3e48ec3f70ee2beba41d05d5420efee5da85f97d97005727587fda33ef4ff2322088f4c79e8133cc9cd9f3512f4d3a303cbdb5bc585415a00",
-        "testuser",
-        "testpassword"
-    ),
+#[rstest]
+#[case("testuser:testpassword", "testuser", "testpassword")]
+#[case(
+    "testuser:sha256:9f735e0df9a1ddc702bf0a1a7b83033f9f7153a00c29de82cedadc9957289b05",
+    "testuser",
+    "testpassword"
+)]
+#[case(
+    "testuser:sha512:e9e633097ab9ceb3e48ec3f70ee2beba41d05d5420efee5da85f97d97005727587fda33ef4ff2322088f4c79e8133cc9cd9f3512f4d3a303cbdb5bc585415a00",
+    "testuser",
+    "testpassword"
 )]
 fn auth_accepts(
-    cli_auth_arg: &str,
-    client_username: &str,
-    client_password: &str,
+    #[case] cli_auth_arg: &str,
+    #[case] client_username: &str,
+    #[case] client_password: &str,
 ) -> Result<(), Error> {
     let server = server(&["-a", cli_auth_arg]);
     let client = Client::new();
@@ -46,37 +43,35 @@ fn auth_accepts(
     Ok(())
 }
 
-#[rstest(
-    cli_auth_arg, client_username, client_password,
-    case("rightuser:rightpassword", "wronguser", "rightpassword"),
-    case(
-        "rightuser:sha256:314eee236177a721d0e58d3ca4ff01795cdcad1e8478ba8183a2e58d69c648c0",
-        "wronguser",
-        "rightpassword"
-    ),
-    case(
-        "rightuser:sha512:84ec4056571afeec9f5b59453305877e9a66c3f9a1d91733fde759b370c1d540b9dc58bfc88c5980ad2d020c3a8ee84f21314a180856f5a82ba29ecba29e2cab",
-        "wronguser",
-        "rightpassword"
-    ),
-    case("rightuser:rightpassword", "rightuser", "wrongpassword"),
-    case(
-        "rightuser:sha256:314eee236177a721d0e58d3ca4ff01795cdcad1e8478ba8183a2e58d69c648c0",
-        "rightuser",
-        "wrongpassword"
-    ),
-    case(
-        "rightuser:sha512:84ec4056571afeec9f5b59453305877e9a66c3f9a1d91733fde759b370c1d540b9dc58bfc88c5980ad2d020c3a8ee84f21314a180856f5a82ba29ecba29e2cab",
-        "rightuser",
-        "wrongpassword"
-    ),
+#[rstest]
+#[case("rightuser:rightpassword", "wronguser", "rightpassword")]
+#[case(
+    "rightuser:sha256:314eee236177a721d0e58d3ca4ff01795cdcad1e8478ba8183a2e58d69c648c0",
+    "wronguser",
+    "rightpassword"
+)]
+#[case(
+    "rightuser:sha512:84ec4056571afeec9f5b59453305877e9a66c3f9a1d91733fde759b370c1d540b9dc58bfc88c5980ad2d020c3a8ee84f21314a180856f5a82ba29ecba29e2cab",
+    "wronguser",
+    "rightpassword"
+)]
+#[case("rightuser:rightpassword", "rightuser", "wrongpassword")]
+#[case(
+    "rightuser:sha256:314eee236177a721d0e58d3ca4ff01795cdcad1e8478ba8183a2e58d69c648c0",
+    "rightuser",
+    "wrongpassword"
+)]
+#[case(
+    "rightuser:sha512:84ec4056571afeec9f5b59453305877e9a66c3f9a1d91733fde759b370c1d540b9dc58bfc88c5980ad2d020c3a8ee84f21314a180856f5a82ba29ecba29e2cab",
+    "rightuser",
+    "wrongpassword"
 )]
 fn auth_rejects(
-    cli_auth_arg: &str,
-    client_username: &str,
-    client_password: &str,
+    #[case] cli_auth_arg: &str,
+    #[case] client_username: &str,
+    #[case] client_password: &str,
 ) -> Result<(), Error> {
-    let server = server_no_stderr(&["-a", cli_auth_arg]);
+    let server = server(&["-a", cli_auth_arg]);
     let client = Client::new();
     let status = client
         .get(server.url())
@@ -106,17 +101,17 @@ static ACCOUNTS: &[&str] = &[
     // pwd5
 ];
 
-#[rstest(
-    username,
-    password,
-    case("usr0", "pwd0"),
-    case("usr1", "pwd1"),
-    case("usr2", "pwd2"),
-    case("usr3", "pwd3"),
-    case("usr4", "pwd4"),
-    case("usr5", "pwd5")
-)]
-fn auth_multiple_accounts_pass(username: &str, password: &str) -> Result<(), Error> {
+#[rstest]
+#[case("usr0", "pwd0")]
+#[case("usr1", "pwd1")]
+#[case("usr2", "pwd2")]
+#[case("usr3", "pwd3")]
+#[case("usr4", "pwd4")]
+#[case("usr5", "pwd5")]
+fn auth_multiple_accounts_pass(
+    #[case] username: &str,
+    #[case] password: &str,
+) -> Result<(), Error> {
     let server = server(ACCOUNTS);
     let client = Client::new();
 
@@ -139,7 +134,7 @@ fn auth_multiple_accounts_pass(username: &str, password: &str) -> Result<(), Err
 
 #[rstest]
 fn auth_multiple_accounts_wrong_username() -> Result<(), Error> {
-    let server = server_no_stderr(ACCOUNTS);
+    let server = server(ACCOUNTS);
     let client = Client::new();
 
     let status = client
@@ -153,18 +148,18 @@ fn auth_multiple_accounts_wrong_username() -> Result<(), Error> {
     Ok(())
 }
 
-#[rstest(
-    username,
-    password,
-    case("usr0", "pwd5"),
-    case("usr1", "pwd4"),
-    case("usr2", "pwd3"),
-    case("usr3", "pwd2"),
-    case("usr4", "pwd1"),
-    case("usr5", "pwd0")
-)]
-fn auth_multiple_accounts_wrong_password(username: &str, password: &str) -> Result<(), Error> {
-    let server = server_no_stderr(ACCOUNTS);
+#[rstest]
+#[case("usr0", "pwd5")]
+#[case("usr1", "pwd4")]
+#[case("usr2", "pwd3")]
+#[case("usr3", "pwd2")]
+#[case("usr4", "pwd1")]
+#[case("usr5", "pwd0")]
+fn auth_multiple_accounts_wrong_password(
+    #[case] username: &str,
+    #[case] password: &str,
+) -> Result<(), Error> {
+    let server = server(ACCOUNTS);
     let client = Client::new();
 
     let status = client

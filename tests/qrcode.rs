@@ -1,14 +1,15 @@
-mod fixtures;
-
-use assert_cmd::prelude::CommandCargoExt;
-use assert_fs::TempDir;
-use fixtures::{port, server, tmpdir, Error, TestServer};
-use rstest::rstest;
-use select::document::Document;
-use select::predicate::Attr;
 use std::process::{Command, Stdio};
 use std::thread::sleep;
 use std::time::Duration;
+
+use assert_cmd::prelude::CommandCargoExt;
+use assert_fs::TempDir;
+use rstest::rstest;
+use select::{document::Document, predicate::Attr};
+
+mod fixtures;
+
+use crate::fixtures::{port, server, tmpdir, Error, TestServer};
 
 #[rstest]
 fn webpage_hides_qrcode_when_disabled(server: TestServer) -> Result<(), Error> {
