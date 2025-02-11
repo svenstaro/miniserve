@@ -127,6 +127,7 @@ Some mobile browsers like Firefox on Android will offer to open the camera app w
 - TLS (for supported architectures)
 - Supports README.md rendering like on GitHub
 - Range requests
+- WebDAV support
 
 ## Usage
 
