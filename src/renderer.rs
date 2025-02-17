@@ -193,6 +193,9 @@ pub fn page(
                     div.upload_container {
                         div.upload_header {
                             h4 style="margin:0px" id="upload_title" {}
+                            svg id="upload-toggle" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6" {
+                              path stroke-linecap="round" stroke-linejoin="round" d="m4.5 15.75 7.5-7.5 7.5 7.5" {}
+                            }
                         }
                         div.upload_action {
                             p id="upload_action_text" { "Starting upload..." }
@@ -663,6 +666,7 @@ fn page_header(title: &str, file_upload: bool, web_file_concurrency: usize, favi
                         const uploadCancelButton = document.querySelector('#upload_cancel');
                         const uploadList = document.querySelector('#upload_file_list');
                         const fileUploadItemTemplate = document.querySelector('#upload_file_item');
+                        const uploadWidgetToggle = document.querySelector('#upload-toggle');
 
                         const dropContainer = document.querySelector('#drop-container');
                         const dragForm = document.querySelector('.drag-form');
@@ -696,6 +700,19 @@ fn page_header(title: &str, file_upload: bool, web_file_concurrency: usize, favi
                             dragForm.style.display = 'none';
                         };
 
+                        uploadWidgetToggle.addEventListener('click', function (e) {
+                            e.preventDefault();
+                            if (uploadArea.style.height === "100vh") {
+                                uploadArea.style = ""
+                                document.body.style = ""
+                                uploadWidgetToggle.style = ""
+                            } else {
+                                uploadArea.style.height = "100vh"
+                                document.body.style = "overflow: hidden"
+                                uploadWidgetToggle.style = "transform: rotate(180deg)"
+                            }
+                        })
+
                         uploadCancelButton.addEventListener('click', function (e) {
                             e.preventDefault();
                             CANCEL_UPLOAD = true;
@@ -706,7 +723,7 @@ fn page_header(title: &str, file_upload: bool, web_file_concurrency: usize, favi
                             uploadFiles()
                         })
 
-                        function updateUploadText() {
+                        function updateUploadTextAndList() {
                             const queryLength = (state) => document.querySelectorAll(`[data-state='${state}']`).length;
                             const total = document.querySelectorAll("[data-state]").length;
                             const uploads = queryLength(UPLOADING);
@@ -733,16 +750,19 @@ fn page_header(title: &str, file_upload: bool, web_file_concurrency: usize, favi
                             uploadTitle.textContent = headerText
                             uploadActionText.textContent = statuses.join(', ')
 
-                            // Update list of uploads
-                            Array.from(uploadList.querySelectorAll('li'))
-                                .sort(({ dataset: { state: a }}, {dataset: { state: b }}) => UPLOAD_ITEM_ORDER[a] >= UPLOAD_ITEM_ORDER[b])
-                                .forEach((item) => item.parentNode.appendChild(item))
+                            const items = Array.from(uploadList.querySelectorAll('li'));
+                            items.sort((a, b) => UPLOAD_ITEM_ORDER[a.dataset.state] - UPLOAD_ITEM_ORDER[b.dataset.state]);
+                            items.forEach((item, index) => {
+                              if (uploadList.children[index] !== item) {
+                                uploadList.insertBefore(item, uploadList.children[index]);
+                              }
+                            });
                         }
 
                         async function doWork(iterator, i) {
                             for (let [index, item] of iterator) {
                                 await item();
-                                updateUploadText();
+                                updateUploadTextAndList();
                             }
                         }
 
@@ -754,17 +774,17 @@ fn page_header(title: &str, file_upload: bool, web_file_concurrency: usize, favi
                             const workers = Array(concurrency).fill(iterator).map(doWork)
                             Promise.allSettled(workers)
                                 .finally(() => {
-                                    updateUploadText();
+                                    updateUploadTextAndList();
                                     form.reset();
                                     setTimeout(() => { uploadArea.classList.remove('active'); }, 1000)
                                     setTimeout(() => { window.location.reload(); }, 1500)
                                 })
 
-                            updateUploadText();
+                            updateUploadTextAndList();
                             uploadArea.classList.add('active')
                             uploadList.scrollTo(0, 0)
                         }
-                        
+
                         function formatBytes(bytes, decimals) {
                             if (bytes == 0) return '0 Bytes';
                             var k = 1024,
@@ -772,6 +792,19 @@ fn page_header(title: &str, file_upload: bool, web_file_concurrency: usize, favi
                                 sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'],
                                 i = Math.floor(Math.log(bytes) / Math.log(k));
                             return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+                        }
+
+                        document.querySelector('input[type="file"]').addEventListener('change', async (e) => {
+                          const file = e.target.files[0];
+                          const hash = await hashFile(file);
+                          console.log('File hash:', hash);
+                        });
+
+                        async function get256FileHash(file) {
+                          const arrayBuffer = await file.arrayBuffer();
+                          const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer);
+                          const hashArray = Array.from(new Uint8Array(hashBuffer));
+                          return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
                         }
 
                         function uploadFile(file) {
@@ -783,16 +816,38 @@ fn page_header(title: &str, file_upload: bool, web_file_concurrency: usize, favi
                             const percentText = fileUploadItem.querySelector(".file_upload_percent")
                             const bar = fileUploadItem.querySelector(".file_progress_bar")
                             const cancel = fileUploadItem.querySelector(".file_cancel_upload")
+                            let preCancel = false;
 
-                            itemContainer.dataset.state = 'pending'
+                            itemContainer.dataset.state = PENDING
                             name.textContent = file.name
                             size.textContent = formatBytes(file.size)
                             percentText.textContent = "0%"
-                            
+
                             uploadList.append(fileUploadItem)
 
+                            function preCancelUpload() {
+                                console.log('cancelled')
+                                preCancel = true;
+                                itemText.classList.add(CANCELLED);
+                                bar.classList.add(CANCELLED);
+                                itemContainer.dataset.state = CANCELLED;
+                                itemContainer.style.background = 'var(--upload_modal_file_upload_complete_background)';
+                                cancel.disabled = true;
+                                cancel.removeEventListener("click", preCancelUpload);
+                                uploadCancelButton.removeEventListener("click", preCancelUpload);
+                                updateUploadTextAndList();
+                            }
+
+                            uploadCancelButton.addEventListener("click", preCancelUpload)
+                            cancel.addEventListener("click", preCancelUpload)
+
                             return async () => {
-                                return new Promise((resolve, reject) => {
+                                if (preCancel) {
+                                    return Promise.resolve()
+                                }
+
+                                return new Promise(async (resolve, reject) => {
+                                    const fileHash = await get256FileHash(file);
                                     const xhr = new XMLHttpRequest();
                                     const formData = new FormData();
                                     formData.append('file', file);
@@ -865,12 +920,14 @@ fn page_header(title: &str, file_upload: bool, web_file_concurrency: usize, favi
                                     if (CANCEL_UPLOAD) {
                                         cancelUpload()
                                     } else {
-                                        itemContainer.dataset.state = 'uploading'
+                                        itemContainer.dataset.state = UPLOADING
                                         xhr.addEventListener('readystatechange', onReadyStateChange);
                                         xhr.addEventListener("error", onError);
                                         xhr.addEventListener("abort", onAbort);
                                         xhr.upload.addEventListener('progress', onProgress);
                                         xhr.open('post', form.getAttribute("action"), true);
+                                        xhr.setRequestHeader('X-File-Hash', fileHash);
+                                        xhr.setRequestHeader('X-File-Hash-Function', 'SHA256');
                                         xhr.send(formData);
                                     }
                                 })

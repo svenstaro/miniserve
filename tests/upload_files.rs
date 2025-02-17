@@ -3,6 +3,7 @@ use std::path::Path;
 
 use assert_fs::fixture::TempDir;
 use reqwest::blocking::{multipart, Client};
+use reqwest::header::HeaderMap;
 use rstest::rstest;
 use select::document::Document;
 use select::predicate::{Attr, Text};
@@ -12,7 +13,16 @@ mod fixtures;
 use crate::fixtures::{server, tmpdir, Error, TestServer};
 
 #[rstest]
-fn uploading_files_works(#[with(&["-u"])] server: TestServer) -> Result<(), Error> {
+#[case("", "")]
+#[case(
+    "SHA256",
+    "e37b14e22e7b3f50dadaf821c189af80f79b1f39fd5a8b3b4f536103735d4620"
+)]
+fn uploading_files_works(
+    #[with(&["-u"])] server: TestServer,
+    #[case] sha_func: String,
+    #[case] sha: String,
+) -> Result<(), Error> {
     let test_file_name = "uploaded test file.txt";
 
     // Before uploading, check whether the uploaded file does not yet exist.
@@ -33,7 +43,12 @@ fn uploading_files_works(#[with(&["-u"])] server: TestServer) -> Result<(), Erro
         .mime_str("text/plain")?;
     let form = form.part("file_to_upload", part);
 
-    let client = Client::new();
+    let mut headers = HeaderMap::new();
+    headers.insert("X-File-Hash", sha.parse()?);
+    headers.insert("X-File-Hash-Function", sha_func.parse()?);
+
+    let client = Client::builder().default_headers(headers).build()?;
+
     client
         .post(server.url().join(upload_action)?)
         .multipart(form)
