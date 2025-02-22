@@ -27,6 +27,157 @@ body {
     padding: 1.5rem 5rem;
 }
 
+$upload_container_height: 18rem;
+
+.upload_area {
+    display: block;
+    position: fixed;
+    bottom: 1rem;
+    right: -105%;
+    color: #ffffff;
+    box-shadow: 0 3px 6px -1px rgba(0, 0, 0, 0.12), 0 10px 36px -4px rgba(77, 96, 232, 0.3);
+    background: linear-gradient(135deg, #73a5ff, #5477f5);
+    padding: 0px;
+    margin: 0px;
+    opacity: 1; // Change this
+    transition: all 0.4s cubic-bezier(0.215, 0.61, 0.355, 1);
+    border-radius: 4px;
+    text-decoration: none;
+    min-width: 400px;
+    max-width: 600px;
+    z-index: 2147483647;
+    max-height: $upload_container_height;
+    overflow: hidden;
+
+    &.active {
+        right: 1rem;
+    }
+
+    #upload-toggle {
+        display: none;
+        transition: transform 0.3s ease;
+        cursor: pointer;
+    }
+}
+
+.upload_container {
+    max-height: $upload_container_height;
+    display: flex;
+    flex-direction: column;
+}
+
+.upload_header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background-color: var(--upload_modal_header_background);
+    color: var(--upload_modal_header_color);
+}
+
+.upload_header svg {
+    width: 24px;
+    height: 24px;
+}
+
+.upload_action {
+    background-color: var(--upload_modal_sub_header_background);
+    color: var(--upload_modal_header_color);
+    padding: 0.25rem 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.75em;
+    font-weight: 500;
+}
+
+.upload_cancel {
+    background: none;
+    border: none;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.upload_files {
+    padding: 0px;
+    margin: 0px;
+    flex: 1;
+    overflow-y: auto;
+    max-height: inherit;
+}
+
+.upload_file_list {
+    background-color: var(--upload_modal_file_item_background);
+    color: var(--upload_modal_file_item_color);
+    padding: 0px;
+    margin: 0px;
+    list-style: none;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    overflow-y: scroll;
+}
+
+.upload_file_container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1rem calc(1rem - 2px) 1rem;
+}
+
+.upload_file_action {
+    display: flex;
+    justify-content: right;
+}
+
+.file_progress_bar {
+    width: 0%;
+    border-top: 2px solid var(--progress_bar_background);
+    transition: width 0.25s ease;
+
+    &.cancelled {
+        border-color: var(--error_color);
+    }
+
+    &.failed {
+        border-color: var(--error_color);
+    }
+
+    &.complete {
+        border-color: var(--success_color);
+    }
+}
+
+.upload_file_text {
+    font-size: 0.80em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    &.cancelled {
+        text-decoration: line-through;
+    }
+
+    &.failed {
+        text-decoration: line-through;
+    }
+}
+
+.file_cancel_upload {
+    padding-left: 0.25rem;
+    font-size: 1em;
+    cursor: pointer;
+    border: none;
+    background: inherit;
+    font-size: 1em;
+    color: var(--error_color);
+
+    &.complete {
+        color: var(--success_color);
+    }
+}
+
 .title {
     word-break: break-all;
 }
@@ -87,7 +238,7 @@ a.file,
     color: var(--file_link_color);
 
     &:visited {
-        color: var(--file_link_color_visited)
+        color: var(--file_link_color_visited);
     }
 }
 
@@ -528,6 +679,32 @@ th span.active span {
 
     .back {
         right: 1.5rem;
+    }
+
+    $upload_container_height_mobile: 100vh;
+
+    .upload_area {
+        width: 100%;
+        height: 136px;
+        max-height: $upload_container_height_mobile;
+        max-width: unset;
+        min-width: unset;
+        bottom: 0;
+        transition: height 0.3s ease;
+
+        &.active {
+            right: 0;
+            left: 0;
+        }
+
+        #upload-toggle {
+            display: block;
+            transition: transform 0.3s ease;
+        }
+    }
+
+    .upload_container {
+        max-height: $upload_container_height_mobile;
     }
 }
 

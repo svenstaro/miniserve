@@ -52,7 +52,7 @@ pub fn page(
     html! {
         (DOCTYPE)
         html {
-            (page_header(&title_path, conf.file_upload, &conf.favicon_route, &conf.css_route))
+            (page_header(&title_path, conf.file_upload, conf.web_upload_concurrency, &conf.favicon_route, &conf.css_route))
 
             body #drop-container
             {
@@ -171,6 +171,40 @@ pub fn page(
                         }
                         @if !conf.hide_version_footer {
                             (version_footer())
+                        }
+                    }
+                }
+                div.upload_area id="upload_area" {
+                    template id="upload_file_item" {
+                        li.upload_file_item {
+                            div.upload_file_container {
+                                div.upload_file_text {
+                                    span.file_upload_percent { "" }
+                                    {" - "}
+                                    span.file_size { "" }
+                                    {" - "}
+                                    span.file_name { "" }
+                                }
+                                button.file_cancel_upload { "✖" }
+                            }
+                            div.file_progress_bar {}
+                        }
+                    }
+                    div.upload_container {
+                        div.upload_header {
+                            h4 style="margin:0px" id="upload_title" {}
+                            svg id="upload-toggle" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6" {
+                              path stroke-linecap="round" stroke-linejoin="round" d="m4.5 15.75 7.5-7.5 7.5 7.5" {}
+                            }
+                        }
+                        div.upload_action {
+                            p id="upload_action_text" { "Starting upload..." }
+                            button.upload_cancel id="upload_cancel" { "CANCEL" }
+                        }
+                        div.upload_files {
+                            ul.upload_file_list id="upload_file_list" {
+
+                            }
                         }
                     }
                 }
@@ -575,7 +609,13 @@ fn chevron_down() -> Markup {
 }
 
 /// Partial: page header
-fn page_header(title: &str, file_upload: bool, favicon_route: &str, css_route: &str) -> Markup {
+fn page_header(
+    title: &str,
+    file_upload: bool,
+    web_file_concurrency: usize,
+    favicon_route: &str,
+    css_route: &str,
+) -> Markup {
     html! {
         head {
             meta charset="utf-8";
@@ -616,9 +656,26 @@ fn page_header(title: &str, file_upload: bool, favicon_route: &str, css_route: &
             "#))
 
             @if file_upload {
-                (PreEscaped(r#"
-                <script>
+                script {
+                    (format!("const CONCURRENCY = {web_file_concurrency};"))
+                    (PreEscaped(r#"
                     window.onload = function() {
+                        // Constants
+                        const UPLOADING = 'uploading', PENDING = 'pending', COMPLETE = 'complete', CANCELLED = 'cancelled', FAILED = 'failed'
+                        const UPLOAD_ITEM_ORDER = { UPLOADING: 0, PENDING: 1, COMPLETE: 2, CANCELLED: 3, FAILED: 4 }
+                        let CANCEL_UPLOAD = false;
+
+                        // File Upload dom elements. Used for interacting with the
+                        // upload container.
+                        const form = document.querySelector('#file_submit');
+                        const uploadArea = document.querySelector('#upload_area');
+                        const uploadTitle = document.querySelector('#upload_title');
+                        const uploadActionText = document.querySelector('#upload_action_text');
+                        const uploadCancelButton = document.querySelector('#upload_cancel');
+                        const uploadList = document.querySelector('#upload_file_list');
+                        const fileUploadItemTemplate = document.querySelector('#upload_file_item');
+                        const uploadWidgetToggle = document.querySelector('#upload-toggle');
+
                         const dropContainer = document.querySelector('#drop-container');
                         const dragForm = document.querySelector('.drag-form');
                         const fileInput = document.querySelector('#file-input');
@@ -647,12 +704,266 @@ fn page_header(title: &str, file_upload: bool, favicon_route: &str, css_route: &
                         dropContainer.ondrop = function(e) {
                             e.preventDefault();
                             fileInput.files = e.dataTransfer.files;
-                            file_submit.submit();
+                            form.requestSubmit();
                             dragForm.style.display = 'none';
                         };
+
+                        // Event listener for toggling the upload widget display on mobile.
+                        uploadWidgetToggle.addEventListener('click', function (e) {
+                            e.preventDefault();
+                            if (uploadArea.style.height === "100vh") {
+                                uploadArea.style = ""
+                                document.body.style = ""
+                                uploadWidgetToggle.style = ""
+                            } else {
+                                uploadArea.style.height = "100vh"
+                                document.body.style = "overflow: hidden"
+                                uploadWidgetToggle.style = "transform: rotate(180deg)"
+                            }
+                        })
+
+                        // Cancel all active and pending uploads
+                        uploadCancelButton.addEventListener('click', function (e) {
+                            e.preventDefault();
+                            CANCEL_UPLOAD = true;
+                        })
+
+                        form.addEventListener('submit', function (e) {
+                            e.preventDefault()
+                            uploadFiles()
+                        })
+
+                        // When uploads start, finish or are cancelled, the UI needs to reactively shows those
+                        // updates of the state. This function updates the text on the upload widget to accurately
+                        // show the state of all uploads.
+                        function updateUploadTextAndList() {
+                            // All state is kept as `data-*` attributed on the HTML node.
+                            const queryLength = (state) => document.querySelectorAll(`[data-state='${state}']`).length;
+                            const total = document.querySelectorAll("[data-state]").length;
+                            const uploads = queryLength(UPLOADING);
+                            const pending = queryLength(PENDING);
+                            const completed = queryLength(COMPLETE);
+                            const cancelled = queryLength(CANCELLED);
+                            const failed = queryLength(FAILED);
+                            const allCompleted = completed + cancelled + failed;
+
+                            // Update header text based on remaining uploads
+                            let headerText = `${total - allCompleted} uploads remaining...`;
+                            if (total === allCompleted) {
+                                headerText = `Complete! Reloading Page!`
+                            }
+
+                            // Build a summary of statuses for sub header
+                            const statuses = []
+                            if (uploads > 0) { statuses.push(`Uploading ${uploads}`) }
+                            if (pending > 0) { statuses.push(`Pending ${pending}`) }
+                            if (completed > 0) { statuses.push(`Complete ${completed}`) }
+                            if (cancelled > 0) { statuses.push(`Cancelled ${cancelled}`) }
+                            if (failed > 0) { statuses.push(`Failed ${failed}`) }
+
+                            uploadTitle.textContent = headerText
+                            uploadActionText.textContent = statuses.join(', ')
+                        }
+
+                        // Initiates the file upload process by disabling the ability for more files to be
+                        // uploaded and creating async callbacks for each file that needs to be uploaded.
+                        // Given the concurrency set by the server input arguments, it will try to process
+                        // that many uploads at once
+                        function uploadFiles() {
+                            fileInput.disabled = true;
+
+                            // Map all the files into async callbacks (uploadFile is a function that returns a function)
+                            const callbacks = Array.from(fileInput.files).map(uploadFile);
+
+                            // Get a list of all the callbacks
+                            const concurrency = CONCURRENCY === 0 ? callbacks.length : CONCURRENCY;
+
+                            // Worker function that continuously pulls tasks from the shared queue.
+                            async function worker() {
+                                while (callbacks.length > 0) {
+                                    // Remove a task from the front of the queue.
+                                    const task = callbacks.shift();
+                                    if (task) {
+                                        await task();
+                                        updateUploadTextAndList();
+                                    }
+                                }
+                            }
+
+                            // Create a work stealing shared queue, split up between `concurrency` amount of workers.
+                            const workers = Array.from({ length: concurrency }).map(worker);
+
+                            // Wait for all the workers to complete
+                            Promise.allSettled(workers)
+                                .finally(() => {
+                                    updateUploadTextAndList();
+                                    form.reset();
+                                    setTimeout(() => { uploadArea.classList.remove('active'); }, 1000)
+                                    setTimeout(() => { window.location.reload(); }, 1500)
+                                })
+
+                            updateUploadTextAndList();
+                            uploadArea.classList.add('active')
+                            uploadList.scrollTo(0, 0)
+                        }
+
+                        function formatBytes(bytes, decimals) {
+                            if (bytes == 0) return '0 Bytes';
+                            var k = 1024,
+                                dm = decimals || 2,
+                                sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'],
+                                i = Math.floor(Math.log(bytes) / Math.log(k));
+                            return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+                        }
+
+                        document.querySelector('input[type="file"]').addEventListener('change', async (e) => {
+                          const file = e.target.files[0];
+                          const hash = await hashFile(file);
+                        });
+
+                        async function get256FileHash(file) {
+                          const arrayBuffer = await file.arrayBuffer();
+                          const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer);
+                          const hashArray = Array.from(new Uint8Array(hashBuffer));
+                          return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+                        }
+
+                        // Upload a file. This function will create a upload item in the upload
+                        // widget from an HTML template. It then returns a promise which will
+                        // be used to upload the file to the server and control the styles and
+                        // interactions on the HTML list item.
+                        function uploadFile(file) {
+                            const fileUploadItem = fileUploadItemTemplate.content.cloneNode(true)
+                            const itemContainer = fileUploadItem.querySelector(".upload_file_item")
+                            const itemText = fileUploadItem.querySelector(".upload_file_text")
+                            const size = fileUploadItem.querySelector(".file_size")
+                            const name = fileUploadItem.querySelector(".file_name")
+                            const percentText = fileUploadItem.querySelector(".file_upload_percent")
+                            const bar = fileUploadItem.querySelector(".file_progress_bar")
+                            const cancel = fileUploadItem.querySelector(".file_cancel_upload")
+                            let preCancel = false;
+
+                            itemContainer.dataset.state = PENDING
+                            name.textContent = file.name
+                            size.textContent = formatBytes(file.size)
+                            percentText.textContent = "0%"
+
+                            uploadList.append(fileUploadItem)
+
+                            // Cancel an upload before it even started.
+                            function preCancelUpload() {
+                                preCancel = true;
+                                itemText.classList.add(CANCELLED);
+                                bar.classList.add(CANCELLED);
+                                itemContainer.dataset.state = CANCELLED;
+                                itemContainer.style.background = 'var(--upload_modal_file_upload_complete_background)';
+                                cancel.disabled = true;
+                                cancel.removeEventListener("click", preCancelUpload);
+                                uploadCancelButton.removeEventListener("click", preCancelUpload);
+                                updateUploadTextAndList();
+                            }
+
+                            uploadCancelButton.addEventListener("click", preCancelUpload)
+                            cancel.addEventListener("click", preCancelUpload)
+
+                            // A callback function is return so that the upload doesn't start until
+                            // we want it to. This is so that we have control over our desired concurrency.
+                            return () => {
+                                if (preCancel) {
+                                    return Promise.resolve()
+                                }
+
+                                // Upload the single file in a multipart request.
+                                return new Promise(async (resolve, reject) => {
+                                    const fileHash = await get256FileHash(file);
+                                    const xhr = new XMLHttpRequest();
+                                    const formData = new FormData();
+                                    formData.append('file', file);
+
+                                    function onReadyStateChange(e) {
+                                        if (e.target.readyState == 4) {
+                                            if (e.target.status == 200) {
+                                                completeSuccess()
+                                            } else {
+                                                failedUpload(e.target.status)
+                                            }
+                                        }
+                                    }
+
+                                    function onError(e) {
+                                        failedUpload()
+                                    }
+
+                                    function onAbort(e) {
+                                        cancelUpload()
+                                    }
+
+                                    function onProgress (e) {
+                                        update(Math.round((e.loaded / e.total) * 100));
+                                    }
+
+                                    function update(uploadPercent) {
+                                        let wholeNumber = Math.floor(uploadPercent)
+                                        percentText.textContent = `${wholeNumber}%`
+                                        bar.style.width = `${wholeNumber}%`
+                                    }
+
+                                    function completeSuccess() {
+                                        cancel.textContent = '✔';
+                                        cancel.classList.add(COMPLETE);
+                                        bar.classList.add(COMPLETE);
+                                        cleanUp(COMPLETE)
+                                    }
+
+                                    function failedUpload(statusCode) {
+                                        cancel.textContent = `${statusCode} ⚠`;
+                                        itemText.classList.add(FAILED);
+                                        bar.classList.add(FAILED);
+                                        cleanUp(FAILED);
+                                    }
+
+                                    function cancelUpload() {
+                                        xhr.abort()
+                                        itemText.classList.add(CANCELLED);
+                                        bar.classList.add(CANCELLED);
+                                        cleanUp(CANCELLED);
+                                    }
+
+                                    function cleanUp(state) {
+                                        itemContainer.dataset.state = state;
+                                        itemContainer.style.background = 'var(--upload_modal_file_upload_complete_background)';
+                                        cancel.disabled = true;
+                                        cancel.removeEventListener("click", cancelUpload)
+                                        uploadCancelButton.removeEventListener("click", cancelUpload)
+                                        xhr.removeEventListener('readystatechange', onReadyStateChange);
+                                        xhr.removeEventListener("error", onError);
+                                        xhr.removeEventListener("abort", onAbort);
+                                        xhr.upload.removeEventListener('progress', onProgress);
+                                        resolve()
+                                    }
+
+                                    uploadCancelButton.addEventListener("click", cancelUpload)
+                                    cancel.addEventListener("click", cancelUpload)
+
+                                    if (CANCEL_UPLOAD) {
+                                        cancelUpload()
+                                    } else {
+                                        itemContainer.dataset.state = UPLOADING
+                                        xhr.addEventListener('readystatechange', onReadyStateChange);
+                                        xhr.addEventListener("error", onError);
+                                        xhr.addEventListener("abort", onAbort);
+                                        xhr.upload.addEventListener('progress', onProgress);
+                                        xhr.open('post', form.getAttribute("action"), true);
+                                        xhr.setRequestHeader('X-File-Hash', fileHash);
+                                        xhr.setRequestHeader('X-File-Hash-Function', 'SHA256');
+                                        xhr.send(formData);
+                                    }
+                                })
+                            }
+                        }
                     }
-                </script>
-                "#))
+                    "#))
+                }
             }
         }
     }
@@ -681,7 +992,7 @@ pub fn render_error(
     html! {
         (DOCTYPE)
         html {
-            (page_header(&error_code.to_string(), false, &conf.favicon_route, &conf.css_route))
+            (page_header(&error_code.to_string(), false, conf.web_upload_concurrency, &conf.favicon_route, &conf.css_route))
 
             body
             {
