@@ -609,7 +609,13 @@ fn chevron_down() -> Markup {
 }
 
 /// Partial: page header
-fn page_header(title: &str, file_upload: bool, web_file_concurrency: usize, favicon_route: &str, css_route: &str) -> Markup {
+fn page_header(
+    title: &str,
+    file_upload: bool,
+    web_file_concurrency: usize,
+    favicon_route: &str,
+    css_route: &str,
+) -> Markup {
     html! {
         head {
             meta charset="utf-8";
@@ -658,7 +664,9 @@ fn page_header(title: &str, file_upload: bool, web_file_concurrency: usize, favi
                         const UPLOADING = 'uploading', PENDING = 'pending', COMPLETE = 'complete', CANCELLED = 'cancelled', FAILED = 'failed'
                         const UPLOAD_ITEM_ORDER = { UPLOADING: 0, PENDING: 1, COMPLETE: 2, CANCELLED: 3, FAILED: 4 }
                         let CANCEL_UPLOAD = false;
-                        // File Upload
+
+                        // File Upload dom elements. Used for interacting with the
+                        // upload container.
                         const form = document.querySelector('#file_submit');
                         const uploadArea = document.querySelector('#upload_area');
                         const uploadTitle = document.querySelector('#upload_title');
@@ -700,6 +708,7 @@ fn page_header(title: &str, file_upload: bool, web_file_concurrency: usize, favi
                             dragForm.style.display = 'none';
                         };
 
+                        // Event listener for toggling the upload widget display on mobile.
                         uploadWidgetToggle.addEventListener('click', function (e) {
                             e.preventDefault();
                             if (uploadArea.style.height === "100vh") {
@@ -713,6 +722,7 @@ fn page_header(title: &str, file_upload: bool, web_file_concurrency: usize, favi
                             }
                         })
 
+                        // Cancel all active and pending uploads
                         uploadCancelButton.addEventListener('click', function (e) {
                             e.preventDefault();
                             CANCEL_UPLOAD = true;
@@ -723,7 +733,11 @@ fn page_header(title: &str, file_upload: bool, web_file_concurrency: usize, favi
                             uploadFiles()
                         })
 
+                        // When uploads start, finish or are cancelled, the UI needs to reactively shows those
+                        // updates of the state. This function updates the text on the upload widget to accurately
+                        // show the state of all uploads.
                         function updateUploadTextAndList() {
+                            // All state is kept as `data-*` attributed on the HTML node.
                             const queryLength = (state) => document.querySelectorAll(`[data-state='${state}']`).length;
                             const total = document.querySelectorAll("[data-state]").length;
                             const uploads = queryLength(UPLOADING);
@@ -733,13 +747,13 @@ fn page_header(title: &str, file_upload: bool, web_file_concurrency: usize, favi
                             const failed = queryLength(FAILED);
                             const allCompleted = completed + cancelled + failed;
 
-                            // Update header
+                            // Update header text based on remaining uploads
                             let headerText = `${total - allCompleted} uploads remaining...`;
                             if (total === allCompleted) {
                                 headerText = `Complete! Reloading Page!`
                             }
 
-                            // Update sub header
+                            // Build a summary of statuses for sub header
                             const statuses = []
                             if (uploads > 0) { statuses.push(`Uploading ${uploads}`) }
                             if (pending > 0) { statuses.push(`Pending ${pending}`) }
@@ -749,29 +763,37 @@ fn page_header(title: &str, file_upload: bool, web_file_concurrency: usize, favi
 
                             uploadTitle.textContent = headerText
                             uploadActionText.textContent = statuses.join(', ')
-
-                            const items = Array.from(uploadList.querySelectorAll('li'));
-                            items.sort((a, b) => UPLOAD_ITEM_ORDER[a.dataset.state] - UPLOAD_ITEM_ORDER[b.dataset.state]);
-                            items.forEach((item, index) => {
-                              if (uploadList.children[index] !== item) {
-                                uploadList.insertBefore(item, uploadList.children[index]);
-                              }
-                            });
                         }
 
-                        async function doWork(iterator, i) {
-                            for (let [index, item] of iterator) {
-                                await item();
-                                updateUploadTextAndList();
-                            }
-                        }
-
+                        // Initiates the file upload process by disabling the ability for more files to be
+                        // uploaded and creating async callbacks for each file that needs to be uploaded.
+                        // Given the concurrency set by the server input arguments, it will try to process
+                        // that many uploads at once
                         function uploadFiles() {
                             fileInput.disabled = true;
+
+                            // Map all the files into async callbacks (uploadFile is a function that returns a function)
                             const callbacks = Array.from(fileInput.files).map(uploadFile);
-                            const iterator = callbacks.entries();
+
+                            // Get a list of all the callbacks
                             const concurrency = CONCURRENCY === 0 ? callbacks.length : CONCURRENCY;
-                            const workers = Array(concurrency).fill(iterator).map(doWork)
+
+                            // Worker function that continuously pulls tasks from the shared queue.
+                            async function worker() {
+                                while (callbacks.length > 0) {
+                                    // Remove a task from the front of the queue.
+                                    const task = callbacks.shift();
+                                    if (task) {
+                                        await task();
+                                        updateUploadTextAndList();
+                                    }
+                                }
+                            }
+
+                            // Create a work stealing shared queue, split up between `concurrency` amount of workers.
+                            const workers = Array.from({ length: concurrency }).map(worker);
+
+                            // Wait for all the workers to complete
                             Promise.allSettled(workers)
                                 .finally(() => {
                                     updateUploadTextAndList();
@@ -797,7 +819,6 @@ fn page_header(title: &str, file_upload: bool, web_file_concurrency: usize, favi
                         document.querySelector('input[type="file"]').addEventListener('change', async (e) => {
                           const file = e.target.files[0];
                           const hash = await hashFile(file);
-                          console.log('File hash:', hash);
                         });
 
                         async function get256FileHash(file) {
@@ -807,6 +828,10 @@ fn page_header(title: &str, file_upload: bool, web_file_concurrency: usize, favi
                           return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
                         }
 
+                        // Upload a file. This function will create a upload item in the upload
+                        // widget from an HTML template. It then returns a promise which will
+                        // be used to upload the file to the server and control the styles and
+                        // interactions on the HTML list item.
                         function uploadFile(file) {
                             const fileUploadItem = fileUploadItemTemplate.content.cloneNode(true)
                             const itemContainer = fileUploadItem.querySelector(".upload_file_item")
@@ -825,8 +850,8 @@ fn page_header(title: &str, file_upload: bool, web_file_concurrency: usize, favi
 
                             uploadList.append(fileUploadItem)
 
+                            // Cancel an upload before it even started.
                             function preCancelUpload() {
-                                console.log('cancelled')
                                 preCancel = true;
                                 itemText.classList.add(CANCELLED);
                                 bar.classList.add(CANCELLED);
@@ -841,11 +866,14 @@ fn page_header(title: &str, file_upload: bool, web_file_concurrency: usize, favi
                             uploadCancelButton.addEventListener("click", preCancelUpload)
                             cancel.addEventListener("click", preCancelUpload)
 
-                            return async () => {
+                            // A callback function is return so that the upload doesn't start until
+                            // we want it to. This is so that we have control over our desired concurrency.
+                            return () => {
                                 if (preCancel) {
                                     return Promise.resolve()
                                 }
 
+                                // Upload the single file in a multipart request.
                                 return new Promise(async (resolve, reject) => {
                                     const fileHash = await get256FileHash(file);
                                     const xhr = new XMLHttpRequest();

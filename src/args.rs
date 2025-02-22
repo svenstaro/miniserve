@@ -26,6 +26,20 @@ pub struct CliArgs {
     #[arg(value_hint = ValueHint::AnyPath, env = "MINISERVE_PATH")]
     pub path: Option<PathBuf>,
 
+    /// The path to where file uploads will be written to before being moved to their
+    /// correct location. It's wise to make sure that this directory will be written to
+    /// disk and not into memory.
+    ///
+    /// This value will only be used **IF** file uploading is enabled. If this option is
+    /// not set, the operating system default temporary directory will be used.
+    #[arg(
+        long = "temp-directory",
+        value_hint = ValueHint::FilePath,
+        requires = "allowed_upload_dir",
+        env = "MINISERVER_TEMP_UPLOAD_DIRECTORY")
+    ]
+    pub temp_upload_directory: Option<PathBuf>,
+
     /// The name of a directory index file to serve, like "index.html"
     ///
     /// Normally, when miniserve serves a directory, it creates a listing for that directory.
@@ -171,6 +185,14 @@ pub struct CliArgs {
     ///
     /// For example, a value of 4 would mean that the web browser will only upload
     /// 4 files at a time to the web server when using the web browser interface.
+    ///
+    /// When the value is kept at 0, it attempts to resolve all the uploads at once
+    /// in the web browser.
+    ///
+    /// NOTE: Web pages have a limit of how many active HTTP connections that they
+    /// can make at one time, so even though you might set a concurrency limit of
+    /// 100, the browser might only make progress on the max amount of connections
+    /// it allows the web page to have open.
     #[arg(
         long = "web-upload-files-concurrency",
         env = "MINISERVE_WEB_UPLOAD_CONCURRENCY",

@@ -44,7 +44,7 @@ pub enum RuntimeError {
     DuplicateFileError,
 
     /// Uploaded hash not correct
-    #[error("File hash that was provided did not match end result of uploaded file")]
+    #[error("File hash that was provided did not match checksum of uploaded file")]
     UploadHashMismatchError,
 
     /// Upload not allowed

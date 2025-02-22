@@ -54,7 +54,9 @@ $upload_container_height: 18rem;
     }
 
     #upload-toggle {
+        display: none;
         transition: transform 0.3s ease;
+        cursor: pointer;
     }
 }
 
@@ -693,6 +695,11 @@ th span.active span {
         &.active {
             right: 0;
             left: 0;
+        }
+
+        #upload-toggle {
+            display: block;
+            transition: transform 0.3s ease;
         }
     }
 
