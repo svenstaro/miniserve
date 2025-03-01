@@ -25,14 +25,14 @@ actix-web = { version = "4", features = ["macros", "compress-brotli", "compress-
 actix-web-httpauth = "0.8"
 alphanumeric-sort = "1"
 anyhow = "1"
-bytesize = "1"
+bytesize = "2"
 chrono = "0.4"
 chrono-humanize = "0.2"
 clap = { version = "4", features = ["derive", "cargo", "wrap_help", "deprecated", "env"] }
 clap_complete = "4"
 clap_mangen = "0.2"
 colored = "3"
-comrak = { version = "0.35", default-features = false }
+comrak = { version = "0.36", default-features = false }
 dav-server = { version = "0.7", features = ["actix-compat"] }
 fast_qr = { version = "0.12", features = ["svg"] }
 futures = "0.3"
@@ -42,7 +42,7 @@ httparse = "1"
 if-addrs = "0.13"
 libflate = "2"
 log = "0.4"
-maud = "0.26"
+maud = "0.27"
 mime = "0.3"
 nanoid = "0.4"
 percent-encoding = "2"
@@ -54,7 +54,7 @@ serde = { version = "1", features = ["derive"] }
 sha2 = "0.10"
 simplelog = "0.12"
 socket2 = "0.5"
-strum = { version = "0.26", features = ["derive"] }
+strum = { version = "0.27", features = ["derive"] }
 tar = "0.4"
 thiserror = "2"
 tokio = { version = "1.42.0", features = ["fs"] }
