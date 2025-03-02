@@ -32,8 +32,8 @@ impl FileHash {
 
     pub fn get_hash(&self) -> &str {
         match self {
-            Self::SHA256(string) => &string,
-            Self::SHA512(string) => &string,
+            Self::SHA256(string) => string,
+            Self::SHA512(string) => string,
         }
     }
 }
@@ -88,9 +88,9 @@ async fn save_file(
     // to control the lifecycle of the file. This is useful for us because
     // we need to convert the temporary file into an async enabled file and
     // on successful upload, we want to move it to the target directory.
-    let (file, temp_path) = named_temp_file.keep().map_err(|err| {
-        RuntimeError::IoError("Failed to keep temporary file".into(), err.error.into())
-    })?;
+    let (file, temp_path) = named_temp_file
+        .keep()
+        .map_err(|err| RuntimeError::IoError("Failed to keep temporary file".into(), err.error))?;
     let mut temp_file = tokio::fs::File::from_std(file);
 
     let mut written_len = 0;
@@ -151,7 +151,7 @@ async fn save_file(
     if let Some(hasher) = hasher {
         if let Some(expected_hash) = file_checksum.as_ref().map(|f| f.get_hash()) {
             let actual_hash = hex::encode(hasher.finalize());
-            if &actual_hash != expected_hash {
+            if actual_hash != expected_hash {
                 warn!("The expected file hash {expected_hash} did not match the calculated hash of {actual_hash}. This can be caused if a file upload was aborted.");
                 let _ = tokio::fs::remove_file(&temp_path).await;
                 return Err(RuntimeError::UploadHashMismatchError);
@@ -171,17 +171,29 @@ async fn save_file(
     Ok(written_len)
 }
 
-/// Handles a single field in a multipart form
-async fn handle_multipart(
-    mut field: actix_multipart::Field,
-    path: PathBuf,
+struct HandleMultipartOpts<'a> {
     overwrite_files: bool,
     allow_mkdir: bool,
     allow_hidden_paths: bool,
     allow_symlinks: bool,
-    file_hash: Option<&FileHash>,
-    upload_directory: Option<&PathBuf>,
+    file_hash: Option<&'a FileHash>,
+    upload_directory: Option<&'a PathBuf>,
+}
+
+/// Handles a single field in a multipart form
+async fn handle_multipart(
+    mut field: actix_multipart::Field,
+    path: PathBuf,
+    opts: HandleMultipartOpts<'_>,
 ) -> Result<u64, RuntimeError> {
+    let HandleMultipartOpts {
+        overwrite_files,
+        allow_mkdir,
+        allow_hidden_paths,
+        allow_symlinks,
+        file_hash,
+        upload_directory,
+    } = opts;
     let field_name = field.name().expect("No name field found").to_string();
 
     match tokio::fs::metadata(&path).await {
@@ -376,12 +388,14 @@ pub async fn upload_file(
             handle_multipart(
                 field,
                 non_canonicalized_target_dir.clone(),
-                conf.overwrite_files,
-                conf.mkdir_enabled,
-                conf.show_hidden,
-                !conf.no_symlinks,
-                hash_ref,
-                upload_directory,
+                HandleMultipartOpts {
+                    overwrite_files: conf.overwrite_files,
+                    allow_mkdir: conf.mkdir_enabled,
+                    allow_hidden_paths: conf.show_hidden,
+                    allow_symlinks: !conf.no_symlinks,
+                    file_hash: hash_ref,
+                    upload_directory,
+                },
             )
         })
         .try_collect::<Vec<u64>>()

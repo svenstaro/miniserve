@@ -278,16 +278,10 @@ impl MiniserveConfig {
             .transpose()?
             .unwrap_or_default();
 
-        let temp_upload_directory = args.temp_upload_directory.as_ref().take().map(|v| if v.exists() && v.is_dir() {
-            Ok(v.clone())
-        } else {
-            Err(anyhow!("Upload temporary directory must exist and be a directory. Validate that path {v:?} meets those requirements"))
-        }).transpose()?;
-
         Ok(Self {
             verbose: args.verbose,
             path: args.path.unwrap_or_else(|| PathBuf::from(".")),
-            temp_upload_directory,
+            temp_upload_directory: args.temp_upload_directory,
             port,
             interfaces,
             auth,
