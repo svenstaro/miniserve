@@ -150,7 +150,7 @@ pub fn page(
                                 }
                             }
                             @for entry in entries {
-                                (entry_row(entry, sort_method, sort_order, false, conf.show_size_in_byte))
+                                (entry_row(entry, sort_method, sort_order, false, conf.show_exact_bytes))
                             }
                         }
                     }
@@ -238,7 +238,7 @@ pub fn raw(entries: Vec<Entry>, is_root: bool, conf: &MiniserveConfig) -> Markup
                             }
                         }
                         @for entry in entries {
-                            (entry_row(entry, None, None, true, conf.show_size_in_byte))
+                            (entry_row(entry, None, None, true, conf.show_exact_bytes))
                         }
                     }
                 }
@@ -522,7 +522,7 @@ fn entry_row(
     sort_method: Option<SortingMethod>,
     sort_order: Option<SortingOrder>,
     raw: bool,
-    show_size_in_byte: bool,
+    show_exact_bytes: bool,
 ) -> Markup {
     html! {
         tr {
@@ -555,7 +555,7 @@ fn entry_row(
 
                         @if !raw {
                             @if let Some(size) = entry.size {
-                                @if show_size_in_byte {
+                                @if show_exact_bytes {
                                     span.mobile-info.size {
                                         (maud::display(format!("{}B", size.as_u64())))
                                     }
@@ -576,7 +576,7 @@ fn entry_row(
             }
             td.size-cell {
                 @if let Some(size) = entry.size {
-                    @if show_size_in_byte {
+                    @if show_exact_bytes {
                         (maud::display(format!("{}B", size.as_u64())))
                     }@else {
                         (maud::display(size))

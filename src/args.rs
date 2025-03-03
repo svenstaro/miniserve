@@ -352,8 +352,8 @@ pub struct CliArgs {
     pub enable_webdav: bool,
 
     /// Show served file size in exact bytes.
-    #[arg(long, default_value = "false", env = "MINISERVE_SHOW_SIZE_IN_BYTE")]
-    pub show_size_in_byte: bool,
+    #[arg(long, default_value = "false", env = "MINISERVE_SHOW_EXACT_BYTES")]
+    pub show_exact_bytes: bool,
 }
 
 /// Checks whether an interface is valid, i.e. it can be parsed into an IP address
