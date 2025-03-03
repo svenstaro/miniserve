@@ -274,6 +274,12 @@ Options:
 
           [env: MINISERVE_ALLOWED_UPLOAD_DIR=]
 
+      --web-upload-files-concurrency <WEB_UPLOAD_CONCURRENCY>
+          Configure amount of concurrent uploads when visiting the website. Must have upload-files option enabled for this setting to matter.
+          
+          [env: MINISERVE_WEB_UPLOAD_CONCURRENCY=]
+          [default: 0]
+
   -U, --mkdir
           Enable creating directories
 

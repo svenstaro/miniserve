@@ -43,6 +43,10 @@ pub enum RuntimeError {
     #[error("File already exists, and the overwrite_files option has not been set")]
     DuplicateFileError,
 
+    /// Uploaded hash not correct
+    #[error("File hash that was provided did not match checksum of uploaded file")]
+    UploadHashMismatchError,
+
     /// Upload not allowed
     #[error("Upload not allowed to this directory")]
     UploadForbiddenError,
@@ -86,6 +90,7 @@ impl ResponseError for RuntimeError {
         use StatusCode as S;
         match self {
             E::IoError(_, _) => S::INTERNAL_SERVER_ERROR,
+            E::UploadHashMismatchError => S::BAD_REQUEST,
             E::MultipartError(_) => S::BAD_REQUEST,
             E::DuplicateFileError => S::CONFLICT,
             E::UploadForbiddenError => S::FORBIDDEN,
@@ -132,6 +137,7 @@ where
         let res = fut.await?.map_into_boxed_body();
 
         if (res.status().is_client_error() || res.status().is_server_error())
+            && res.request().path() != "/upload"
             && res
                 .headers()
                 .get(header::CONTENT_TYPE)

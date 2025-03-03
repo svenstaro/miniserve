@@ -3,6 +3,7 @@ use std::path::Path;
 
 use assert_fs::fixture::TempDir;
 use reqwest::blocking::{multipart, Client};
+use reqwest::header::HeaderMap;
 use rstest::rstest;
 use select::document::Document;
 use select::predicate::{Attr, Text};
@@ -11,8 +12,29 @@ mod fixtures;
 
 use crate::fixtures::{server, tmpdir, Error, TestServer};
 
+// Generate the hashes using the following
+// ```bash
+// $ sha256 -s 'this should be uploaded'
+// $ sha512 -s 'this should be uploaded'
+// ```
 #[rstest]
-fn uploading_files_works(#[with(&["-u"])] server: TestServer) -> Result<(), Error> {
+#[case::no_hash(None, None)]
+#[case::only_hash(None, Some("test"))]
+#[case::partial_sha256_hash(Some("SHA256"), None)]
+#[case::partial_sha512_hash(Some("SHA512"), None)]
+#[case::sha256_hash(
+    Some("SHA256"),
+    Some("e37b14e22e7b3f50dadaf821c189af80f79b1f39fd5a8b3b4f536103735d4620")
+)]
+#[case::sha512_hash(
+    Some("SHA512"),
+    Some("03bcfc52c53904e34e06b95e8c3ee1275c66960c441417892e977d52687e28afae85b6039509060ee07da739e4e7fc3137acd142162c1456f723604f8365e154")
+)]
+fn uploading_files_works(
+    #[with(&["-u"])] server: TestServer,
+    #[case] sha_func: Option<&str>,
+    #[case] sha: Option<&str>,
+) -> Result<(), Error> {
     let test_file_name = "uploaded test file.txt";
 
     // Before uploading, check whether the uploaded file does not yet exist.
@@ -33,7 +55,16 @@ fn uploading_files_works(#[with(&["-u"])] server: TestServer) -> Result<(), Erro
         .mime_str("text/plain")?;
     let form = form.part("file_to_upload", part);
 
-    let client = Client::new();
+    let mut headers = HeaderMap::new();
+    if let Some(sha_func) = sha_func.as_ref() {
+        headers.insert("X-File-Hash-Function", sha_func.parse()?);
+    }
+    if let Some(sha) = sha.as_ref() {
+        headers.insert("X-File-Hash", sha.parse()?);
+    }
+
+    let client = Client::builder().default_headers(headers).build()?;
+
     client
         .post(server.url().join(upload_action)?)
         .multipart(form)
@@ -69,6 +100,65 @@ fn uploading_files_is_prevented(server: TestServer) -> Result<(), Error> {
 
     let client = Client::new();
     // Ensure uploading fails and returns an error
+    assert!(client
+        .post(server.url().join("/upload?path=/")?)
+        .multipart(form)
+        .send()?
+        .error_for_status()
+        .is_err());
+
+    // After uploading, check whether the uploaded file is NOT getting listed.
+    let body = reqwest::blocking::get(server.url())?;
+    let parsed = Document::from_read(body)?;
+    assert!(!parsed.find(Text).any(|x| x.text() == test_file_name));
+
+    Ok(())
+}
+
+// Generated hashs with the following
+// ```bash
+// echo "invalid" | base64 | sha256
+// echo "invalid" | base64 | sha512
+// ```
+#[rstest]
+#[case::sha256_hash(
+    Some("SHA256"),
+    Some("f4ddf641a44e8fe8248cc086532cafaa8a914a21a937e40be67926ea074b955a")
+)]
+#[case::sha512_hash(
+    Some("SHA512"),
+    Some("d3fe39ab560dd7ba91e6e2f8c948066d696f2afcfc90bf9df32946512f6934079807f301235b88b72bf746b6a88bf111bc5abe5c711514ed0731d286985297ba")
+)]
+#[case::sha128_hash(Some("SHA128"), Some("invalid"))]
+fn uploading_files_with_invalid_sha_func_is_prevented(
+    #[with(&["-u"])] server: TestServer,
+    #[case] sha_func: Option<&str>,
+    #[case] sha: Option<&str>,
+) -> Result<(), Error> {
+    let test_file_name = "uploaded test file.txt";
+
+    // Before uploading, check whether the uploaded file does not yet exist.
+    let body = reqwest::blocking::get(server.url())?.error_for_status()?;
+    let parsed = Document::from_read(body)?;
+    assert!(parsed.find(Text).all(|x| x.text() != test_file_name));
+
+    // Perform the actual upload.
+    let form = multipart::Form::new();
+    let part = multipart::Part::text("this should be uploaded")
+        .file_name(test_file_name)
+        .mime_str("text/plain")?;
+    let form = form.part("file_to_upload", part);
+
+    let mut headers = HeaderMap::new();
+    if let Some(sha_func) = sha_func.as_ref() {
+        headers.insert("X-File-Hash-Function", sha_func.parse()?);
+    }
+    if let Some(sha) = sha.as_ref() {
+        headers.insert("X-File-Hash", sha.parse()?);
+    }
+
+    let client = Client::builder().default_headers(headers).build()?;
+
     assert!(client
         .post(server.url().join("/upload?path=/")?)
         .multipart(form)

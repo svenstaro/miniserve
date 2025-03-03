@@ -56,8 +56,9 @@ simplelog = "0.12"
 socket2 = "0.5"
 strum = { version = "0.27", features = ["derive"] }
 tar = "0.4"
+tempfile = "3.17.0"
 thiserror = "2"
-tokio = { version = "1.42.0", features = ["fs"] }
+tokio = { version = "1.42.0", features = ["fs", "macros"] }
 zip = { version = "2", default-features = false }
 
 [features]

@@ -45,6 +45,14 @@ $generate_default: true !default;
   --size_text_color: #efefef;
   --error_color: #d06565;
   --footer_color: #bfaf9f;
+  --success_color: #52e28a;
+  --upload_modal_header_background: #7f9f7f;
+  --upload_modal_header_color: #eeeeee;
+  --upload_modal_sub_header_background: #404e40;
+  --upload_modal_file_item_background: #eeeeee;
+  --upload_modal_file_item_color: #111111;
+  --upload_modal_file_upload_complete_background: #cccccc;
+  --progress_bar_background: #5294e2;
 };
 
 @if $generate_default {
