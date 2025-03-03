@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - ReleaseDate
 - Add date pill and sort links for mobile views [#1473](https://github.com/svenstaro/miniserve/pull/1473) (thanks @Flat)
+- Add upload progress bar and allow for multiple concurrent file uploads [#1431](https://github.com/svenstaro/miniserve/pull/1431) (thanks @AlecDivito)
 
 ## [0.29.0] - 2025-02-06
 - Make URL encoding fully WHATWG-compliant [#1454](https://github.com/svenstaro/miniserve/pull/1454) (thanks @cyqsimon)
