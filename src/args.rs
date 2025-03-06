@@ -1,3 +1,4 @@
+use std::fmt::Display;
 use std::net::IpAddr;
 use std::path::PathBuf;
 
@@ -13,6 +14,21 @@ pub enum MediaType {
     Image,
     Audio,
     Video,
+}
+
+#[derive(ValueEnum, Clone)]
+pub enum SizeDisplay {
+    Human,
+    Exact,
+}
+
+impl Display for SizeDisplay {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            SizeDisplay::Human => write!(f, "human"),
+            SizeDisplay::Exact => write!(f, "exact"),
+        }
+    }
 }
 
 #[derive(Parser)]
@@ -352,8 +368,8 @@ pub struct CliArgs {
     pub enable_webdav: bool,
 
     /// Show served file size in exact bytes.
-    #[arg(long, default_value = "false", env = "MINISERVE_SHOW_EXACT_BYTES")]
-    pub show_exact_bytes: bool,
+    #[arg(long, default_value_t = SizeDisplay::Human, env = "MINISERVE_SIZE_DISPLAY")]
+    pub size_display: SizeDisplay,
 }
 
 /// Checks whether an interface is valid, i.e. it can be parsed into an IP address

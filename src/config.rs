@@ -281,6 +281,11 @@ impl MiniserveConfig {
             .transpose()?
             .unwrap_or_default();
 
+        let show_exact_bytes = match args.size_display {
+            crate::args::SizeDisplay::Human => false,
+            crate::args::SizeDisplay::Exact => true,
+        };
+
         Ok(Self {
             verbose: args.verbose,
             path: args.path.unwrap_or_else(|| PathBuf::from(".")),
@@ -323,7 +328,7 @@ impl MiniserveConfig {
             webdav_enabled: args.enable_webdav,
             tls_rustls_config: tls_rustls_server_config,
             compress_response: args.compress_response,
-            show_exact_bytes: args.show_exact_bytes,
+            show_exact_bytes,
         })
     }
 }
