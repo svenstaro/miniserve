@@ -32,7 +32,7 @@ pub fn page(
 ) -> Markup {
     // If query_params.raw is true, we want render a minimal directory listing
     if query_params.raw.is_some() && query_params.raw.unwrap() {
-        return raw(entries, is_root);
+        return raw(entries, is_root, conf);
     }
 
     let upload_route = format!("{}/upload", &conf.route_prefix);
@@ -150,7 +150,7 @@ pub fn page(
                                 }
                             }
                             @for entry in entries {
-                                (entry_row(entry, sort_method, sort_order, false))
+                                (entry_row(entry, sort_method, sort_order, false, conf.show_exact_bytes))
                             }
                         }
                     }
@@ -214,7 +214,7 @@ pub fn page(
 }
 
 /// Renders the file listing
-pub fn raw(entries: Vec<Entry>, is_root: bool) -> Markup {
+pub fn raw(entries: Vec<Entry>, is_root: bool, conf: &MiniserveConfig) -> Markup {
     html! {
         (DOCTYPE)
         html {
@@ -238,7 +238,7 @@ pub fn raw(entries: Vec<Entry>, is_root: bool) -> Markup {
                             }
                         }
                         @for entry in entries {
-                            (entry_row(entry, None, None, true))
+                            (entry_row(entry, None, None, true, conf.show_exact_bytes))
                         }
                     }
                 }
@@ -522,6 +522,7 @@ fn entry_row(
     sort_method: Option<SortingMethod>,
     sort_order: Option<SortingOrder>,
     raw: bool,
+    show_exact_bytes: bool,
 ) -> Markup {
     html! {
         tr {
@@ -554,13 +555,19 @@ fn entry_row(
 
                         @if !raw {
                             @if let Some(size) = entry.size {
-                                span.mobile-info.size {
-                                    (build_link("size", &format!("{}", size), sort_method, sort_order))
+                                @if show_exact_bytes {
+                                    span.mobile-info.size {
+                                        (maud::display(format!("{}B", size.as_u64())))
+                                    }
+                                }@else {
+                                    span.mobile-info.size {
+                                        (build_link("size", &format!("{}", size), sort_method, sort_order))
                                 }
                             }
                             @if let Some(modification_timer) = humanize_systemtime(entry.last_modification_date) {
                                 span.mobile-info.history {
                                     (build_link("date", &modification_timer, sort_method, sort_order))
+                                    }
                                 }
                             }
                         }
@@ -569,7 +576,11 @@ fn entry_row(
             }
             td.size-cell {
                 @if let Some(size) = entry.size {
-                    (maud::display(size))
+                    @if show_exact_bytes {
+                        (maud::display(format!("{}B", size.as_u64())))
+                    }@else {
+                        (maud::display(size))
+                    }
                 }
             }
             td.date-cell {

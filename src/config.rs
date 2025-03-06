@@ -158,6 +158,9 @@ pub struct MiniserveConfig {
     /// If enabled, respond to WebDAV requests (read-only).
     pub webdav_enabled: bool,
 
+    /// If enabled, will show in exact byte size of the file
+    pub show_exact_bytes: bool,
+
     /// If set, use provided rustls config for TLS
     #[cfg(feature = "tls")]
     pub tls_rustls_config: Option<rustls::ServerConfig>,
@@ -278,6 +281,11 @@ impl MiniserveConfig {
             .transpose()?
             .unwrap_or_default();
 
+        let show_exact_bytes = match args.size_display {
+            crate::args::SizeDisplay::Human => false,
+            crate::args::SizeDisplay::Exact => true,
+        };
+
         Ok(Self {
             verbose: args.verbose,
             path: args.path.unwrap_or_else(|| PathBuf::from(".")),
@@ -320,6 +328,7 @@ impl MiniserveConfig {
             webdav_enabled: args.enable_webdav,
             tls_rustls_config: tls_rustls_server_config,
             compress_response: args.compress_response,
+            show_exact_bytes,
         })
     }
 }
