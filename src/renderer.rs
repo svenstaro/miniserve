@@ -557,7 +557,7 @@ fn entry_row(
                             @if let Some(size) = entry.size {
                                 @if show_exact_bytes {
                                     span.mobile-info.size {
-                                        (maud::display(format!("{}B", size.as_u64())))
+                                        (maud::display(format!("{} B", size.as_u64())))
                                     }
                                 }@else {
                                     span.mobile-info.size {
@@ -577,7 +577,7 @@ fn entry_row(
             td.size-cell {
                 @if let Some(size) = entry.size {
                     @if show_exact_bytes {
-                        (maud::display(format!("{}B", size.as_u64())))
+                        (maud::display(format!("{} B", size.as_u64())))
                     }@else {
                         (maud::display(size))
                     }
