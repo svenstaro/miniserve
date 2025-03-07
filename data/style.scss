@@ -7,770 +7,774 @@
 $themes: squirrel, archlinux, monokai, zenburn;
 
 html {
-    font-smoothing: antialiased;
-    text-rendering: optimizeLegibility;
-    width: 100%;
-    height: 100%;
+  font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  width: 100%;
+  height: 100%;
 }
 
 body {
-    margin: 0;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Helvetica, Arial, sans-serif;
-    font-weight: normal;
-    color: var(--text_color);
-    background: var(--background);
-    position: relative;
-    min-height: 100%;
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-weight: normal;
+  color: var(--text_color);
+  background: var(--background);
+  position: relative;
+  min-height: 100%;
 }
 
 .container {
-    padding: 1.5rem 5rem;
+  padding: 1.5rem 5rem;
 }
 
 $upload_container_height: 18rem;
 
 .upload_area {
-    display: block;
-    position: fixed;
-    bottom: 1rem;
-    right: -105%;
-    color: #ffffff;
-    box-shadow: 0 3px 6px -1px rgba(0, 0, 0, 0.12), 0 10px 36px -4px rgba(77, 96, 232, 0.3);
-    background: linear-gradient(135deg, #73a5ff, #5477f5);
-    padding: 0px;
-    margin: 0px;
-    opacity: 1; // Change this
-    transition: all 0.4s cubic-bezier(0.215, 0.61, 0.355, 1);
-    border-radius: 4px;
-    text-decoration: none;
-    min-width: 400px;
-    max-width: 600px;
-    z-index: 2147483647;
-    max-height: $upload_container_height;
-    overflow: hidden;
+  display: block;
+  position: fixed;
+  bottom: 1rem;
+  right: -105%;
+  color: #ffffff;
+  box-shadow: 0 3px 6px -1px rgba(0, 0, 0, 0.12), 0 10px 36px -4px rgba(77, 96, 232, 0.3);
+  background: linear-gradient(135deg, #73a5ff, #5477f5);
+  padding: 0px;
+  margin: 0px;
+  opacity: 1; // Change this
+  transition: all 0.4s cubic-bezier(0.215, 0.61, 0.355, 1);
+  border-radius: 4px;
+  text-decoration: none;
+  min-width: 400px;
+  max-width: 600px;
+  z-index: 2147483647;
+  max-height: $upload_container_height;
+  overflow: hidden;
 
-    &.active {
-        right: 1rem;
-    }
+  &.active {
+    right: 1rem;
+  }
 
-    #upload-toggle {
-        display: none;
-        transition: transform 0.3s ease;
-        cursor: pointer;
-    }
+  #upload-toggle {
+    display: none;
+    transition: transform 0.3s ease;
+    cursor: pointer;
+  }
 }
 
 .upload_container {
-    max-height: $upload_container_height;
-    display: flex;
-    flex-direction: column;
+  max-height: $upload_container_height;
+  display: flex;
+  flex-direction: column;
 }
 
 .upload_header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1rem;
-    background-color: var(--upload_modal_header_background);
-    color: var(--upload_modal_header_color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background-color: var(--upload_modal_header_background);
+  color: var(--upload_modal_header_color);
 }
 
 .upload_header svg {
-    width: 24px;
-    height: 24px;
+  width: 24px;
+  height: 24px;
 }
 
 .upload_action {
-    background-color: var(--upload_modal_sub_header_background);
-    color: var(--upload_modal_header_color);
-    padding: 0.25rem 1rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 0.75em;
-    font-weight: 500;
+  background-color: var(--upload_modal_sub_header_background);
+  color: var(--upload_modal_header_color);
+  padding: 0.25rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.75em;
+  font-weight: 500;
 }
 
 .upload_cancel {
-    background: none;
-    border: none;
-    font-weight: 500;
-    cursor: pointer;
+  background: none;
+  border: none;
+  font-weight: 500;
+  cursor: pointer;
 }
 
 .upload_files {
-    padding: 0px;
-    margin: 0px;
-    flex: 1;
-    overflow-y: auto;
-    max-height: inherit;
+  padding: 0px;
+  margin: 0px;
+  flex: 1;
+  overflow-y: auto;
+  max-height: inherit;
 }
 
 .upload_file_list {
-    background-color: var(--upload_modal_file_item_background);
-    color: var(--upload_modal_file_item_color);
-    padding: 0px;
-    margin: 0px;
-    list-style: none;
-    list-style: none;
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    overflow-y: scroll;
+  background-color: var(--upload_modal_file_item_background);
+  color: var(--upload_modal_file_item_color);
+  padding: 0px;
+  margin: 0px;
+  list-style: none;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  overflow-y: scroll;
 }
 
 .upload_file_container {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 1rem 1rem calc(1rem - 2px) 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1rem calc(1rem - 2px) 1rem;
 }
 
 .upload_file_action {
-    display: flex;
-    justify-content: right;
+  display: flex;
+  justify-content: right;
 }
 
 .file_progress_bar {
-    width: 0%;
-    border-top: 2px solid var(--progress_bar_background);
-    transition: width 0.25s ease;
+  width: 0%;
+  border-top: 2px solid var(--progress_bar_background);
+  transition: width 0.25s ease;
 
-    &.cancelled {
-        border-color: var(--error_color);
-    }
+  &.cancelled {
+    border-color: var(--error_color);
+  }
 
-    &.failed {
-        border-color: var(--error_color);
-    }
+  &.failed {
+    border-color: var(--error_color);
+  }
 
-    &.complete {
-        border-color: var(--success_color);
-    }
+  &.complete {
+    border-color: var(--success_color);
+  }
 }
 
 .upload_file_text {
-    font-size: 0.80em;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+  font-size: 0.80em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 
-    &.cancelled {
-        text-decoration: line-through;
-    }
+  &.cancelled {
+    text-decoration: line-through;
+  }
 
-    &.failed {
-        text-decoration: line-through;
-    }
+  &.failed {
+    text-decoration: line-through;
+  }
 }
 
 .file_cancel_upload {
-    padding-left: 0.25rem;
-    font-size: 1em;
-    cursor: pointer;
-    border: none;
-    background: inherit;
-    font-size: 1em;
-    color: var(--error_color);
+  padding-left: 0.25rem;
+  font-size: 1em;
+  cursor: pointer;
+  border: none;
+  background: inherit;
+  font-size: 1em;
+  color: var(--error_color);
 
-    &.complete {
-        color: var(--success_color);
-    }
+  &.complete {
+    color: var(--success_color);
+  }
 }
 
 .title {
-    word-break: break-all;
+  word-break: break-all;
 }
 
 .title a {
-    font-weight: bold;
-    color: var(--directory_link_color);
+  font-weight: bold;
+  color: var(--directory_link_color);
 }
 
 .footer {
-    text-align: center;
-    padding-top: 1.5rem;
-    font-size: 0.7em;
-    color: var(--footer_color);
+  text-align: center;
+  padding-top: 1.5rem;
+  font-size: 0.7em;
+  color: var(--footer_color);
 
-    .downloadDirectory {
-        display: flex;
-        flex-direction: row;
-        justify-content: center;
-        flex-wrap: wrap;
+  .downloadDirectory {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    flex-wrap: wrap;
 
-        .cmd {
-            margin: 0;
-            padding-left: 5px;
+    .cmd {
+      margin: 0;
+      padding-left: 5px;
 
-            line-height: 13px;
-            font-family: monospace;
-        }
+      line-height: 13px;
+      font-family: monospace;
     }
+  }
 }
 
 a {
-    text-decoration: none;
+  text-decoration: none;
 }
 
 a.root,
 a.root:visited,
 .root-chevron {
-    font-weight: bold;
-    color: var(--root_link_color);
+  font-weight: bold;
+  color: var(--root_link_color);
 }
 
 a:hover {
-    text-decoration: underline;
+  text-decoration: underline;
 }
 
 a.directory {
-    font-weight: bold;
-    color: var(--directory_link_color);
+  font-weight: bold;
+  color: var(--directory_link_color);
 
-    &:visited {
-        color: var(--directory_link_color_visited);
-    }
+  &:visited {
+    color: var(--directory_link_color_visited);
+  }
 }
 
 a.file,
 .error-back {
-    color: var(--file_link_color);
+  color: var(--file_link_color);
 
-    &:visited {
-        color: var(--file_link_color_visited);
-    }
+  &:visited {
+    color: var(--file_link_color_visited);
+  }
 }
 
 a.file::before {
-    content: "📃 ";
+  content: "📃 ";
 }
 
 a.directory::before {
-    content: "📁 ";
+  content: "📁 ";
 }
 
 a.directory:hover {
-    color: var(--directory_link_color);
+  color: var(--directory_link_color);
 }
 
 a.file:hover {
-    color: var(--file_link_color);
+  color: var(--file_link_color);
 }
 
 a.symlink,
 a.symlink:visited {
-    font-weight: bold;
-    color: var(--symlink_color);
+  font-weight: bold;
+  color: var(--symlink_color);
 }
 
 .symlink-symbol::after {
-    content: "⇢";
-    display: inline-block;
-    border: 1px solid;
-    margin-left: 0.5rem;
-    margin-right: 0.5rem;
-    border-radius: 0.2rem;
-    padding: 0 0.1rem;
+  content: "⇢";
+  display: inline-block;
+  border: 1px solid;
+  margin-left: 0.5rem;
+  margin-right: 0.5rem;
+  border-radius: 0.2rem;
+  padding: 0 0.1rem;
 }
 
 nav {
-    padding: 0 5rem;
-    display: flex;
-    justify-content: flex-end;
+  padding: 0 5rem;
+  display: flex;
+  justify-content: flex-end;
 }
 
 nav>div {
-    position: relative;
-    margin-left: 0.5rem;
+  position: relative;
+  margin-left: 0.5rem;
 }
 
 nav p {
-    padding: 0.5rem 1rem;
-    width: 8rem;
-    text-align: center;
-    background: var(--switch_theme_background);
-    color: var(--change_theme_link_color);
+  padding: 0.5rem 1rem;
+  width: 8rem;
+  text-align: center;
+  background: var(--switch_theme_background);
+  color: var(--change_theme_link_color);
 }
 
 nav p+* {
-    display: none;
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: 100%;
+  display: none;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
 }
 
 @keyframes show {
-    from {
-        opacity: 0;
-    }
+  from {
+    opacity: 0;
+  }
 
-    to {
-        opacity: 1;
-    }
+  to {
+    opacity: 1;
+  }
 }
 
 nav>div:hover p {
-    cursor: pointer;
-    color: var(--switch_theme_link_color);
+  cursor: pointer;
+  color: var(--switch_theme_link_color);
 }
 
 nav>div:hover p+* {
-    display: block;
-    border-top: 1px solid var(--switch_theme_border);
+  display: block;
+  border-top: 1px solid var(--switch_theme_border);
 }
 
 nav .qrcode {
-    padding: 0.5rem;
-    background: var(--switch_theme_background);
+  padding: 0.5rem;
+  background: var(--switch_theme_background);
 }
 
 nav .qrcode svg {
-    display: block;
+  display: block;
 }
 
 nav .theme {
-    margin: 0;
-    padding: 0;
-    list-style-type: none;
+  margin: 0;
+  padding: 0;
+  list-style-type: none;
 }
 
 nav .theme li {
-    width: 100%;
-    background: var(--switch_theme_background);
+  width: 100%;
+  background: var(--switch_theme_background);
 }
 
 nav .theme li a {
-    display: block;
-    width: 100%;
-    padding: 0.5rem 0;
-    text-align: center;
-    color: var(--switch_theme_link_color);
+  display: block;
+  width: 100%;
+  padding: 0.5rem 0;
+  text-align: center;
+  color: var(--switch_theme_link_color);
 }
 
 nav .theme li a:visited {
-    color: var(--switch_theme_link_color);
+  color: var(--switch_theme_link_color);
 }
 
 nav .theme li a:hover {
-    text-decoration: underline;
-    color: var(--change_theme_link_color_hover);
+  text-decoration: underline;
+  color: var(--change_theme_link_color_hover);
 }
 
 p {
-    margin: 0;
-    padding: 0;
+  margin: 0;
+  padding: 0;
 }
 
 h1 {
-    margin-top: 0;
-    font-size: 1.5rem;
+  margin-top: 0;
+  font-size: 1.5rem;
 }
 
 table {
-    margin-top: 2rem;
-    width: 100%;
-    border: 0;
-    table-layout: auto;
-    background: var(--table_background);
+  margin-top: 2rem;
+  width: 100%;
+  border: 0;
+  table-layout: auto;
+  background: var(--table_background);
 }
 
 table thead tr th,
 table tbody tr td {
-    padding: 0.5625rem 0.625rem;
-    font-size: 0.875rem;
-    color: var(--table_text_color);
-    text-align: left;
-    line-height: 1.125rem;
+  padding: 0.5625rem 0.625rem;
+  font-size: 0.875rem;
+  color: var(--table_text_color);
+  text-align: left;
+  line-height: 1.125rem;
 }
 
 table tbody tr td p {
-    display: flex;
-    align-items: center;
+  display: flex;
+  align-items: center;
 }
 
 table thead tr th {
-    padding: 0.5rem 0.625rem 0.625rem;
-    font-weight: bold;
+  padding: 0.5rem 0.625rem 0.625rem;
+  font-weight: bold;
 }
 
 table thead th.size {
-    width: 6em;
+  width: 6em;
 }
 
 table thead th.date {
-    width: 21em;
+  width: 21em;
 }
 
 table tbody tr:nth-child(odd) {
-    background: var(--odd_row_background);
+  background: var(--odd_row_background);
 }
 
 table tbody tr:nth-child(even) {
-    background: var(--even_row_background);
+  background: var(--even_row_background);
 }
 
 table thead {
-    background: var(--table_header_background);
+  background: var(--table_header_background);
 }
 
 table tbody tr:hover {
-    background: var(--active_row_color);
+  background: var(--active_row_color);
 }
 
 td.size-cell {
-    text-align: right;
+  text-align: right;
 }
 
 td.date-cell {
-    display: flex;
-    justify-content: space-between;
+  display: flex;
+  justify-content: space-between;
 }
 
 .history {
-    color: var(--date_text_color);
+  color: var(--date_text_color);
 }
 
-span.size, span.mobile-info.history {
-    white-space: nowrap;
-    border-radius: 1rem;
-    background: var(--size_background_color);
-    padding: 0 0.25rem;
-    margin: 0 0.25rem;
-    font-size: 0.7rem;
-    color: var(--size_text_color);
+span.size,
+span.mobile-info.history {
+  white-space: nowrap;
+  border-radius: 1rem;
+  background: var(--size_background_color);
+  padding: 0 0.25rem;
+  margin: 0 0.25rem;
+  font-size: 0.7rem;
+  color: var(--size_text_color);
 }
 
 .mobile-info {
-    display: none;
+  display: none;
 }
 
-.mobile-info a, .mobile-info a:visited {
-    color: var(--size_text_color);
+.mobile-info a,
+.mobile-info a:visited {
+  color: var(--size_text_color);
 }
 
 th a,
 th a:visited,
 .chevron {
-    color: var(--table_header_text_color);
+  color: var(--table_header_text_color);
 }
 
 .chevron,
 .root-chevron {
-    margin-right: 0.5rem;
-    font-size: 1.2em;
-    font-weight: bold;
+  margin-right: 0.5rem;
+  font-size: 1.2em;
+  font-weight: bold;
 }
 
 th span.active a,
 th span.active span {
-    color: var(--table_header_active_color);
+  color: var(--table_header_active_color);
 }
 
 .back {
-    position: fixed;
-    width: 3rem;
-    height: 3rem;
-    align-items: center;
-    justify-content: center;
-    bottom: 3rem;
-    right: 3.75rem;
-    background: var(--back_button_background);
-    border-radius: 100%;
-    box-shadow: 0 0 8px -4px #888888;
-    color: var(--back_button_link_color);
-    display: none;
-    padding: 0;
-    font-size: 2em;
+  position: fixed;
+  width: 3rem;
+  height: 3rem;
+  align-items: center;
+  justify-content: center;
+  bottom: 3rem;
+  right: 3.75rem;
+  background: var(--back_button_background);
+  border-radius: 100%;
+  box-shadow: 0 0 8px -4px #888888;
+  color: var(--back_button_link_color);
+  display: none;
+  padding: 0;
+  font-size: 2em;
 }
 
 .back:visited {
-    color: var(--back_button_link_color);
+  color: var(--back_button_link_color);
 }
 
 .back:hover {
-    color: var(--back_button_link_color_hover);
-    font-weight: bold;
-    text-decoration: none;
-    background: var(--back_button_background_hover);
+  color: var(--back_button_link_color_hover);
+  font-weight: bold;
+  text-decoration: none;
+  background: var(--back_button_background_hover);
 }
 
 .toolbar {
-    display: flex;
-    justify-content: space-between;
-    flex-wrap: wrap;
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
 }
 
 .download {
-    margin-top: 1rem;
-    padding: 0.125rem;
-    display: flex;
-    flex-direction: row;
-    align-items: flex-start;
-    flex-wrap: wrap;
+  margin-top: 1rem;
+  padding: 0.125rem;
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  flex-wrap: wrap;
 }
 
 .download a,
 .download a:visited {
-    color: var(--download_button_link_color);
+  color: var(--download_button_link_color);
 }
 
 .download a {
-    background: var(--download_button_background);
-    padding: 0.5rem;
-    border-radius: 0.2rem;
+  background: var(--download_button_background);
+  padding: 0.5rem;
+  border-radius: 0.2rem;
 }
 
 .download a:hover {
-    background: var(--download_button_background_hover);
-    color: var(--download_button_link_color_hover);
+  background: var(--download_button_background_hover);
+  color: var(--download_button_link_color_hover);
 }
 
 .download a:not(:last-of-type) {
-    margin-right: 1rem;
+  margin-right: 1rem;
 }
 
 .toolbar_box_group {
-    min-width: max-content;
+  min-width: max-content;
 }
 
 .toolbar_box {
-    margin-top: 1rem;
-    display: flex;
-    justify-content: flex-end;
+  margin-top: 1rem;
+  display: flex;
+  justify-content: flex-end;
 }
 
 .toolbar_box p {
-    font-size: 0.8rem;
-    margin-bottom: 1rem;
-    color: var(--upload_text_color);
+  font-size: 0.8rem;
+  margin-bottom: 1rem;
+  color: var(--upload_text_color);
 }
 
 .toolbar_box form {
-    padding: 1rem;
-    border: 1px solid var(--upload_form_border_color);
-    background: var(--upload_form_background);
+  padding: 1rem;
+  border: 1px solid var(--upload_form_border_color);
+  background: var(--upload_form_background);
 }
 
 .toolbar_box input {
-    padding: 0.5rem;
-    margin-right: 0.2rem;
-    border-radius: 0.2rem;
-    border: 0;
-    display: inline;
+  padding: 0.5rem;
+  margin-right: 0.2rem;
+  border-radius: 0.2rem;
+  border: 0;
+  display: inline;
 }
 
 .toolbar_box button {
-    background: var(--upload_button_background);
-    padding: 0.5rem;
-    border-radius: 0.2rem;
-    color: var(--upload_button_text_color);
-    border: none;
-    min-width: max-content;
+  background: var(--upload_button_background);
+  padding: 0.5rem;
+  border-radius: 0.2rem;
+  color: var(--upload_button_text_color);
+  border: none;
+  min-width: max-content;
 }
 
 .toolbar_box div {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
 }
 
-.form, .drag-form {
-    display: none;
-    background: var(--drag_background);
-    position: absolute;
-    border: 0.5rem dashed var(--drag_border_color);
-    width: calc(100% - 1rem);
-    height: calc(100% - 1rem);
-    text-align: center;
-    z-index: 2;
-    margin: 0 5px;
+.form,
+.drag-form {
+  display: none;
+  background: var(--drag_background);
+  position: absolute;
+  border: 0.5rem dashed var(--drag_border_color);
+  width: calc(100% - 1rem);
+  height: calc(100% - 1rem);
+  text-align: center;
+  z-index: 2;
+  margin: 0 5px;
 }
 
 .form_title {
-    position: fixed;
-    color: var(--drag_text_color);
-    top: 50%;
-    width: 100%;
-    text-align: center;
+  position: fixed;
+  color: var(--drag_text_color);
+  top: 50%;
+  width: 100%;
+  text-align: center;
 }
 
 .error {
-    margin: 2rem;
+  margin: 2rem;
 }
 
 .error p {
-    margin: 1rem 0;
-    font-size: 0.9rem;
-    word-break: break-all;
+  margin: 1rem 0;
+  font-size: 0.9rem;
+  word-break: break-all;
 }
 
 .error p:first-of-type {
-    font-size: 1.25rem;
-    color: var(--error_color);
-    margin-bottom: 2rem;
+  font-size: 1.25rem;
+  color: var(--error_color);
+  margin-bottom: 2rem;
 }
 
 .error p:nth-of-type(2) {
-    font-weight: bold;
+  font-weight: bold;
 }
 
 .error-nav {
-    margin-top: 4rem;
+  margin-top: 4rem;
 }
 
 @media (min-width: 900px) {
-    .toolbar_box_group {
-        display: flex;
-        justify-content: flex-end;
-    }
+  .toolbar_box_group {
+    display: flex;
+    justify-content: flex-end;
+  }
 }
 
 @media (max-width: 760px) {
-    nav {
-        padding: 0 2.5rem;
+  nav {
+    padding: 0 2.5rem;
+  }
+
+  .container {
+    padding: 1.5rem 2.5rem;
+  }
+
+  h1 {
+    font-size: 1.4em;
+  }
+
+  td:not(:nth-child(1)),
+  th:not(:nth-child(1)) {
+    display: none;
+  }
+
+  .mobile-info {
+    display: inline-flex;
+    align-items: center;
+    margin: auto;
+  }
+
+  table tbody tr td {
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+
+  a {
+    padding: 0.5625rem 0;
+  }
+
+  a.directory {
+    flex-grow: 1;
+  }
+
+  .file-entry {
+    align-items: center;
+  }
+
+  a.root,
+  a.file {
+    flex-grow: 1;
+  }
+
+  .back {
+    display: flex;
+  }
+
+  .back {
+    right: 1.5rem;
+  }
+
+  $upload_container_height_mobile: 100vh;
+
+  .upload_area {
+    width: 100%;
+    height: 136px;
+    max-height: $upload_container_height_mobile;
+    max-width: unset;
+    min-width: unset;
+    bottom: 0;
+    transition: height 0.3s ease;
+
+    &.active {
+      right: 0;
+      left: 0;
     }
 
-    .container {
-        padding: 1.5rem 2.5rem;
+    #upload-toggle {
+      display: block;
+      transition: transform 0.3s ease;
     }
+  }
 
-    h1 {
-        font-size: 1.4em;
-    }
-
-    td:not(:nth-child(1)),
-    th:not(:nth-child(1)) {
-        display: none;
-    }
-
-    .mobile-info {
-        display: inline-flex;
-        align-items: center;
-        margin: auto;
-    }
-
-    table tbody tr td {
-        padding-top: 0;
-        padding-bottom: 0;
-    }
-
-    a {
-        padding: 0.5625rem 0;
-    }
-
-    a.directory {
-        flex-grow: 1;
-    }
-
-    .file-entry {
-        align-items: center;
-    }
-
-    a.root,
-    a.file {
-        flex-grow: 1;
-    }
-
-    .back {
-        display: flex;
-    }
-
-    .back {
-        right: 1.5rem;
-    }
-
-    $upload_container_height_mobile: 100vh;
-
-    .upload_area {
-        width: 100%;
-        height: 136px;
-        max-height: $upload_container_height_mobile;
-        max-width: unset;
-        min-width: unset;
-        bottom: 0;
-        transition: height 0.3s ease;
-
-        &.active {
-            right: 0;
-            left: 0;
-        }
-
-        #upload-toggle {
-            display: block;
-            transition: transform 0.3s ease;
-        }
-    }
-
-    .upload_container {
-        max-height: $upload_container_height_mobile;
-    }
+  .upload_container {
+    max-height: $upload_container_height_mobile;
+  }
 }
 
 @media (max-width: 600px) {
-    h1 {
-        font-size: 1.375em;
-    }
+  h1 {
+    font-size: 1.375em;
+  }
 }
 
 @media (max-width: 400px) {
-    nav {
-        padding: 0 0.5rem;
-    }
+  nav {
+    padding: 0 0.5rem;
+  }
 
-    .container {
-        padding: 0.5rem;
-    }
+  .container {
+    padding: 0.5rem;
+  }
 
-    h1 {
-        font-size: 1.375em;
-    }
+  h1 {
+    font-size: 1.375em;
+  }
 
-    .back {
-        right: 1.5rem;
-    }
+  .back {
+    right: 1.5rem;
+  }
 }
 
 @mixin theme($name) {
-    @if $name == squirrel {
-        @include squirrel.theme();
-    }
+  @if $name ==squirrel {
+    @include squirrel.theme();
+  }
 
-    @else if $name == archlinux {
-        @include archlinux.theme();
-    }
+  @else if $name ==archlinux {
+    @include archlinux.theme();
+  }
 
-    @else if $name == monokai {
-        @include monokai.theme();
-    }
+  @else if $name ==monokai {
+    @include monokai.theme();
+  }
 
-    @else if $name == zenburn {
-        @include zenburn.theme();
-    }
+  @else if $name ==zenburn {
+    @include zenburn.theme();
+  }
 
-    @else {
-        @error "Invalid theme: #{$name}";
-    }
+  @else {
+    @error "Invalid theme: #{$name}";
+  }
 }
 
 %active_theme_link {
-    font-weight: bold;
-    color: var(--switch_theme_active);
+  font-weight: bold;
+  color: var(--switch_theme_active);
 }
 
 // when no specific theme is applied, highlight the `default` theme button in
 // the theme menu
 body:not([data-theme]) nav .theme li[data-theme="default"] a {
-    @extend %active_theme_link;
+  @extend %active_theme_link;
 }
 
 @each $theme in $themes {
-    body[data-theme="#{$theme}"] {
-        @include theme($theme);
-        // highlight the currently active theme in the theme selection menu
-        nav .theme li[data-theme="#{$theme}"] a {
-            @extend %active_theme_link;
-        }
+  body[data-theme="#{$theme}"] {
+    @include theme($theme);
+
+    // highlight the currently active theme in the theme selection menu
+    nav .theme li[data-theme="#{$theme}"] a {
+      @extend %active_theme_link;
     }
+  }
 }
