@@ -103,6 +103,21 @@ this example, you'd need to use `-u -v`.
 
 (where `$DIR_NAME` is the name of the directory. This uses miniserve's default port of 8080.)
 
+### Use the raw renderer for use with simple viewers
+
+You can pass `?raw=true` with requests where you only require minimal HTML output for CLI-based browsers such as `lynx` or `w3m`.
+This is enabled by default without any extra flags:
+
+    miniserve .
+    curl http://localhost:8080?raw=true
+
+You can enable a convenient copy-pastable footer for `wget` using `--show-wget-footer`:
+
+    miniserve --show-wget-footer .
+
+Afterwards, check the bottom of any rendered page.
+It'll have a neat `wget` command you can easily copy-paste to recursively grab the current directory.
+
 ### Take pictures and upload them from smartphones:
 
     miniserve -u -m image -q
@@ -276,7 +291,7 @@ Options:
 
       --web-upload-files-concurrency <WEB_UPLOAD_CONCURRENCY>
           Configure amount of concurrent uploads when visiting the website. Must have upload-files option enabled for this setting to matter.
-          
+
           [env: MINISERVE_WEB_UPLOAD_CONCURRENCY=]
           [default: 0]
 
