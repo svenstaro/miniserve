@@ -1,11 +1,11 @@
 use pretty_assertions::assert_eq;
-use reqwest::{blocking::Client, StatusCode};
+use reqwest::{StatusCode, blocking::Client};
 use rstest::rstest;
 use select::{document::Document, predicate::Text};
 
 mod fixtures;
 
-use crate::fixtures::{server, Error, FILES};
+use crate::fixtures::{Error, FILES, server};
 
 #[rstest]
 #[case("testuser:testpassword", "testuser", "testpassword")]

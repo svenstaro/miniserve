@@ -4,11 +4,11 @@ use std::path::{Component, Path};
 use std::time::SystemTime;
 
 use actix_web::{
-    dev::ServiceResponse, http::Uri, web::Query, HttpMessage, HttpRequest, HttpResponse,
+    HttpMessage, HttpRequest, HttpResponse, dev::ServiceResponse, http::Uri, web::Query,
 };
 use bytesize::ByteSize;
 use clap::ValueEnum;
-use comrak::{markdown_to_html, ComrakOptions};
+use comrak::{ComrakOptions, markdown_to_html};
 use percent_encoding::{percent_decode_str, utf8_percent_encode};
 use regex::Regex;
 use serde::Deserialize;

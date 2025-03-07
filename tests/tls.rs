@@ -6,7 +6,7 @@ use select::{document::Document, node::Node};
 
 mod fixtures;
 
-use crate::fixtures::{server, Error, TestServer, FILES};
+use crate::fixtures::{Error, FILES, TestServer, server};
 
 /// Can start the server with TLS and receive encrypted responses.
 #[rstest]

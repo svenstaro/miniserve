@@ -2,7 +2,7 @@
 //! for WebDAV handlers
 
 use dav_server::{davpath::DavPath, fs::*, localfs::LocalFs};
-use futures::{future::ready, StreamExt, TryFutureExt};
+use futures::{StreamExt, TryFutureExt, future::ready};
 use std::path::{Component, Path};
 
 /// A dav_server local filesystem backend that can be configured to deny access

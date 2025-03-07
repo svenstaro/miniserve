@@ -3,19 +3,19 @@ use std::time::SystemTime;
 use actix_web::http::{StatusCode, Uri};
 use chrono::{DateTime, Local};
 use chrono_humanize::Humanize;
-use clap::{crate_name, crate_version, ValueEnum};
+use clap::{ValueEnum, crate_name, crate_version};
 use fast_qr::{
-    convert::{svg::SvgBuilder, Builder},
-    qr::QRCodeError,
     QRBuilder,
+    convert::{Builder, svg::SvgBuilder},
+    qr::QRCodeError,
 };
-use maud::{html, Markup, PreEscaped, DOCTYPE};
+use maud::{DOCTYPE, Markup, PreEscaped, html};
 use strum::{Display, IntoEnumIterator};
 
 use crate::auth::CurrentUser;
 use crate::consts;
 use crate::listing::{Breadcrumb, Entry, ListingQueryParameters, SortingMethod, SortingOrder};
-use crate::{archive::ArchiveMethod, MiniserveConfig};
+use crate::{MiniserveConfig, archive::ArchiveMethod};
 
 #[allow(clippy::too_many_arguments)]
 /// Renders the file listing
@@ -1074,7 +1074,9 @@ mod tests {
             Some("Marcell D'Avis"),
         )
         .into();
-        let expected = to_html("-P '1&amp;1 - Willkommen!!!' --ask-password --user 'Marcell D'&quot;'&quot;'Avis' 'http://1und1.de");
+        let expected = to_html(
+            "-P '1&amp;1 - Willkommen!!!' --ask-password --user 'Marcell D'&quot;'&quot;'Avis' 'http://1und1.de",
+        );
         assert_eq!(to_be_tested, expected);
     }
 
@@ -1086,7 +1088,9 @@ mod tests {
             Some("uøý`¶'7ÅÛé"),
         )
         .into();
-        let expected = to_html("--ask-password --user 'uøý`¶'&quot;'&quot;'7ÅÛé' 'http://127.0.0.1:1234/geheime_dokumente.php");
+        let expected = to_html(
+            "--ask-password --user 'uøý`¶'&quot;'&quot;'7ÅÛé' 'http://127.0.0.1:1234/geheime_dokumente.php",
+        );
         assert_eq!(to_be_tested, expected);
     }
 

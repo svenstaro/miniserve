@@ -394,7 +394,9 @@ fn validate_is_dir_and_exists(s: &str) -> Result<PathBuf, String> {
 #[derive(Clone, Debug, thiserror::Error)]
 pub enum AuthParseError {
     /// Might occur if the HTTP credential string does not respect the expected format
-    #[error("Invalid format for credentials string. Expected username:password, username:sha256:hash or username:sha512:hash")]
+    #[error(
+        "Invalid format for credentials string. Expected username:password, username:sha256:hash or username:sha512:hash"
+    )]
     InvalidAuthFormat,
 
     /// Might occur if the hash method is neither sha256 nor sha512

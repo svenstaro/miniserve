@@ -7,7 +7,7 @@ use select::document::Document;
 mod fixtures;
 mod utils;
 
-use crate::fixtures::{server, Error, TestServer, DEEPLY_NESTED_FILE, DIRECTORIES};
+use crate::fixtures::{DEEPLY_NESTED_FILE, DIRECTORIES, Error, TestServer, server};
 use crate::utils::{get_link_from_text, get_link_hrefs_with_prefix};
 
 #[rstest]

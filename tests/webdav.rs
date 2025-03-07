@@ -3,18 +3,18 @@ use std::process::Command;
 use assert_cmd::prelude::*;
 use assert_fs::TempDir;
 use predicates::str::contains;
-use reqwest::{blocking::Client, Method};
+use reqwest::{Method, blocking::Client};
 use reqwest_dav::{
-    list_cmd::{ListEntity, ListFile, ListFolder},
     ClientBuilder as DavClientBuilder,
+    list_cmd::{ListEntity, ListFile, ListFolder},
 };
 use rstest::rstest;
 
 mod fixtures;
 
 use crate::fixtures::{
-    server, tmpdir, Error, TestServer, DIRECTORIES, DIRECTORY_SYMLINK, FILES, FILE_SYMLINK,
-    HIDDEN_DIRECTORIES, HIDDEN_FILES,
+    DIRECTORIES, DIRECTORY_SYMLINK, Error, FILE_SYMLINK, FILES, HIDDEN_DIRECTORIES, HIDDEN_FILES,
+    TestServer, server, tmpdir,
 };
 
 #[rstest]

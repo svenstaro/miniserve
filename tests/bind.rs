@@ -8,7 +8,7 @@ use rstest::rstest;
 
 mod fixtures;
 
-use crate::fixtures::{port, server, tmpdir, Error, TestServer};
+use crate::fixtures::{Error, TestServer, port, server, tmpdir};
 
 #[rstest]
 #[case(&["-i", "12.123.234.12"])]

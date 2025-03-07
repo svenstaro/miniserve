@@ -1,10 +1,10 @@
-use reqwest::{blocking::Client, StatusCode};
+use reqwest::{StatusCode, blocking::Client};
 use rstest::rstest;
 use select::{document::Document, predicate::Text};
 
 mod fixtures;
 
-use crate::fixtures::{server, Error, TestServer, FILES};
+use crate::fixtures::{Error, FILES, TestServer, server};
 
 #[rstest]
 #[case("joe", "123")]

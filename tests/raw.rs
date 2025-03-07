@@ -8,7 +8,7 @@ use select::{
 
 mod fixtures;
 
-use crate::fixtures::{server, Error, TestServer};
+use crate::fixtures::{Error, TestServer, server};
 
 /// The footer displays the correct wget command to download the folder recursively
 // This test can't test all aspects of the wget footer,

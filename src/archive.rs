@@ -6,7 +6,7 @@ use libflate::gzip::Encoder;
 use serde::Deserialize;
 use strum::{Display, EnumIter, EnumString};
 use tar::Builder;
-use zip::{write, ZipWriter};
+use zip::{ZipWriter, write};
 
 use crate::errors::RuntimeError;
 

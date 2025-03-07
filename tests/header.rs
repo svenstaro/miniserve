@@ -2,7 +2,7 @@ use rstest::rstest;
 
 mod fixtures;
 
-use crate::fixtures::{server, Error};
+use crate::fixtures::{Error, server};
 
 #[rstest]
 #[case(vec!["x-info: 123".to_string()])]

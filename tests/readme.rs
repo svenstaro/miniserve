@@ -1,4 +1,4 @@
-use std::fs::{remove_file, File};
+use std::fs::{File, remove_file};
 use std::io::Write;
 use std::path::PathBuf;
 
@@ -8,7 +8,7 @@ use select::{document::Document, node::Node};
 
 mod fixtures;
 
-use fixtures::{server, Error, TestServer, DIRECTORIES, FILES};
+use fixtures::{DIRECTORIES, Error, FILES, TestServer, server};
 
 fn write_readme_contents(path: PathBuf, filename: &str) -> PathBuf {
     let readme_path = path.join(filename);
@@ -21,10 +21,12 @@ fn write_readme_contents(path: PathBuf, filename: &str) -> PathBuf {
 
 fn assert_readme_contents(parsed_dom: &Document, filename: &str) {
     assert!(parsed_dom.find(Attr("id", "readme")).next().is_some());
-    assert!(parsed_dom
-        .find(Attr("id", "readme-filename"))
-        .next()
-        .is_some());
+    assert!(
+        parsed_dom
+            .find(Attr("id", "readme-filename"))
+            .next()
+            .is_some()
+    );
     assert!(
         parsed_dom
             .find(Attr("id", "readme-filename"))
@@ -33,17 +35,21 @@ fn assert_readme_contents(parsed_dom: &Document, filename: &str) {
             .text()
             == filename
     );
-    assert!(parsed_dom
-        .find(Attr("id", "readme-contents"))
-        .next()
-        .is_some());
-    assert!(parsed_dom
-        .find(Attr("id", "readme-contents"))
-        .next()
-        .unwrap()
-        .text()
-        .trim()
-        .contains(&format!("Contents of {filename}")));
+    assert!(
+        parsed_dom
+            .find(Attr("id", "readme-contents"))
+            .next()
+            .is_some()
+    );
+    assert!(
+        parsed_dom
+            .find(Attr("id", "readme-contents"))
+            .next()
+            .unwrap()
+            .text()
+            .trim()
+            .contains(&format!("Contents of {filename}"))
+    );
 }
 
 /// Do not show readme contents by default

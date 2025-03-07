@@ -9,7 +9,7 @@ use select::{document::Document, predicate::Attr};
 
 mod fixtures;
 
-use crate::fixtures::{port, server, tmpdir, Error, TestServer};
+use crate::fixtures::{Error, TestServer, port, server, tmpdir};
 
 #[rstest]
 fn webpage_hides_qrcode_when_disabled(server: TestServer) -> Result<(), Error> {

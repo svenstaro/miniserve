@@ -2,7 +2,7 @@ use std::fs::create_dir_all;
 use std::path::Path;
 
 use assert_fs::fixture::TempDir;
-use reqwest::blocking::{multipart, Client};
+use reqwest::blocking::{Client, multipart};
 use reqwest::header::HeaderMap;
 use rstest::rstest;
 use select::document::Document;
@@ -10,7 +10,7 @@ use select::predicate::{Attr, Text};
 
 mod fixtures;
 
-use crate::fixtures::{server, tmpdir, Error, TestServer};
+use crate::fixtures::{Error, TestServer, server, tmpdir};
 
 // Generate the hashes using the following
 // ```bash
@@ -28,7 +28,9 @@ use crate::fixtures::{server, tmpdir, Error, TestServer};
 )]
 #[case::sha512_hash(
     Some("SHA512"),
-    Some("03bcfc52c53904e34e06b95e8c3ee1275c66960c441417892e977d52687e28afae85b6039509060ee07da739e4e7fc3137acd142162c1456f723604f8365e154")
+    Some(
+        "03bcfc52c53904e34e06b95e8c3ee1275c66960c441417892e977d52687e28afae85b6039509060ee07da739e4e7fc3137acd142162c1456f723604f8365e154"
+    )
 )]
 fn uploading_files_works(
     #[with(&["-u"])] server: TestServer,
@@ -100,12 +102,14 @@ fn uploading_files_is_prevented(server: TestServer) -> Result<(), Error> {
 
     let client = Client::new();
     // Ensure uploading fails and returns an error
-    assert!(client
-        .post(server.url().join("/upload?path=/")?)
-        .multipart(form)
-        .send()?
-        .error_for_status()
-        .is_err());
+    assert!(
+        client
+            .post(server.url().join("/upload?path=/")?)
+            .multipart(form)
+            .send()?
+            .error_for_status()
+            .is_err()
+    );
 
     // After uploading, check whether the uploaded file is NOT getting listed.
     let body = reqwest::blocking::get(server.url())?;
@@ -127,7 +131,9 @@ fn uploading_files_is_prevented(server: TestServer) -> Result<(), Error> {
 )]
 #[case::sha512_hash(
     Some("SHA512"),
-    Some("d3fe39ab560dd7ba91e6e2f8c948066d696f2afcfc90bf9df32946512f6934079807f301235b88b72bf746b6a88bf111bc5abe5c711514ed0731d286985297ba")
+    Some(
+        "d3fe39ab560dd7ba91e6e2f8c948066d696f2afcfc90bf9df32946512f6934079807f301235b88b72bf746b6a88bf111bc5abe5c711514ed0731d286985297ba"
+    )
 )]
 #[case::sha128_hash(Some("SHA128"), Some("invalid"))]
 fn uploading_files_with_invalid_sha_func_is_prevented(
@@ -159,12 +165,14 @@ fn uploading_files_with_invalid_sha_func_is_prevented(
 
     let client = Client::builder().default_headers(headers).build()?;
 
-    assert!(client
-        .post(server.url().join("/upload?path=/")?)
-        .multipart(form)
-        .send()?
-        .error_for_status()
-        .is_err());
+    assert!(
+        client
+            .post(server.url().join("/upload?path=/")?)
+            .multipart(form)
+            .send()?
+            .error_for_status()
+            .is_err()
+    );
 
     // After uploading, check whether the uploaded file is NOT getting listed.
     let body = reqwest::blocking::get(server.url())?;

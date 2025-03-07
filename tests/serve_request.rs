@@ -13,8 +13,8 @@ use select::{document::Document, node::Node, predicate::Attr};
 mod fixtures;
 
 use crate::fixtures::{
-    port, server, tmpdir, Error, TestServer, DIRECTORIES, DIRECTORY_SYMLINK, FILES, FILE_SYMLINK,
-    HIDDEN_DIRECTORIES, HIDDEN_FILES,
+    DIRECTORIES, DIRECTORY_SYMLINK, Error, FILE_SYMLINK, FILES, HIDDEN_DIRECTORIES, HIDDEN_FILES,
+    TestServer, port, server, tmpdir,
 };
 
 #[rstest]
@@ -55,17 +55,21 @@ fn serves_requests_with_non_default_port(server: TestServer) -> Result<(), Error
     }
 
     for &directory in DIRECTORIES {
-        assert!(parsed
-            .find(|x: &Node| x.text() == directory)
-            .next()
-            .is_some());
+        assert!(
+            parsed
+                .find(|x: &Node| x.text() == directory)
+                .next()
+                .is_some()
+        );
         let dir_body = reqwest::blocking::get(server.url().join(directory)?)?.error_for_status()?;
         let dir_body_parsed = Document::from_read(dir_body)?;
         for &file in FILES {
-            assert!(dir_body_parsed
-                .find(|x: &Node| x.text() == file)
-                .next()
-                .is_some());
+            assert!(
+                dir_body_parsed
+                    .find(|x: &Node| x.text() == file)
+                    .next()
+                    .is_some()
+            );
         }
     }
 
@@ -105,17 +109,21 @@ fn serves_requests_hidden_files(#[with(&["--hidden"])] server: TestServer) -> Re
     }
 
     for &directory in DIRECTORIES.iter().chain(HIDDEN_DIRECTORIES) {
-        assert!(parsed
-            .find(|x: &Node| x.text() == directory)
-            .next()
-            .is_some());
+        assert!(
+            parsed
+                .find(|x: &Node| x.text() == directory)
+                .next()
+                .is_some()
+        );
         let dir_body = reqwest::blocking::get(server.url().join(directory)?)?.error_for_status()?;
         let dir_body_parsed = Document::from_read(dir_body)?;
         for &file in FILES.iter().chain(HIDDEN_FILES) {
-            assert!(dir_body_parsed
-                .find(|x: &Node| x.text() == file)
-                .next()
-                .is_some());
+            assert!(
+                dir_body_parsed
+                    .find(|x: &Node| x.text() == file)
+                    .next()
+                    .is_some()
+            );
         }
     }
 
@@ -128,10 +136,12 @@ fn serves_requests_no_hidden_files_without_flag(server: TestServer) -> Result<()
     let parsed = Document::from_read(body)?;
 
     for &hidden_item in HIDDEN_FILES.iter().chain(HIDDEN_DIRECTORIES) {
-        assert!(parsed
-            .find(|x: &Node| x.text() == hidden_item)
-            .next()
-            .is_none());
+        assert!(
+            parsed
+                .find(|x: &Node| x.text() == hidden_item)
+                .next()
+                .is_none()
+        );
         let resp = reqwest::blocking::get(server.url().join(hidden_item)?)?;
         assert_eq!(resp.status(), StatusCode::BAD_REQUEST);
     }
@@ -191,10 +201,12 @@ fn serves_requests_symlinks(
             assert_eq!(node.unwrap().attr("class").unwrap(), "file");
         }
     }
-    assert!(parsed
-        .find(|x: &Node| x.text() == BROKEN_SYMLINK)
-        .next()
-        .is_none());
+    assert!(
+        parsed
+            .find(|x: &Node| x.text() == BROKEN_SYMLINK)
+            .next()
+            .is_none()
+    );
 
     Ok(())
 }
@@ -267,10 +279,12 @@ fn serve_index_instead_of_404_in_spa_mode(
 ) -> Result<(), Error> {
     let body = reqwest::blocking::get(format!("{}{}", server.url(), url))?.error_for_status()?;
     let parsed = Document::from_read(body)?;
-    assert!(parsed
-        .find(|x: &Node| x.text() == "Test Hello Yes")
-        .next()
-        .is_some());
+    assert!(
+        parsed
+            .find(|x: &Node| x.text() == "Test Hello Yes")
+            .next()
+            .is_some()
+    );
 
     Ok(())
 }
@@ -285,10 +299,12 @@ fn serve_file_instead_of_404_in_pretty_urls_mode(
 ) -> Result<(), Error> {
     let body = reqwest::blocking::get(format!("{}{}", server.url(), url))?.error_for_status()?;
     let parsed = Document::from_read(body)?;
-    assert!(parsed
-        .find(|x: &Node| x.text() == "Test Hello Yes")
-        .next()
-        .is_some());
+    assert!(
+        parsed
+            .find(|x: &Node| x.text() == "Test Hello Yes")
+            .next()
+            .is_some()
+    );
 
     Ok(())
 }
@@ -320,12 +336,16 @@ fn serves_requests_static_file_check(
     let parsed = Document::from_read(body)?;
     let re = Regex::new(&static_file_pattern).unwrap();
 
-    assert!(parsed
-        .find(Attr("rel", "stylesheet"))
-        .all(|x| re.is_match(x.attr("href").unwrap())));
-    assert!(parsed
-        .find(Attr("rel", "icon"))
-        .all(|x| re.is_match(x.attr("href").unwrap())));
+    assert!(
+        parsed
+            .find(Attr("rel", "stylesheet"))
+            .all(|x| re.is_match(x.attr("href").unwrap()))
+    );
+    assert!(
+        parsed
+            .find(Attr("rel", "icon"))
+            .all(|x| re.is_match(x.attr("href").unwrap()))
+    );
 
     Ok(())
 }
@@ -337,22 +357,30 @@ fn serves_no_directory_if_indexing_disabled(#[case] server: TestServer) -> Resul
     assert_eq!(body.status(), StatusCode::NOT_FOUND);
     let parsed = Document::from_read(body)?;
 
-    assert!(parsed
-        .find(|x: &Node| x.text() == FILES[0])
-        .next()
-        .is_none());
-    assert!(parsed
-        .find(|x: &Node| x.text() == DIRECTORIES[0])
-        .next()
-        .is_none());
-    assert!(parsed
-        .find(|x: &Node| x.text() == "404 Not Found")
-        .next()
-        .is_some());
-    assert!(parsed
-        .find(|x: &Node| x.text() == "File not found.")
-        .next()
-        .is_some());
+    assert!(
+        parsed
+            .find(|x: &Node| x.text() == FILES[0])
+            .next()
+            .is_none()
+    );
+    assert!(
+        parsed
+            .find(|x: &Node| x.text() == DIRECTORIES[0])
+            .next()
+            .is_none()
+    );
+    assert!(
+        parsed
+            .find(|x: &Node| x.text() == "404 Not Found")
+            .next()
+            .is_some()
+    );
+    assert!(
+        parsed
+            .find(|x: &Node| x.text() == "File not found.")
+            .next()
+            .is_some()
+    );
 
     Ok(())
 }

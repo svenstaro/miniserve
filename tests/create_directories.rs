@@ -1,4 +1,4 @@
-use reqwest::blocking::{multipart, Client};
+use reqwest::blocking::{Client, multipart};
 use rstest::rstest;
 use select::{
     document::Document,
@@ -7,7 +7,7 @@ use select::{
 
 mod fixtures;
 
-use crate::fixtures::{server, Error, TestServer, DIRECTORY_SYMLINK};
+use crate::fixtures::{DIRECTORY_SYMLINK, Error, TestServer, server};
 
 /// This should work because the flags for uploading files and creating directories
 /// are set, and the directory name and path are valid.
@@ -43,9 +43,11 @@ fn creating_directories_works(
     // After creating, check whether the directory is now getting listed.
     let body = reqwest::blocking::get(server.url())?;
     let parsed = Document::from_read(body)?;
-    assert!(parsed
-        .find(Text)
-        .any(|x| x.text() == test_directory_name.to_owned() + "/"));
+    assert!(
+        parsed
+            .find(Text)
+            .any(|x| x.text() == test_directory_name.to_owned() + "/")
+    );
 
     Ok(())
 }
@@ -72,19 +74,23 @@ fn creating_directories_is_prevented(server: TestServer) -> Result<(), Error> {
 
     let client = Client::new();
     // This should fail
-    assert!(client
-        .post(server.url().join("/upload?path=/")?)
-        .multipart(form)
-        .send()?
-        .error_for_status()
-        .is_err());
+    assert!(
+        client
+            .post(server.url().join("/upload?path=/")?)
+            .multipart(form)
+            .send()?
+            .error_for_status()
+            .is_err()
+    );
 
     // After creating, check whether the directory is now getting listed (shouldn't).
     let body = reqwest::blocking::get(server.url())?;
     let parsed = Document::from_read(body)?;
-    assert!(parsed
-        .find(Text)
-        .all(|x| x.text() != test_directory_name.to_owned() + "/"));
+    assert!(
+        parsed
+            .find(Text)
+            .all(|x| x.text() != test_directory_name.to_owned() + "/")
+    );
 
     Ok(())
 }
@@ -106,16 +112,18 @@ fn creating_directories_through_symlinks_is_prevented(
     let form = form.part("mkdir", part);
 
     // This should fail
-    assert!(Client::new()
-        .post(
-            server
-                .url()
-                .join(format!("/upload?path=/{DIRECTORY_SYMLINK}").as_str())?
-        )
-        .multipart(form)
-        .send()?
-        .error_for_status()
-        .is_err());
+    assert!(
+        Client::new()
+            .post(
+                server
+                    .url()
+                    .join(format!("/upload?path=/{DIRECTORY_SYMLINK}").as_str())?
+            )
+            .multipart(form)
+            .send()?
+            .error_for_status()
+            .is_err()
+    );
 
     Ok(())
 }
@@ -145,12 +153,14 @@ fn prevent_path_transversal_attacks(
     let form = form.part("mkdir", part);
 
     // This should fail
-    assert!(Client::new()
-        .post(server.url().join(&format!("/upload/path={path}"))?)
-        .multipart(form)
-        .send()?
-        .error_for_status()
-        .is_err());
+    assert!(
+        Client::new()
+            .post(server.url().join(&format!("/upload/path={path}"))?)
+            .multipart(form)
+            .send()?
+            .error_for_status()
+            .is_err()
+    );
 
     Ok(())
 }
