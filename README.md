@@ -143,6 +143,7 @@ Some mobile browsers like Firefox on Android will offer to open the camera app w
 - Supports README.md rendering like on GitHub
 - Range requests
 - WebDAV support
+- Healthcheck route (at `/__miniserve_internal/healthcheck`)
 
 ## Usage
 

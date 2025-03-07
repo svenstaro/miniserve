@@ -73,6 +73,25 @@ fn serves_requests_with_non_default_port(server: TestServer) -> Result<(), Error
 }
 
 #[rstest]
+#[case("__miniserve_internal/healthcheck", server(None::<&str>))]
+#[case("__miniserve_internal/favicon.svg", server(None::<&str>))]
+#[case("__miniserve_internal/style.css", server(None::<&str>))]
+#[case("testlol/__miniserve_internal/healthcheck", server(&["--route-prefix", "testlol"]))]
+#[case("testlol/__miniserve_internal/favicon.svg", server(&["--route-prefix", "testlol"]))]
+#[case("testlol/__miniserve_internal/style.css", server(&["--route-prefix", "testlol"]))]
+#[case("__miniserve_internal/healthcheck", server(&["--random-route"]))]
+#[case("__miniserve_internal/favicon.svg", server(&["--random-route"]))]
+#[case("__miniserve_internal/style.css", server(&["--random-route"]))]
+fn serves_requests_for_special_routes(
+    #[case] route: &str,
+    #[case] server: TestServer,
+) -> Result<(), Error> {
+    let body = reqwest::blocking::get(format!("{}{}", server.url(), route))?.error_for_status()?;
+
+    Ok(())
+}
+
+#[rstest]
 fn serves_requests_hidden_files(#[with(&["--hidden"])] server: TestServer) -> Result<(), Error> {
     let body = reqwest::blocking::get(server.url())?.error_for_status()?;
     let parsed = Document::from_read(body)?;

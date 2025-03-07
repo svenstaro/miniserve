@@ -219,6 +219,7 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), StartupError> {
                 miniserve_config.compress_response,
                 middleware::Compress::default(),
             ))
+            .route(&inside_config.healthcheck_route, web::get().to(healthcheck))
             .route(&inside_config.favicon_route, web::get().to(favicon))
             .route(&inside_config.css_route, web::get().to(css))
             .service(
@@ -427,6 +428,10 @@ async fn dav_handler(req: DavRequest, davhandler: web::Data<DavHandler>) -> DavR
 
 async fn error_404(req: HttpRequest) -> Result<HttpResponse, RuntimeError> {
     Err(RuntimeError::RouteNotFoundError(req.path().to_string()))
+}
+
+async fn healthcheck() -> impl Responder {
+    HttpResponse::Ok().body("OK")
 }
 
 async fn favicon() -> impl Responder {

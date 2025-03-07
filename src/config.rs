@@ -63,10 +63,13 @@ pub struct MiniserveConfig {
     /// Route prefix; Either empty or prefixed with slash
     pub route_prefix: String,
 
-    /// Randomly generated favicon route
+    /// Well-known healthcheck route (prefixed if route_prefix is provided)
+    pub healthcheck_route: String,
+
+    /// Well-known favicon route (prefixed if route_prefix is provided)
     pub favicon_route: String,
 
-    /// Randomly generated css route
+    /// Well-known css route (prefixed if route_prefix is provided)
     pub css_route: String,
 
     /// Default color scheme
@@ -198,19 +201,21 @@ impl MiniserveConfig {
             }
         }
 
-        // Generate some random routes for the favicon and css so that they are very unlikely to conflict with
-        // real files.
-        // If --random-route is enabled , in order to not leak the random generated route, we must not use it
+        // Format some well-known routes at paths that are very unlikely to conflict with real
+        // files.
+        // If --random-route is enabled, in order to not leak the random generated route, we must not use it
         // as static files prefix.
         // Otherwise, we should apply route_prefix to static files.
-        let (favicon_route, css_route) = if args.random_route {
+        let (healthcheck_route, favicon_route, css_route) = if args.random_route {
             (
+                "/__miniserve_internal/healthcheck".into(),
                 "/__miniserve_internal/favicon.svg".into(),
                 "/__miniserve_internal/style.css".into(),
             )
         } else {
             (
-                format!("{}/{}", route_prefix, "__miniserve_internal/favicon.ico"),
+                format!("{}/{}", route_prefix, "__miniserve_internal/healthcheck"),
+                format!("{}/{}", route_prefix, "__miniserve_internal/favicon.svg"),
                 format!("{}/{}", route_prefix, "__miniserve_internal/style.css"),
             )
         };
@@ -299,6 +304,7 @@ impl MiniserveConfig {
             default_sorting_method: args.default_sorting_method,
             default_sorting_order: args.default_sorting_order,
             route_prefix,
+            healthcheck_route,
             favicon_route,
             css_route,
             default_color_scheme,
