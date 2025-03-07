@@ -428,6 +428,25 @@ td.date-cell {
   justify-content: space-between;
 }
 
+.loading-indicator {
+  width: 65%;
+  height: 15px;
+  margin-left: 35%;
+  animation: shimmer 2s infinite;
+  background: linear-gradient(to right, #e6e6e655 5%, #77777755 25%, #e6e6e655 35%);
+  background-size: 500px 100%;
+}
+
+@keyframes shimmer {
+  from {
+    background-position: -500px 0;
+  }
+
+  to {
+    background-position: 500px 0;
+  }
+}
+
 .history {
   color: var(--date_text_color);
 }

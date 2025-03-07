@@ -367,7 +367,7 @@ pub struct CliArgs {
     #[arg(long, env = "MINISERVE_ENABLE_WEBDAV", conflicts_with = "no_symlinks")]
     pub enable_webdav: bool,
 
-    /// Show served file size in exact bytes.
+    /// Show served file size in exact bytes
     #[arg(long, default_value_t = SizeDisplay::Human, env = "MINISERVE_SIZE_DISPLAY")]
     pub size_display: SizeDisplay,
 }

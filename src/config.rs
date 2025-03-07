@@ -24,7 +24,7 @@ const ROUTE_ALPHABET: [char; 16] = [
     '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', 'a', 'b', 'c', 'd', 'e', 'f',
 ];
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 /// Configuration of the Miniserve application
 pub struct MiniserveConfig {
     /// Enable verbose mode
@@ -65,6 +65,9 @@ pub struct MiniserveConfig {
 
     /// Well-known healthcheck route (prefixed if route_prefix is provided)
     pub healthcheck_route: String,
+
+    /// Well-known API route (prefixed if route_prefix is provided)
+    pub api_route: String,
 
     /// Well-known favicon route (prefixed if route_prefix is provided)
     pub favicon_route: String,
@@ -206,15 +209,17 @@ impl MiniserveConfig {
         // If --random-route is enabled, in order to not leak the random generated route, we must not use it
         // as static files prefix.
         // Otherwise, we should apply route_prefix to static files.
-        let (healthcheck_route, favicon_route, css_route) = if args.random_route {
+        let (healthcheck_route, api_route, favicon_route, css_route) = if args.random_route {
             (
                 "/__miniserve_internal/healthcheck".into(),
+                "/__miniserve_internal/api".into(),
                 "/__miniserve_internal/favicon.svg".into(),
                 "/__miniserve_internal/style.css".into(),
             )
         } else {
             (
                 format!("{}/{}", route_prefix, "__miniserve_internal/healthcheck"),
+                format!("{}/{}", route_prefix, "__miniserve_internal/api"),
                 format!("{}/{}", route_prefix, "__miniserve_internal/favicon.svg"),
                 format!("{}/{}", route_prefix, "__miniserve_internal/style.css"),
             )
@@ -305,6 +310,7 @@ impl MiniserveConfig {
             default_sorting_order: args.default_sorting_order,
             route_prefix,
             healthcheck_route,
+            api_route,
             favicon_route,
             css_route,
             default_color_scheme,

@@ -24,6 +24,7 @@ actix-web = { version = "4", features = ["macros", "compress-brotli", "compress-
 actix-web-httpauth = "0.8"
 alphanumeric-sort = "1"
 anyhow = "1"
+async-walkdir = "2.1.0"
 bytesize = "2"
 chrono = "0.4"
 chrono-humanize = "0.2"
@@ -74,7 +75,7 @@ assert_fs = "1"
 predicates = "3"
 pretty_assertions = "1.2"
 regex = "1"
-reqwest = { version = "0.12", features = ["blocking", "multipart", "rustls-tls"], default-features = false }
+reqwest = { version = "0.12", features = ["blocking", "multipart", "json", "rustls-tls"], default-features = false }
 reqwest_dav = "0.1"
 rstest = "0.24"
 select = "0.6"

@@ -52,7 +52,7 @@ pub fn page(
     html! {
         (DOCTYPE)
         html {
-            (page_header(&title_path, conf.file_upload, conf.web_upload_concurrency, &conf.favicon_route, &conf.css_route))
+            (page_header(&title_path, conf.file_upload, conf.web_upload_concurrency, &conf.api_route, &conf.favicon_route, &conf.css_route))
 
             body #drop-container
             {
@@ -525,11 +525,12 @@ fn entry_row(
     show_exact_bytes: bool,
 ) -> Markup {
     html! {
-        tr {
+        @let entry_type = entry.entry_type.clone();
+        tr .{ "entry-type-" (entry_type) } {
             td {
                 p {
                     @if entry.is_dir() {
-                        @if let Some(symlink_dest) = entry.symlink_info {
+                        @if let Some(ref symlink_dest) = entry.symlink_info {
                             a.symlink href=(parametrized_link(&entry.link, sort_method, sort_order, raw)) {
                                 (entry.name) "/"
                                 span.symlink-symbol { }
@@ -541,7 +542,7 @@ fn entry_row(
                             }
                         }
                     } @else if entry.is_file() {
-                        @if let Some(symlink_dest) = entry.symlink_info {
+                        @if let Some(ref symlink_dest) = entry.symlink_info {
                             a.symlink href=(&entry.link) {
                                 (entry.name)
                                 span.symlink-symbol { }
@@ -624,6 +625,7 @@ fn page_header(
     title: &str,
     file_upload: bool,
     web_file_concurrency: usize,
+    api_route: &str,
     favicon_route: &str,
     css_route: &str,
 ) -> Markup {
@@ -639,8 +641,8 @@ fn page_header(
 
             title { (title) }
 
-            (PreEscaped(r#"
-                <script>
+            script {
+                (PreEscaped(r#"
                     // updates the color scheme by setting the theme data attribute
                     // on body and saving the new theme to local storage
                     function updateColorScheme(name) {
@@ -663,8 +665,69 @@ fn page_header(
                     addEventListener("load", loadColorScheme);
                     // load saved theme when local storage is changed (synchronize between tabs)
                     addEventListener("storage", loadColorScheme);
-                </script>
-            "#))
+                "#))
+            }
+
+            script {
+                (format!("const API_ROUTE = '{api_route}';"))
+                (PreEscaped(r#"
+                    let dirSizeCache = {};
+
+                    // Query the directory size from the miniserve API
+                    function fetchDirSize(dir) {
+                        return fetch(API_ROUTE, {
+                            headers: {
+                                'Accept': 'application/json',
+                                'Content-Type': 'application/json'
+                            },
+                            method: 'POST',
+                            body: JSON.stringify({
+                                DirSize: dir
+                            })
+                        }).then(resp => resp.text())
+                    }
+
+                    // Initialize shimmer effects for .size-cell elements in .entry-type-directory rows
+                    //
+                    // TODO: Perhaps it'd be better to statically do this during html generation in
+                    // entry_row()?
+                    function initializeLoadingIndicators() {
+                        const directoryCells = document.querySelectorAll('tr.entry-type-directory .size-cell');
+
+                        directoryCells.forEach(cell => {
+                            // Add a loading indicator to each cell
+                            const loadingIndicator = document.createElement('div');
+                            loadingIndicator.className = 'loading-indicator';
+                            cell.appendChild(loadingIndicator);
+                        });
+                    }
+
+                    function updateSizeCells() {
+                        const directoryCells = document.querySelectorAll('tr.entry-type-directory .size-cell');
+
+                        directoryCells.forEach(cell => {
+                            // Get the dir from the sibling anchor tag.
+                            const href = cell.parentNode.querySelector('a').href;
+                            const target = new URL(href).pathname;
+
+                            // First check our local cache
+                            if (target in dirSizeCache) {
+                                cell.innerHTML = '';
+                                cell.textContent = dirSizeCache[target];
+                            } else {
+                                fetchDirSize(target).then(dir_size => {
+                                    cell.innerHTML = '';
+                                    cell.textContent = dir_size;
+                                    dirSizeCache[target] = dir_size;
+                                })
+                                .catch(error => console.error("Error fetching dir size:", error));
+                            }
+                        })
+                    }
+                    setInterval(updateSizeCells, 1000);
+                    window.addEventListener('load', initializeLoadingIndicators);
+                "#))
+            }
 
             @if file_upload {
                 script {
@@ -1003,7 +1066,7 @@ pub fn render_error(
     html! {
         (DOCTYPE)
         html {
-            (page_header(&error_code.to_string(), false, conf.web_upload_concurrency, &conf.favicon_route, &conf.css_route))
+            (page_header(&error_code.to_string(), false, conf.web_upload_concurrency, &conf.api_route, &conf.favicon_route, &conf.css_route))
 
             body
             {

@@ -4,6 +4,7 @@ use std::io::ErrorKind;
 use std::path::{Component, Path, PathBuf};
 
 use actix_web::{HttpRequest, HttpResponse, http::header, web};
+use async_walkdir::{Filtering, WalkDir};
 use futures::{StreamExt, TryStreamExt};
 use log::{info, warn};
 use serde::Deserialize;
@@ -36,6 +37,37 @@ impl FileHash {
             Self::SHA512(string) => string,
         }
     }
+}
+
+/// Get the recursively calculated dir size for a given dir
+///
+/// Expects `dir` to be sanitized. This function doesn't do any sanitization itself.
+pub async fn recursive_dir_size(dir: &Path) -> Result<u64, RuntimeError> {
+    let mut entries = WalkDir::new(dir).filter(|entry| async move {
+        if let Ok(metadata) = entry.metadata().await {
+            if metadata.is_file() {
+                return Filtering::Continue;
+            }
+        }
+        Filtering::Ignore
+    });
+
+    let mut total_size = 0;
+    loop {
+        match entries.next().await {
+            Some(Ok(entry)) => {
+                if let Ok(metadata) = entry.metadata().await {
+                    total_size += metadata.len();
+                }
+            }
+            Some(Err(e)) => {
+                warn!("Error trying to read file when calculating dir size: {e}");
+                return Err(RuntimeError::InvalidPathError(e.to_string()));
+            }
+            None => break,
+        }
+    }
+    Ok(total_size)
 }
 
 /// Saves file data from a multipart form field (`field`) to `file_path`. Optionally overwriting
@@ -329,7 +361,7 @@ pub async fn upload_file(
     query: web::Query<FileOpQueryParameters>,
     payload: web::Payload,
 ) -> Result<HttpResponse, RuntimeError> {
-    let conf = req.app_data::<MiniserveConfig>().unwrap();
+    let conf = req.app_data::<web::Data<MiniserveConfig>>().unwrap();
     let upload_path = sanitize_path(&query.path, conf.show_hidden).ok_or_else(|| {
         RuntimeError::InvalidPathError("Invalid value for 'path' parameter".to_string())
     })?;

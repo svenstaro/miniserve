@@ -4,7 +4,7 @@ use std::path::{Component, Path};
 use std::time::SystemTime;
 
 use actix_web::{
-    HttpMessage, HttpRequest, HttpResponse, dev::ServiceResponse, http::Uri, web::Query,
+    HttpMessage, HttpRequest, HttpResponse, dev::ServiceResponse, http::Uri, web, web::Query,
 };
 use bytesize::ByteSize;
 use clap::ValueEnum;
@@ -51,7 +51,7 @@ pub struct ListingQueryParameters {
 }
 
 /// Available sorting methods
-#[derive(Deserialize, Default, Clone, EnumString, Display, Copy, ValueEnum)]
+#[derive(Debug, Deserialize, Default, Clone, EnumString, Display, Copy, ValueEnum)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum SortingMethod {
@@ -67,7 +67,7 @@ pub enum SortingMethod {
 }
 
 /// Available sorting orders
-#[derive(Deserialize, Default, Clone, EnumString, Display, Copy, ValueEnum)]
+#[derive(Debug, Deserialize, Default, Clone, EnumString, Display, Copy, ValueEnum)]
 pub enum SortingOrder {
     /// Ascending order
     #[serde(alias = "asc")]
@@ -81,8 +81,9 @@ pub enum SortingOrder {
     Desc,
 }
 
-#[derive(PartialEq, Eq)]
 /// Possible entry types
+#[derive(PartialEq, Clone, Display, Eq)]
+#[strum(serialize_all = "snake_case")]
 pub enum EntryType {
     /// Entry is a directory
     Directory,
@@ -158,7 +159,10 @@ impl Breadcrumb {
 }
 
 pub async fn file_handler(req: HttpRequest) -> actix_web::Result<actix_files::NamedFile> {
-    let path = &req.app_data::<crate::MiniserveConfig>().unwrap().path;
+    let path = &req
+        .app_data::<web::Data<crate::MiniserveConfig>>()
+        .unwrap()
+        .path;
     actix_files::NamedFile::open(path).map_err(Into::into)
 }
 
@@ -171,7 +175,7 @@ pub fn directory_listing(
     let extensions = req.extensions();
     let current_user: Option<&CurrentUser> = extensions.get::<CurrentUser>();
 
-    let conf = req.app_data::<crate::MiniserveConfig>().unwrap();
+    let conf = req.app_data::<web::Data<crate::MiniserveConfig>>().unwrap();
     if conf.disable_indexing {
         return Ok(ServiceResponse::new(
             req.clone(),
