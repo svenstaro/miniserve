@@ -125,7 +125,7 @@ impl ResponseError for RuntimeError {
 pub fn error_page_middleware<S, B>(
     req: ServiceRequest,
     srv: &S,
-) -> impl Future<Output = actix_web::Result<ServiceResponse>> + 'static
+) -> impl Future<Output = actix_web::Result<ServiceResponse>> + 'static + use<S, B>
 where
     S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = actix_web::Error>,
     B: MessageBody + 'static,

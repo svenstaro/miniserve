@@ -6,13 +6,13 @@ use std::{
 };
 
 use actix_web::http::header::HeaderMap;
-use anyhow::{anyhow, Context, Result};
+use anyhow::{Context, Result, anyhow};
 
 #[cfg(feature = "tls")]
 use rustls_pemfile as pemfile;
 
 use crate::{
-    args::{parse_auth, CliArgs, MediaType},
+    args::{CliArgs, MediaType, parse_auth},
     auth::RequiredAuth,
     file_utils::sanitize_path,
     listing::{SortingMethod, SortingOrder},

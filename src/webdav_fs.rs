@@ -54,7 +54,7 @@ impl DavFileSystem for RestrictedFs {
             Box::pin(self.local.read_dir(path, meta).map_ok(|stream| {
                 let dyn_stream: FsStream<Box<dyn DavDirEntry>> = Box::pin(stream.filter(|entry| {
                     ready(match entry {
-                        Ok(ref e) => !e.name().starts_with(b"."),
+                        Ok(e) => !e.name().starts_with(b"."),
                         _ => false,
                     })
                 }));

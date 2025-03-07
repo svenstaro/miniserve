@@ -3,7 +3,7 @@
 use std::io::ErrorKind;
 use std::path::{Component, Path, PathBuf};
 
-use actix_web::{http::header, web, HttpRequest, HttpResponse};
+use actix_web::{HttpRequest, HttpResponse, http::header, web};
 use futures::{StreamExt, TryStreamExt};
 use log::{info, warn};
 use serde::Deserialize;
@@ -152,7 +152,9 @@ async fn save_file(
         if let Some(expected_hash) = file_checksum.as_ref().map(|f| f.get_hash()) {
             let actual_hash = hex::encode(hasher.finalize());
             if actual_hash != expected_hash {
-                warn!("The expected file hash {expected_hash} did not match the calculated hash of {actual_hash}. This can be caused if a file upload was aborted.");
+                warn!(
+                    "The expected file hash {expected_hash} did not match the calculated hash of {actual_hash}. This can be caused if a file upload was aborted."
+                );
                 let _ = tokio::fs::remove_file(&temp_path).await;
                 return Err(RuntimeError::UploadHashMismatchError);
             }
@@ -235,7 +237,7 @@ async fn handle_multipart(
                 return Err(RuntimeError::ParseError(
                     "Failed to parse 'mkdir' path".to_string(),
                     "".to_string(),
-                ))
+                ));
             }
         };
 
@@ -374,7 +376,7 @@ pub async fn upload_file(
             sha => {
                 return Err(RuntimeError::InvalidHttpRequestError(format!(
                     "Invalid header value found for 'X-File-Hash-Function'. Supported values are SHA256 or SHA512. Found {sha}.",
-                )))
+                )));
             }
         }
     } else {

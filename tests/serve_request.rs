@@ -86,7 +86,7 @@ fn serves_requests_for_special_routes(
     #[case] route: &str,
     #[case] server: TestServer,
 ) -> Result<(), Error> {
-    let body = reqwest::blocking::get(format!("{}{}", server.url(), route))?.error_for_status()?;
+    reqwest::blocking::get(format!("{}{}", server.url(), route))?.error_for_status()?;
 
     Ok(())
 }

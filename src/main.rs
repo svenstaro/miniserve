@@ -5,18 +5,19 @@ use std::time::Duration;
 
 use actix_files::NamedFile;
 use actix_web::{
-    dev::{fn_service, ServiceRequest, ServiceResponse},
+    App, HttpRequest, HttpResponse, Responder,
+    dev::{ServiceRequest, ServiceResponse, fn_service},
     guard,
-    http::{header::ContentType, Method},
-    middleware, web, App, HttpRequest, HttpResponse, Responder,
+    http::{Method, header::ContentType},
+    middleware, web,
 };
 use actix_web_httpauth::middleware::HttpAuthentication;
 use anyhow::Result;
-use clap::{crate_version, CommandFactory, Parser};
+use clap::{CommandFactory, Parser, crate_version};
 use colored::*;
 use dav_server::{
-    actix::{DavRequest, DavResponse},
     DavConfig, DavHandler, DavMethodSet,
+    actix::{DavRequest, DavResponse},
 };
 use fast_qr::QRBuilder;
 use log::{error, warn};
@@ -134,7 +135,9 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), StartupError> {
             return Err(StartupError::NoExplicitPathAndNoTerminal);
         }
 
-        warn!("miniserve has been invoked without an explicit path so it will serve the current directory after a short delay.");
+        warn!(
+            "miniserve has been invoked without an explicit path so it will serve the current directory after a short delay."
+        );
         warn!(
             "Invoke with -h|--help to see options or invoke as `miniserve .` to hide this advice."
         );

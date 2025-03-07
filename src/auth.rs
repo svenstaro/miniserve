@@ -1,4 +1,4 @@
-use actix_web::{dev::ServiceRequest, HttpMessage};
+use actix_web::{HttpMessage, dev::ServiceRequest};
 use actix_web_httpauth::extractors::basic::BasicAuth;
 use sha2::{Digest, Sha256, Sha512};
 
