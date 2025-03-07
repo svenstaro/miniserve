@@ -1,14 +1,15 @@
-use actix_web::{
-    body::{BoxBody, MessageBody},
-    dev::{ResponseHead, Service, ServiceRequest, ServiceResponse},
-    http::{header, StatusCode},
-    HttpRequest, HttpResponse, ResponseError,
-};
-use futures::prelude::*;
 use std::str::FromStr;
+
+use actix_web::{
+    HttpRequest, HttpResponse, ResponseError,
+    body::{BoxBody, MessageBody},
+    dev::{ResponseHead, ServiceRequest, ServiceResponse},
+    http::{StatusCode, header},
+    middleware::Next,
+};
 use thiserror::Error;
 
-use crate::{renderer::render_error, MiniserveConfig};
+use crate::{MiniserveConfig, renderer::render_error};
 
 #[derive(Debug, Error)]
 pub enum StartupError {
@@ -122,37 +123,28 @@ impl ResponseError for RuntimeError {
 }
 
 /// Middleware to convert plain-text error responses to user-friendly web pages
-pub fn error_page_middleware<S, B>(
+pub async fn error_page_middleware(
     req: ServiceRequest,
-    srv: &S,
-) -> impl Future<Output = actix_web::Result<ServiceResponse>> + 'static + use<S, B>
-where
-    S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = actix_web::Error>,
-    B: MessageBody + 'static,
-    S::Future: 'static,
-{
-    let fut = srv.call(req);
+    next: Next<impl MessageBody + 'static>,
+) -> Result<ServiceResponse<impl MessageBody>, actix_web::Error> {
+    let res = next.call(req).await?.map_into_boxed_body();
 
-    async {
-        let res = fut.await?.map_into_boxed_body();
-
-        if (res.status().is_client_error() || res.status().is_server_error())
-            && res.request().path() != "/upload"
-            && res
-                .headers()
-                .get(header::CONTENT_TYPE)
-                .map(AsRef::as_ref)
-                .and_then(|s| std::str::from_utf8(s).ok())
-                .and_then(|s| mime::Mime::from_str(s).ok())
-                .as_ref()
-                .map(mime::Mime::essence_str)
-                == Some(mime::TEXT_PLAIN.as_ref())
-        {
-            let req = res.request().clone();
-            Ok(res.map_body(|head, body| map_error_page(&req, head, body)))
-        } else {
-            Ok(res)
-        }
+    if (res.status().is_client_error() || res.status().is_server_error())
+        && res.request().path() != "/upload"
+        && res
+            .headers()
+            .get(header::CONTENT_TYPE)
+            .map(AsRef::as_ref)
+            .and_then(|s| std::str::from_utf8(s).ok())
+            .and_then(|s| mime::Mime::from_str(s).ok())
+            .as_ref()
+            .map(mime::Mime::essence_str)
+            == Some(mime::TEXT_PLAIN.as_ref())
+    {
+        let req = res.request().clone();
+        Ok(res.map_body(|head, body| map_error_page(&req, head, body)))
+    } else {
+        Ok(res)
     }
 }
 

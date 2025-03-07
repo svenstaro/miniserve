@@ -4,6 +4,7 @@ use std::thread;
 use std::time::Duration;
 
 use actix_files::NamedFile;
+use actix_web::middleware::from_fn;
 use actix_web::{
     App, HttpRequest, HttpResponse, Responder,
     dev::{ServiceRequest, ServiceResponse, fn_service},
@@ -216,7 +217,7 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), StartupError> {
             .wrap(configure_header(&inside_config.clone()))
             .app_data(inside_config.clone())
             .app_data(stylesheet.clone())
-            .wrap_fn(errors::error_page_middleware)
+            .wrap(from_fn(errors::error_page_middleware))
             .wrap(middleware::Logger::default())
             .wrap(middleware::Condition::new(
                 miniserve_config.compress_response,
