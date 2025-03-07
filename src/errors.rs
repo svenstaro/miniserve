@@ -6,6 +6,7 @@ use actix_web::{
     dev::{ResponseHead, ServiceRequest, ServiceResponse},
     http::{StatusCode, header},
     middleware::Next,
+    web,
 };
 use thiserror::Error;
 
@@ -159,7 +160,7 @@ fn map_error_page(req: &HttpRequest, head: &mut ResponseHead, body: BoxBody) -> 
         _ => return BoxBody::new(error_msg),
     };
 
-    let conf = req.app_data::<MiniserveConfig>().unwrap();
+    let conf = req.app_data::<web::Data<MiniserveConfig>>().unwrap();
     let return_address = req
         .headers()
         .get(header::REFERER)

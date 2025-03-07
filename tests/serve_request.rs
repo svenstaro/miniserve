@@ -86,6 +86,9 @@ fn serves_requests_with_non_default_port(server: TestServer) -> Result<(), Error
 #[case("__miniserve_internal/healthcheck", server(&["--random-route"]))]
 #[case("__miniserve_internal/favicon.svg", server(&["--random-route"]))]
 #[case("__miniserve_internal/style.css", server(&["--random-route"]))]
+#[case("__miniserve_internal/healthcheck", server(&["--auth", "doesnt:matter"]))]
+#[case("__miniserve_internal/favicon.svg", server(&["--auth", "doesnt:matter"]))]
+#[case("__miniserve_internal/style.css", server(&["--auth", "doesnt:matter"]))]
 fn serves_requests_for_special_routes(
     #[case] route: &str,
     #[case] server: TestServer,

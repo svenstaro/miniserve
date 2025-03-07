@@ -1,4 +1,4 @@
-use actix_web::{HttpMessage, dev::ServiceRequest};
+use actix_web::{HttpMessage, dev::ServiceRequest, web};
 use actix_web_httpauth::extractors::basic::BasicAuth;
 use sha2::{Digest, Sha256, Sha512};
 
@@ -77,7 +77,10 @@ pub async fn handle_auth(
     req: ServiceRequest,
     cred: BasicAuth,
 ) -> actix_web::Result<ServiceRequest, (actix_web::Error, ServiceRequest)> {
-    let required_auth = &req.app_data::<crate::MiniserveConfig>().unwrap().auth;
+    let required_auth = &req
+        .app_data::<web::Data<crate::MiniserveConfig>>()
+        .unwrap()
+        .auth;
 
     req.extensions_mut().insert(CurrentUser {
         name: cred.user_id().to_string(),
