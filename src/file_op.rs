@@ -1,12 +1,16 @@
 //! Handlers for file upload and removal
 
+#[cfg(target_family = "unix")]
 use std::collections::HashSet;
+
 use std::io::ErrorKind;
 
 #[cfg(target_family = "unix")]
 use std::os::unix::fs::MetadataExt;
 
 use std::path::{Component, Path, PathBuf};
+
+#[cfg(target_family = "unix")]
 use std::sync::Arc;
 
 use actix_web::{HttpRequest, HttpResponse, http::header, web};
@@ -18,6 +22,8 @@ use sha2::digest::DynDigest;
 use sha2::{Digest, Sha256, Sha512};
 use tempfile::NamedTempFile;
 use tokio::io::AsyncWriteExt;
+
+#[cfg(target_family = "unix")]
 use tokio::sync::RwLock;
 
 use crate::{
