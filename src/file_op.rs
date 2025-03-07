@@ -1,7 +1,13 @@
 //! Handlers for file upload and removal
 
+use std::collections::HashSet;
 use std::io::ErrorKind;
+
+#[cfg(target_family = "unix")]
+use std::os::unix::fs::MetadataExt;
+
 use std::path::{Component, Path, PathBuf};
+use std::sync::Arc;
 
 use actix_web::{HttpRequest, HttpResponse, http::header, web};
 use async_walkdir::{Filtering, WalkDir};
@@ -12,6 +18,7 @@ use sha2::digest::DynDigest;
 use sha2::{Digest, Sha256, Sha512};
 use tempfile::NamedTempFile;
 use tokio::io::AsyncWriteExt;
+use tokio::sync::RwLock;
 
 use crate::{
     config::MiniserveConfig, errors::RuntimeError, file_utils::contains_symlink,
@@ -41,15 +48,38 @@ impl FileHash {
 
 /// Get the recursively calculated dir size for a given dir
 ///
+/// Counts hardlinked files only once if the OS supports hardlinks.
+///
 /// Expects `dir` to be sanitized. This function doesn't do any sanitization itself.
 pub async fn recursive_dir_size(dir: &Path) -> Result<u64, RuntimeError> {
-    let mut entries = WalkDir::new(dir).filter(|entry| async move {
-        if let Ok(metadata) = entry.metadata().await {
-            if metadata.is_file() {
-                return Filtering::Continue;
+    #[cfg(target_family = "unix")]
+    let seen_inodes = Arc::new(RwLock::new(HashSet::new()));
+    let mut entries = WalkDir::new(dir).filter(move |entry| {
+        {
+            #[cfg(target_family = "unix")]
+            let seen = seen_inodes.clone();
+            async move {
+                if let Ok(metadata) = entry.metadata().await {
+                    if metadata.is_file() {
+                        // On Unix, we want to filter inodes that we've already seen so we get a more
+                        // accurate count of real size used on disk.
+                        #[cfg(target_family = "unix")]
+                        {
+                            let (device_id, inode) = (metadata.dev(), metadata.ino());
+
+                            // Check if this file has been seen before based on its device ID and inode number
+                            if seen.read().await.contains(&(device_id, inode)) {
+                                return Filtering::Ignore;
+                            } else {
+                                seen.write().await.insert((device_id, inode));
+                            }
+                        }
+                        return Filtering::Continue;
+                    }
+                }
+                Filtering::Ignore
             }
         }
-        Filtering::Ignore
     });
 
     let mut total_size = 0;
