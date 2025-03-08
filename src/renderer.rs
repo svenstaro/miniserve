@@ -682,9 +682,9 @@ fn page_header(
                             },
                             method: 'POST',
                             body: JSON.stringify({
-                                DirSize: dir
+                                DirSize: decodeURI(dir)
                             })
-                        }).then(resp => resp.text())
+                        }).then(resp => resp.ok ? resp.text() : "~")
                     }
 
                     // Initialize shimmer effects for .size-cell elements in .entry-type-directory rows
