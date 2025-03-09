@@ -428,22 +428,35 @@ td.date-cell {
   justify-content: space-between;
 }
 
-.loading-indicator {
-  width: 65%;
-  height: 15px;
-  margin-left: 35%;
-  animation: shimmer 2s infinite;
-  background: linear-gradient(to right, #e6e6e655 5%, #77777755 25%, #e6e6e655 35%);
-  background-size: 500px 100%;
-}
+tr.entry-type-directory .size-cell {
+  &:not([data-size])::after {
+    content: "xxxx KiB"; // hidden placeholder to get text-like width and height
+    color: transparent;
 
-@keyframes shimmer {
-  from {
-    background-position: -500px 0;
+    animation:
+      shimmer 2.5s ease-in-out reverse infinite,
+      bump 1.25s ease-out alternate-reverse infinite;
+
+    background:
+      linear-gradient(to left, #e6e6e633 0%, #e6e6e633 20%, #e7e7e744 40%, #ececec70 45%, #e7e7e755 60%, #e6e6e633 80%, #e6e6e633 100%),
+      linear-gradient(to bottom, #ffffff00 40%, #ffffff18 60%, #ffffff50 80%);
+
+    background-size: 500% 160%;
+    border-radius: 4px;
   }
 
-  to {
-    background-position: 500px 0;
+  &[data-size]::after {
+    content: attr(data-size);
+  }
+
+  @keyframes bump {
+    from { background-position-y: 30%; }
+    to   { background-position-y: 0; }
+  }
+
+  @keyframes shimmer {
+    from { background-position-x: 0; }
+    to   { background-position-x: 100%; }
   }
 }
 

@@ -687,21 +687,6 @@ fn page_header(
                         }).then(resp => resp.ok ? resp.text() : "~")
                     }
 
-                    // Initialize shimmer effects for .size-cell elements in .entry-type-directory rows
-                    //
-                    // TODO: Perhaps it'd be better to statically do this during html generation in
-                    // entry_row()?
-                    function initializeLoadingIndicators() {
-                        const directoryCells = document.querySelectorAll('tr.entry-type-directory .size-cell');
-
-                        directoryCells.forEach(cell => {
-                            // Add a loading indicator to each cell
-                            const loadingIndicator = document.createElement('div');
-                            loadingIndicator.className = 'loading-indicator';
-                            cell.appendChild(loadingIndicator);
-                        });
-                    }
-
                     function updateSizeCells() {
                         const directoryCells = document.querySelectorAll('tr.entry-type-directory .size-cell');
 
@@ -712,12 +697,10 @@ fn page_header(
 
                             // First check our local cache
                             if (target in dirSizeCache) {
-                                cell.innerHTML = '';
-                                cell.textContent = dirSizeCache[target];
+                                cell.dataset.size = dirSizeCache[target];
                             } else {
                                 fetchDirSize(target).then(dir_size => {
-                                    cell.innerHTML = '';
-                                    cell.textContent = dir_size;
+                                    cell.dataset.size = dir_size;
                                     dirSizeCache[target] = dir_size;
                                 })
                                 .catch(error => console.error("Error fetching dir size:", error));
@@ -725,7 +708,6 @@ fn page_header(
                         })
                     }
                     setInterval(updateSizeCells, 1000);
-                    window.addEventListener('load', initializeLoadingIndicators);
                 "#))
             }
 
