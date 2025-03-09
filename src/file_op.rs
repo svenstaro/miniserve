@@ -14,7 +14,7 @@ use std::path::{Component, Path, PathBuf};
 use std::sync::Arc;
 
 use actix_web::{HttpRequest, HttpResponse, http::header, web};
-use async_walkdir::{Filtering, WalkDir};
+use async_walkdir::WalkDir;
 use futures::{StreamExt, TryStreamExt};
 use log::{info, warn};
 use serde::Deserialize;
@@ -60,11 +60,13 @@ impl FileHash {
 pub async fn recursive_dir_size(dir: &Path) -> Result<u64, RuntimeError> {
     #[cfg(target_family = "unix")]
     let seen_inodes = Arc::new(RwLock::new(HashSet::new()));
-    let mut entries = WalkDir::new(dir).filter(move |entry| {
-        {
-            #[cfg(target_family = "unix")]
-            let seen = seen_inodes.clone();
-            async move {
+
+    let mut entries = WalkDir::new(dir);
+
+    let mut total_size = 0;
+    loop {
+        match entries.next().await {
+            Some(Ok(entry)) => {
                 if let Ok(metadata) = entry.metadata().await {
                     if metadata.is_file() {
                         // On Unix, we want to filter inodes that we've already seen so we get a more
@@ -74,31 +76,25 @@ pub async fn recursive_dir_size(dir: &Path) -> Result<u64, RuntimeError> {
                             let (device_id, inode) = (metadata.dev(), metadata.ino());
 
                             // Check if this file has been seen before based on its device ID and inode number
-                            if seen.read().await.contains(&(device_id, inode)) {
-                                return Filtering::Ignore;
+                            if seen_inodes.read().await.contains(&(device_id, inode)) {
+                                continue;
                             } else {
-                                seen.write().await.insert((device_id, inode));
+                                seen_inodes.write().await.insert((device_id, inode));
                             }
                         }
-                        return Filtering::Continue;
+                        total_size += metadata.len();
                     }
-                }
-                Filtering::Ignore
-            }
-        }
-    });
-
-    let mut total_size = 0;
-    loop {
-        match entries.next().await {
-            Some(Ok(entry)) => {
-                if let Ok(metadata) = entry.metadata().await {
-                    total_size += metadata.len();
                 }
             }
             Some(Err(e)) => {
-                warn!("Error trying to read file when calculating dir size: {e}");
-                return Err(RuntimeError::InvalidPathError(e.to_string()));
+                if let Some(io_err) = e.into_io() {
+                    match io_err.kind() {
+                        ErrorKind::PermissionDenied => warn!(
+                            "Error trying to read file when calculating dir size: {io_err}, ignoring"
+                        ),
+                        _ => return Err(RuntimeError::InvalidPathError(io_err.to_string())),
+                    }
+                }
             }
             None => break,
         }
