@@ -69,13 +69,14 @@ pub async fn recursive_dir_size(dir: &Path) -> Result<u64, RuntimeError> {
             Some(Ok(entry)) => {
                 if let Ok(metadata) = entry.metadata().await {
                     if metadata.is_file() {
-                        // On Unix, we want to filter inodes that we've already seen so we get a more
-                        // accurate count of real size used on disk.
+                        // On Unix, we want to filter inodes that we've already seen so we get a
+                        // more accurate count of real size used on disk.
                         #[cfg(target_family = "unix")]
                         {
                             let (device_id, inode) = (metadata.dev(), metadata.ino());
 
-                            // Check if this file has been seen before based on its device ID and inode number
+                            // Check if this file has been seen before based on its device ID and
+                            // inode number
                             if seen_inodes.read().await.contains(&(device_id, inode)) {
                                 continue;
                             } else {

@@ -461,9 +461,11 @@ async fn api(
             let decoded_path = percent_decode_str(&path)
                 .decode_utf8()
                 .map_err(|e| RuntimeError::ParseError(path.clone(), e.to_string()))?;
+
             // Convert the relative dir to an absolute path on the system.
             let sanitized_path = file_utils::sanitize_path(&*decoded_path, true)
                 .expect("Expected a path to directory");
+
             let full_path = config
                 .path
                 .canonicalize()
