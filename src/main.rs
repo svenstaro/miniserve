@@ -23,6 +23,7 @@ use dav_server::{
 };
 use fast_qr::QRBuilder;
 use log::{error, info, warn};
+use percent_encoding::percent_decode_str;
 use serde::Deserialize;
 
 mod archive;
@@ -455,10 +456,14 @@ async fn api(
     config: web::Data<MiniserveConfig>,
 ) -> Result<impl Responder, RuntimeError> {
     match command.into_inner() {
-        ApiCommand::DirSize(dir) => {
-            // Convert the relative dir to an absolute path on the system
-            let sanitized_path =
-                file_utils::sanitize_path(&dir, true).expect("Expected a path to directory");
+        ApiCommand::DirSize(path) => {
+            // The dir argument might be percent-encoded so let's decode it just in case.
+            let decoded_path = percent_decode_str(&path)
+                .decode_utf8()
+                .map_err(|e| RuntimeError::ParseError(path.clone(), e.to_string()))?;
+            // Convert the relative dir to an absolute path on the system.
+            let sanitized_path = file_utils::sanitize_path(&*decoded_path, true)
+                .expect("Expected a path to directory");
             let full_path = config
                 .path
                 .canonicalize()

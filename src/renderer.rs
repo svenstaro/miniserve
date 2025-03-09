@@ -684,7 +684,7 @@ fn page_header(
                             body: JSON.stringify({
                                 DirSize: dir
                             })
-                        }).then(resp => resp.text())
+                        }).then(resp => resp.ok ? resp.text() : "~")
                     }
 
                     // Initialize shimmer effects for .size-cell elements in .entry-type-directory rows

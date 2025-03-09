@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use percent_encoding::{NON_ALPHANUMERIC, utf8_percent_encode};
 use reqwest::{StatusCode, blocking::Client};
 use rstest::rstest;
 
@@ -7,10 +8,17 @@ mod fixtures;
 
 use crate::fixtures::{DIRECTORIES, Error, TestServer, server};
 
+/// Test that we can get dir size for plain paths as well as percent-encoded paths
 #[rstest]
-fn api_dir_size(server: TestServer) -> Result<(), Error> {
+#[case(DIRECTORIES[0].to_string())]
+#[case(DIRECTORIES[1].to_string())]
+#[case(DIRECTORIES[2].to_string())]
+#[case(utf8_percent_encode(DIRECTORIES[0], NON_ALPHANUMERIC).to_string())]
+#[case(utf8_percent_encode(DIRECTORIES[1], NON_ALPHANUMERIC).to_string())]
+#[case(utf8_percent_encode(DIRECTORIES[2], NON_ALPHANUMERIC).to_string())]
+fn api_dir_size(#[case] dir: String, server: TestServer) -> Result<(), Error> {
     let mut command = HashMap::new();
-    command.insert("DirSize", DIRECTORIES[0]);
+    command.insert("DirSize", dir);
 
     let resp = Client::new()
         .post(server.url().join(&format!("__miniserve_internal/api"))?)

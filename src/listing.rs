@@ -23,7 +23,7 @@ use self::percent_encode_sets::COMPONENT;
 
 /// "percent-encode sets" as defined by WHATWG specs:
 /// https://url.spec.whatwg.org/#percent-encoded-bytes
-mod percent_encode_sets {
+pub mod percent_encode_sets {
     use percent_encoding::{AsciiSet, CONTROLS};
     pub const QUERY: &AsciiSet = &CONTROLS.add(b' ').add(b'"').add(b'#').add(b'<').add(b'>');
     pub const PATH: &AsciiSet = &QUERY.add(b'?').add(b'`').add(b'{').add(b'}');

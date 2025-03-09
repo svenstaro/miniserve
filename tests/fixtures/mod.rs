@@ -34,10 +34,10 @@ pub static FILES: &[&str] = &[
 pub static HIDDEN_FILES: &[&str] = &[".hidden_file1", ".hidden_file2"];
 
 /// Directory names for testing purpose
-pub static DIRECTORIES: &[&str] = &["dira/", "dirb/", "dirc/"];
+pub static DIRECTORIES: &[&str] = &["dira/", "dirb/", "dir space/"];
 
 /// Hidden directories for testing purpose
-pub static HIDDEN_DIRECTORIES: &[&str] = &[".hidden_dir1/", ".hidden_dir2/"];
+pub static HIDDEN_DIRECTORIES: &[&str] = &[".hidden_dir1/", ".hidden space dir/"];
 
 /// Name of a deeply nested file
 pub static DEEPLY_NESTED_FILE: &str = "very/deeply/nested/test.rs";
