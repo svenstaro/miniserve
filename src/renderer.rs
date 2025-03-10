@@ -270,7 +270,10 @@ fn breadcrumbs_to_path_string(breadcrumbs: &[Breadcrumb]) -> String {
 fn version_footer() -> Markup {
     html! {
        div.version {
-           (format!("{}/{}", crate_name!(), crate_version!()))
+            a href="https://github.com/svenstaro/miniserve" {
+               (crate_name!())
+           }
+           (format!("/{}", crate_version!()))
        }
     }
 }

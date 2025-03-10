@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Add `--size-display` to allow for toggling file size display between `human` and `exact` [#1261](https://github.com/svenstaro/miniserve/pull/1261) (thanks @Lzzzzzt)
 - Add well-known healthcheck route at `/__miniserve_internal/healthcheck` (of `/<prefix>/__miniserve_internal/healthcheck` when using `--route-prefix`)
 - Add asynchronous recursive directory size counting [#1482](https://github.com/svenstaro/miniserve/pull/1482)
+- Add link to miniserve GitHub page to footer
 
 ## [0.29.0] - 2025-02-06
 - Make URL encoding fully WHATWG-compliant [#1454](https://github.com/svenstaro/miniserve/pull/1454) (thanks @cyqsimon)
