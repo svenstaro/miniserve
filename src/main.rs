@@ -6,25 +6,20 @@ use std::time::Duration;
 use actix_files::NamedFile;
 use actix_web::middleware::from_fn;
 use actix_web::{
-    App, HttpRequest, HttpResponse, Responder,
+    App,
     dev::{ServiceRequest, ServiceResponse, fn_service},
     guard,
-    http::{Method, header::ContentType},
+    http::Method,
     middleware, web,
 };
 use actix_web_httpauth::middleware::HttpAuthentication;
 use anyhow::Result;
-use bytesize::ByteSize;
 use clap::{CommandFactory, Parser, crate_version};
 use colored::*;
-use dav_server::{
-    DavConfig, DavHandler, DavMethodSet,
-    actix::{DavRequest, DavResponse},
-};
+use dav_server::{DavHandler, DavMethodSet};
 use fast_qr::QRBuilder;
-use log::{error, info, warn};
-use percent_encoding::percent_decode_str;
-use serde::Deserialize;
+use log::{error, warn};
+use tokio::sync::Mutex;
 
 mod archive;
 mod args;
@@ -34,14 +29,17 @@ mod consts;
 mod errors;
 mod file_op;
 mod file_utils;
+mod handlers;
 mod listing;
 mod pipe;
 mod renderer;
 mod webdav_fs;
 
 use crate::config::MiniserveConfig;
-use crate::errors::{RuntimeError, StartupError};
-use crate::file_op::recursive_dir_size;
+use crate::errors::StartupError;
+use crate::handlers::{
+    DirSizeJoinSet, api_command, api_sse, css, dav_handler, error_404, favicon, healthcheck,
+};
 use crate::webdav_fs::RestrictedFs;
 
 static STYLESHEET: &str = grass::include!("data/style.scss");
@@ -216,10 +214,13 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), StartupError> {
         .join("\n"),
     );
 
+    let dir_size_join_set = web::Data::new(Mutex::new(DirSizeJoinSet::new()));
+
     let srv = actix_web::HttpServer::new(move || {
         App::new()
             .wrap(configure_header(&inside_config.clone()))
             .app_data(web::Data::new(inside_config.clone()))
+            .app_data(dir_size_join_set.clone())
             .app_data(stylesheet.clone())
             .wrap(from_fn(errors::error_page_middleware))
             .wrap(middleware::Logger::default())
@@ -228,7 +229,8 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), StartupError> {
                 middleware::Compress::default(),
             ))
             .route(&inside_config.healthcheck_route, web::get().to(healthcheck))
-            .route(&inside_config.api_route, web::post().to(api))
+            .route(&inside_config.api_route, web::post().to(api_command))
+            .route(&inside_config.api_route, web::get().to(api_sse))
             .route(&inside_config.favicon_route, web::get().to(favicon))
             .route(&inside_config.css_route, web::get().to(css))
             .service(
@@ -424,75 +426,4 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
                 .to(dav_handler),
         );
     }
-}
-
-async fn dav_handler(req: DavRequest, davhandler: web::Data<DavHandler>) -> DavResponse {
-    if let Some(prefix) = req.prefix() {
-        let config = DavConfig::new().strip_prefix(prefix);
-        davhandler.handle_with(config, req.request).await.into()
-    } else {
-        davhandler.handle(req.request).await.into()
-    }
-}
-
-async fn error_404(req: HttpRequest) -> Result<HttpResponse, RuntimeError> {
-    Err(RuntimeError::RouteNotFoundError(req.path().to_string()))
-}
-
-async fn healthcheck() -> impl Responder {
-    HttpResponse::Ok().body("OK")
-}
-
-#[derive(Deserialize, Debug)]
-enum ApiCommand {
-    /// Request the size of a particular directory
-    DirSize(String),
-}
-
-/// This "API" is pretty shitty but frankly miniserve doesn't really need a very fancy API. Or at
-/// least I hope so.
-async fn api(
-    command: web::Json<ApiCommand>,
-    config: web::Data<MiniserveConfig>,
-) -> Result<impl Responder, RuntimeError> {
-    match command.into_inner() {
-        ApiCommand::DirSize(path) => {
-            // The dir argument might be percent-encoded so let's decode it just in case.
-            let decoded_path = percent_decode_str(&path)
-                .decode_utf8()
-                .map_err(|e| RuntimeError::ParseError(path.clone(), e.to_string()))?;
-
-            // Convert the relative dir to an absolute path on the system.
-            let sanitized_path = file_utils::sanitize_path(&*decoded_path, true)
-                .expect("Expected a path to directory");
-
-            let full_path = config
-                .path
-                .canonicalize()
-                .expect("Couldn't canonicalize path")
-                .join(sanitized_path);
-            info!("Requested directory listing for {full_path:?}");
-
-            let dir_size = recursive_dir_size(&full_path).await?;
-            if config.show_exact_bytes {
-                Ok(format!("{dir_size} B"))
-            } else {
-                let dir_size = ByteSize::b(dir_size);
-                Ok(dir_size.to_string())
-            }
-        }
-    }
-}
-
-async fn favicon() -> impl Responder {
-    let logo = include_str!("../data/logo.svg");
-    HttpResponse::Ok()
-        .insert_header(ContentType(mime::IMAGE_SVG))
-        .body(logo)
-}
-
-async fn css(stylesheet: web::Data<String>) -> impl Responder {
-    HttpResponse::Ok()
-        .insert_header(ContentType(mime::TEXT_CSS))
-        .body(stylesheet.to_string())
 }
