@@ -674,10 +674,8 @@ fn page_header(
             script {
                 (format!("const API_ROUTE = '{api_route}';"))
                 (PreEscaped(r#"
-                    let dirSizeCache = {};
-
                     // Query the directory size from the miniserve API
-                    function fetchDirSize(dir) {
+                    function requestDirSizeCalculation(dirs) {
                         return fetch(API_ROUTE, {
                             headers: {
                                 'Accept': 'application/json',
@@ -685,32 +683,50 @@ fn page_header(
                             },
                             method: 'POST',
                             body: JSON.stringify({
-                                DirSize: dir
+                                CalculateDirSizes: dirs
                             })
                         }).then(resp => resp.ok ? resp.text() : "~")
                     }
 
-                    function updateSizeCells() {
+                    function updateSizeCells(event_data) {
+                        console.log("Received dir-size object", event_data);
                         const directoryCells = document.querySelectorAll('tr.entry-type-directory .size-cell');
+                        directoryCells.forEach(cell => {
+                            // Get the dir from the sibling anchor tag.
+                            const href = cell.parentNode.querySelector('a').href;
+                            const target = new URL(href).pathname;
+
+                            if (target === event_data.web_path) {
+                                cell.dataset.size = event_data.size
+                            }
+                        });
+                    }
+
+                    function requestDirSizes() {
+                        // Subscribe to the SSE stream
+                        let dir_sizes_events = new EventSource(API_ROUTE)
+
+                        dir_sizes_events.addEventListener('dir-size', (event) => {
+                            updateSizeCells(JSON.parse(event.data));
+                        })
+
+                        const directoryCells = document.querySelectorAll('tr.entry-type-directory .size-cell');
+
+                        // The list of dirs we'll request to have calculated.
+                        let dirs = [];
 
                         directoryCells.forEach(cell => {
                             // Get the dir from the sibling anchor tag.
                             const href = cell.parentNode.querySelector('a').href;
                             const target = new URL(href).pathname;
 
-                            // First check our local cache
-                            if (target in dirSizeCache) {
-                                cell.dataset.size = dirSizeCache[target];
-                            } else {
-                                fetchDirSize(target).then(dir_size => {
-                                    cell.dataset.size = dir_size;
-                                    dirSizeCache[target] = dir_size;
-                                })
-                                .catch(error => console.error("Error fetching dir size:", error));
-                            }
-                        })
+                            dirs.push(target);
+                        });
+
+                        requestDirSizeCalculation(dirs);
                     }
-                    setInterval(updateSizeCells, 1000);
+
+                    window.addEventListener('load', requestDirSizes);
                 "#))
             }
 
