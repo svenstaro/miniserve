@@ -60,6 +60,7 @@ tar = "0.4"
 tempfile = "3.17.0"
 thiserror = "2"
 tokio = { version = "1.42.0", features = ["fs", "macros"] }
+tokio-stream = "0.1.17"
 zip = { version = "2", default-features = false }
 
 [features]

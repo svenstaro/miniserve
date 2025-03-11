@@ -19,7 +19,6 @@ use colored::*;
 use dav_server::{DavHandler, DavMethodSet};
 use fast_qr::QRBuilder;
 use log::{error, warn};
-use tokio::sync::Mutex;
 
 mod archive;
 mod args;
@@ -38,7 +37,8 @@ mod webdav_fs;
 use crate::config::MiniserveConfig;
 use crate::errors::StartupError;
 use crate::handlers::{
-    DirSizeJoinSet, api_command, api_sse, css, dav_handler, error_404, favicon, healthcheck,
+    DirSizeTasks, SseManager, api_command, api_sse, css, dav_handler, error_404, favicon,
+    healthcheck,
 };
 use crate::webdav_fs::RestrictedFs;
 
@@ -214,13 +214,18 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), StartupError> {
         .join("\n"),
     );
 
-    let dir_size_join_set = web::Data::new(Mutex::new(DirSizeJoinSet::new()));
+    let sse_manager = web::Data::new(SseManager::new());
+    let dir_size_tasks = web::Data::new(DirSizeTasks::new(
+        miniserve_config.show_exact_bytes,
+        sse_manager.clone(),
+    ));
 
     let srv = actix_web::HttpServer::new(move || {
         App::new()
             .wrap(configure_header(&inside_config.clone()))
             .app_data(web::Data::new(inside_config.clone()))
-            .app_data(dir_size_join_set.clone())
+            .app_data(dir_size_tasks.clone())
+            .app_data(sse_manager.clone())
             .app_data(stylesheet.clone())
             .wrap(from_fn(errors::error_page_middleware))
             .wrap(middleware::Logger::default())
