@@ -16,7 +16,7 @@ use std::sync::Arc;
 use actix_web::{HttpRequest, HttpResponse, http::header, web};
 use async_walkdir::WalkDir;
 use futures::{StreamExt, TryStreamExt};
-use log::{info, warn};
+use log::{error, info, warn};
 use serde::Deserialize;
 use sha2::digest::DynDigest;
 use sha2::{Digest, Sha256, Sha512};
@@ -227,12 +227,31 @@ async fn save_file(
     }
 
     info!("File upload successful to {temp_path:?}. Moving to {file_path:?}",);
-    if let Err(e) = tokio::fs::rename(&temp_path, &file_path).await {
-        let _ = tokio::fs::remove_file(&temp_path).await;
-        return Err(RuntimeError::IoError(
-            format!("Failed to move temporary file {temp_path:?} to {file_path:?}",),
-            e,
-        ));
+    if let Err(err) = tokio::fs::rename(&temp_path, &file_path).await {
+        match err.kind() {
+            ErrorKind::CrossesDevices => {
+                warn!(
+                    "File writen to {temp_path:?} must be copied to {file_path:?} because it's on a different filesystem"
+                );
+                let copy_result = tokio::fs::copy(&temp_path, &file_path).await;
+                if let Err(e) = tokio::fs::remove_file(&temp_path).await {
+                    error!("Failed to clean up temp file at {temp_path:?} with error {e:?}");
+                }
+                copy_result.map_err(|e| {
+                    RuntimeError::IoError(
+                        format!("Failed to copy file from {temp_path:?} to {file_path:?}"),
+                        e,
+                    )
+                })?;
+            }
+            _ => {
+                let _ = tokio::fs::remove_file(&temp_path).await;
+                return Err(RuntimeError::IoError(
+                    format!("Failed to move temporary file {temp_path:?} to {file_path:?}",),
+                    err,
+                ));
+            }
+        }
     }
 
     Ok(written_len)
