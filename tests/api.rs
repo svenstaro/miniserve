@@ -18,7 +18,7 @@ use crate::fixtures::{DIRECTORIES, Error, TestServer, server};
 #[case(utf8_percent_encode(DIRECTORIES[2], NON_ALPHANUMERIC).to_string())]
 fn api_dir_size(#[case] dir: String, server: TestServer) -> Result<(), Error> {
     let mut command = HashMap::new();
-    command.insert("DirSize", dir);
+    command.insert("CalculateDirSizes", vec![dir]);
 
     let resp = Client::new()
         .post(server.url().join(&format!("__miniserve_internal/api"))?)
