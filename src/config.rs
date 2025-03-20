@@ -104,6 +104,9 @@ pub struct MiniserveConfig {
     /// Enable QR code display
     pub show_qrcode: bool,
 
+    /// Enable recursive directory size calculation
+    pub directory_size: bool,
+
     /// Enable creating directories
     pub mkdir_enabled: bool,
 
@@ -320,6 +323,7 @@ impl MiniserveConfig {
             pretty_urls: args.pretty_urls,
             overwrite_files: args.overwrite_files,
             show_qrcode: args.qrcode,
+            directory_size: args.directory_size,
             mkdir_enabled: args.mkdir_enabled,
             file_upload: args.allowed_upload_dir.is_some(),
             web_upload_concurrency: args.web_upload_concurrency,

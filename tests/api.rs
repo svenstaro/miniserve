@@ -16,7 +16,10 @@ use crate::fixtures::{DIRECTORIES, Error, TestServer, server};
 #[case(utf8_percent_encode(DIRECTORIES[0], NON_ALPHANUMERIC).to_string())]
 #[case(utf8_percent_encode(DIRECTORIES[1], NON_ALPHANUMERIC).to_string())]
 #[case(utf8_percent_encode(DIRECTORIES[2], NON_ALPHANUMERIC).to_string())]
-fn api_dir_size(#[case] dir: String, server: TestServer) -> Result<(), Error> {
+fn api_dir_size(
+    #[case] dir: String,
+    #[with(&["--directory-size"])] server: TestServer,
+) -> Result<(), Error> {
     let mut command = HashMap::new();
     command.insert("DirSize", dir);
 
@@ -44,7 +47,7 @@ fn api_dir_size(#[case] dir: String, server: TestServer) -> Result<(), Error> {
 #[case(r"C:\foo")]
 #[case(r"\foo")]
 fn api_dir_size_prevent_path_transversal_attacks(
-    server: TestServer,
+    #[with(&["--directory-size"])] server: TestServer,
     #[case] path: &str,
 ) -> Result<(), Error> {
     let mut command = HashMap::new();

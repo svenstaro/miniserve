@@ -217,6 +217,12 @@ pub struct CliArgs {
     )]
     pub web_upload_concurrency: usize,
 
+    /// Enable recursive directory size calculation
+    ///
+    /// This is disabled by default because it is a potentially fairly IO intensive operation.
+    #[arg(long = "directory-size", env = "MINISERVE_DIRECTORY_SIZE")]
+    pub directory_size: bool,
+
     /// Enable creating directories
     #[arg(
         short = 'U',

@@ -457,28 +457,32 @@ async fn api(
 ) -> Result<impl Responder, RuntimeError> {
     match command.into_inner() {
         ApiCommand::DirSize(path) => {
-            // The dir argument might be percent-encoded so let's decode it just in case.
-            let decoded_path = percent_decode_str(&path)
-                .decode_utf8()
-                .map_err(|e| RuntimeError::ParseError(path.clone(), e.to_string()))?;
+            if config.directory_size {
+                // The dir argument might be percent-encoded so let's decode it just in case.
+                let decoded_path = percent_decode_str(&path)
+                    .decode_utf8()
+                    .map_err(|e| RuntimeError::ParseError(path.clone(), e.to_string()))?;
 
-            // Convert the relative dir to an absolute path on the system.
-            let sanitized_path = file_utils::sanitize_path(&*decoded_path, true)
-                .expect("Expected a path to directory");
+                // Convert the relative dir to an absolute path on the system.
+                let sanitized_path = file_utils::sanitize_path(&*decoded_path, true)
+                    .expect("Expected a path to directory");
 
-            let full_path = config
-                .path
-                .canonicalize()
-                .expect("Couldn't canonicalize path")
-                .join(sanitized_path);
-            info!("Requested directory listing for {full_path:?}");
+                let full_path = config
+                    .path
+                    .canonicalize()
+                    .expect("Couldn't canonicalize path")
+                    .join(sanitized_path);
+                info!("Requested directory listing for {full_path:?}");
 
-            let dir_size = recursive_dir_size(&full_path).await?;
-            if config.show_exact_bytes {
-                Ok(format!("{dir_size} B"))
+                let dir_size = recursive_dir_size(&full_path).await?;
+                if config.show_exact_bytes {
+                    Ok(format!("{dir_size} B"))
+                } else {
+                    let dir_size = ByteSize::b(dir_size);
+                    Ok(dir_size.to_string())
+                }
             } else {
-                let dir_size = ByteSize::b(dir_size);
-                Ok(dir_size.to_string())
+                Ok("-".to_string())
             }
         }
     }
