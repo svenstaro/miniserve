@@ -231,6 +231,11 @@ Options:
 
           [env: MINISERVE_RANDOM_ROUTE=]
 
+      --file-base-url <FILE_BASE_URL>
+          Optional base URL (e.g., 'http://external.example.com:8081') to prepend to file links
+
+          [env: MINISERVE_FILE_BASE_URL=]
+
   -P, --no-symlinks
           Hide symlinks in listing and prevent them from being followed
 
