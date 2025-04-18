@@ -376,6 +376,10 @@ pub struct CliArgs {
     /// Show served file size in exact bytes
     #[arg(long, default_value_t = SizeDisplay::Human, env = "MINISERVE_SIZE_DISPLAY")]
     pub size_display: SizeDisplay,
+
+    /// Optional base URL (e.g., 'http://external.example.com:8081') to prepend to file links
+    #[arg(long = "file-base-url", env = "MINISERVE_FILE_BASE_URL")]
+    pub file_base_url: Option<String>,
 }
 
 /// Checks whether an interface is valid, i.e. it can be parsed into an IP address
