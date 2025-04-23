@@ -290,40 +290,40 @@ pub fn directory_listing(
                         symlink_dest,
                     ));
                 } else if metadata.is_file() {
-                let file_link = match &conf.file_base_url {
-                    Some(base_url) => {
-                        // Construct the full relative path including subdirectories
-                        // encoded_dir holds the current directory path relative to the prefix (e.g., /subdir1/subdir2)
-                        let current_relative_dir = encoded_dir.trim_matches('/'); // Remove leading/trailing slashes if any
-                        
-                        // Combine the relative directory path and the filename
-                        let full_relative_path = if current_relative_dir.is_empty() {
-                            // If in the root directory, just use the filename
-                            utf8_percent_encode(&file_name, COMPONENT).to_string()
-                        } else {
-                            // Otherwise, join directory and filename
+                    let file_link = match &conf.file_external_url {
+                        Some(external_url) => {
+                            // Construct the full relative path including subdirectories
+                            // encoded_dir holds the current directory path relative to the prefix (e.g., /subdir1/subdir2)
+                            let current_relative_dir = encoded_dir.trim_matches('/'); // Remove leading/trailing slashes if any
+
+                            // Combine the relative directory path and the filename
+                            let full_relative_path = if current_relative_dir.is_empty() {
+                                // If in the root directory, just use the filename
+                                utf8_percent_encode(&file_name, COMPONENT).to_string()
+                            } else {
+                                // Otherwise, join directory and filename
+                                format!(
+                                    "{}/{}",
+                                    current_relative_dir,
+                                    utf8_percent_encode(&file_name, COMPONENT)
+                                )
+                            };
+
+                            // Join the external external URL with the full relative path
                             format!(
                                 "{}/{}",
-                                current_relative_dir,
-                                utf8_percent_encode(&file_name, COMPONENT)
+                                external_url.trim_end_matches('/'), // Base URL without trailing slash
+                                full_relative_path // Relative path (dir + file) - should not have leading slash here
                             )
-                        };
-                        
-                        // Join the external base URL with the full relative path
-                        format!(
-                            "{}/{}",
-                            base_url.trim_end_matches('/'), // Base URL without trailing slash
-                            full_relative_path // Relative path (dir + file) - should not have leading slash here
-                        )
-                    }
-                    None => {
-                        // Fallback to original relative URL generation
-                        base.join(utf8_percent_encode(&file_name, COMPONENT).to_string())
-                            .to_string_lossy()
-                            .to_string()
-                    }
-                };
-		    entries.push(Entry::new(
+                        }
+                        None => {
+                            // Fallback to original relative URL generation
+                            base.join(utf8_percent_encode(&file_name, COMPONENT).to_string())
+                                .to_string_lossy()
+                                .to_string()
+                        }
+                    };
+                    entries.push(Entry::new(
                         file_name.clone(),
                         EntryType::File,
                         file_link,
