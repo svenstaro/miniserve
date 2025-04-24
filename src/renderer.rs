@@ -1111,7 +1111,7 @@ mod tests {
 
     #[test]
     fn test_wget_footer_trivial() {
-        let to_be_tested: String = wget_footer(&uri("https://github.com/"), None, None).into();
+        let to_be_tested: String = wget_footer(&uri("https://github.com/"), None, None, None).into();
         let expected = to_html("-P 'github.com' 'https://github.com");
         assert_eq!(to_be_tested, expected);
     }
@@ -1121,6 +1121,7 @@ mod tests {
         let to_be_tested: String = wget_footer(
             &uri("https://github.com/svenstaro/miniserve/"),
             Some("Miniserve"),
+            None,
             None,
         )
         .into();
@@ -1134,6 +1135,7 @@ mod tests {
             &uri("http://1und1.de/"),
             Some("1&1 - Willkommen!!!"),
             Some("Marcell D'Avis"),
+            None,
         )
         .into();
         let expected = to_html(
@@ -1148,6 +1150,7 @@ mod tests {
             &uri("http://127.0.0.1:1234/geheime_dokumente.php/"),
             Some("Streng Geheim!!!"),
             Some("uøý`¶'7ÅÛé"),
+            None,
         )
         .into();
         let expected = to_html(
@@ -1158,7 +1161,7 @@ mod tests {
 
     #[test]
     fn test_wget_footer_ip() {
-        let to_be_tested: String = wget_footer(&uri("http://127.0.0.1:420/"), None, None).into();
+        let to_be_tested: String = wget_footer(&uri("http://127.0.0.1:420/"), None, None, None).into();
         let expected = to_html("-P '127.0.0.1:420' 'http://127.0.0.1:420");
         assert_eq!(to_be_tested, expected);
     }
