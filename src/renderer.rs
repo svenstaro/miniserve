@@ -167,7 +167,8 @@ pub fn page(
                     }
                     div.footer {
                         @if conf.show_wget_footer {
-                            (wget_footer(abs_uri, conf.title.as_deref(), current_user.map(|x| &*x.name)))
+                            (wget_footer(abs_uri, conf.title.as_deref(), current_user.map(|x| &*x.name),
+                                conf.file_external_url.as_deref()))
                         }
                         @if !conf.hide_version_footer {
                             (version_footer())
@@ -278,7 +279,12 @@ fn version_footer() -> Markup {
     }
 }
 
-fn wget_footer(abs_path: &Uri, root_dir_name: Option<&str>, current_user: Option<&str>) -> Markup {
+fn wget_footer(
+    abs_path: &Uri,
+    root_dir_name: Option<&str>,
+    current_user: Option<&str>,
+    file_external_url: Option<&str>,
+) -> Markup {
     fn escape_apostrophes(x: &str) -> String {
         x.replace('\'', "'\"'\"'")
     }
@@ -303,9 +309,17 @@ fn wget_footer(abs_path: &Uri, root_dir_name: Option<&str>, current_user: Option
         None => String::new(),
     };
 
+    // Add the -H option to span hosts when serving files from another instance
+    let span_hosts_option = if file_external_url.is_some() {
+        // <-- Use the new parameter
+        " -H"
+    } else {
+        ""
+    };
+
     let encoded_abs_path = abs_path.to_string().replace('\'', "%27");
     let command = format!(
-        "wget -rcnHp -R 'index.html*'{cut_dirs}{user_params} '{encoded_abs_path}?raw=true'"
+        "wget -rcnHp{span_hosts_option} -R 'index.html*'{cut_dirs}{user_params} '{encoded_abs_path}?raw=true'"
     );
     let click_to_copy = format!("navigator.clipboard.writeText(\"{command}\")");
 
