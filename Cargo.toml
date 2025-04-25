@@ -32,9 +32,9 @@ clap = { version = "4", features = ["derive", "cargo", "wrap_help", "deprecated"
 clap_complete = "4"
 clap_mangen = "0.2"
 colored = "3"
-comrak = { version = "0.37", default-features = false }
+comrak = { version = "0.38", default-features = false }
 dav-server = { version = "0.7", features = ["actix-compat"] }
-fast_qr = { version = "0.12", features = ["svg"] }
+fast_qr = { version = "0.13", features = ["svg"] }
 futures = "0.3"
 grass = { version = "0.13", features = ["macro"], default-features = false }
 hex = "0.4"
@@ -76,7 +76,7 @@ predicates = "3"
 pretty_assertions = "1.2"
 regex = "1"
 reqwest = { version = "0.12", features = ["blocking", "multipart", "json", "rustls-tls"], default-features = false }
-reqwest_dav = "0.1"
+reqwest_dav = "0.2"
 rstest = "0.25"
 select = "0.6"
 url = "2"
