@@ -24,7 +24,7 @@ fn api_dir_size(
     command.insert("DirSize", dir);
 
     let resp = Client::new()
-        .post(server.url().join(&format!("__miniserve_internal/api"))?)
+        .post(server.url().join("__miniserve_internal/api")?)
         .json(&command)
         .send()?
         .error_for_status()?;
@@ -54,7 +54,7 @@ fn api_dir_size_prevent_path_transversal_attacks(
     command.insert("DirSize", path);
 
     let resp = Client::new()
-        .post(server.url().join(&format!("__miniserve_internal/api"))?)
+        .post(server.url().join("__miniserve_internal/api")?)
         .json(&command)
         .send()?;
 
