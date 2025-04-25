@@ -311,15 +311,14 @@ fn wget_footer(
 
     // Add the -H option to span hosts when serving files from another instance
     let span_hosts_option = if file_external_url.is_some() {
-        // <-- Use the new parameter
         " -H"
     } else {
-        ""
+        " -nH"
     };
 
     let encoded_abs_path = abs_path.to_string().replace('\'', "%27");
     let command = format!(
-        "wget -rcnHp{span_hosts_option} -R 'index.html*'{cut_dirs}{user_params} '{encoded_abs_path}?raw=true'"
+        "wget -rcnp -R 'index.html*'{span_hosts_option}{cut_dirs}{user_params} '{encoded_abs_path}?raw=true'"
     );
     let click_to_copy = format!("navigator.clipboard.writeText(\"{command}\")");
 
@@ -1101,7 +1100,7 @@ mod tests {
 
     fn to_html(wget_part: &str) -> String {
         format!(
-            r#"<div class="downloadDirectory"><p>Download folder:</p><a class="cmd" title="Click to copy!" style="cursor: pointer;" onclick="navigator.clipboard.writeText(&quot;wget -rcnHp -R 'index.html*' {wget_part}/?raw=true'&quot;)">wget -rcnHp -R 'index.html*' {wget_part}/?raw=true'</a></div>"#
+            r#"<div class="downloadDirectory"><p>Download folder:</p><a class="cmd" title="Click to copy!" style="cursor: pointer;" onclick="navigator.clipboard.writeText(&quot;wget -rcnp -R 'index.html*' {wget_part}/?raw=true'&quot;)">wget -rcnp -R 'index.html*' {wget_part}/?raw=true'</a></div>"#
         )
     }
 
@@ -1111,8 +1110,9 @@ mod tests {
 
     #[test]
     fn test_wget_footer_trivial() {
-        let to_be_tested: String = wget_footer(&uri("https://github.com/"), None, None, None).into();
-        let expected = to_html("-P 'github.com' 'https://github.com");
+        let to_be_tested: String =
+            wget_footer(&uri("https://github.com/"), None, None, None).into();
+        let expected = to_html("-nH -P 'github.com' 'https://github.com");
         assert_eq!(to_be_tested, expected);
     }
 
@@ -1125,7 +1125,7 @@ mod tests {
             None,
         )
         .into();
-        let expected = to_html("--cut-dirs=1 'https://github.com/svenstaro/miniserve");
+        let expected = to_html("-nH --cut-dirs=1 'https://github.com/svenstaro/miniserve");
         assert_eq!(to_be_tested, expected);
     }
 
@@ -1139,7 +1139,7 @@ mod tests {
         )
         .into();
         let expected = to_html(
-            "-P '1&amp;1 - Willkommen!!!' --ask-password --user 'Marcell D'&quot;'&quot;'Avis' 'http://1und1.de",
+            "-nH -P '1&amp;1 - Willkommen!!!' --ask-password --user 'Marcell D'&quot;'&quot;'Avis' 'http://1und1.de",
         );
         assert_eq!(to_be_tested, expected);
     }
@@ -1154,15 +1154,25 @@ mod tests {
         )
         .into();
         let expected = to_html(
-            "--ask-password --user 'uøý`¶'&quot;'&quot;'7ÅÛé' 'http://127.0.0.1:1234/geheime_dokumente.php",
+            "-nH --ask-password --user 'uøý`¶'&quot;'&quot;'7ÅÛé' 'http://127.0.0.1:1234/geheime_dokumente.php",
         );
         assert_eq!(to_be_tested, expected);
     }
 
     #[test]
     fn test_wget_footer_ip() {
-        let to_be_tested: String = wget_footer(&uri("http://127.0.0.1:420/"), None, None, None).into();
-        let expected = to_html("-P '127.0.0.1:420' 'http://127.0.0.1:420");
+        let to_be_tested: String =
+            wget_footer(&uri("http://127.0.0.1:420/"), None, None, None).into();
+        let expected = to_html("-nH -P '127.0.0.1:420' 'http://127.0.0.1:420");
         assert_eq!(to_be_tested, expected);
     }
+    
+    #[test]
+    fn test_wget_footer_externalurl() {
+        let to_be_tested: String =
+            wget_footer(&uri("https://github.com/"), None, None, Some("https://gitlab.com")).into();
+        let expected = to_html("-H -P 'github.com' 'https://github.com");
+        assert_eq!(to_be_tested, expected);
+    }
+
 }
