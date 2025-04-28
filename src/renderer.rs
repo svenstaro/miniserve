@@ -1166,13 +1166,17 @@ mod tests {
         let expected = to_html("-nH -P '127.0.0.1:420' 'http://127.0.0.1:420");
         assert_eq!(to_be_tested, expected);
     }
-    
+
     #[test]
     fn test_wget_footer_externalurl() {
-        let to_be_tested: String =
-            wget_footer(&uri("https://github.com/"), None, None, Some("https://gitlab.com")).into();
+        let to_be_tested: String = wget_footer(
+            &uri("https://github.com/"),
+            None,
+            None,
+            Some("https://gitlab.com"),
+        )
+        .into();
         let expected = to_html("-H -P 'github.com' 'https://github.com");
         assert_eq!(to_be_tested, expected);
     }
-
 }
