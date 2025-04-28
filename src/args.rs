@@ -378,6 +378,7 @@ pub struct CliArgs {
     pub size_display: SizeDisplay,
 
     /// Optional external URL (e.g., 'http://external.example.com:8081') prepended to file links in listings.
+    ///
     /// Allows serving files from a different URL than the browsing instance. Useful for setups like:
     /// one authenticated instance for browsing, linking files (via this option) to a second,
     /// non-indexed (-I) instance for direct downloads. This obscures the full file list on
