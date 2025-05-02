@@ -14,7 +14,7 @@ mod fixtures;
 
 use crate::fixtures::{
     DIRECTORIES, DIRECTORY_SYMLINK, Error, FILE_SYMLINK, FILES, HIDDEN_DIRECTORIES, HIDDEN_FILES,
-    TestServer, port, server, tmpdir,
+    SYMLINK_NESTED_DIR, SYMLINK_NESTED_FILE, TestServer, port, server, tmpdir,
 };
 
 #[rstest]
@@ -148,6 +148,33 @@ fn serves_requests_no_hidden_files_without_flag(server: TestServer) -> Result<()
         let resp = reqwest::blocking::get(server.url().join(hidden_item)?)?;
         assert_eq!(resp.status(), StatusCode::BAD_REQUEST);
     }
+
+    Ok(())
+}
+
+#[rstest]
+#[case(false, server(None::<&str>))]
+#[case(true, server(&["--no-symlinks"]))]
+fn serves_requests_nested_in_symlinks(
+    #[case] no_symlinks: bool,
+    #[case] server: TestServer,
+) -> Result<(), Error> {
+    let expected_status = if no_symlinks {
+        StatusCode::NOT_FOUND
+    } else {
+        StatusCode::OK
+    };
+
+    let file_status =
+        reqwest::blocking::get(server.url().join(DIRECTORY_SYMLINK)?.join(FILES[0])?)?.status();
+    assert_eq!(file_status, expected_status);
+
+    let dir_status = reqwest::blocking::get(server.url().join(SYMLINK_NESTED_DIR)?)?.status();
+    assert_eq!(dir_status, expected_status);
+
+    let nested_file_status =
+        reqwest::blocking::get(server.url().join(SYMLINK_NESTED_FILE)?)?.status();
+    assert_eq!(nested_file_status, expected_status);
 
     Ok(())
 }
