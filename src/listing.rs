@@ -316,12 +316,7 @@ pub fn directory_listing(
                                 full_relative_path // Relative path (dir + file) - should not have leading slash here
                             )
                         }
-                        None => {
-                            // Fallback to original relative URL generation
-                            base.join(utf8_percent_encode(&file_name, COMPONENT).to_string())
-                                .to_string_lossy()
-                                .to_string()
-                        }
+                        None => file_url,
                     };
                     entries.push(Entry::new(
                         file_name.clone(),

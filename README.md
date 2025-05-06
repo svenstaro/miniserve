@@ -237,6 +237,8 @@ Options:
           one authenticated instance for browsing, linking files (via this option) to a second,
           non-indexed (-I) instance for direct downloads. This obscures the full file list on
           the download server, while users can still copy direct file URLs for sharing.
+          The external URL is put verbatim in front of the relative location of the file, including the protocol.
+          The user should take care this results in a valid URL, no further checks are being done.
       
           [env: MINISERVE_FILE_EXTERNAL_URL=]
 
