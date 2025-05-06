@@ -176,6 +176,9 @@ pub struct MiniserveConfig {
 
     #[cfg(not(feature = "tls"))]
     pub tls_rustls_config: Option<()>,
+
+    /// Optional external URL to prepend to file links in listings
+    pub file_external_url: Option<String>,
 }
 
 impl MiniserveConfig {
@@ -345,6 +348,7 @@ impl MiniserveConfig {
             tls_rustls_config: tls_rustls_server_config,
             compress_response: args.compress_response,
             show_exact_bytes,
+            file_external_url: args.file_external_url,
         })
     }
 }

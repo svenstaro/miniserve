@@ -231,6 +231,17 @@ Options:
 
           [env: MINISERVE_RANDOM_ROUTE=]
 
+      --file-external-url <FILE_BASE_URL>
+          Optional external URL (e.g., 'http://external.example.com:8081') prepended to file links in listings.
+          Allows serving files from a different URL than the browsing instance. Useful for setups like:
+          one authenticated instance for browsing, linking files (via this option) to a second,
+          non-indexed (-I) instance for direct downloads. This obscures the full file list on
+          the download server, while users can still copy direct file URLs for sharing.
+          The external URL is put verbatim in front of the relative location of the file, including the protocol.
+          The user should take care this results in a valid URL, no further checks are being done.
+      
+          [env: MINISERVE_FILE_EXTERNAL_URL=]
+
   -P, --no-symlinks
           Hide symlinks in listing and prevent them from being followed
 
