@@ -376,6 +376,17 @@ pub struct CliArgs {
     /// Show served file size in exact bytes
     #[arg(long, default_value_t = SizeDisplay::Human, env = "MINISERVE_SIZE_DISPLAY")]
     pub size_display: SizeDisplay,
+
+    /// Optional external URL (e.g., 'http://external.example.com:8081') prepended to file links in listings.
+    ///
+    /// Allows serving files from a different URL than the browsing instance. Useful for setups like:
+    /// one authenticated instance for browsing, linking files (via this option) to a second,
+    /// non-indexed (-I) instance for direct downloads. This obscures the full file list on
+    /// the download server, while users can still copy direct file URLs for sharing.
+    /// The external URL is put verbatim in front of the relative location of the file, including the protocol.
+    /// The user should take care this results in a valid URL, no further checks are being done.
+    #[arg(long = "file-external-url", env = "MINISERVE_FILE_EXTERNAL_URL")]
+    pub file_external_url: Option<String>,
 }
 
 /// Checks whether an interface is valid, i.e. it can be parsed into an IP address
