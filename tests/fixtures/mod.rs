@@ -45,6 +45,13 @@ pub static DEEPLY_NESTED_FILE: &str = "very/deeply/nested/test.rs";
 /// Name of a symlink pointing to a directory
 pub static DIRECTORY_SYMLINK: &str = "dir_symlink/";
 
+/// Name of a directory inside a symlinked directory
+#[allow(unused)]
+pub static DIR_BEHIND_SYMLINKED_DIR: &str = "dir_symlink/nested";
+
+/// Name of a file inside a directory inside a symlinked directory
+pub static FILE_IN_DIR_BEHIND_SYMLINKED_DIR: &str = "dir_symlink/nested/file";
+
 /// Name of a symlink pointing to a file
 pub static FILE_SYMLINK: &str = "file_symlink";
 
@@ -95,6 +102,11 @@ pub fn tmpdir() -> TempDir {
         .child(BROKEN_SYMLINK)
         .symlink_to_file("broken_symlink")
         .expect("Couldn't create broken symlink");
+
+    tmpdir
+        .child(FILE_IN_DIR_BEHIND_SYMLINKED_DIR)
+        .write_str("something")
+        .expect("Couldn't write symlink nexted file");
 
     tmpdir
 }
