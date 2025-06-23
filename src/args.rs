@@ -368,9 +368,7 @@ pub struct CliArgs {
     pub disable_indexing: bool,
 
     /// Enable read-only WebDAV support (PROPFIND requests)
-    ///
-    /// Currently incompatible with -P|--no-symlinks (see https://github.com/messense/dav-server-rs/issues/37)
-    #[arg(long, env = "MINISERVE_ENABLE_WEBDAV", conflicts_with = "no_symlinks")]
+    #[arg(long, env = "MINISERVE_ENABLE_WEBDAV")]
     pub enable_webdav: bool,
 
     /// Show served file size in exact bytes
