@@ -1,4 +1,6 @@
+use std::io::{BufRead, BufReader};
 use std::process::{Child, Command, Stdio};
+use std::thread;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
 
@@ -115,9 +117,10 @@ where
 {
     let port = port();
     let tmpdir = tmpdir();
-    let child = Command::cargo_bin("miniserve")
+    let mut child = Command::cargo_bin("miniserve")
         .expect("Couldn't find test binary")
         .arg(tmpdir.path())
+        .arg("-v")
         .arg("-p")
         .arg(port.to_string())
         .args(args.clone())
@@ -128,6 +131,26 @@ where
     let is_tls = args
         .into_iter()
         .any(|x| x.as_ref().to_str().unwrap().contains("tls"));
+
+    // Read from stdout/stderr in the background and print/eprint everything read.
+    // This dance is required to allow test output capturing to work as expected.
+    // See https://github.com/rust-lang/rust/issues/92370 and https://github.com/rust-lang/rust/issues/90785
+
+    let stdout = child.stdout.take().expect("Child process stdout is None");
+    thread::spawn(move || {
+        BufReader::new(stdout)
+            .lines()
+            .filter_map(Result::ok)
+            .for_each(|line| println!("[miniserve stdout] {}", line));
+    });
+
+    let stderr = child.stderr.take().expect("Child process stderr is None");
+    thread::spawn(move || {
+        BufReader::new(stderr)
+            .lines()
+            .filter_map(Result::ok)
+            .for_each(|line| eprintln!("[miniserve stderr] {}", line));
+    });
 
     wait_for_port(port);
     TestServer::new(port, tmpdir, child, is_tls)
