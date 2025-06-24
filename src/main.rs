@@ -385,8 +385,23 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
             .prefer_utf8(true)
             .redirect_to_slash_directory()
             .path_filter(move |path, _| {
-                // deny symlinks if conf.no_symlinks
-                !(no_symlinks && base_path.join(path).is_symlink())
+                if !no_symlinks {
+                    // no_symlinks not enabled => nothing to filter
+                    return true;
+                }
+
+                // append path to base_path component by component and check for symlink at each step
+                let mut full_path = base_path.clone();
+                for component in path.components() {
+                    full_path.push(component);
+                    if full_path.is_symlink() {
+                        // path contains symlink component while no_symlink is active => filter
+                        return false;
+                    }
+                }
+
+                // path didn't include a symlink component => don't filter
+                true
             })
     };
 
