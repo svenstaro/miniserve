@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Add asynchronous recursive directory size counting [#1482](https://github.com/svenstaro/miniserve/pull/1482)
 - Add link to miniserve GitHub page to footer
 - Add `--directory-size` flag to enable directory size counting
+- Fix --no-symlinks not filtering files and dirs nested in symlinks [#1495](https://github.com/svenstaro/miniserve/pull/1495) (thanks @ahti)
 
 ## [0.29.0] - 2025-02-06
 - Make URL encoding fully WHATWG-compliant [#1454](https://github.com/svenstaro/miniserve/pull/1454) (thanks @cyqsimon)
