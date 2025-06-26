@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+- Add `--file-external-url` to generate links pointing to another server [#1492](https://github.com/svenstaro/miniserve/pull/1492) (thanks @jankeymeulen)
 - Add date pill and sort links for mobile views [#1473](https://github.com/svenstaro/miniserve/pull/1473) (thanks @Flat)
 - Add upload progress bar and allow for multiple concurrent file uploads [#1431](https://github.com/svenstaro/miniserve/pull/1431) (thanks @AlecDivito)
 - Add `--size-display` to allow for toggling file size display between `human` and `exact` [#1261](https://github.com/svenstaro/miniserve/pull/1261) (thanks @Lzzzzzt)
