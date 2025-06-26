@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+
+## [0.30.0] - 2025-06-26
 - Add `--file-external-url` to generate links pointing to another server [#1492](https://github.com/svenstaro/miniserve/pull/1492) (thanks @jankeymeulen)
 - Add date pill and sort links for mobile views [#1473](https://github.com/svenstaro/miniserve/pull/1473) (thanks @Flat)
 - Add upload progress bar and allow for multiple concurrent file uploads [#1431](https://github.com/svenstaro/miniserve/pull/1431) (thanks @AlecDivito)
@@ -220,7 +222,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Some theme related bug fixes (thanks @boastful-squirrel)
 
 <!-- next-url -->
-[Unreleased]: https://github.com/svenstaro/miniserve/compare/v0.29.0...HEAD
+[Unreleased]: https://github.com/svenstaro/miniserve/compare/v0.30.0...HEAD
+[0.30.0]: https://github.com/svenstaro/miniserve/compare/v0.29.0...v0.30.0
 [0.29.0]: https://github.com/svenstaro/miniserve/compare/v0.28.0...v0.29.0
 [0.28.0]: https://github.com/svenstaro/miniserve/compare/v0.27.1...v0.28.0
 [0.27.1]: https://github.com/svenstaro/miniserve/compare/v0.27.0...v0.27.1
