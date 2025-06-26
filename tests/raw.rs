@@ -48,7 +48,7 @@ fn ui_displays_wget_element(
     assert_eq!(
         wget_url,
         format!(
-            "wget -rcnHp -R 'index.html*'{} '{}{}?raw=true'",
+            "wget -rcnp -R 'index.html*' -nH{} '{}{}?raw=true'",
             cut_dirs,
             server.url(),
             dir
