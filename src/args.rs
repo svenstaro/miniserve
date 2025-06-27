@@ -262,7 +262,7 @@ pub struct CliArgs {
     /// What to do if existing files with same name is present during file upload
     ///
     /// If you enable renaming files, the renaming will occur by
-    /// adding numerical suffix to the filename before the final
+    /// adding a numerical suffix to the filename before the final
     /// extension. For example file.txt will be uploaded as
     /// file-1.txt, the number will be increased until an available
     /// filename is found.

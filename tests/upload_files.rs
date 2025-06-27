@@ -279,7 +279,7 @@ fn uploading_duplicate_file_is_prevented(#[case] server: TestServer) -> Result<(
 
     // create the file
     let test_file_path = server.path().join(test_file_name);
-    let _ = std::fs::write(&test_file_path, test_file_contents);
+    std::fs::write(&test_file_path, test_file_contents)?;
 
     // Before uploading, make sure the file is there.
     let body = reqwest::blocking::get(server.url())?.error_for_status()?;
@@ -359,11 +359,11 @@ fn overwrite_duplicate_file(#[case] server: TestServer) -> Result<(), Error> {
         .send()?
         .error_for_status()?;
 
-    // After uploading, uploaded file is still getting listed.
+    // After uploading, verify the listing has the file
     let body = reqwest::blocking::get(server.url())?;
     let parsed = Document::from_read(body)?;
     assert!(parsed.find(Text).any(|x| x.text() == test_file_name));
-    // and assert the contents is the same as before
+    // and assert the contents is from recently uploaded file
     assert_file_contents(&test_file_path, test_file_contents_new);
 
     Ok(())
@@ -408,12 +408,12 @@ fn rename_duplicate_file(#[case] server: TestServer) -> Result<(), Error> {
         .send()?
         .error_for_status()?;
 
-    // After uploading, uploaded file is still getting listed.
+    // After uploading, assert the old file is still getting listed, and the new file is also in listing
     let body = reqwest::blocking::get(server.url())?;
     let parsed = Document::from_read(body)?;
     assert!(parsed.find(Text).any(|x| x.text() == test_file_name));
     assert!(parsed.find(Text).any(|x| x.text() == test_file_name_new));
-    // and assert the contents is the same as before
+    // and assert the contents is the same as before for old file, and new contents for new file
     assert_file_contents(&test_file_path, test_file_contents);
     assert_file_contents(
         &server.path().join(test_file_name_new),

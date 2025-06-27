@@ -131,6 +131,7 @@ async fn save_file(
                     } else {
                         file_path.with_file_name(format!("{}-{}", file_name, i))
                     };
+                    // If we have a file name that doesn't exist yet then we'll use that.
                     if !fp.exists() {
                         file_path = fp;
                         break;
