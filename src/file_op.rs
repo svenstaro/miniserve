@@ -67,8 +67,8 @@ pub async fn recursive_dir_size(dir: &Path) -> Result<u64, RuntimeError> {
     loop {
         match entries.next().await {
             Some(Ok(entry)) => {
-                if let Ok(metadata) = entry.metadata().await {
-                    if metadata.is_file() {
+                if let Ok(metadata) = entry.metadata().await
+                    && metadata.is_file() {
                         // On Unix, we want to filter inodes that we've already seen so we get a
                         // more accurate count of real size used on disk.
                         #[cfg(target_family = "unix")]
@@ -85,7 +85,6 @@ pub async fn recursive_dir_size(dir: &Path) -> Result<u64, RuntimeError> {
                         }
                         total_size += metadata.len();
                     }
-                }
             }
             Some(Err(e)) => {
                 if let Some(io_err) = e.into_io() {
@@ -213,8 +212,8 @@ async fn save_file(
     // - https://github.com/actix/actix-web/discussions/3011
     // Therefore, we are relying on the fact that the web UI uploads a
     // hash of the file to determine if it was completed uploaded or not.
-    if let Some(hasher) = hasher {
-        if let Some(expected_hash) = file_checksum.as_ref().map(|f| f.get_hash()) {
+    if let Some(hasher) = hasher
+        && let Some(expected_hash) = file_checksum.as_ref().map(|f| f.get_hash()) {
             let actual_hash = hex::encode(hasher.finalize());
             if actual_hash != expected_hash {
                 warn!(
@@ -224,7 +223,6 @@ async fn save_file(
                 return Err(RuntimeError::UploadHashMismatchError);
             }
         }
-    }
 
     info!("File upload successful to {temp_path:?}. Moving to {file_path:?}",);
     if let Err(err) = tokio::fs::rename(&temp_path, &file_path).await {

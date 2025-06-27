@@ -152,16 +152,16 @@ where
     thread::spawn(move || {
         BufReader::new(stdout)
             .lines()
-            .filter_map(Result::ok)
-            .for_each(|line| println!("[miniserve stdout] {}", line));
+            .map_while(Result::ok)
+            .for_each(|line| println!("[miniserve stdout] {line}"));
     });
 
     let stderr = child.stderr.take().expect("Child process stderr is None");
     thread::spawn(move || {
         BufReader::new(stderr)
             .lines()
-            .filter_map(Result::ok)
-            .for_each(|line| eprintln!("[miniserve stderr] {}", line));
+            .map_while(Result::ok)
+            .for_each(|line| eprintln!("[miniserve stderr] {line}"));
     });
 
     wait_for_port(port);

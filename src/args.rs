@@ -400,8 +400,7 @@ fn validate_is_dir_and_exists(s: &str) -> Result<PathBuf, String> {
     } else {
         Err(format!(
             "Upload temporary directory must exist and be a directory. \
-            Validate that path {:?} meets those requirements.",
-            path
+            Validate that path {path:?} meets those requirements."
         ))
     }
 }
@@ -478,14 +477,13 @@ pub fn parse_header(src: &str) -> Result<HeaderMap, httparse::Error> {
     httparse::parse_headers(header.as_bytes(), &mut headers)?;
 
     let mut header_map = HeaderMap::new();
-    if let Some(h) = headers.first() {
-        if h.name != httparse::EMPTY_HEADER.name {
+    if let Some(h) = headers.first()
+        && h.name != httparse::EMPTY_HEADER.name {
             header_map.insert(
                 HeaderName::from_bytes(h.name.as_bytes()).unwrap(),
                 HeaderValue::from_bytes(h.value).unwrap(),
             );
         }
-    }
 
     Ok(header_map)
 }

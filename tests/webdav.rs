@@ -108,15 +108,15 @@ fn webdav_respects_no_symlink_flag(#[case] server: TestServer, #[case] symlinks_
         ),
     );
 
-    let list_linked = list_webdav(server.url(), &format!("/{}", DIRECTORY_SYMLINK));
+    let list_linked = list_webdav(server.url(), &format!("/{DIRECTORY_SYMLINK}"));
     assert_eq!(symlinks_should_show, list_linked.is_ok());
 
-    let list_nested_dir = list_webdav(server.url(), &format!("/{}", DIR_BEHIND_SYMLINKED_DIR));
+    let list_nested_dir = list_webdav(server.url(), &format!("/{DIR_BEHIND_SYMLINKED_DIR}"));
     assert_eq!(symlinks_should_show, list_nested_dir.is_ok());
 
     let list_nested_file = list_webdav(
         server.url(),
-        &format!("/{}", FILE_IN_DIR_BEHIND_SYMLINKED_DIR),
+        &format!("/{FILE_IN_DIR_BEHIND_SYMLINKED_DIR}"),
     );
     assert_eq!(symlinks_should_show, list_nested_file.is_ok());
 }

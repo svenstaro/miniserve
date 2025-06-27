@@ -408,7 +408,7 @@ pub fn directory_listing(
         let skip_symlinks = conf.no_symlinks;
         std::thread::spawn(move || {
             if let Err(err) = archive_method.create_archive(dir, skip_symlinks, pipe) {
-                log::error!("Error during archive creation: {:?}", err);
+                log::error!("Error during archive creation: {err:?}");
             }
         });
 

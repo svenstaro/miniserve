@@ -177,6 +177,6 @@ fn map_error_page(req: &HttpRequest, head: &mut ResponseHead, body: BoxBody) -> 
 
 pub fn log_error_chain(description: String) {
     for cause in description.lines() {
-        log::error!("{}", cause);
+        log::error!("{cause}");
     }
 }
