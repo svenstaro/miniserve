@@ -13,7 +13,8 @@ use rstest::rstest;
 mod fixtures;
 
 use crate::fixtures::{
-    DIRECTORIES, DIRECTORY_SYMLINK, Error, FILE_SYMLINK, FILES, HIDDEN_DIRECTORIES, HIDDEN_FILES,
+    DIR_BEHIND_SYMLINKED_DIR, DIRECTORIES, DIRECTORY_SYMLINK, Error,
+    FILE_IN_DIR_BEHIND_SYMLINKED_DIR, FILE_SYMLINK, FILES, HIDDEN_DIRECTORIES, HIDDEN_FILES,
     TestServer, server, tmpdir,
 };
 
@@ -89,7 +90,6 @@ fn webdav_respects_hidden_flag(
 
 #[rstest]
 #[case(server(&["--enable-webdav"]), true)]
-#[should_panic]
 #[case(server(&["--enable-webdav", "--no-symlinks"]), false)]
 fn webdav_respects_no_symlink_flag(#[case] server: TestServer, #[case] symlinks_should_show: bool) {
     let list = list_webdav(server.url(), "/").unwrap();
@@ -109,8 +109,16 @@ fn webdav_respects_no_symlink_flag(#[case] server: TestServer, #[case] symlinks_
     );
 
     let list_linked = list_webdav(server.url(), &format!("/{}", DIRECTORY_SYMLINK));
-
     assert_eq!(symlinks_should_show, list_linked.is_ok());
+
+    let list_nested_dir = list_webdav(server.url(), &format!("/{}", DIR_BEHIND_SYMLINKED_DIR));
+    assert_eq!(symlinks_should_show, list_nested_dir.is_ok());
+
+    let list_nested_file = list_webdav(
+        server.url(),
+        &format!("/{}", FILE_IN_DIR_BEHIND_SYMLINKED_DIR),
+    );
+    assert_eq!(symlinks_should_show, list_nested_file.is_ok());
 }
 
 #[rstest]

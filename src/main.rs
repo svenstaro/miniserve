@@ -418,12 +418,12 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
     }
 
     if conf.webdav_enabled {
-        let fs = RestrictedFs::new(&conf.path, conf.show_hidden);
+        let fs = RestrictedFs::new(&conf.path, conf.show_hidden, conf.no_symlinks);
 
         let dav_server = DavHandler::builder()
             .filesystem(fs)
             .methods(DavMethodSet::WEBDAV_RO)
-            .hide_symlinks(conf.no_symlinks)
+            .hide_symlinks(false) // we handle filtering symlinks ourselves in RestrictedFs
             .strip_prefix(conf.route_prefix.to_owned())
             .build_handler();
 
