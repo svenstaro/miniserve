@@ -493,12 +493,13 @@ pub fn parse_header(src: &str) -> Result<HeaderMap, httparse::Error> {
 
     let mut header_map = HeaderMap::new();
     if let Some(h) = headers.first()
-        && h.name != httparse::EMPTY_HEADER.name {
-            header_map.insert(
-                HeaderName::from_bytes(h.name.as_bytes()).unwrap(),
-                HeaderValue::from_bytes(h.value).unwrap(),
-            );
-        }
+        && h.name != httparse::EMPTY_HEADER.name
+    {
+        header_map.insert(
+            HeaderName::from_bytes(h.name.as_bytes()).unwrap(),
+            HeaderValue::from_bytes(h.value).unwrap(),
+        );
+    }
 
     Ok(header_map)
 }

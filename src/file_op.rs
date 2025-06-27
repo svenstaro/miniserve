@@ -68,23 +68,24 @@ pub async fn recursive_dir_size(dir: &Path) -> Result<u64, RuntimeError> {
         match entries.next().await {
             Some(Ok(entry)) => {
                 if let Ok(metadata) = entry.metadata().await
-                    && metadata.is_file() {
-                        // On Unix, we want to filter inodes that we've already seen so we get a
-                        // more accurate count of real size used on disk.
-                        #[cfg(target_family = "unix")]
-                        {
-                            let (device_id, inode) = (metadata.dev(), metadata.ino());
+                    && metadata.is_file()
+                {
+                    // On Unix, we want to filter inodes that we've already seen so we get a
+                    // more accurate count of real size used on disk.
+                    #[cfg(target_family = "unix")]
+                    {
+                        let (device_id, inode) = (metadata.dev(), metadata.ino());
 
-                            // Check if this file has been seen before based on its device ID and
-                            // inode number
-                            if seen_inodes.read().await.contains(&(device_id, inode)) {
-                                continue;
-                            } else {
-                                seen_inodes.write().await.insert((device_id, inode));
-                            }
+                        // Check if this file has been seen before based on its device ID and
+                        // inode number
+                        if seen_inodes.read().await.contains(&(device_id, inode)) {
+                            continue;
+                        } else {
+                            seen_inodes.write().await.insert((device_id, inode));
                         }
-                        total_size += metadata.len();
                     }
+                    total_size += metadata.len();
+                }
             }
             Some(Err(e)) => {
                 if let Some(io_err) = e.into_io() {
@@ -126,9 +127,9 @@ async fn save_file(
                     // increment the number N in {file_name}-{N}.{file_ext}
                     // format until available name is found (e.g. file-1.txt, file-2.txt, etc)
                     let fp = if let Some(ext) = &file_ext {
-                        file_path.with_file_name(format!("{}-{}.{}", file_name, i, ext))
+                        file_path.with_file_name(format!("{file_name}-{i}.{ext}"))
                     } else {
-                        file_path.with_file_name(format!("{}-{}", file_name, i))
+                        file_path.with_file_name(format!("{file_name}-{i}"))
                     };
                     // If we have a file name that doesn't exist yet then we'll use that.
                     if !fp.exists() {
@@ -236,16 +237,17 @@ async fn save_file(
     // Therefore, we are relying on the fact that the web UI uploads a
     // hash of the file to determine if it was completed uploaded or not.
     if let Some(hasher) = hasher
-        && let Some(expected_hash) = file_checksum.as_ref().map(|f| f.get_hash()) {
-            let actual_hash = hex::encode(hasher.finalize());
-            if actual_hash != expected_hash {
-                warn!(
-                    "The expected file hash {expected_hash} did not match the calculated hash of {actual_hash}. This can be caused if a file upload was aborted."
-                );
-                let _ = tokio::fs::remove_file(&temp_path).await;
-                return Err(RuntimeError::UploadHashMismatchError);
-            }
+        && let Some(expected_hash) = file_checksum.as_ref().map(|f| f.get_hash())
+    {
+        let actual_hash = hex::encode(hasher.finalize());
+        if actual_hash != expected_hash {
+            warn!(
+                "The expected file hash {expected_hash} did not match the calculated hash of {actual_hash}. This can be caused if a file upload was aborted."
+            );
+            let _ = tokio::fs::remove_file(&temp_path).await;
+            return Err(RuntimeError::UploadHashMismatchError);
         }
+    }
 
     info!("File upload successful to {temp_path:?}. Moving to {file_path:?}",);
     if let Err(err) = tokio::fs::rename(&temp_path, &file_path).await {

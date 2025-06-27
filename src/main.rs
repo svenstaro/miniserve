@@ -116,12 +116,13 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), StartupError> {
 
     // warn if --index is specified but not found
     if let Some(ref index) = miniserve_config.index
-        && !canon_path.join(index).exists() {
-            warn!(
-                "The file '{}' provided for option --index could not be found.",
-                index.to_string_lossy(),
-            );
-        }
+        && !canon_path.join(index).exists()
+    {
+        warn!(
+            "The file '{}' provided for option --index could not be found.",
+            index.to_string_lossy(),
+        );
+    }
 
     let path_string = canon_path.to_string_lossy();
 

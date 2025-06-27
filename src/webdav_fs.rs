@@ -70,9 +70,10 @@ async fn path_has_symlink_components(path: &DavPath, base_path: &Path) -> bool {
             Component::Normal(name) => {
                 current_path.push(name);
                 if let Ok(md) = fs::symlink_metadata(&current_path).await
-                    && md.file_type().is_symlink() {
-                        return true;
-                    }
+                    && md.file_type().is_symlink()
+                {
+                    return true;
+                }
             }
             _ => {
                 panic!("dav path should not contain any non-normal components")
@@ -135,9 +136,10 @@ impl DavFileSystem for RestrictedFs {
                                     std::str::from_utf8(&name).unwrap().as_ref();
                                 let entry_path = base_path.join(os_string);
                                 if let Ok(md) = fs::symlink_metadata(&entry_path).await
-                                    && md.file_type().is_symlink() {
-                                        return None;
-                                    }
+                                    && md.file_type().is_symlink()
+                                {
+                                    return None;
+                                }
                             }
                             Some(Ok(e))
                         }

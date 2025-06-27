@@ -484,16 +484,17 @@ fn parametrized_link(
     }
 
     if let Some(method) = sort_method
-        && let Some(order) = sort_order {
-            let parametrized_link = format!(
-                "{}?sort={}&order={}",
-                make_link_with_trailing_slash(link),
-                method,
-                order,
-            );
+        && let Some(order) = sort_order
+    {
+        let parametrized_link = format!(
+            "{}?sort={}&order={}",
+            make_link_with_trailing_slash(link),
+            method,
+            order,
+        );
 
-            return parametrized_link;
-        }
+        return parametrized_link;
+    }
 
     make_link_with_trailing_slash(link)
 }
@@ -511,15 +512,17 @@ fn build_link(
     let mut class = "";
 
     if let Some(method) = sort_method
-        && method.to_string() == name {
-            class = "active";
-            if let Some(order) = sort_order
-                && order.to_string() == "asc" {
-                    link = format!("?sort={name}&order=desc");
-                    help = format!("Sort by {name} in descending order");
-                    chevron = chevron_up();
-                }
-        };
+        && method.to_string() == name
+    {
+        class = "active";
+        if let Some(order) = sort_order
+            && order.to_string() == "asc"
+        {
+            link = format!("?sort={name}&order=desc");
+            help = format!("Sort by {name} in descending order");
+            chevron = chevron_up();
+        }
+    };
 
     html! {
         span class=(class) {
