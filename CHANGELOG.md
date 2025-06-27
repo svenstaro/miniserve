@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+- Fix filtering symlinks when hosting WebDAV [#1502](https://github.com/svenstaro/miniserve/pull/1502) (thanks @ahti)
 
 ## [0.30.0] - 2025-06-26
 - Add `--file-external-url` to generate links pointing to another server [#1492](https://github.com/svenstaro/miniserve/pull/1492) (thanks @jankeymeulen)
