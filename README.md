@@ -323,10 +323,15 @@ Options:
 
           [env: MINISERVE_RAW_MEDIA_TYPE=]
 
-  -o, --overwrite-files
-          Enable overriding existing files during file upload
+  -o, --on-duplicate-files <ON_DUPLICATE_FILES>
+          What to do if existing files with same name is present during file upload
 
-          [env: MINISERVE_OVERWRITE_FILES=]
+          If you enable renaming files, the renaming will occur by adding numerical suffix to the filename before the final extension. For example file.txt will be uploaded
+          as file-1.txt, the number will be increased until an available filename is found.
+
+          [env: MINISERVE_ON_DUPLICATE_FILES=]
+          [default: error]
+          [possible values: error, overwrite, rename]
 
   -r, --enable-tar
           Enable uncompressed tar archive generation
@@ -554,7 +559,7 @@ You can provide `-i` multiple times to bind to multiple interfaces at the same t
 
 This is mostly a note for me on how to release this thing:
 
-- Make sure `CHANGELOG.md` is up to date.
+- Make sure [CHANGELOG.md](./CHANGELOG.md) is up to date.
 - `cargo release <version>`
 - `cargo release --execute <version>`
 - Releases will automatically be deployed by GitHub Actions.

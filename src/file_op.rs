@@ -27,8 +27,8 @@ use tokio::io::AsyncWriteExt;
 use tokio::sync::RwLock;
 
 use crate::{
-    config::MiniserveConfig, errors::RuntimeError, file_utils::contains_symlink,
-    file_utils::sanitize_path,
+    args::DuplicateFile, config::MiniserveConfig, errors::RuntimeError,
+    file_utils::contains_symlink, file_utils::sanitize_path,
 };
 
 enum FileHash {
@@ -108,13 +108,36 @@ pub async fn recursive_dir_size(dir: &Path) -> Result<u64, RuntimeError> {
 /// Returns total bytes written to file.
 async fn save_file(
     field: &mut actix_multipart::Field,
-    file_path: PathBuf,
-    overwrite_files: bool,
+    mut file_path: PathBuf,
+    on_duplicate_files: DuplicateFile,
     file_checksum: Option<&FileHash>,
     temporary_upload_directory: Option<&PathBuf>,
 ) -> Result<u64, RuntimeError> {
-    if !overwrite_files && file_path.exists() {
-        return Err(RuntimeError::DuplicateFileError);
+    if file_path.exists() {
+        match on_duplicate_files {
+            DuplicateFile::Error => return Err(RuntimeError::DuplicateFileError),
+            DuplicateFile::Overwrite => (),
+            DuplicateFile::Rename => {
+                // extract extension of the file and the file stem without extension
+                // file.txt => (file, txt)
+                let file_name = file_path.file_stem().unwrap_or_default().to_string_lossy();
+                let file_ext = file_path.extension().map(|s| s.to_string_lossy());
+                for i in 1.. {
+                    // increment the number N in {file_name}-{N}.{file_ext}
+                    // format until available name is found (e.g. file-1.txt, file-2.txt, etc)
+                    let fp = if let Some(ext) = &file_ext {
+                        file_path.with_file_name(format!("{}-{}.{}", file_name, i, ext))
+                    } else {
+                        file_path.with_file_name(format!("{}-{}", file_name, i))
+                    };
+                    // If we have a file name that doesn't exist yet then we'll use that.
+                    if !fp.exists() {
+                        file_path = fp;
+                        break;
+                    }
+                }
+            }
+        }
     }
 
     let temp_upload_directory = temporary_upload_directory.cloned();
@@ -256,7 +279,7 @@ async fn save_file(
 }
 
 struct HandleMultipartOpts<'a> {
-    overwrite_files: bool,
+    on_duplicate_files: DuplicateFile,
     allow_mkdir: bool,
     allow_hidden_paths: bool,
     allow_symlinks: bool,
@@ -271,7 +294,7 @@ async fn handle_multipart(
     opts: HandleMultipartOpts<'_>,
 ) -> Result<u64, RuntimeError> {
     let HandleMultipartOpts {
-        overwrite_files,
+        on_duplicate_files,
         allow_mkdir,
         allow_hidden_paths,
         allow_symlinks,
@@ -388,7 +411,7 @@ async fn handle_multipart(
     save_file(
         &mut field,
         path.join(filename_path),
-        overwrite_files,
+        on_duplicate_files,
         file_hash,
         upload_directory,
     )
@@ -473,7 +496,7 @@ pub async fn upload_file(
                 field,
                 non_canonicalized_target_dir.clone(),
                 HandleMultipartOpts {
-                    overwrite_files: conf.overwrite_files,
+                    on_duplicate_files: conf.on_duplicate_files,
                     allow_mkdir: conf.mkdir_enabled,
                     allow_hidden_paths: conf.show_hidden,
                     allow_symlinks: !conf.no_symlinks,

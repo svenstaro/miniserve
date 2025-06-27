@@ -16,6 +16,14 @@ pub enum MediaType {
     Video,
 }
 
+#[derive(Debug, ValueEnum, Clone, Default, Copy)]
+pub enum DuplicateFile {
+    #[default]
+    Error,
+    Overwrite,
+    Rename,
+}
+
 #[derive(ValueEnum, Clone)]
 pub enum SizeDisplay {
     Human,
@@ -251,13 +259,20 @@ pub struct CliArgs {
     )]
     pub media_type_raw: Option<String>,
 
-    /// Enable overriding existing files during file upload
+    /// What to do if existing files with same name is present during file upload
+    ///
+    /// If you enable renaming files, the renaming will occur by
+    /// adding a numerical suffix to the filename before the final
+    /// extension. For example file.txt will be uploaded as
+    /// file-1.txt, the number will be increased until an available
+    /// filename is found.
     #[arg(
         short = 'o',
-        long = "overwrite-files",
-        env = "MINISERVE_OVERWRITE_FILES"
+        long = "on-duplicate-files",
+        env = "MINISERVE_ON_DUPLICATE_FILES",
+        default_value = "error"
     )]
-    pub overwrite_files: bool,
+    pub on_duplicate_files: DuplicateFile,
 
     /// Enable uncompressed tar archive generation
     #[arg(short = 'r', long = "enable-tar", env = "MINISERVE_ENABLE_TAR")]
