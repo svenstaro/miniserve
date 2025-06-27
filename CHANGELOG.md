@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+
+## [0.31.0] - 2025-06-27
 - Fix filtering symlinks when hosting WebDAV [#1502](https://github.com/svenstaro/miniserve/pull/1502) (thanks @ahti)
 - Enable renaming during file upload if duplicate exists [#1453](https://github.com/svenstaro/miniserve/pull/1453) (thanks @Atreyagaurav)
 
@@ -224,7 +226,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Some theme related bug fixes (thanks @boastful-squirrel)
 
 <!-- next-url -->
-[Unreleased]: https://github.com/svenstaro/miniserve/compare/v0.30.0...HEAD
+[Unreleased]: https://github.com/svenstaro/miniserve/compare/v0.31.0...HEAD
+[0.31.0]: https://github.com/svenstaro/miniserve/compare/v0.30.0...v0.31.0
 [0.30.0]: https://github.com/svenstaro/miniserve/compare/v0.29.0...v0.30.0
 [0.29.0]: https://github.com/svenstaro/miniserve/compare/v0.28.0...v0.29.0
 [0.28.0]: https://github.com/svenstaro/miniserve/compare/v0.27.1...v0.28.0
