@@ -46,6 +46,7 @@ pub struct ListingQueryParameters {
     pub sort: Option<SortingMethod>,
     pub order: Option<SortingOrder>,
     pub raw: Option<bool>,
+    pub search: Option<String>,
     download: Option<ArchiveMethod>,
 }
 
@@ -247,6 +248,13 @@ pub fn directory_listing(
     };
 
     let query_params = extract_query_parameters(req);
+    let search = query_params.search.as_ref().map(|s| s.to_lowercase());
+    let matches_search = move |filename: &str| -> bool {
+        match search {
+            Some(ref search) => filename.to_lowercase().contains(search),
+            None => true,
+        }
+    };
     let mut entries: Vec<Entry> = Vec::new();
     let mut readme: Option<(String, String)> = None;
     let readme_rx: Regex = Regex::new("^readme([.](md|txt))?$").unwrap();
@@ -256,6 +264,9 @@ pub fn directory_listing(
             let entry = entry?;
             // show file url as relative to static path
             let file_name = entry.file_name().to_string_lossy().to_string();
+            if !matches_search(&file_name) {
+                continue;
+            }
             let (is_symlink, metadata) = match entry.metadata() {
                 Ok(metadata) if metadata.file_type().is_symlink() => {
                     // for symlinks, get the metadata of the original file
