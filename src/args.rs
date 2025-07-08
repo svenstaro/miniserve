@@ -225,6 +225,18 @@ pub struct CliArgs {
     )]
     pub web_upload_concurrency: usize,
 
+    /// chmod permissions of uploaded files
+    ///
+    /// This takes an octal number that is similar to the one the chmod use
+    #[cfg(unix)]
+    #[arg(
+        long = "chmod",
+        value_parser(parse_file_mode),
+        env = "MINISERVE_CHMOD",
+        default_value = "0600"
+    )]
+    pub chmod: u32,
+
     /// Enable recursive directory size calculation
     ///
     /// This is disabled by default because it is a potentially fairly IO intensive operation.
@@ -502,6 +514,10 @@ pub fn parse_header(src: &str) -> Result<HeaderMap, httparse::Error> {
     }
 
     Ok(header_map)
+}
+
+pub fn parse_file_mode(src: &str) -> Result<u32, std::num::ParseIntError> {
+    u32::from_str_radix(src, 8)
 }
 
 #[rustfmt::skip]
