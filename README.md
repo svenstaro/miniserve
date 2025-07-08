@@ -118,6 +118,15 @@ You can enable a convenient copy-pastable footer for `wget` using `--show-wget-f
 Afterwards, check the bottom of any rendered page.
 It'll have a neat `wget` command you can easily copy-paste to recursively grab the current directory.
 
+### Use query parameter to do a simple filter
+
+You can pass a `?search=<keyword>` query parameter to only show files and directories whose name contains the `<keyword>`, for example:
+
+    miniserve .
+    # Then visit http://127.0.0.1:8080/src/?search=file
+
+This filter feature is case insensitive.
+
 ### Take pictures and upload them from smartphones:
 
     miniserve -u -m image -q
@@ -239,7 +248,7 @@ Options:
           the download server, while users can still copy direct file URLs for sharing.
           The external URL is put verbatim in front of the relative location of the file, including the protocol.
           The user should take care this results in a valid URL, no further checks are being done.
-      
+
           [env: MINISERVE_FILE_EXTERNAL_URL=]
 
   -P, --no-symlinks
