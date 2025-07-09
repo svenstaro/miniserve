@@ -10,11 +10,15 @@ use fast_qr::{
     qr::QRCodeError,
 };
 use maud::{DOCTYPE, Markup, PreEscaped, html};
+use percent_encoding::utf8_percent_encode;
 use strum::{Display, IntoEnumIterator};
 
 use crate::auth::CurrentUser;
 use crate::consts;
-use crate::listing::{Breadcrumb, Entry, ListingQueryParameters, SortingMethod, SortingOrder};
+use crate::listing::{
+    Breadcrumb, Entry, ListingQueryParameters, SortingMethod, SortingOrder,
+    percent_encode_sets::COMPONENT,
+};
 use crate::{MiniserveConfig, archive::ArchiveMethod};
 
 #[allow(clippy::too_many_arguments)]
@@ -519,7 +523,7 @@ fn parametrized_link(
     if let Some(search) = search
         && !search.is_empty()
     {
-        query.push(format!("search={search}").into());
+        query.push(format!("search={}", utf8_percent_encode(search, COMPONENT)).into());
     }
 
     if query.is_empty() {
