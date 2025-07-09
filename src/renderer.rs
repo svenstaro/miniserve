@@ -1,4 +1,4 @@
-use std::time::SystemTime;
+use std::{borrow::Cow, time::SystemTime};
 
 use actix_web::http::{StatusCode, Uri};
 use chrono::{DateTime, Local};
@@ -10,11 +10,15 @@ use fast_qr::{
     qr::QRCodeError,
 };
 use maud::{DOCTYPE, Markup, PreEscaped, html};
+use percent_encoding::utf8_percent_encode;
 use strum::{Display, IntoEnumIterator};
 
 use crate::auth::CurrentUser;
 use crate::consts;
-use crate::listing::{Breadcrumb, Entry, ListingQueryParameters, SortingMethod, SortingOrder};
+use crate::listing::{
+    Breadcrumb, Entry, ListingQueryParameters, SortingMethod, SortingOrder,
+    percent_encode_sets::COMPONENT,
+};
 use crate::{MiniserveConfig, archive::ArchiveMethod};
 
 #[allow(clippy::too_many_arguments)]
@@ -30,14 +34,18 @@ pub fn page(
     conf: &MiniserveConfig,
     current_user: Option<&CurrentUser>,
 ) -> Markup {
+    let (sort_method, sort_order, search) = (
+        query_params.sort,
+        query_params.order,
+        query_params.search.as_deref(),
+    );
+
     // If query_params.raw is true, we want render a minimal directory listing
     if query_params.raw.is_some() && query_params.raw.unwrap() {
-        return raw(entries, is_root, conf);
+        return raw(entries, search, is_root, conf);
     }
 
     let upload_route = format!("{}/upload", &conf.route_prefix);
-    let (sort_method, sort_order) = (query_params.sort, query_params.order);
-
     let upload_action = build_upload_action(&upload_route, encoded_dir, sort_method, sort_order);
     let mkdir_action = build_mkdir_action(&upload_route, encoded_dir);
 
@@ -85,7 +93,7 @@ pub fn page(
                                 // wrapped in span so the text doesn't shift slightly when it turns into a link
                                 span { bdi { (el.name) } }
                             } @else {
-                                a href=(parametrized_link(&el.link, sort_method, sort_order, false)) {
+                                a href=(parametrized_link(&el.link, sort_method, sort_order, false, search)) {
                                     bdi { (el.name) }
                                 }
                             }
@@ -142,7 +150,7 @@ pub fn page(
                                     td colspan="3" {
                                         p {
                                             span.root-chevron { (chevron_left()) }
-                                            a.root href=(parametrized_link("../", sort_method, sort_order, false)) {
+                                            a.root href=(parametrized_link("../", sort_method, sort_order, false, search)) {
                                                 "Parent directory"
                                             }
                                         }
@@ -150,7 +158,7 @@ pub fn page(
                                 }
                             }
                             @for entry in entries {
-                                (entry_row(entry, sort_method, sort_order, false, conf.show_exact_bytes))
+                                (entry_row(entry, sort_method, sort_order, false, search, conf.show_exact_bytes))
                             }
                         }
                     }
@@ -215,7 +223,12 @@ pub fn page(
 }
 
 /// Renders the file listing
-pub fn raw(entries: Vec<Entry>, is_root: bool, conf: &MiniserveConfig) -> Markup {
+pub fn raw(
+    entries: Vec<Entry>,
+    search: Option<&str>,
+    is_root: bool,
+    conf: &MiniserveConfig,
+) -> Markup {
     html! {
         (DOCTYPE)
         html {
@@ -231,7 +244,7 @@ pub fn raw(entries: Vec<Entry>, is_root: bool, conf: &MiniserveConfig) -> Markup
                             tr {
                                 td colspan="3" {
                                     p {
-                                        a.root href=(parametrized_link("../", None, None, true)) {
+                                        a.root href=(parametrized_link("../", None, None, true, search)) {
                                             ".."
                                         }
                                     }
@@ -239,7 +252,7 @@ pub fn raw(entries: Vec<Entry>, is_root: bool, conf: &MiniserveConfig) -> Markup
                             }
                         }
                         @for entry in entries {
-                            (entry_row(entry, None, None, true, conf.show_exact_bytes))
+                            (entry_row(entry, None, None, true, search, conf.show_exact_bytes))
                         }
                     }
                 }
@@ -449,7 +462,7 @@ fn archive_button(
     } else {
         format!(
             "{}&download={}",
-            parametrized_link("", sort_method, sort_order, false),
+            parametrized_link("", sort_method, sort_order, false, None),
             archive_method
         )
     };
@@ -478,25 +491,34 @@ fn parametrized_link(
     sort_method: Option<SortingMethod>,
     sort_order: Option<SortingOrder>,
     raw: bool,
+    search: Option<&str>,
 ) -> String {
-    if raw {
-        return format!("{}?raw=true", make_link_with_trailing_slash(link));
-    }
+    let mut query: Vec<Cow<'static, str>> = Vec::with_capacity(4);
 
-    if let Some(method) = sort_method
+    if raw {
+        query.push("raw=true".into());
+    } else if let Some(method) = sort_method
         && let Some(order) = sort_order
     {
-        let parametrized_link = format!(
-            "{}?sort={}&order={}",
-            make_link_with_trailing_slash(link),
-            method,
-            order,
-        );
-
-        return parametrized_link;
+        query.push(format!("sort={method}").into());
+        query.push(format!("order={order}").into());
     }
 
-    make_link_with_trailing_slash(link)
+    if let Some(search) = search
+        && !search.is_empty()
+    {
+        query.push(format!("search={}", utf8_percent_encode(search, COMPONENT)).into());
+    }
+
+    if query.is_empty() {
+        make_link_with_trailing_slash(link)
+    } else {
+        format!(
+            "{}?{}",
+            make_link_with_trailing_slash(link),
+            query.join("&")
+        )
+    }
 }
 
 /// Partial: table header link
@@ -538,6 +560,7 @@ fn entry_row(
     sort_method: Option<SortingMethod>,
     sort_order: Option<SortingOrder>,
     raw: bool,
+    search: Option<&str>,
     show_exact_bytes: bool,
 ) -> Markup {
     html! {
@@ -547,13 +570,13 @@ fn entry_row(
                 p {
                     @if entry.is_dir() {
                         @if let Some(ref symlink_dest) = entry.symlink_info {
-                            a.symlink href=(parametrized_link(&entry.link, sort_method, sort_order, raw)) {
+                            a.symlink href=(parametrized_link(&entry.link, sort_method, sort_order, raw, search)) {
                                 (entry.name) "/"
                                 span.symlink-symbol { }
                                 a.directory {(symlink_dest) "/"}
                             }
                         }@else {
-                            a.directory href=(parametrized_link(&entry.link, sort_method, sort_order, raw)) {
+                            a.directory href=(parametrized_link(&entry.link, sort_method, sort_order, raw, search)) {
                                 (entry.name) "/"
                             }
                         }
