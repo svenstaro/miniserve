@@ -116,6 +116,10 @@ pub struct MiniserveConfig {
     /// Max amount of concurrency when uploading multiple files
     pub web_upload_concurrency: usize,
 
+    /// chmod permissions of uploaded files
+    #[cfg(unix)]
+    pub upload_chmod: u32,
+
     /// List of allowed upload directories
     pub allowed_upload_dir: Vec<String>,
 
@@ -330,6 +334,8 @@ impl MiniserveConfig {
             mkdir_enabled: args.mkdir_enabled,
             file_upload: args.allowed_upload_dir.is_some(),
             web_upload_concurrency: args.web_upload_concurrency,
+            #[cfg(unix)]
+            upload_chmod: args.chmod,
             allowed_upload_dir,
             uploadable_media_type,
             tar_enabled: args.enable_tar,
