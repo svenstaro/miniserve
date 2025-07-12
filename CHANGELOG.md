@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+- Skip hash calculation when crypto.subtle is not available [#1507](https://github.com/svenstaro/miniserve/pull/1507) (thanks @outloudvi)
 
 ## [0.31.0] - 2025-06-27
 - Fix filtering symlinks when hosting WebDAV [#1502](https://github.com/svenstaro/miniserve/pull/1502) (thanks @ahti)
