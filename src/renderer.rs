@@ -896,6 +896,7 @@ fn page_header(
                         async function get256FileHash(file) {
                           if (!crypto.subtle) {
                             // `crypto.subtle` is not available in nonsecure context (e.g. non-HTTPS LAN).
+                            // See https://developer.mozilla.org/en-US/docs/Web/API/Crypto/subtle
                             return "";
                           }
                           const arrayBuffer = await file.arrayBuffer();
