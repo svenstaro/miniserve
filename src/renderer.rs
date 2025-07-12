@@ -894,6 +894,11 @@ fn page_header(
                         });
 
                         async function get256FileHash(file) {
+                          if (!crypto.subtle) {
+                            // `crypto.subtle` is not available in nonsecure context (e.g. non-HTTPS LAN).
+                            // See https://developer.mozilla.org/en-US/docs/Web/API/Crypto/subtle
+                            return "";
+                          }
                           const arrayBuffer = await file.arrayBuffer();
                           const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer);
                           const hashArray = Array.from(new Uint8Array(hashBuffer));
@@ -1026,8 +1031,10 @@ fn page_header(
                                         xhr.addEventListener("abort", onAbort);
                                         xhr.upload.addEventListener('progress', onProgress);
                                         xhr.open('post', form.getAttribute("action"), true);
-                                        xhr.setRequestHeader('X-File-Hash', fileHash);
-                                        xhr.setRequestHeader('X-File-Hash-Function', 'SHA256');
+                                        if (fileHash) {
+                                            xhr.setRequestHeader('X-File-Hash', fileHash);
+                                            xhr.setRequestHeader('X-File-Hash-Function', 'SHA256');
+                                        }
                                         xhr.send(formData);
                                     }
                                 })
