@@ -32,14 +32,14 @@ clap = { version = "4", features = ["derive", "cargo", "wrap_help", "deprecated"
 clap_complete = "4"
 clap_mangen = "0.2"
 colored = "3"
-comrak = { version = "0.39", default-features = false }
+comrak = { version = "0.40", default-features = false }
 dav-server = { version = "0.8", features = ["actix-compat"] }
 fast_qr = { version = "0.13", features = ["svg"] }
 futures = "0.3"
 grass = { version = "0.13", features = ["macro"], default-features = false }
 hex = "0.4"
 httparse = "1"
-if-addrs = "0.13"
+if-addrs = "0.14"
 libflate = "2"
 log = "0.4"
 maud = "0.27"
@@ -53,12 +53,12 @@ rustls-pemfile = { version = "2", optional = true }
 serde = { version = "1", features = ["derive"] }
 sha2 = "0.10"
 simplelog = "0.12"
-socket2 = "0.5"
+socket2 = "0.6"
 strum = { version = "0.27", features = ["derive"] }
 tar = "0.4"
 tempfile = "3.20.0"
 thiserror = "2"
-tokio = { version = "1.45.1", features = ["fs", "macros"] }
+tokio = { version = "1.47.0", features = ["fs", "macros"] }
 zip = { version = "4", default-features = false }
 
 [features]
@@ -77,7 +77,7 @@ pretty_assertions = "1.2"
 regex = "1"
 reqwest = { version = "0.12", features = ["blocking", "multipart", "json", "rustls-tls"], default-features = false }
 reqwest_dav = "0.2"
-rstest = "0.25"
+rstest = "0.26"
 select = "0.6"
 url = "2"
 
