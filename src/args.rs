@@ -107,6 +107,11 @@ pub struct CliArgs {
     )]
     pub interfaces: Vec<IpAddr>,
 
+    /// Don't use a public IP service to include externally visible IP addresses in "Available at"
+    #[cfg(feature = "public-ip")]
+    #[arg(long = "no-public-ip", env = "MINISERVE_NO_PUBLIC_IP")]
+    pub no_public_ip: bool,
+
     /// Set authentication
     ///
     /// Currently supported formats:

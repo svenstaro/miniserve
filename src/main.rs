@@ -22,7 +22,7 @@ use dav_server::{
     actix::{DavRequest, DavResponse},
 };
 use fast_qr::QRBuilder;
-use log::{error, info, warn};
+use log::{debug, error, info, warn};
 use percent_encoding::percent_decode_str;
 use serde::Deserialize;
 
@@ -45,6 +45,22 @@ use crate::file_op::recursive_dir_size;
 use crate::webdav_fs::RestrictedFs;
 
 static STYLESHEET: &str = grass::include!("data/style.scss");
+
+/// Helper shared between internal and external IP address display code
+fn format_display_urls(ifaces: impl IntoIterator<Item=IpAddr>, miniserve_config: &MiniserveConfig) -> Vec<String> {
+    ifaces
+        .into_iter()
+        .map(|addr| match addr {
+            IpAddr::V4(_) => format!("{}:{}", addr, miniserve_config.port),
+            IpAddr::V6(_) => format!("[{}]:{}", addr, miniserve_config.port),
+        })
+        .map(|addr| match miniserve_config.tls_rustls_config {
+            Some(_) => format!("https://{addr}"),
+            None => format!("http://{addr}"),
+        })
+        .map(|url| format!("{}{}", url, miniserve_config.route_prefix))
+        .collect::<Vec<_>>()
+}
 
 fn main() -> Result<()> {
     let args = args::CliArgs::parse();
@@ -182,18 +198,7 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), StartupError> {
             ifaces.sort();
         }
 
-        ifaces
-            .into_iter()
-            .map(|addr| match addr {
-                IpAddr::V4(_) => format!("{}:{}", addr, miniserve_config.port),
-                IpAddr::V6(_) => format!("[{}]:{}", addr, miniserve_config.port),
-            })
-            .map(|addr| match miniserve_config.tls_rustls_config {
-                Some(_) => format!("https://{addr}"),
-                None => format!("http://{addr}"),
-            })
-            .map(|url| format!("{}{}", url, miniserve_config.route_prefix))
-            .collect::<Vec<_>>()
+        format_display_urls(ifaces, &miniserve_config)
     };
 
     let socket_addresses = miniserve_config
@@ -274,6 +279,34 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), StartupError> {
             .collect::<Vec<_>>()
             .join("\n    "),
     );
+
+
+    #[cfg(feature = "public-ip")]
+    {
+        let mut public_ips = Vec::with_capacity(2);
+        if let Some(public_ip) = public_ip::addr_v4().await {
+            public_ips.push(IpAddr::V4(public_ip));
+        } else {
+            debug!("Couldn't get public IPv4 address.");
+        }
+        if let Some(public_ip) = public_ip::addr_v6().await {
+            public_ips.push(IpAddr::V6(public_ip));
+        } else {
+            debug!("Couldn't get public IPv6 address.");
+        }
+
+        if !public_ips.is_empty() {
+            println!(
+                "Depending on firewall/NAT settings, may be publicly accessible at:\n    {}\n",
+                format_display_urls(public_ips, &miniserve_config)
+                    .iter()
+                    .map(|url| url.green().bold().to_string())
+                    .collect::<Vec<_>>()
+                    .join("\n    "),
+            );
+        }
+    }
+
 
     // print QR code to terminal
     if miniserve_config.show_qrcode && io::stdout().is_terminal() {
