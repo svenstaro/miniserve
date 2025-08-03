@@ -22,7 +22,7 @@ use dav_server::{
     actix::{DavRequest, DavResponse},
 };
 use fast_qr::QRBuilder;
-use log::{debug, error, info, warn};
+use log::{error, info, warn};
 use percent_encoding::percent_decode_str;
 use serde::Deserialize;
 
@@ -287,12 +287,12 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), StartupError> {
         if let Some(public_ip) = public_ip::addr_v4().await {
             public_ips.push(IpAddr::V4(public_ip));
         } else {
-            debug!("Couldn't get public IPv4 address.");
+            log::debug!("Couldn't get public IPv4 address.");
         }
         if let Some(public_ip) = public_ip::addr_v6().await {
             public_ips.push(IpAddr::V6(public_ip));
         } else {
-            debug!("Couldn't get public IPv6 address.");
+            log::debug!("Couldn't get public IPv6 address.");
         }
 
         if !public_ips.is_empty() {
