@@ -192,7 +192,7 @@ pub fn directory_listing(
         let res = Uri::builder()
             .scheme(req.connection_info().scheme())
             .authority(req.connection_info().host())
-            .path_and_query(req.uri().to_string())
+            .path_and_query(req.path())
             .build();
         match res {
             Ok(uri) => uri,
