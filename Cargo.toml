@@ -47,6 +47,7 @@ mime = "0.3"
 nanoid = "0.4"
 percent-encoding = "2"
 port_check = "0.2"
+public-ip = { version = "0.2.2", optional = true }
 regex = "1"
 rustls = { version = "0.23", features = ["ring"], optional = true, default-features = false }
 rustls-pemfile = { version = "2", optional = true }
@@ -62,12 +63,13 @@ tokio = { version = "1.47.0", features = ["fs", "macros"] }
 zip = { version = "4", default-features = false }
 
 [features]
-default = ["tls"]
+default = ["tls", "public-ip"]
 # This feature allows us to use rustls only on architectures supported by ring.
 # See also https://github.com/briansmith/ring/issues/1182
 # and https://github.com/briansmith/ring/issues/562
 # and https://github.com/briansmith/ring/issues/1367
 tls = ["rustls", "rustls-pemfile", "actix-web/rustls-0_23"]
+public-ip = ["dep:public-ip"]
 
 [dev-dependencies]
 assert_cmd = "2"
