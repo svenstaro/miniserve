@@ -6,10 +6,7 @@ use percent_encoding::utf8_percent_encode;
 use reqwest::StatusCode;
 use reqwest::blocking::Client;
 use rstest::rstest;
-use std::{
-    iter,
-    path::{Component, Path},
-};
+use std::path::{Component, Path};
 use url::Url;
 
 use crate::fixtures::{DEEPLY_NESTED_FILE, DIRECTORIES, FILES, HIDDEN_DIRECTORIES, HIDDEN_FILES};
