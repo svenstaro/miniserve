@@ -531,7 +531,7 @@ pub async fn rm_file(
     req: HttpRequest,
     query: web::Query<FileOpQueryParameters>,
 ) -> Result<HttpResponse, RuntimeError> {
-    let conf = req.app_data::<MiniserveConfig>().unwrap();
+    let conf = req.app_data::<web::Data<MiniserveConfig>>().unwrap();
     let rm_path = sanitize_path(&query.path, conf.show_hidden).ok_or_else(|| {
         RuntimeError::InvalidPathError("Invalid value for 'path' parameter".to_string())
     })?;

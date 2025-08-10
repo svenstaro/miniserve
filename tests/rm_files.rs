@@ -11,7 +11,6 @@ use url::Url;
 
 use crate::fixtures::{DEEPLY_NESTED_FILE, DIRECTORIES, FILES, HIDDEN_DIRECTORIES, HIDDEN_FILES};
 
-// Define the missing constant locally
 const NESTED_FILES_UNDER_SINGLE_ROOT: &[&str] = &["someDir/alpha", "someDir/some_sub_dir/bravo"];
 
 /// Construct a path for a GET request,
