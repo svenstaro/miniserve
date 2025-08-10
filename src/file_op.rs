@@ -21,6 +21,7 @@ use serde::Deserialize;
 use sha2::digest::DynDigest;
 use sha2::{Digest, Sha256, Sha512};
 use tempfile::NamedTempFile;
+use tokio::fs;
 use tokio::io::AsyncWriteExt;
 
 #[cfg(target_family = "unix")]

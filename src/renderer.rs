@@ -165,7 +165,7 @@ pub fn page(
                                 }
                             }
                             @for entry in entries {
-                                (entry_row(entry, sort_method, sort_order, false, conf.show_exact_bytes))
+                                (entry_row(entry, sort_method, sort_order, false, conf.show_exact_bytes, actions_conf))
                             }
                         }
                     }
@@ -254,7 +254,7 @@ pub fn raw(entries: Vec<Entry>, is_root: bool, conf: &MiniserveConfig) -> Markup
                             }
                         }
                         @for entry in entries {
-                            (entry_row(entry, None, None, true, conf.show_exact_bytes))
+                            (entry_row(entry, None, None, true, conf.show_exact_bytes, None))
                         }
                     }
                 }
@@ -570,6 +570,7 @@ fn entry_row(
     sort_order: Option<SortingOrder>,
     raw: bool,
     show_exact_bytes: bool,
+    actions_conf: Option<ActionsConf>,
 ) -> Markup {
     html! {
         @let entry_type = entry.entry_type.clone();
@@ -609,13 +610,13 @@ fn entry_row(
                                     }
                                 }@else {
                                     span.mobile-info.size {
-                                        (build_link("size", &format!("{size}"), sort_method, sort_order))
+                                        (sortable_title("size", &format!("{size}"), sort_method, sort_order))
+                                    }
                                 }
                             }
                             @if let Some(modification_timer) = humanize_systemtime(entry.last_modification_date) {
                                 span.mobile-info.history {
-                                    (build_link("date", &modification_timer, sort_method, sort_order))
-                                    }
+                                    (sortable_title("date", &modification_timer, sort_method, sort_order))
                                 }
                             }
                         }
