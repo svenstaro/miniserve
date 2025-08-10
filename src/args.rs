@@ -225,9 +225,9 @@ pub struct CliArgs {
     )]
     pub web_upload_concurrency: usize,
 
-    /// chmod permissions of uploaded files
+    /// Set unix file permissions of uploaded files
     ///
-    /// This takes an octal number that is similar to the one the chmod use
+    /// This takes an octal number, for example 0600.
     #[cfg(unix)]
     #[arg(
         long = "chmod",
