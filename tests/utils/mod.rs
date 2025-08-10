@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use select::document::Document;
 use select::node::Node;
 use select::predicate::Name;

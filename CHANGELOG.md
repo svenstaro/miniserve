@@ -8,7 +8,30 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+- Skip hash calculation when crypto.subtle is not available [#1507](https://github.com/svenstaro/miniserve/pull/1507) (thanks @outloudvi)
+- Fix hostname:port getting repeated in wget footer if TLS is used [#1515](https://github.com/svenstaro/miniserve/pull/1515) (thanks @xtay573269555)
+
+## [0.31.0] - 2025-06-27
+- Fix filtering symlinks when hosting WebDAV [#1502](https://github.com/svenstaro/miniserve/pull/1502) (thanks @ahti)
+- Enable renaming during file upload if duplicate exists [#1453](https://github.com/svenstaro/miniserve/pull/1453) (thanks @Atreyagaurav)
+
+## [0.30.0] - 2025-06-26
+- Add `--file-external-url` to generate links pointing to another server [#1492](https://github.com/svenstaro/miniserve/pull/1492) (thanks @jankeymeulen)
+- Add date pill and sort links for mobile views [#1473](https://github.com/svenstaro/miniserve/pull/1473) (thanks @Flat)
+- Add upload progress bar and allow for multiple concurrent file uploads [#1431](https://github.com/svenstaro/miniserve/pull/1431) (thanks @AlecDivito)
+- Add `--size-display` to allow for toggling file size display between `human` and `exact` [#1261](https://github.com/svenstaro/miniserve/pull/1261) (thanks @Lzzzzzt)
+- Add well-known healthcheck route at `/__miniserve_internal/healthcheck` (of `/<prefix>/__miniserve_internal/healthcheck` when using `--route-prefix`)
+- Add asynchronous recursive directory size counting [#1482](https://github.com/svenstaro/miniserve/pull/1482)
+- Add link to miniserve GitHub page to footer
+- Add `--directory-size` flag to enable directory size counting
+- Fix --no-symlinks not filtering files and dirs nested in symlinks [#1495](https://github.com/svenstaro/miniserve/pull/1495) (thanks @ahti)
+
+## [0.29.0] - 2025-02-06
 - Make URL encoding fully WHATWG-compliant [#1454](https://github.com/svenstaro/miniserve/pull/1454) (thanks @cyqsimon)
+- Fix `OVERWRITE_FILES` env var not being prefixed by `MINISERVE_` [#1457](https://github.com/svenstaro/miniserve/issues/1457)
+- Change `font-weight` of regular files to be `normal` to improve readability [#1471](https://github.com/svenstaro/miniserve/pull/1471) (thanks @shaicoleman)
+- Add webdav support [#1415](https://github.com/svenstaro/miniserve/pull/1415) (thanks @ahti)
+- Move favicon and css to stable, non-random routes [#1472](https://github.com/svenstaro/miniserve/pull/1472) (thanks @ahti)
 
 ## [0.28.0] - 2024-09-12
 - Fix wrapping text in mobile view when the file name too long [#1379](https://github.com/svenstaro/miniserve/pull/1379) (thanks @chaibiq)
@@ -205,7 +228,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Some theme related bug fixes (thanks @boastful-squirrel)
 
 <!-- next-url -->
-[Unreleased]: https://github.com/svenstaro/miniserve/compare/v0.28.0...HEAD
+[Unreleased]: https://github.com/svenstaro/miniserve/compare/v0.31.0...HEAD
+[0.31.0]: https://github.com/svenstaro/miniserve/compare/v0.30.0...v0.31.0
+[0.30.0]: https://github.com/svenstaro/miniserve/compare/v0.29.0...v0.30.0
+[0.29.0]: https://github.com/svenstaro/miniserve/compare/v0.28.0...v0.29.0
 [0.28.0]: https://github.com/svenstaro/miniserve/compare/v0.27.1...v0.28.0
 [0.27.1]: https://github.com/svenstaro/miniserve/compare/v0.27.0...v0.27.1
 [0.27.0]: https://github.com/svenstaro/miniserve/compare/v0.26.0...v0.27.0

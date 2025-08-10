@@ -4,11 +4,11 @@ use std::path::{Component, Path};
 use std::time::SystemTime;
 
 use actix_web::{
-    dev::ServiceResponse, http::Uri, web::Query, HttpMessage, HttpRequest, HttpResponse,
+    HttpMessage, HttpRequest, HttpResponse, dev::ServiceResponse, http::Uri, web, web::Query,
 };
 use bytesize::ByteSize;
 use clap::ValueEnum;
-use comrak::{markdown_to_html, ComrakOptions};
+use comrak::{ComrakOptions, markdown_to_html};
 use percent_encoding::{percent_decode_str, utf8_percent_encode};
 use regex::Regex;
 use serde::Deserialize;
@@ -20,6 +20,28 @@ use crate::errors::{self, RuntimeError};
 use crate::path_utils::percent_encode_sets::COMPONENT;
 use crate::renderer;
 
+use self::percent_encode_sets::COMPONENT;
+
+/// "percent-encode sets" as defined by WHATWG specs:
+/// https://url.spec.whatwg.org/#percent-encoded-bytes
+pub mod percent_encode_sets {
+    use percent_encoding::{AsciiSet, CONTROLS};
+    pub const QUERY: &AsciiSet = &CONTROLS.add(b' ').add(b'"').add(b'#').add(b'<').add(b'>');
+    pub const PATH: &AsciiSet = &QUERY.add(b'?').add(b'`').add(b'{').add(b'}');
+    pub const USERINFO: &AsciiSet = &PATH
+        .add(b'/')
+        .add(b':')
+        .add(b';')
+        .add(b'=')
+        .add(b'@')
+        .add(b'[')
+        .add(b'\\')
+        .add(b']')
+        .add(b'^')
+        .add(b'|');
+    pub const COMPONENT: &AsciiSet = &USERINFO.add(b'$').add(b'%').add(b'&').add(b'+').add(b',');
+}
+
 /// Query parameters used by listing APIs
 #[derive(Deserialize, Default)]
 pub struct ListingQueryParameters {
@@ -30,7 +52,7 @@ pub struct ListingQueryParameters {
 }
 
 /// Available sorting methods
-#[derive(Deserialize, Default, Clone, EnumString, Display, Copy, ValueEnum)]
+#[derive(Debug, Deserialize, Default, Clone, EnumString, Display, Copy, ValueEnum)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum SortingMethod {
@@ -46,7 +68,7 @@ pub enum SortingMethod {
 }
 
 /// Available sorting orders
-#[derive(Deserialize, Default, Clone, EnumString, Display, Copy, ValueEnum)]
+#[derive(Debug, Deserialize, Default, Clone, EnumString, Display, Copy, ValueEnum)]
 pub enum SortingOrder {
     /// Ascending order
     #[serde(alias = "asc")]
@@ -60,8 +82,9 @@ pub enum SortingOrder {
     Desc,
 }
 
-#[derive(PartialEq, Eq)]
 /// Possible entry types
+#[derive(PartialEq, Clone, Display, Eq)]
+#[strum(serialize_all = "snake_case")]
 pub enum EntryType {
     /// Entry is a directory
     Directory,
@@ -100,7 +123,7 @@ impl Entry {
         last_modification_date: Option<SystemTime>,
         symlink_info: Option<String>,
     ) -> Self {
-        Entry {
+        Self {
             name,
             entry_type,
             link,
@@ -132,12 +155,15 @@ pub struct Breadcrumb {
 
 impl Breadcrumb {
     fn new(name: String, link: String) -> Self {
-        Breadcrumb { name, link }
+        Self { name, link }
     }
 }
 
 pub async fn file_handler(req: HttpRequest) -> actix_web::Result<actix_files::NamedFile> {
-    let path = &req.app_data::<crate::MiniserveConfig>().unwrap().path;
+    let path = &req
+        .app_data::<web::Data<crate::MiniserveConfig>>()
+        .unwrap()
+        .path;
     actix_files::NamedFile::open(path).map_err(Into::into)
 }
 
@@ -150,7 +176,7 @@ pub fn directory_listing(
     let extensions = req.extensions();
     let current_user: Option<&CurrentUser> = extensions.get::<CurrentUser>();
 
-    let conf = req.app_data::<crate::MiniserveConfig>().unwrap();
+    let conf = req.app_data::<web::Data<crate::MiniserveConfig>>().unwrap();
     if conf.disable_indexing {
         return Ok(ServiceResponse::new(
             req.clone(),
@@ -167,7 +193,7 @@ pub fn directory_listing(
         let res = Uri::builder()
             .scheme(req.connection_info().scheme())
             .authority(req.connection_info().host())
-            .path_and_query(req.uri().to_string())
+            .path_and_query(req.path())
             .build();
         match res {
             Ok(uri) => uri,
@@ -253,10 +279,7 @@ pub fn directory_listing(
                 if conf.no_symlinks && is_symlink {
                     continue;
                 }
-                let last_modification_date = match metadata.modified() {
-                    Ok(date) => Some(date),
-                    Err(_) => None,
-                };
+                let last_modification_date = metadata.modified().ok();
 
                 if metadata.is_dir() {
                     entries.push(Entry::new(
@@ -268,16 +291,44 @@ pub fn directory_listing(
                         symlink_dest,
                     ));
                 } else if metadata.is_file() {
+                    let file_link = match &conf.file_external_url {
+                        Some(external_url) => {
+                            // Construct the full relative path including subdirectories
+                            // encoded_dir holds the current directory path relative to the prefix (e.g., /subdir1/subdir2)
+                            let current_relative_dir = encoded_dir.trim_matches('/'); // Remove leading/trailing slashes if any
+
+                            // Combine the relative directory path and the filename
+                            let full_relative_path = if current_relative_dir.is_empty() {
+                                // If in the root directory, just use the filename
+                                utf8_percent_encode(&file_name, COMPONENT).to_string()
+                            } else {
+                                // Otherwise, join directory and filename
+                                format!(
+                                    "{}/{}",
+                                    current_relative_dir,
+                                    utf8_percent_encode(&file_name, COMPONENT)
+                                )
+                            };
+
+                            // Join the external external URL with the full relative path
+                            format!(
+                                "{}/{}",
+                                external_url.trim_end_matches('/'), // Base URL without trailing slash
+                                full_relative_path // Relative path (dir + file) - should not have leading slash here
+                            )
+                        }
+                        None => file_url,
+                    };
                     entries.push(Entry::new(
                         file_name.clone(),
                         EntryType::File,
-                        file_url,
+                        file_link,
                         Some(ByteSize::b(metadata.len())),
                         last_modification_date,
                         symlink_dest,
                     ));
                     if conf.readme && readme_rx.is_match(&file_name.to_lowercase()) {
-                        let ext = file_name.split('.').last().unwrap().to_lowercase();
+                        let ext = file_name.split('.').next_back().unwrap().to_lowercase();
                         readme = Some((
                             file_name.to_string(),
                             if ext == "md" {
@@ -358,7 +409,7 @@ pub fn directory_listing(
         let skip_symlinks = conf.no_symlinks;
         std::thread::spawn(move || {
             if let Err(err) = archive_method.create_archive(dir, skip_symlinks, pipe) {
-                log::error!("Error during archive creation: {:?}", err);
+                log::error!("Error during archive creation: {err:?}");
             }
         });
 

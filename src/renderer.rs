@@ -3,19 +3,19 @@ use std::time::SystemTime;
 use actix_web::http::{StatusCode, Uri};
 use chrono::{DateTime, Local};
 use chrono_humanize::Humanize;
-use clap::{crate_name, crate_version, ValueEnum};
+use clap::{ValueEnum, crate_name, crate_version};
 use fast_qr::{
-    convert::{svg::SvgBuilder, Builder},
-    qr::QRCodeError,
     QRBuilder,
+    convert::{Builder, svg::SvgBuilder},
+    qr::QRCodeError,
 };
-use maud::{html, Markup, PreEscaped, DOCTYPE};
+use maud::{DOCTYPE, Markup, PreEscaped, html};
 use strum::{Display, IntoEnumIterator};
 
 use crate::auth::CurrentUser;
 use crate::consts;
 use crate::listing::{Breadcrumb, Entry, ListingQueryParameters, SortingMethod, SortingOrder};
-use crate::{archive::ArchiveMethod, MiniserveConfig};
+use crate::{MiniserveConfig, archive::ArchiveMethod};
 
 #[allow(clippy::too_many_arguments)]
 /// Renders the file listing
@@ -32,7 +32,7 @@ pub fn page(
 ) -> Markup {
     // If query_params.raw is true, we want render a minimal directory listing
     if query_params.raw.is_some() && query_params.raw.unwrap() {
-        return raw(entries, is_root);
+        return raw(entries, is_root, conf);
     }
 
     let upload_route = format!("{}/upload", &conf.route_prefix);
@@ -64,7 +64,7 @@ pub fn page(
     html! {
         (DOCTYPE)
         html {
-            (page_header(&title_path, conf.file_upload, &conf.favicon_route, &conf.css_route))
+            (page_header(&title_path, conf.file_upload, conf.web_upload_concurrency, &conf.api_route, &conf.favicon_route, &conf.css_route))
 
             body #drop-container
             {
@@ -165,7 +165,7 @@ pub fn page(
                                 }
                             }
                             @for entry in entries {
-                                (entry_row(entry, sort_method, sort_order, false, actions_conf))
+                                (entry_row(entry, sort_method, sort_order, false, conf.show_exact_bytes))
                             }
                         }
                     }
@@ -182,10 +182,45 @@ pub fn page(
                     }
                     div.footer {
                         @if conf.show_wget_footer {
-                            (wget_footer(abs_uri, conf.title.as_deref(), current_user.map(|x| &*x.name)))
+                            (wget_footer(abs_uri, conf.title.as_deref(), current_user.map(|x| &*x.name),
+                                conf.file_external_url.as_deref()))
                         }
                         @if !conf.hide_version_footer {
                             (version_footer())
+                        }
+                    }
+                }
+                div.upload_area id="upload_area" {
+                    template id="upload_file_item" {
+                        li.upload_file_item {
+                            div.upload_file_container {
+                                div.upload_file_text {
+                                    span.file_upload_percent { "" }
+                                    {" - "}
+                                    span.file_size { "" }
+                                    {" - "}
+                                    span.file_name { "" }
+                                }
+                                button.file_cancel_upload { "✖" }
+                            }
+                            div.file_progress_bar {}
+                        }
+                    }
+                    div.upload_container {
+                        div.upload_header {
+                            h4 style="margin:0px" id="upload_title" {}
+                            svg id="upload-toggle" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6" {
+                              path stroke-linecap="round" stroke-linejoin="round" d="m4.5 15.75 7.5-7.5 7.5 7.5" {}
+                            }
+                        }
+                        div.upload_action {
+                            p id="upload_action_text" { "Starting upload..." }
+                            button.upload_cancel id="upload_cancel" { "CANCEL" }
+                        }
+                        div.upload_files {
+                            ul.upload_file_list id="upload_file_list" {
+
+                            }
                         }
                     }
                 }
@@ -195,7 +230,7 @@ pub fn page(
 }
 
 /// Renders the file listing
-pub fn raw(entries: Vec<Entry>, is_root: bool) -> Markup {
+pub fn raw(entries: Vec<Entry>, is_root: bool, conf: &MiniserveConfig) -> Markup {
     html! {
         (DOCTYPE)
         html {
@@ -219,7 +254,7 @@ pub fn raw(entries: Vec<Entry>, is_root: bool) -> Markup {
                             }
                         }
                         @for entry in entries {
-                            (entry_row(entry, None, None, true, None))
+                            (entry_row(entry, None, None, true, conf.show_exact_bytes))
                         }
                     }
                 }
@@ -251,12 +286,20 @@ fn breadcrumbs_to_path_string(breadcrumbs: &[Breadcrumb]) -> String {
 fn version_footer() -> Markup {
     html! {
        div.version {
-           (format!("{}/{}", crate_name!(), crate_version!()))
+            a href="https://github.com/svenstaro/miniserve" {
+               (crate_name!())
+           }
+           (format!("/{}", crate_version!()))
        }
     }
 }
 
-fn wget_footer(abs_path: &Uri, root_dir_name: Option<&str>, current_user: Option<&str>) -> Markup {
+fn wget_footer(
+    abs_path: &Uri,
+    root_dir_name: Option<&str>,
+    current_user: Option<&str>,
+    file_external_url: Option<&str>,
+) -> Markup {
     fn escape_apostrophes(x: &str) -> String {
         x.replace('\'', "'\"'\"'")
     }
@@ -281,9 +324,16 @@ fn wget_footer(abs_path: &Uri, root_dir_name: Option<&str>, current_user: Option
         None => String::new(),
     };
 
+    // Add the -H option to span hosts when serving files from another instance
+    let span_hosts_option = if file_external_url.is_some() {
+        " -H"
+    } else {
+        " -nH"
+    };
+
     let encoded_abs_path = abs_path.to_string().replace('\'', "%27");
     let command = format!(
-        "wget -rcnHp -R 'index.html*'{cut_dirs}{user_params} '{encoded_abs_path}?raw=true'"
+        "wget -rcnp -R 'index.html*'{span_hosts_option}{cut_dirs}{user_params} '{encoded_abs_path}?raw=true'"
     );
     let click_to_copy = format!("navigator.clipboard.writeText(\"{command}\")");
 
@@ -341,10 +391,10 @@ pub enum ThemeSlug {
 impl ThemeSlug {
     pub fn css(&self) -> &str {
         match self {
-            ThemeSlug::Squirrel => grass::include!("data/themes/squirrel.scss"),
-            ThemeSlug::Archlinux => grass::include!("data/themes/archlinux.scss"),
-            ThemeSlug::Zenburn => grass::include!("data/themes/zenburn.scss"),
-            ThemeSlug::Monokai => grass::include!("data/themes/monokai.scss"),
+            Self::Squirrel => grass::include!("data/themes/squirrel.scss"),
+            Self::Archlinux => grass::include!("data/themes/archlinux.scss"),
+            Self::Zenburn => grass::include!("data/themes/zenburn.scss"),
+            Self::Monokai => grass::include!("data/themes/monokai.scss"),
         }
     }
 
@@ -448,17 +498,17 @@ fn parametrized_link(
         return format!("{}?raw=true", make_link_with_trailing_slash(link));
     }
 
-    if let Some(method) = sort_method {
-        if let Some(order) = sort_order {
-            let parametrized_link = format!(
-                "{}?sort={}&order={}",
-                make_link_with_trailing_slash(link),
-                method,
-                order,
-            );
+    if let Some(method) = sort_method
+        && let Some(order) = sort_order
+    {
+        let parametrized_link = format!(
+            "{}?sort={}&order={}",
+            make_link_with_trailing_slash(link),
+            method,
+            order,
+        );
 
-            return parametrized_link;
-        }
+        return parametrized_link;
     }
 
     make_link_with_trailing_slash(link)
@@ -476,16 +526,16 @@ fn sortable_title(
     let mut chevron = chevron_down();
     let mut class = "";
 
-    if let Some(method) = sort_method {
-        if method.to_string() == name {
-            class = "active";
-            if let Some(order) = sort_order {
-                if order.to_string() == "asc" {
-                    link = format!("?sort={name}&order=desc");
-                    help = format!("Sort by {name} in descending order");
-                    chevron = chevron_up();
-                }
-            }
+    if let Some(method) = sort_method
+        && method.to_string() == name
+    {
+        class = "active";
+        if let Some(order) = sort_order
+            && order.to_string() == "asc"
+        {
+            link = format!("?sort={name}&order=desc");
+            help = format!("Sort by {name} in descending order");
+            chevron = chevron_up();
         }
     };
 
@@ -519,14 +569,15 @@ fn entry_row(
     sort_method: Option<SortingMethod>,
     sort_order: Option<SortingOrder>,
     raw: bool,
-    actions_conf: Option<ActionsConf>,
+    show_exact_bytes: bool,
 ) -> Markup {
     html! {
-        tr {
+        @let entry_type = entry.entry_type.clone();
+        tr .{ "entry-type-" (entry_type) } {
             td {
                 p {
                     @if entry.is_dir() {
-                        @if let Some(symlink_dest) = entry.symlink_info {
+                        @if let Some(ref symlink_dest) = entry.symlink_info {
                             a.symlink href=(parametrized_link(&entry.link, sort_method, sort_order, raw)) {
                                 (entry.name) "/"
                                 span.symlink-symbol { }
@@ -538,7 +589,7 @@ fn entry_row(
                             }
                         }
                     } @else if entry.is_file() {
-                        @if let Some(symlink_dest) = entry.symlink_info {
+                        @if let Some(ref symlink_dest) = entry.symlink_info {
                             a.symlink href=(&entry.link) {
                                 (entry.name)
                                 span.symlink-symbol { }
@@ -552,8 +603,19 @@ fn entry_row(
 
                         @if !raw {
                             @if let Some(size) = entry.size {
-                                span.mobile-info.size {
-                                    (maud::display(size))
+                                @if show_exact_bytes {
+                                    span.mobile-info.size {
+                                        (maud::display(format!("{} B", size.as_u64())))
+                                    }
+                                }@else {
+                                    span.mobile-info.size {
+                                        (build_link("size", &format!("{size}"), sort_method, sort_order))
+                                }
+                            }
+                            @if let Some(modification_timer) = humanize_systemtime(entry.last_modification_date) {
+                                span.mobile-info.history {
+                                    (build_link("date", &modification_timer, sort_method, sort_order))
+                                    }
                                 }
                             }
                         }
@@ -562,7 +624,11 @@ fn entry_row(
             }
             td.size-cell {
                 @if let Some(size) = entry.size {
-                    (maud::display(size))
+                    @if show_exact_bytes {
+                        (maud::display(format!("{} B", size.as_u64())))
+                    }@else {
+                        (maud::display(size))
+                    }
                 }
             }
             td.date-cell {
@@ -607,7 +673,14 @@ fn chevron_down() -> Markup {
 }
 
 /// Partial: page header
-fn page_header(title: &str, file_upload: bool, favicon_route: &str, css_route: &str) -> Markup {
+fn page_header(
+    title: &str,
+    file_upload: bool,
+    web_file_concurrency: usize,
+    api_route: &str,
+    favicon_route: &str,
+    css_route: &str,
+) -> Markup {
     html! {
         head {
             meta charset="utf-8";
@@ -620,8 +693,8 @@ fn page_header(title: &str, file_upload: bool, favicon_route: &str, css_route: &
 
             title { (title) }
 
-            (PreEscaped(r#"
-                <script>
+            script {
+                (PreEscaped(r#"
                     // updates the color scheme by setting the theme data attribute
                     // on body and saving the new theme to local storage
                     function updateColorScheme(name) {
@@ -644,13 +717,73 @@ fn page_header(title: &str, file_upload: bool, favicon_route: &str, css_route: &
                     addEventListener("load", loadColorScheme);
                     // load saved theme when local storage is changed (synchronize between tabs)
                     addEventListener("storage", loadColorScheme);
-                </script>
-            "#))
+                "#))
+            }
+
+            script {
+                (format!("const API_ROUTE = '{api_route}';"))
+                (PreEscaped(r#"
+                    let dirSizeCache = {};
+
+                    // Query the directory size from the miniserve API
+                    function fetchDirSize(dir) {
+                        return fetch(API_ROUTE, {
+                            headers: {
+                                'Accept': 'application/json',
+                                'Content-Type': 'application/json'
+                            },
+                            method: 'POST',
+                            body: JSON.stringify({
+                                DirSize: dir
+                            })
+                        }).then(resp => resp.ok ? resp.text() : "~")
+                    }
+
+                    function updateSizeCells() {
+                        const directoryCells = document.querySelectorAll('tr.entry-type-directory .size-cell');
+
+                        directoryCells.forEach(cell => {
+                            // Get the dir from the sibling anchor tag.
+                            const href = cell.parentNode.querySelector('a').href;
+                            const target = new URL(href).pathname;
+
+                            // First check our local cache
+                            if (target in dirSizeCache) {
+                                cell.dataset.size = dirSizeCache[target];
+                            } else {
+                                fetchDirSize(target).then(dir_size => {
+                                    cell.dataset.size = dir_size;
+                                    dirSizeCache[target] = dir_size;
+                                })
+                                .catch(error => console.error("Error fetching dir size:", error));
+                            }
+                        })
+                    }
+                    setInterval(updateSizeCells, 1000);
+                "#))
+            }
 
             @if file_upload {
-                (PreEscaped(r#"
-                <script>
+                script {
+                    (format!("const CONCURRENCY = {web_file_concurrency};"))
+                    (PreEscaped(r#"
                     window.onload = function() {
+                        // Constants
+                        const UPLOADING = 'uploading', PENDING = 'pending', COMPLETE = 'complete', CANCELLED = 'cancelled', FAILED = 'failed'
+                        const UPLOAD_ITEM_ORDER = { UPLOADING: 0, PENDING: 1, COMPLETE: 2, CANCELLED: 3, FAILED: 4 }
+                        let CANCEL_UPLOAD = false;
+
+                        // File Upload dom elements. Used for interacting with the
+                        // upload container.
+                        const form = document.querySelector('#file_submit');
+                        const uploadArea = document.querySelector('#upload_area');
+                        const uploadTitle = document.querySelector('#upload_title');
+                        const uploadActionText = document.querySelector('#upload_action_text');
+                        const uploadCancelButton = document.querySelector('#upload_cancel');
+                        const uploadList = document.querySelector('#upload_file_list');
+                        const fileUploadItemTemplate = document.querySelector('#upload_file_item');
+                        const uploadWidgetToggle = document.querySelector('#upload-toggle');
+
                         const dropContainer = document.querySelector('#drop-container');
                         const dragForm = document.querySelector('.drag-form');
                         const fileInput = document.querySelector('#file-input');
@@ -679,12 +812,273 @@ fn page_header(title: &str, file_upload: bool, favicon_route: &str, css_route: &
                         dropContainer.ondrop = function(e) {
                             e.preventDefault();
                             fileInput.files = e.dataTransfer.files;
-                            file_submit.submit();
+                            form.requestSubmit();
                             dragForm.style.display = 'none';
                         };
+
+                        // Event listener for toggling the upload widget display on mobile.
+                        uploadWidgetToggle.addEventListener('click', function (e) {
+                            e.preventDefault();
+                            if (uploadArea.style.height === "100vh") {
+                                uploadArea.style = ""
+                                document.body.style = ""
+                                uploadWidgetToggle.style = ""
+                            } else {
+                                uploadArea.style.height = "100vh"
+                                document.body.style = "overflow: hidden"
+                                uploadWidgetToggle.style = "transform: rotate(180deg)"
+                            }
+                        })
+
+                        // Cancel all active and pending uploads
+                        uploadCancelButton.addEventListener('click', function (e) {
+                            e.preventDefault();
+                            CANCEL_UPLOAD = true;
+                        })
+
+                        form.addEventListener('submit', function (e) {
+                            e.preventDefault()
+                            uploadFiles()
+                        })
+
+                        // When uploads start, finish or are cancelled, the UI needs to reactively shows those
+                        // updates of the state. This function updates the text on the upload widget to accurately
+                        // show the state of all uploads.
+                        function updateUploadTextAndList() {
+                            // All state is kept as `data-*` attributed on the HTML node.
+                            const queryLength = (state) => document.querySelectorAll(`[data-state='${state}']`).length;
+                            const total = document.querySelectorAll("[data-state]").length;
+                            const uploads = queryLength(UPLOADING);
+                            const pending = queryLength(PENDING);
+                            const completed = queryLength(COMPLETE);
+                            const cancelled = queryLength(CANCELLED);
+                            const failed = queryLength(FAILED);
+                            const allCompleted = completed + cancelled + failed;
+
+                            // Update header text based on remaining uploads
+                            let headerText = `${total - allCompleted} uploads remaining...`;
+                            if (total === allCompleted) {
+                                headerText = `Complete! Reloading Page!`
+                            }
+
+                            // Build a summary of statuses for sub header
+                            const statuses = []
+                            if (uploads > 0) { statuses.push(`Uploading ${uploads}`) }
+                            if (pending > 0) { statuses.push(`Pending ${pending}`) }
+                            if (completed > 0) { statuses.push(`Complete ${completed}`) }
+                            if (cancelled > 0) { statuses.push(`Cancelled ${cancelled}`) }
+                            if (failed > 0) { statuses.push(`Failed ${failed}`) }
+
+                            uploadTitle.textContent = headerText
+                            uploadActionText.textContent = statuses.join(', ')
+                        }
+
+                        // Initiates the file upload process by disabling the ability for more files to be
+                        // uploaded and creating async callbacks for each file that needs to be uploaded.
+                        // Given the concurrency set by the server input arguments, it will try to process
+                        // that many uploads at once
+                        function uploadFiles() {
+                            fileInput.disabled = true;
+
+                            // Map all the files into async callbacks (uploadFile is a function that returns a function)
+                            const callbacks = Array.from(fileInput.files).map(uploadFile);
+
+                            // Get a list of all the callbacks
+                            const concurrency = CONCURRENCY === 0 ? callbacks.length : CONCURRENCY;
+
+                            // Worker function that continuously pulls tasks from the shared queue.
+                            async function worker() {
+                                while (callbacks.length > 0) {
+                                    // Remove a task from the front of the queue.
+                                    const task = callbacks.shift();
+                                    if (task) {
+                                        await task();
+                                        updateUploadTextAndList();
+                                    }
+                                }
+                            }
+
+                            // Create a work stealing shared queue, split up between `concurrency` amount of workers.
+                            const workers = Array.from({ length: concurrency }).map(worker);
+
+                            // Wait for all the workers to complete
+                            Promise.allSettled(workers)
+                                .finally(() => {
+                                    updateUploadTextAndList();
+                                    form.reset();
+                                    setTimeout(() => { uploadArea.classList.remove('active'); }, 1000)
+                                    setTimeout(() => { window.location.reload(); }, 1500)
+                                })
+
+                            updateUploadTextAndList();
+                            uploadArea.classList.add('active')
+                            uploadList.scrollTo(0, 0)
+                        }
+
+                        function formatBytes(bytes, decimals) {
+                            if (bytes == 0) return '0 Bytes';
+                            var k = 1024,
+                                dm = decimals || 2,
+                                sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'],
+                                i = Math.floor(Math.log(bytes) / Math.log(k));
+                            return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+                        }
+
+                        document.querySelector('input[type="file"]').addEventListener('change', async (e) => {
+                          const file = e.target.files[0];
+                          const hash = await hashFile(file);
+                        });
+
+                        async function get256FileHash(file) {
+                          if (!crypto.subtle) {
+                            // `crypto.subtle` is not available in nonsecure context (e.g. non-HTTPS LAN).
+                            // See https://developer.mozilla.org/en-US/docs/Web/API/Crypto/subtle
+                            return "";
+                          }
+                          const arrayBuffer = await file.arrayBuffer();
+                          const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer);
+                          const hashArray = Array.from(new Uint8Array(hashBuffer));
+                          return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+                        }
+
+                        // Upload a file. This function will create a upload item in the upload
+                        // widget from an HTML template. It then returns a promise which will
+                        // be used to upload the file to the server and control the styles and
+                        // interactions on the HTML list item.
+                        function uploadFile(file) {
+                            const fileUploadItem = fileUploadItemTemplate.content.cloneNode(true)
+                            const itemContainer = fileUploadItem.querySelector(".upload_file_item")
+                            const itemText = fileUploadItem.querySelector(".upload_file_text")
+                            const size = fileUploadItem.querySelector(".file_size")
+                            const name = fileUploadItem.querySelector(".file_name")
+                            const percentText = fileUploadItem.querySelector(".file_upload_percent")
+                            const bar = fileUploadItem.querySelector(".file_progress_bar")
+                            const cancel = fileUploadItem.querySelector(".file_cancel_upload")
+                            let preCancel = false;
+
+                            itemContainer.dataset.state = PENDING
+                            name.textContent = file.name
+                            size.textContent = formatBytes(file.size)
+                            percentText.textContent = "0%"
+
+                            uploadList.append(fileUploadItem)
+
+                            // Cancel an upload before it even started.
+                            function preCancelUpload() {
+                                preCancel = true;
+                                itemText.classList.add(CANCELLED);
+                                bar.classList.add(CANCELLED);
+                                itemContainer.dataset.state = CANCELLED;
+                                itemContainer.style.background = 'var(--upload_modal_file_upload_complete_background)';
+                                cancel.disabled = true;
+                                cancel.removeEventListener("click", preCancelUpload);
+                                uploadCancelButton.removeEventListener("click", preCancelUpload);
+                                updateUploadTextAndList();
+                            }
+
+                            uploadCancelButton.addEventListener("click", preCancelUpload)
+                            cancel.addEventListener("click", preCancelUpload)
+
+                            // A callback function is return so that the upload doesn't start until
+                            // we want it to. This is so that we have control over our desired concurrency.
+                            return () => {
+                                if (preCancel) {
+                                    return Promise.resolve()
+                                }
+
+                                // Upload the single file in a multipart request.
+                                return new Promise(async (resolve, reject) => {
+                                    const fileHash = await get256FileHash(file);
+                                    const xhr = new XMLHttpRequest();
+                                    const formData = new FormData();
+                                    formData.append('file', file);
+
+                                    function onReadyStateChange(e) {
+                                        if (e.target.readyState == 4) {
+                                            if (e.target.status == 200) {
+                                                completeSuccess()
+                                            } else {
+                                                failedUpload(e.target.status)
+                                            }
+                                        }
+                                    }
+
+                                    function onError(e) {
+                                        failedUpload()
+                                    }
+
+                                    function onAbort(e) {
+                                        cancelUpload()
+                                    }
+
+                                    function onProgress (e) {
+                                        update(Math.round((e.loaded / e.total) * 100));
+                                    }
+
+                                    function update(uploadPercent) {
+                                        let wholeNumber = Math.floor(uploadPercent)
+                                        percentText.textContent = `${wholeNumber}%`
+                                        bar.style.width = `${wholeNumber}%`
+                                    }
+
+                                    function completeSuccess() {
+                                        cancel.textContent = '✔';
+                                        cancel.classList.add(COMPLETE);
+                                        bar.classList.add(COMPLETE);
+                                        cleanUp(COMPLETE)
+                                    }
+
+                                    function failedUpload(statusCode) {
+                                        cancel.textContent = `${statusCode} ⚠`;
+                                        itemText.classList.add(FAILED);
+                                        bar.classList.add(FAILED);
+                                        cleanUp(FAILED);
+                                    }
+
+                                    function cancelUpload() {
+                                        xhr.abort()
+                                        itemText.classList.add(CANCELLED);
+                                        bar.classList.add(CANCELLED);
+                                        cleanUp(CANCELLED);
+                                    }
+
+                                    function cleanUp(state) {
+                                        itemContainer.dataset.state = state;
+                                        itemContainer.style.background = 'var(--upload_modal_file_upload_complete_background)';
+                                        cancel.disabled = true;
+                                        cancel.removeEventListener("click", cancelUpload)
+                                        uploadCancelButton.removeEventListener("click", cancelUpload)
+                                        xhr.removeEventListener('readystatechange', onReadyStateChange);
+                                        xhr.removeEventListener("error", onError);
+                                        xhr.removeEventListener("abort", onAbort);
+                                        xhr.upload.removeEventListener('progress', onProgress);
+                                        resolve()
+                                    }
+
+                                    uploadCancelButton.addEventListener("click", cancelUpload)
+                                    cancel.addEventListener("click", cancelUpload)
+
+                                    if (CANCEL_UPLOAD) {
+                                        cancelUpload()
+                                    } else {
+                                        itemContainer.dataset.state = UPLOADING
+                                        xhr.addEventListener('readystatechange', onReadyStateChange);
+                                        xhr.addEventListener("error", onError);
+                                        xhr.addEventListener("abort", onAbort);
+                                        xhr.upload.addEventListener('progress', onProgress);
+                                        xhr.open('post', form.getAttribute("action"), true);
+                                        if (fileHash) {
+                                            xhr.setRequestHeader('X-File-Hash', fileHash);
+                                            xhr.setRequestHeader('X-File-Hash-Function', 'SHA256');
+                                        }
+                                        xhr.send(formData);
+                                    }
+                                })
+                            }
+                        }
                     }
-                </script>
-                "#))
+                    "#))
+                }
             }
         }
     }
@@ -713,7 +1107,7 @@ pub fn render_error(
     html! {
         (DOCTYPE)
         html {
-            (page_header(&error_code.to_string(), false, &conf.favicon_route, &conf.css_route))
+            (page_header(&error_code.to_string(), false, conf.web_upload_concurrency, &conf.api_route, &conf.favicon_route, &conf.css_route))
 
             body
             {
@@ -749,7 +1143,7 @@ mod tests {
 
     fn to_html(wget_part: &str) -> String {
         format!(
-            r#"<div class="downloadDirectory"><p>Download folder:</p><a class="cmd" title="Click to copy!" style="cursor: pointer;" onclick="navigator.clipboard.writeText(&quot;wget -rcnHp -R 'index.html*' {wget_part}/?raw=true'&quot;)">wget -rcnHp -R 'index.html*' {wget_part}/?raw=true'</a></div>"#
+            r#"<div class="downloadDirectory"><p>Download folder:</p><a class="cmd" title="Click to copy!" style="cursor: pointer;" onclick="navigator.clipboard.writeText(&quot;wget -rcnp -R 'index.html*' {wget_part}/?raw=true'&quot;)">wget -rcnp -R 'index.html*' {wget_part}/?raw=true'</a></div>"#
         )
     }
 
@@ -759,8 +1153,9 @@ mod tests {
 
     #[test]
     fn test_wget_footer_trivial() {
-        let to_be_tested: String = wget_footer(&uri("https://github.com/"), None, None).into();
-        let expected = to_html("-P 'github.com' 'https://github.com");
+        let to_be_tested: String =
+            wget_footer(&uri("https://github.com/"), None, None, None).into();
+        let expected = to_html("-nH -P 'github.com' 'https://github.com");
         assert_eq!(to_be_tested, expected);
     }
 
@@ -770,9 +1165,10 @@ mod tests {
             &uri("https://github.com/svenstaro/miniserve/"),
             Some("Miniserve"),
             None,
+            None,
         )
         .into();
-        let expected = to_html("--cut-dirs=1 'https://github.com/svenstaro/miniserve");
+        let expected = to_html("-nH --cut-dirs=1 'https://github.com/svenstaro/miniserve");
         assert_eq!(to_be_tested, expected);
     }
 
@@ -782,9 +1178,12 @@ mod tests {
             &uri("http://1und1.de/"),
             Some("1&1 - Willkommen!!!"),
             Some("Marcell D'Avis"),
+            None,
         )
         .into();
-        let expected = to_html("-P '1&amp;1 - Willkommen!!!' --ask-password --user 'Marcell D'&quot;'&quot;'Avis' 'http://1und1.de");
+        let expected = to_html(
+            "-nH -P '1&amp;1 - Willkommen!!!' --ask-password --user 'Marcell D'&quot;'&quot;'Avis' 'http://1und1.de",
+        );
         assert_eq!(to_be_tested, expected);
     }
 
@@ -794,16 +1193,33 @@ mod tests {
             &uri("http://127.0.0.1:1234/geheime_dokumente.php/"),
             Some("Streng Geheim!!!"),
             Some("uøý`¶'7ÅÛé"),
+            None,
         )
         .into();
-        let expected = to_html("--ask-password --user 'uøý`¶'&quot;'&quot;'7ÅÛé' 'http://127.0.0.1:1234/geheime_dokumente.php");
+        let expected = to_html(
+            "-nH --ask-password --user 'uøý`¶'&quot;'&quot;'7ÅÛé' 'http://127.0.0.1:1234/geheime_dokumente.php",
+        );
         assert_eq!(to_be_tested, expected);
     }
 
     #[test]
     fn test_wget_footer_ip() {
-        let to_be_tested: String = wget_footer(&uri("http://127.0.0.1:420/"), None, None).into();
-        let expected = to_html("-P '127.0.0.1:420' 'http://127.0.0.1:420");
+        let to_be_tested: String =
+            wget_footer(&uri("http://127.0.0.1:420/"), None, None, None).into();
+        let expected = to_html("-nH -P '127.0.0.1:420' 'http://127.0.0.1:420");
+        assert_eq!(to_be_tested, expected);
+    }
+
+    #[test]
+    fn test_wget_footer_externalurl() {
+        let to_be_tested: String = wget_footer(
+            &uri("https://github.com/"),
+            None,
+            None,
+            Some("https://gitlab.com"),
+        )
+        .into();
+        let expected = to_html("-H -P 'github.com' 'https://github.com");
         assert_eq!(to_be_tested, expected);
     }
 }

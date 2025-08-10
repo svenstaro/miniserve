@@ -1,3 +1,4 @@
+use std::fmt::Display;
 use std::net::IpAddr;
 use std::path::PathBuf;
 
@@ -15,6 +16,29 @@ pub enum MediaType {
     Video,
 }
 
+#[derive(Debug, ValueEnum, Clone, Default, Copy)]
+pub enum DuplicateFile {
+    #[default]
+    Error,
+    Overwrite,
+    Rename,
+}
+
+#[derive(ValueEnum, Clone)]
+pub enum SizeDisplay {
+    Human,
+    Exact,
+}
+
+impl Display for SizeDisplay {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            SizeDisplay::Human => write!(f, "human"),
+            SizeDisplay::Exact => write!(f, "exact"),
+        }
+    }
+}
+
 #[derive(Parser)]
 #[command(name = "miniserve", author, about, version)]
 pub struct CliArgs {
@@ -25,6 +49,21 @@ pub struct CliArgs {
     /// Which path to serve
     #[arg(value_hint = ValueHint::AnyPath, env = "MINISERVE_PATH")]
     pub path: Option<PathBuf>,
+
+    /// The path to where file uploads will be written to before being moved to their
+    /// correct location. It's wise to make sure that this directory will be written to
+    /// disk and not into memory.
+    ///
+    /// This value will only be used **IF** file uploading is enabled. If this option is
+    /// not set, the operating system default temporary directory will be used.
+    #[arg(
+        long = "temp-directory",
+        value_hint = ValueHint::FilePath,
+        requires = "allowed_upload_dir",
+        value_parser(validate_is_dir_and_exists),
+        env = "MINISERVER_TEMP_UPLOAD_DIRECTORY")
+    ]
+    pub temp_upload_directory: Option<PathBuf>,
 
     /// The name of a directory index file to serve, like "index.html"
     ///
@@ -166,6 +205,32 @@ pub struct CliArgs {
     #[arg(short = 'u', long = "upload-files", value_hint = ValueHint::FilePath, num_args(0..=1), value_delimiter(','), env = "MINISERVE_ALLOWED_UPLOAD_DIR")]
     pub allowed_upload_dir: Option<Vec<PathBuf>>,
 
+    /// Configure amount of concurrent uploads when visiting the website. Must have
+    /// upload-files option enabled for this setting to matter.
+    ///
+    /// For example, a value of 4 would mean that the web browser will only upload
+    /// 4 files at a time to the web server when using the web browser interface.
+    ///
+    /// When the value is kept at 0, it attempts to resolve all the uploads at once
+    /// in the web browser.
+    ///
+    /// NOTE: Web pages have a limit of how many active HTTP connections that they
+    /// can make at one time, so even though you might set a concurrency limit of
+    /// 100, the browser might only make progress on the max amount of connections
+    /// it allows the web page to have open.
+    #[arg(
+        long = "web-upload-files-concurrency",
+        env = "MINISERVE_WEB_UPLOAD_CONCURRENCY",
+        default_value = "0"
+    )]
+    pub web_upload_concurrency: usize,
+
+    /// Enable recursive directory size calculation
+    ///
+    /// This is disabled by default because it is a potentially fairly IO intensive operation.
+    #[arg(long = "directory-size", env = "MINISERVE_DIRECTORY_SIZE")]
+    pub directory_size: bool,
+
     /// Enable creating directories
     #[arg(
         short = 'U',
@@ -194,9 +259,20 @@ pub struct CliArgs {
     )]
     pub media_type_raw: Option<String>,
 
-    /// Enable overriding existing files during file upload
-    #[arg(short = 'o', long = "overwrite-files", env = "OVERWRITE_FILES")]
-    pub overwrite_files: bool,
+    /// What to do if existing files with same name is present during file upload
+    ///
+    /// If you enable renaming files, the renaming will occur by
+    /// adding a numerical suffix to the filename before the final
+    /// extension. For example file.txt will be uploaded as
+    /// file-1.txt, the number will be increased until an available
+    /// filename is found.
+    #[arg(
+        short = 'o',
+        long = "on-duplicate-files",
+        env = "MINISERVE_ON_DUPLICATE_FILES",
+        default_value = "error"
+    )]
+    pub on_duplicate_files: DuplicateFile,
 
     /// Enable file and directory deletion (and optionally specify for which directory)
     #[arg(
@@ -316,6 +392,25 @@ pub struct CliArgs {
     /// and return an error instead.
     #[arg(short = 'I', long, env = "MINISERVE_DISABLE_INDEXING")]
     pub disable_indexing: bool,
+
+    /// Enable read-only WebDAV support (PROPFIND requests)
+    #[arg(long, env = "MINISERVE_ENABLE_WEBDAV")]
+    pub enable_webdav: bool,
+
+    /// Show served file size in exact bytes
+    #[arg(long, default_value_t = SizeDisplay::Human, env = "MINISERVE_SIZE_DISPLAY")]
+    pub size_display: SizeDisplay,
+
+    /// Optional external URL (e.g., 'http://external.example.com:8081') prepended to file links in listings.
+    ///
+    /// Allows serving files from a different URL than the browsing instance. Useful for setups like:
+    /// one authenticated instance for browsing, linking files (via this option) to a second,
+    /// non-indexed (-I) instance for direct downloads. This obscures the full file list on
+    /// the download server, while users can still copy direct file URLs for sharing.
+    /// The external URL is put verbatim in front of the relative location of the file, including the protocol.
+    /// The user should take care this results in a valid URL, no further checks are being done.
+    #[arg(long = "file-external-url", env = "MINISERVE_FILE_EXTERNAL_URL")]
+    pub file_external_url: Option<String>,
 }
 
 /// Checks whether an interface is valid, i.e. it can be parsed into an IP address
@@ -323,10 +418,25 @@ fn parse_interface(src: &str) -> Result<IpAddr, std::net::AddrParseError> {
     src.parse::<IpAddr>()
 }
 
+/// Validate that a path passed in is a directory and it exists.
+fn validate_is_dir_and_exists(s: &str) -> Result<PathBuf, String> {
+    let path = PathBuf::from(s);
+    if path.exists() && path.is_dir() {
+        Ok(path)
+    } else {
+        Err(format!(
+            "Upload temporary directory must exist and be a directory. \
+            Validate that path {path:?} meets those requirements."
+        ))
+    }
+}
+
 #[derive(Clone, Debug, thiserror::Error)]
 pub enum AuthParseError {
     /// Might occur if the HTTP credential string does not respect the expected format
-    #[error("Invalid format for credentials string. Expected username:password, username:sha256:hash or username:sha512:hash")]
+    #[error(
+        "Invalid format for credentials string. Expected username:password, username:sha256:hash or username:sha512:hash"
+    )]
     InvalidAuthFormat,
 
     /// Might occur if the hash method is neither sha256 nor sha512
@@ -393,13 +503,13 @@ pub fn parse_header(src: &str) -> Result<HeaderMap, httparse::Error> {
     httparse::parse_headers(header.as_bytes(), &mut headers)?;
 
     let mut header_map = HeaderMap::new();
-    if let Some(h) = headers.first() {
-        if h.name != httparse::EMPTY_HEADER.name {
-            header_map.insert(
-                HeaderName::from_bytes(h.name.as_bytes()).unwrap(),
-                HeaderValue::from_bytes(h.value).unwrap(),
-            );
-        }
+    if let Some(h) = headers.first()
+        && h.name != httparse::EMPTY_HEADER.name
+    {
+        header_map.insert(
+            HeaderName::from_bytes(h.name.as_bytes()).unwrap(),
+            HeaderValue::from_bytes(h.value).unwrap(),
+        );
     }
 
     Ok(header_map)

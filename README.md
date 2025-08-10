@@ -75,7 +75,7 @@ If a header is already set or previously inserted, it will not be overwritten.
     # Fullchain TLS and HTTP Strict Transport Security (HSTS)
     miniserve --tls-cert fullchain.pem --tls-key my.key --header "Strict-Transport-Security: max-age=31536000; includeSubDomains; preload" /tmp/myshare
 
-If the parameter value has spaces, be sure to wrap it in quotes.  
+If the parameter value has spaces, be sure to wrap it in quotes.
 (To achieve an A+ rating at https://www.ssllabs.com/ssltest/, enabling both fullchain TLS and HSTS is necessary.)
 
 ### Upload a file using `curl`:
@@ -103,6 +103,21 @@ this example, you'd need to use `-u -v`.
 
 (where `$DIR_NAME` is the name of the directory. This uses miniserve's default port of 8080.)
 
+### Use the raw renderer for use with simple viewers
+
+You can pass `?raw=true` with requests where you only require minimal HTML output for CLI-based browsers such as `lynx` or `w3m`.
+This is enabled by default without any extra flags:
+
+    miniserve .
+    curl http://localhost:8080?raw=true
+
+You can enable a convenient copy-pastable footer for `wget` using `--show-wget-footer`:
+
+    miniserve --show-wget-footer .
+
+Afterwards, check the bottom of any rendered page.
+It'll have a neat `wget` command you can easily copy-paste to recursively grab the current directory.
+
 ### Take pictures and upload them from smartphones:
 
     miniserve -u -m image -q
@@ -127,6 +142,8 @@ Some mobile browsers like Firefox on Android will offer to open the camera app w
 - TLS (for supported architectures)
 - Supports README.md rendering like on GitHub
 - Range requests
+- WebDAV support
+- Healthcheck route (at `/__miniserve_internal/healthcheck`)
 
 ## Usage
 
@@ -150,16 +167,17 @@ Options:
       --index <INDEX>
           The name of a directory index file to serve, like "index.html"
 
-          Normally, when miniserve serves a directory, it creates a listing for that directory. However, if a directory
-          contains this file, miniserve will serve that file instead.
+          Normally, when miniserve serves a directory, it creates a listing for that directory. However, if a
+          directory contains this file, miniserve will serve that file instead.
 
           [env: MINISERVE_INDEX=]
 
       --spa
           Activate SPA (Single Page Application) mode
 
-          This will cause the file given by --index to be served for all non-existing file paths. In effect, this will serve
-          the index file whenever a 404 would otherwise occur in order to allow the SPA router to handle the request instead.
+          This will cause the file given by --index to be served for all non-existing file paths. In effect,
+          this will serve the index file whenever a 404 would otherwise occur in order to allow the SPA
+          router to handle the request instead.
 
           [env: MINISERVE_SPA=]
 
@@ -212,6 +230,17 @@ Options:
           Generate a random 6-hexdigit route
 
           [env: MINISERVE_RANDOM_ROUTE=]
+
+      --file-external-url <FILE_BASE_URL>
+          Optional external URL (e.g., 'http://external.example.com:8081') prepended to file links in listings.
+          Allows serving files from a different URL than the browsing instance. Useful for setups like:
+          one authenticated instance for browsing, linking files (via this option) to a second,
+          non-indexed (-I) instance for direct downloads. This obscures the full file list on
+          the download server, while users can still copy direct file URLs for sharing.
+          The external URL is put verbatim in front of the relative location of the file, including the protocol.
+          The user should take care this results in a valid URL, no further checks are being done.
+      
+          [env: MINISERVE_FILE_EXTERNAL_URL=]
 
   -P, --no-symlinks
           Hide symlinks in listing and prevent them from being followed
@@ -266,7 +295,17 @@ Options:
   -u, --upload-files [<ALLOWED_UPLOAD_DIR>]
           Enable file uploading (and optionally specify for which directory)
 
+          The provided path is not a physical file system path. Instead, it's relative to the serve dir. For
+          instance, if the serve dir is '/home/hello', set this to '/upload' to allow uploading to
+          '/home/hello/upload'. When specified via environment variable, a path always needs to be specified.
+
           [env: MINISERVE_ALLOWED_UPLOAD_DIR=]
+
+      --web-upload-files-concurrency <WEB_UPLOAD_CONCURRENCY>
+          Configure amount of concurrent uploads when visiting the website. Must have upload-files option enabled for this setting to matter.
+
+          [env: MINISERVE_WEB_UPLOAD_CONCURRENCY=]
+          [default: 0]
 
   -U, --mkdir
           Enable creating directories
@@ -284,10 +323,15 @@ Options:
 
           [env: MINISERVE_RAW_MEDIA_TYPE=]
 
-  -o, --overwrite-files
-          Enable overriding existing files during file upload
+  -o, --on-duplicate-files <ON_DUPLICATE_FILES>
+          What to do if existing files with same name is present during file upload
 
-          [env: OVERWRITE_FILES=]
+          If you enable renaming files, the renaming will occur by adding numerical suffix to the filename before the final extension. For example file.txt will be uploaded
+          as file-1.txt, the number will be increased until an available filename is found.
+
+          [env: MINISERVE_ON_DUPLICATE_FILES=]
+          [default: error]
+          [possible values: error, overwrite, rename]
 
   -r, --enable-tar
           Enable uncompressed tar archive generation
@@ -302,17 +346,19 @@ Options:
   -z, --enable-zip
           Enable zip archive generation
 
-          WARNING: Zipping large directories can result in out-of-memory exception because zip generation is done in memory
-          and cannot be sent on the fly
+          WARNING: Zipping large directories can result in out-of-memory exception because zip generation is
+          done in memory and cannot be sent on the fly
 
           [env: MINISERVE_ENABLE_ZIP=]
 
   -C, --compress-response
           Compress response
 
-          WARNING: Enabling this option may slow down transfers due to CPU overhead, so it is disabled by default.
+          WARNING: Enabling this option may slow down transfers due to CPU overhead, so it is disabled by
+          default.
 
-          Only enable this option if you know that your users have slow connections or if you want to minimize your server's bandwidth usage.
+          Only enable this option if you know that your users have slow connections or if you want to
+          minimize your server's bandwidth usage.
 
           [env: MINISERVE_COMPRESS_RESPONSE=]
 
@@ -327,12 +373,11 @@ Options:
           [env: MINISERVE_TITLE=]
 
       --header <HEADER>
-          Inserts custom headers into the responses. Specify each header as a 'Header:Value' pair.
-          This parameter can be used multiple times to add multiple headers.
+          Inserts custom headers into the responses. Specify each header as a 'Header:Value' pair. This
+          parameter can be used multiple times to add multiple headers.
 
-          Example:
-          --header "Header1:Value1" --header "Header2:Value2"
-          (If a header is already set or previously inserted, it will not be overwritten.)
+          Example: --header "Header1:Value1" --header "Header2:Value2" (If a header is already set or
+          previously inserted, it will not be overwritten.)
 
           [env: MINISERVE_HEADER=]
 
@@ -385,6 +430,14 @@ Options:
           This will prevent directory listings from being generated and return an error instead.
 
           [env: MINISERVE_DISABLE_INDEXING=]
+
+      --enable-webdav
+          Enable read-only WebDAV support (PROPFIND requests)
+
+          Currently incompatible with -P|--no-symlinks (see
+          https://github.com/messense/dav-server-rs/issues/37)
+
+          [env: MINISERVE_ENABLE_WEBDAV=]
 
   -h, --help
           Print help (see a summary with '-h')
@@ -473,10 +526,19 @@ In case you want to customize the particular flags that miniserve launches with,
 and set the `[Service]` part in the resulting `override.conf` file. For instance:
 
     [Service]
+    ExecStart=
     ExecStart=/usr/bin/miniserve --enable-tar --enable-zip --no-symlinks --verbose -i ::1 -p 1234 --title hello --color-scheme monokai --color-scheme-dark monokai -- %I
 
-Make sure to leave the `%I` at the very end in place or the wrong path might be served. You
-might additionally have to override `IPAddressAllow` and `IPAddressDeny` if you plan on making
+Make sure to leave the `%I` at the very end in place or the wrong path might be served.
+Alternatively, you can configure the service via environment variables:
+
+    [Service]
+    Environment=MINISERVE_ENABLE_TAR=true
+    Environment=MINISERVE_ENABLE_ZIP=true
+    Environment="MINISERVE_TITLE=hello world"
+    ...
+
+You might additionally have to override `IPAddressAllow` and `IPAddressDeny` if you plan on making
 miniserve directly available on a public interface.
 
 ## Binding behavior
@@ -497,7 +559,7 @@ You can provide `-i` multiple times to bind to multiple interfaces at the same t
 
 This is mostly a note for me on how to release this thing:
 
-- Make sure `CHANGELOG.md` is up to date.
+- Make sure [CHANGELOG.md](./CHANGELOG.md) is up to date.
 - `cargo release <version>`
 - `cargo release --execute <version>`
 - Releases will automatically be deployed by GitHub Actions.

@@ -1,14 +1,16 @@
-use actix_web::{
-    body::{BoxBody, MessageBody},
-    dev::{ResponseHead, Service, ServiceRequest, ServiceResponse},
-    http::{header, StatusCode},
-    HttpRequest, HttpResponse, ResponseError,
-};
-use futures::prelude::*;
 use std::str::FromStr;
+
+use actix_web::{
+    HttpRequest, HttpResponse, ResponseError,
+    body::{BoxBody, MessageBody},
+    dev::{ResponseHead, ServiceRequest, ServiceResponse},
+    http::{StatusCode, header},
+    middleware::Next,
+    web,
+};
 use thiserror::Error;
 
-use crate::{renderer::render_error, MiniserveConfig};
+use crate::{MiniserveConfig, renderer::render_error};
 
 #[derive(Debug, Error)]
 pub enum StartupError {
@@ -24,6 +26,9 @@ Please set an explicit serve path like: `miniserve /my/path`")]
     /// In case miniserve was invoked with --no-symlinks but the serve path is a symlink
     #[error("The -P|--no-symlinks option was provided but the serve path '{0}' is a symlink")]
     NoSymlinksOptionWithSymlinkServePath(String),
+
+    #[error("The --enable-webdav option was provided, but the serve path '{0}' is a file")]
+    WebdavWithFileServePath(String),
 }
 
 #[derive(Debug, Error)]
@@ -37,8 +42,12 @@ pub enum RuntimeError {
     MultipartError(String),
 
     /// Might occur during file upload
-    #[error("File already exists, and the overwrite_files option has not been set")]
+    #[error("File already exists, and the on_duplicate_files option is set to error out")]
     DuplicateFileError,
+
+    /// Uploaded hash not correct
+    #[error("File hash that was provided did not match checksum of uploaded file")]
+    UploadHashMismatchError,
 
     /// Upload not allowed
     #[error("Upload not allowed to this directory")]
@@ -87,6 +96,7 @@ impl ResponseError for RuntimeError {
         use StatusCode as S;
         match self {
             E::IoError(_, _) => S::INTERNAL_SERVER_ERROR,
+            E::UploadHashMismatchError => S::BAD_REQUEST,
             E::MultipartError(_) => S::BAD_REQUEST,
             E::DuplicateFileError => S::CONFLICT,
             E::UploadForbiddenError => S::FORBIDDEN,
@@ -119,36 +129,28 @@ impl ResponseError for RuntimeError {
 }
 
 /// Middleware to convert plain-text error responses to user-friendly web pages
-pub fn error_page_middleware<S, B>(
+pub async fn error_page_middleware(
     req: ServiceRequest,
-    srv: &S,
-) -> impl Future<Output = actix_web::Result<ServiceResponse>> + 'static
-where
-    S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = actix_web::Error>,
-    B: MessageBody + 'static,
-    S::Future: 'static,
-{
-    let fut = srv.call(req);
+    next: Next<impl MessageBody + 'static>,
+) -> Result<ServiceResponse<impl MessageBody>, actix_web::Error> {
+    let res = next.call(req).await?.map_into_boxed_body();
 
-    async {
-        let res = fut.await?.map_into_boxed_body();
-
-        if (res.status().is_client_error() || res.status().is_server_error())
-            && res
-                .headers()
-                .get(header::CONTENT_TYPE)
-                .map(AsRef::as_ref)
-                .and_then(|s| std::str::from_utf8(s).ok())
-                .and_then(|s| mime::Mime::from_str(s).ok())
-                .as_ref()
-                .map(mime::Mime::essence_str)
-                == Some(mime::TEXT_PLAIN.as_ref())
-        {
-            let req = res.request().clone();
-            Ok(res.map_body(|head, body| map_error_page(&req, head, body)))
-        } else {
-            Ok(res)
-        }
+    if (res.status().is_client_error() || res.status().is_server_error())
+        && res.request().path() != "/upload"
+        && res
+            .headers()
+            .get(header::CONTENT_TYPE)
+            .map(AsRef::as_ref)
+            .and_then(|s| std::str::from_utf8(s).ok())
+            .and_then(|s| mime::Mime::from_str(s).ok())
+            .as_ref()
+            .map(mime::Mime::essence_str)
+            == Some(mime::TEXT_PLAIN.as_ref())
+    {
+        let req = res.request().clone();
+        Ok(res.map_body(|head, body| map_error_page(&req, head, body)))
+    } else {
+        Ok(res)
     }
 }
 
@@ -163,7 +165,7 @@ fn map_error_page(req: &HttpRequest, head: &mut ResponseHead, body: BoxBody) -> 
         _ => return BoxBody::new(error_msg),
     };
 
-    let conf = req.app_data::<MiniserveConfig>().unwrap();
+    let conf = req.app_data::<web::Data<MiniserveConfig>>().unwrap();
     let return_address = req
         .headers()
         .get(header::REFERER)
@@ -180,6 +182,6 @@ fn map_error_page(req: &HttpRequest, head: &mut ResponseHead, body: BoxBody) -> 
 
 pub fn log_error_chain(description: String) {
     for cause in description.lines() {
-        log::error!("{}", cause);
+        log::error!("{cause}");
     }
 }

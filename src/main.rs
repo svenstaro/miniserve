@@ -4,17 +4,27 @@ use std::thread;
 use std::time::Duration;
 
 use actix_files::NamedFile;
+use actix_web::middleware::from_fn;
 use actix_web::{
-    dev::{fn_service, ServiceRequest, ServiceResponse},
-    http::header::ContentType,
-    middleware, web, App, HttpRequest, HttpResponse, Responder,
+    App, HttpRequest, HttpResponse, Responder,
+    dev::{ServiceRequest, ServiceResponse, fn_service},
+    guard,
+    http::{Method, header::ContentType},
+    middleware, web,
 };
 use actix_web_httpauth::middleware::HttpAuthentication;
 use anyhow::Result;
-use clap::{crate_version, CommandFactory, Parser};
+use bytesize::ByteSize;
+use clap::{CommandFactory, Parser, crate_version};
 use colored::*;
+use dav_server::{
+    DavConfig, DavHandler, DavMethodSet,
+    actix::{DavRequest, DavResponse},
+};
 use fast_qr::QRBuilder;
-use log::{error, warn};
+use log::{error, info, warn};
+use percent_encoding::percent_decode_str;
+use serde::Deserialize;
 
 mod archive;
 mod args;
@@ -28,9 +38,12 @@ mod listing;
 mod path_utils;
 mod pipe;
 mod renderer;
+mod webdav_fs;
 
 use crate::config::MiniserveConfig;
 use crate::errors::{RuntimeError, StartupError};
+use crate::file_op::recursive_dir_size;
+use crate::webdav_fs::RestrictedFs;
 
 static STYLESHEET: &str = grass::include!("data/style.scss");
 
@@ -89,6 +102,12 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), StartupError> {
         ));
     }
 
+    if miniserve_config.webdav_enabled && miniserve_config.path.is_file() {
+        return Err(StartupError::WebdavWithFileServePath(
+            miniserve_config.path.to_string_lossy().to_string(),
+        ));
+    }
+
     let inside_config = miniserve_config.clone();
 
     let canon_path = miniserve_config
@@ -97,13 +116,13 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), StartupError> {
         .map_err(|e| StartupError::IoError("Failed to resolve path to be served".to_string(), e))?;
 
     // warn if --index is specified but not found
-    if let Some(ref index) = miniserve_config.index {
-        if !canon_path.join(index).exists() {
-            warn!(
-                "The file '{}' provided for option --index could not be found.",
-                index.to_string_lossy(),
-            );
-        }
+    if let Some(ref index) = miniserve_config.index
+        && !canon_path.join(index).exists()
+    {
+        warn!(
+            "The file '{}' provided for option --index could not be found.",
+            index.to_string_lossy(),
+        );
     }
 
     let path_string = canon_path.to_string_lossy();
@@ -122,7 +141,9 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), StartupError> {
             return Err(StartupError::NoExplicitPathAndNoTerminal);
         }
 
-        warn!("miniserve has been invoked without an explicit path so it will serve the current directory after a short delay.");
+        warn!(
+            "miniserve has been invoked without an explicit path so it will serve the current directory after a short delay."
+        );
         warn!(
             "Invoke with -h|--help to see options or invoke as `miniserve .` to hide this advice."
         );
@@ -152,7 +173,7 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), StartupError> {
             let all_ipv6 = wildcard.iter().any(|addr| addr.is_ipv6());
             ifaces = if_addrs::get_if_addrs()
                 .unwrap_or_else(|e| {
-                    error!("Failed to get local interface addresses: {}", e);
+                    error!("Failed to get local interface addresses: {e}");
                     Default::default()
                 })
                 .into_iter()
@@ -199,14 +220,16 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), StartupError> {
     let srv = actix_web::HttpServer::new(move || {
         App::new()
             .wrap(configure_header(&inside_config.clone()))
-            .app_data(inside_config.clone())
+            .app_data(web::Data::new(inside_config.clone()))
             .app_data(stylesheet.clone())
-            .wrap_fn(errors::error_page_middleware)
+            .wrap(from_fn(errors::error_page_middleware))
             .wrap(middleware::Logger::default())
             .wrap(middleware::Condition::new(
                 miniserve_config.compress_response,
                 middleware::Compress::default(),
             ))
+            .route(&inside_config.healthcheck_route, web::get().to(healthcheck))
+            .route(&inside_config.api_route, web::post().to(api))
             .route(&inside_config.favicon_route, web::get().to(favicon))
             .route(&inside_config.css_route, web::get().to(css))
             .service(
@@ -265,7 +288,7 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), StartupError> {
                     qr.print();
                 }
                 Err(e) => {
-                    error!("Failed to render QR to terminal: {:?}", e);
+                    error!("Failed to render QR to terminal: {e:?}");
                 }
             };
         }
@@ -308,7 +331,9 @@ fn configure_header(conf: &MiniserveConfig) -> middleware::DefaultHeaders {
 /// This is where we configure the app to serve an index file, the file listing, or a single file.
 fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
     let dir_service = || {
-        let mut files = actix_files::Files::new("", &conf.path);
+        // use routing guard so propfind and options requests fall through to the webdav handler
+        let mut files = actix_files::Files::new("", &conf.path)
+            .guard(guard::Any(guard::Get()).or(guard::Head()));
 
         // Use specific index file if one was provided.
         if let Some(ref index_file) = conf.index {
@@ -334,14 +359,14 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
             files = files.default_handler(fn_service(|req: ServiceRequest| async {
                 let (req, _) = req.into_parts();
                 let conf = req
-                    .app_data::<MiniserveConfig>()
+                    .app_data::<web::Data<MiniserveConfig>>()
                     .expect("Could not get miniserve config");
                 let mut path_base = req.path()[1..].to_string();
                 if path_base.ends_with('/') {
                     path_base.pop();
                 }
                 if !path_base.ends_with("html") {
-                    path_base = format!("{}.html", path_base);
+                    path_base = format!("{path_base}.html");
                 }
                 let file = NamedFile::open_async(conf.path.join(path_base)).await?;
                 let res = file.into_response(&req);
@@ -361,8 +386,23 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
             .prefer_utf8(true)
             .redirect_to_slash_directory()
             .path_filter(move |path, _| {
-                // deny symlinks if conf.no_symlinks
-                !(no_symlinks && base_path.join(path).is_symlink())
+                if !no_symlinks {
+                    // no_symlinks not enabled => nothing to filter
+                    return true;
+                }
+
+                // append path to base_path component by component and check for symlink at each step
+                let mut full_path = base_path.clone();
+                for component in path.components() {
+                    full_path.push(component);
+                    if full_path.is_symlink() {
+                        // path contains symlink component while no_symlink is active => filter
+                        return false;
+                    }
+                }
+
+                // path didn't include a symlink component => don't filter
+                true
             })
     };
 
@@ -381,10 +421,91 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
         // Handle directories
         app.service(dir_service());
     }
+
+    if conf.webdav_enabled {
+        let fs = RestrictedFs::new(&conf.path, conf.show_hidden, conf.no_symlinks);
+
+        let dav_server = DavHandler::builder()
+            .filesystem(fs)
+            .methods(DavMethodSet::WEBDAV_RO)
+            .hide_symlinks(false) // we handle filtering symlinks ourselves in RestrictedFs
+            .strip_prefix(conf.route_prefix.to_owned())
+            .build_handler();
+
+        app.app_data(web::Data::new(dav_server.clone()));
+
+        app.service(
+            // actix requires tail segment to be named, even if unused
+            web::resource("/{tail}*")
+                .guard(
+                    guard::Any(guard::Options())
+                        .or(guard::Method(Method::from_bytes(b"PROPFIND").unwrap())),
+                )
+                .to(dav_handler),
+        );
+    }
+}
+
+async fn dav_handler(req: DavRequest, davhandler: web::Data<DavHandler>) -> DavResponse {
+    if let Some(prefix) = req.prefix() {
+        let config = DavConfig::new().strip_prefix(prefix);
+        davhandler.handle_with(config, req.request).await.into()
+    } else {
+        davhandler.handle(req.request).await.into()
+    }
 }
 
 async fn error_404(req: HttpRequest) -> Result<HttpResponse, RuntimeError> {
     Err(RuntimeError::RouteNotFoundError(req.path().to_string()))
+}
+
+async fn healthcheck() -> impl Responder {
+    HttpResponse::Ok().body("OK")
+}
+
+#[derive(Deserialize, Debug)]
+enum ApiCommand {
+    /// Request the size of a particular directory
+    DirSize(String),
+}
+
+/// This "API" is pretty shitty but frankly miniserve doesn't really need a very fancy API. Or at
+/// least I hope so.
+async fn api(
+    command: web::Json<ApiCommand>,
+    config: web::Data<MiniserveConfig>,
+) -> Result<impl Responder, RuntimeError> {
+    match command.into_inner() {
+        ApiCommand::DirSize(path) => {
+            if config.directory_size {
+                // The dir argument might be percent-encoded so let's decode it just in case.
+                let decoded_path = percent_decode_str(&path)
+                    .decode_utf8()
+                    .map_err(|e| RuntimeError::ParseError(path.clone(), e.to_string()))?;
+
+                // Convert the relative dir to an absolute path on the system.
+                let sanitized_path = file_utils::sanitize_path(&*decoded_path, true)
+                    .expect("Expected a path to directory");
+
+                let full_path = config
+                    .path
+                    .canonicalize()
+                    .expect("Couldn't canonicalize path")
+                    .join(sanitized_path);
+                info!("Requested directory listing for {full_path:?}");
+
+                let dir_size = recursive_dir_size(&full_path).await?;
+                if config.show_exact_bytes {
+                    Ok(format!("{dir_size} B"))
+                } else {
+                    let dir_size = ByteSize::b(dir_size);
+                    Ok(dir_size.to_string())
+                }
+            } else {
+                Ok("-".to_string())
+            }
+        }
+    }
 }
 
 async fn favicon() -> impl Responder {

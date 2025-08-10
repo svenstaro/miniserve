@@ -1,6 +1,6 @@
 [package]
 name = "miniserve"
-version = "0.28.0"
+version = "0.31.0"
 description = "For when you really just want to serve some files over HTTP right now!"
 authors = ["Sven-Hendrik Haase <svenstaro@gmail.com>", "Boastful Squirrel <boastful.squirrel@gmail.com>"]
 repository = "https://github.com/svenstaro/miniserve"
@@ -8,8 +8,7 @@ license = "MIT"
 readme = "README.md"
 keywords = ["serve", "http-server", "static-files", "http", "server"]
 categories = ["command-line-utilities", "network-programming", "web-programming::http-server"]
-edition = "2021"
-resolver = "2"
+edition = "2024"
 
 [profile.release]
 codegen-units = 1
@@ -25,23 +24,25 @@ actix-web = { version = "4", features = ["macros", "compress-brotli", "compress-
 actix-web-httpauth = "0.8"
 alphanumeric-sort = "1"
 anyhow = "1"
-bytesize = "1"
+async-walkdir = "2.1.0"
+bytesize = "2"
 chrono = "0.4"
 chrono-humanize = "0.2"
 clap = { version = "4", features = ["derive", "cargo", "wrap_help", "deprecated", "env"] }
 clap_complete = "4"
 clap_mangen = "0.2"
-colored = "2"
-comrak = { version = "0.28", default-features = false }
-fast_qr = { version = "0.12", features = ["svg"] }
+colored = "3"
+comrak = { version = "0.40", default-features = false }
+dav-server = { version = "0.8", features = ["actix-compat"] }
+fast_qr = { version = "0.13", features = ["svg"] }
 futures = "0.3"
 grass = { version = "0.13", features = ["macro"], default-features = false }
 hex = "0.4"
 httparse = "1"
-if-addrs = "0.13"
+if-addrs = "0.14"
 libflate = "2"
 log = "0.4"
-maud = "0.26"
+maud = "0.27"
 mime = "0.3"
 nanoid = "0.4"
 percent-encoding = "2"
@@ -52,12 +53,13 @@ rustls-pemfile = { version = "2", optional = true }
 serde = { version = "1", features = ["derive"] }
 sha2 = "0.10"
 simplelog = "0.12"
-socket2 = "0.5"
-strum = { version = "0.26", features = ["derive"] }
+socket2 = "0.6"
+strum = { version = "0.27", features = ["derive"] }
 tar = "0.4"
-thiserror = "1"
-tokio = { version = "1.40.0", features = ["fs"] }
-zip = { version = "2", default-features = false }
+tempfile = "3.20.0"
+thiserror = "2"
+tokio = { version = "1.47.0", features = ["fs", "macros"] }
+zip = { version = "4", default-features = false }
 
 [features]
 default = ["tls"]
@@ -73,8 +75,9 @@ assert_fs = "1"
 predicates = "3"
 pretty_assertions = "1.2"
 regex = "1"
-reqwest = { version = "0.12", features = ["blocking", "multipart", "rustls-tls"], default-features = false }
-rstest = "0.22"
+reqwest = { version = "0.12", features = ["blocking", "multipart", "json", "rustls-tls"], default-features = false }
+reqwest_dav = "0.2"
+rstest = "0.26"
 select = "0.6"
 url = "2"
 
