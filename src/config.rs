@@ -14,7 +14,7 @@ use rustls_pemfile as pemfile;
 use crate::{
     args::{CliArgs, DuplicateFile, MediaType, parse_auth},
     auth::RequiredAuth,
-    file_utils::sanitize_path,
+    file_utils::{sanitize_path, get_default_filemode},
     listing::{SortingMethod, SortingOrder},
     renderer::ThemeSlug,
 };
@@ -305,6 +305,8 @@ impl MiniserveConfig {
             crate::args::SizeDisplay::Human => false,
             crate::args::SizeDisplay::Exact => true,
         };
+        #[cfg(unix)]
+        let upload_chmod = args.chmod.unwrap_or_else(|| get_default_filemode());
 
         Ok(Self {
             verbose: args.verbose,
@@ -335,7 +337,7 @@ impl MiniserveConfig {
             file_upload: args.allowed_upload_dir.is_some(),
             web_upload_concurrency: args.web_upload_concurrency,
             #[cfg(unix)]
-            upload_chmod: args.chmod,
+            upload_chmod,
             allowed_upload_dir,
             uploadable_media_type,
             tar_enabled: args.enable_tar,

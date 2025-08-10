@@ -539,7 +539,6 @@ fn assert_file_contents(file_path: &Path, contents: &str) {
 /// Test --chmod change file permissions as intended
 #[cfg(unix)]
 #[rstest]
-#[case(server(&["-u"]), 0o600)]
 #[case(server(&["-u", "--chmod", "660"]), 0o660)]
 #[case(server(&["-u", "--chmod", "644"]), 0o644)]
 #[case(server(&["-u", "--chmod", "0600"]), 0o600)]

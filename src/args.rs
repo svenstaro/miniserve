@@ -227,16 +227,16 @@ pub struct CliArgs {
 
     /// Set unix file permissions of uploaded files
     ///
-    /// This takes an octal number, for example 0600.
+    /// This takes an octal number, for example 0600. By default 0666 & ~umask is used to simulate
+    /// the system's default behavior.
     #[cfg(unix)]
     #[arg(
         long = "chmod",
         value_parser(parse_file_mode),
         env = "MINISERVE_CHMOD",
-        default_value = "0600",
         requires = "allowed_upload_dir"
     )]
-    pub chmod: u32,
+    pub chmod: Option<u32>,
 
     /// Enable recursive directory size calculation
     ///

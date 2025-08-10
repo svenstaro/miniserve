@@ -2,6 +2,10 @@ use std::{
     io,
     path::{Component, Path, PathBuf},
 };
+use rustix::{
+    process::umask,
+    fs::Mode,
+};
 
 /// Guarantee that the path is relative and cannot traverse back to parent directories
 /// and optionally prevent traversing hidden directories.
@@ -49,6 +53,13 @@ pub fn contains_symlink(path: impl AsRef<Path>) -> io::Result<bool> {
         .any(|p| p.file_type().is_symlink());
 
     Ok(contains_symlink)
+}
+
+/// Get default file creation permissions by umask
+pub fn get_default_filemode() -> u32 {
+    let old = umask(Mode::all());
+    umask(old);
+    0o666 & (!old).as_raw_mode()
 }
 
 #[cfg(test)]
