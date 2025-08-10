@@ -84,7 +84,6 @@ fn can_navigate_deep_into_dirs_and_back(server: TestServer) -> Result<(), Error>
             dir.to_str().unwrap()
         })
         .collect::<Vec<_>>();
-    dbg!(&dir_names);
     let base_url = server.url();
 
     // First we'll go forwards through the directory tree and then we'll go backwards.

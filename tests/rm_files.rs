@@ -1,8 +1,7 @@
 mod fixtures;
 
-use anyhow::bail;
 use assert_fs::fixture::TempDir;
-use fixtures::{server, tmpdir, TestServer};
+use fixtures::{Error, server, tmpdir, TestServer};
 use percent_encoding::utf8_percent_encode;
 use reqwest::blocking::Client;
 use reqwest::StatusCode;
@@ -44,129 +43,145 @@ fn make_del_path(unencoded_path: impl AsRef<Path>) -> String {
     format!("rm?path=/{}", make_get_path(unencoded_path))
 }
 
-fn assert_rm_ok(base_url: Url, unencoded_paths: &[impl AsRef<Path>]) -> anyhow::Result<()> {
+/// Tests that deletion requests succeed as expected.
+/// Verifies that the path exists, can be deleted, and is no longer accessible after deletion.
+fn assert_rm_ok(base_url: Url, unencoded_path: impl AsRef<Path>) -> Result<(), Error> {
     let client = Client::new();
+    let file_path = unencoded_path.as_ref();
 
-    for file_path in unencoded_paths.iter().map(AsRef::as_ref) {
-        // encode
-        let get_url = base_url.join(&make_get_path(file_path))?;
-        let del_url = base_url.join(&make_del_path(file_path))?;
-        println!("===== {file_path:?} =====");
-        println!("{get_url}, {del_url}");
+    // encode
+    let get_url = base_url.join(&make_get_path(file_path))?;
+    let del_url = base_url.join(&make_del_path(file_path))?;
+    println!("===== {file_path:?} =====");
+    println!("{get_url}, {del_url}");
 
-        // check path exists
-        let _get_res = client.get(get_url.clone()).send()?.error_for_status()?;
+    // check path exists
+    let _get_res = client.get(get_url.clone()).send()?.error_for_status()?;
 
-        // delete
-        let _del_res = client.post(del_url).send()?.error_for_status()?;
+    // delete
+    let _del_res = client.post(del_url).send()?.error_for_status()?;
 
-        // check path is gone
-        let get_res = client.get(get_url).send()?;
-        if get_res.status() != StatusCode::NOT_FOUND {
-            bail!("Unexpected status code: {}", get_res.status());
-        }
+    // check path is gone
+    let get_res = client.get(get_url).send()?;
+    if get_res.status() != StatusCode::NOT_FOUND {
+        return Err(format!("Unexpected status code: {}", get_res.status()).into());
     }
 
     Ok(())
 }
 
-/// The `check_paths_exist` parameter allows skipping this check before and after
-/// the deletion attempt in case these paths should be inaccessible via GET.
+/// Tests that deletion requests fail as expected.
+/// The `check_path_exists` parameter allows skipping this check before and after
+/// the deletion attempt in case the path should be inaccessible via GET.
 fn assert_rm_err(
     base_url: Url,
-    unencoded_paths: &[impl AsRef<Path>],
-    check_paths_exist: bool,
-) -> anyhow::Result<()> {
+    unencoded_path: impl AsRef<Path>,
+    check_path_exists: bool,
+) -> Result<(), Error> {
     let client = Client::new();
+    let file_path = unencoded_path.as_ref();
 
-    for file_path in unencoded_paths.iter().map(AsRef::as_ref) {
-        // encode
-        let get_url = base_url.join(&make_get_path(file_path))?;
-        let del_url = base_url.join(&make_del_path(file_path))?;
-        println!("===== {file_path:?} =====");
-        println!("{get_url}, {del_url}");
+    // encode
+    let get_url = base_url.join(&make_get_path(file_path))?;
+    let del_url = base_url.join(&make_del_path(file_path))?;
+    println!("===== {file_path:?} =====");
+    println!("{get_url}, {del_url}");
 
-        // check path exists
-        if check_paths_exist {
-            let _get_res = client.get(get_url.clone()).send()?.error_for_status()?;
-        }
+    // check path exists
+    if check_path_exists {
+        let _get_res = client.get(get_url.clone()).send()?.error_for_status()?;
+    }
 
-        // delete
-        let del_res = client.post(del_url).send()?;
-        if !del_res.status().is_client_error() {
-            bail!("Unexpected status code: {}", del_res.status());
-        }
+    // delete
+    let del_res = client.post(del_url).send()?;
+    if !del_res.status().is_client_error() {
+        return Err(format!("Unexpected status code: {}", del_res.status()).into());
+    }
 
-        // check path still exists
-        if check_paths_exist {
-            let _get_res = client.get(get_url).send()?.error_for_status()?;
-        }
+    // check path still exists
+    if check_path_exists {
+        let _get_res = client.get(get_url).send()?.error_for_status()?;
     }
 
     Ok(())
 }
 
 #[rstest]
-fn rm_disabled_by_default(server: TestServer) -> anyhow::Result<()> {
-    let paths = [FILES, DIRECTORIES]
-        .concat()
-        .into_iter()
-        .map(Path::new)
-        .chain(iter::once(DEEPLY_NESTED_FILE.as_ref()))
-        .collect::<Vec<_>>();
-    assert_rm_err(server.url(), &paths, true)
+#[case(FILES[0])]
+#[case(FILES[1])]
+#[case(FILES[2])]
+#[case(DIRECTORIES[0])]
+#[case(DIRECTORIES[1])]
+#[case(DIRECTORIES[2])]
+#[case(DEEPLY_NESTED_FILE)]
+fn rm_disabled_by_default(server: TestServer, #[case] path: &str) -> Result<(), Error> {
+    assert_rm_err(server.url(), path, true)
 }
 
 #[rstest]
-fn rm_disabled_by_default_with_hidden(#[with(&["-H"])] server: TestServer) -> anyhow::Result<()> {
-    let paths = [FILES, HIDDEN_FILES, DIRECTORIES, HIDDEN_DIRECTORIES]
-        .concat()
-        .into_iter()
-        .map(Path::new)
-        .chain(iter::once(DEEPLY_NESTED_FILE.as_ref()))
-        .collect::<Vec<_>>();
-    assert_rm_err(server.url(), &paths, true)
+#[case(FILES[0])]
+#[case(FILES[1])]
+#[case(FILES[2])]
+#[case(HIDDEN_FILES[0])]
+#[case(HIDDEN_FILES[1])]
+#[case(DIRECTORIES[0])]
+#[case(DIRECTORIES[1])]
+#[case(DIRECTORIES[2])]
+#[case(HIDDEN_DIRECTORIES[0])]
+#[case(HIDDEN_DIRECTORIES[1])]
+#[case(DEEPLY_NESTED_FILE)]
+fn rm_disabled_by_default_with_hidden(
+    #[with(&["-H"])] server: TestServer,
+    #[case] path: &str,
+) -> Result<(), Error> {
+    assert_rm_err(server.url(), path, true)
 }
 
 #[rstest]
-fn rm_works(#[with(&["-R"])] server: TestServer) -> anyhow::Result<()> {
-    let paths = [FILES, DIRECTORIES]
-        .concat()
-        .into_iter()
-        .map(Path::new)
-        .chain(iter::once(DEEPLY_NESTED_FILE.as_ref()))
-        .collect::<Vec<_>>();
-    assert_rm_ok(server.url(), &paths)
+#[case(FILES[0])]
+#[case(FILES[1])]
+#[case(FILES[2])]
+#[case(DIRECTORIES[0])]
+#[case(DIRECTORIES[1])]
+#[case(DIRECTORIES[2])]
+#[case(DEEPLY_NESTED_FILE)]
+fn rm_works(#[with(&["-R"])] server: TestServer, #[case] path: &str) -> Result<(), Error> {
+    assert_rm_ok(server.url(), path)
 }
 
 #[rstest]
+#[case(HIDDEN_FILES[0])]
+#[case(HIDDEN_FILES[1])]
+#[case(HIDDEN_DIRECTORIES[0])]
+#[case(HIDDEN_DIRECTORIES[1])]
 fn cannot_rm_hidden_when_disallowed(
     #[with(&["-R"])] server: TestServer,
-) -> anyhow::Result<()> {
-    assert_rm_err(
-        server.url(),
-        &[HIDDEN_FILES, HIDDEN_DIRECTORIES].concat(),
-        false,
-    )
+    #[case] path: &str,
+) -> Result<(), Error> {
+    assert_rm_err(server.url(), path, false)
 }
 
 #[rstest]
+#[case(HIDDEN_FILES[0])]
+#[case(HIDDEN_FILES[1])]
+#[case(HIDDEN_DIRECTORIES[0])]
+#[case(HIDDEN_DIRECTORIES[1])]
 fn can_rm_hidden_when_allowed(
     #[with(&["-R", "-H"])] server: TestServer,
-) -> anyhow::Result<()> {
-    assert_rm_ok(
-        server.url(),
-        &[HIDDEN_FILES, HIDDEN_DIRECTORIES].concat(),
-    )
+    #[case] path: &str,
+) -> Result<(), Error> {
+    assert_rm_ok(server.url(), path)
 }
 
 /// This test runs the server with --allowed-rm-dir argument and checks that
 /// deletions in a different directory are actually prevented.
 #[rstest]
-#[case(server(&["-R", "someOtherDir"]))]
-#[case(server(&["-R", "someDir/some_other_sub_dir"]))]
-fn rm_is_restricted(#[case] server: TestServer) -> anyhow::Result<()> {
-    assert_rm_err(server.url(), &NESTED_FILES_UNDER_SINGLE_ROOT, true)
+#[case(server(&["-R", "someOtherDir"]), NESTED_FILES_UNDER_SINGLE_ROOT[0])]
+#[case(server(&["-R", "someOtherDir"]), NESTED_FILES_UNDER_SINGLE_ROOT[1])]
+#[case(server(&["-R", "someDir/some_other_sub_dir"]), NESTED_FILES_UNDER_SINGLE_ROOT[0])]
+#[case(server(&["-R", "someDir/some_other_sub_dir"]), NESTED_FILES_UNDER_SINGLE_ROOT[1])]
+fn rm_is_restricted(#[case] server: TestServer, #[case] path: &str) -> Result<(), Error> {
+    assert_rm_err(server.url(), path, true)
 }
 
 /// This test runs the server with --allowed-rm-dir argument and checks that
@@ -174,10 +189,14 @@ fn rm_is_restricted(#[case] server: TestServer) -> anyhow::Result<()> {
 ///
 /// Both ways of specifying multiple directories are tested.
 #[rstest]
-#[case(server(&["-R", "dira,dirb,dirc"]))]
-#[case(server(&["-R", "dira", "-R", "dirb", "-R", "dirc"]))]
-fn can_rm_allowed_dir(#[case] server: TestServer) -> anyhow::Result<()> {
-    assert_rm_ok(server.url(), DIRECTORIES)
+#[case(server(&["-R", "dira,dirb,dirc"]), DIRECTORIES[0])]
+#[case(server(&["-R", "dira,dirb,dirc"]), DIRECTORIES[1])]
+#[case(server(&["-R", "dira,dirb,dirc"]), DIRECTORIES[2])]
+#[case(server(&["-R", "dira", "-R", "dirb", "-R", "dirc"]), DIRECTORIES[0])]
+#[case(server(&["-R", "dira", "-R", "dirb", "-R", "dirc"]), DIRECTORIES[1])]
+#[case(server(&["-R", "dira", "-R", "dirb", "-R", "dirc"]), DIRECTORIES[2])]
+fn can_rm_allowed_dir(#[case] server: TestServer, #[case] path: &str) -> Result<(), Error> {
+    assert_rm_ok(server.url(), path)
 }
 
 /// This tests that we can delete from directories specified by --allow-rm-dir.
@@ -195,8 +214,8 @@ fn can_rm_allowed_dir(#[case] server: TestServer) -> anyhow::Result<()> {
 #[case(server(&["-R", "someDir/some_sub_dir"]), "someDir/some_sub_dir/bravo")]
 #[case(server(&["-R", Path::new("someDir/some_sub_dir").to_str().unwrap()]),
     "someDir/some_sub_dir/bravo")]
-fn can_rm_from_allowed_dir(#[case] server: TestServer, #[case] file: &str) -> anyhow::Result<()> {
-    assert_rm_ok(server.url(), &[file])
+fn can_rm_from_allowed_dir(#[case] server: TestServer, #[case] file: &str) -> Result<(), Error> {
+    assert_rm_ok(server.url(), file)
 }
 
 /// Test deleting from symlinked directories that point to outside the server root.
@@ -207,7 +226,7 @@ fn rm_from_symlinked_dir(
     #[case] server: TestServer,
     #[case] should_succeed: bool,
     #[from(tmpdir)] target: TempDir,
-) -> anyhow::Result<()> {
+) -> Result<(), Error> {
     #[cfg(unix)]
     use std::os::unix::fs::symlink as symlink_dir;
     #[cfg(windows)]
@@ -223,8 +242,13 @@ fn rm_from_symlinked_dir(
         .map(|name| link.join(name))
         .collect::<Vec<_>>();
     if should_succeed {
-        assert_rm_ok(server.url(), &files_through_link)
+        for file_path in &files_through_link {
+            assert_rm_ok(server.url(), file_path)?;
+        }
     } else {
-        assert_rm_err(server.url(), &files_through_link, false)
+        for file_path in &files_through_link {
+            assert_rm_err(server.url(), file_path, false)?;
+        }
     }
+    Ok(())
 }
