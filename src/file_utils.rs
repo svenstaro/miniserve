@@ -1,10 +1,7 @@
+use rustix::{fs::Mode, process::umask};
 use std::{
     io,
     path::{Component, Path, PathBuf},
-};
-use rustix::{
-    process::umask,
-    fs::Mode,
 };
 
 /// Guarantee that the path is relative and cannot traverse back to parent directories

@@ -14,7 +14,7 @@ use rustls_pemfile as pemfile;
 use crate::{
     args::{CliArgs, DuplicateFile, MediaType, parse_auth},
     auth::RequiredAuth,
-    file_utils::{sanitize_path, get_default_filemode},
+    file_utils::{get_default_filemode, sanitize_path},
     listing::{SortingMethod, SortingOrder},
     renderer::ThemeSlug,
 };

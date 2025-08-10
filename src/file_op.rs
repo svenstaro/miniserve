@@ -431,7 +431,8 @@ async fn handle_multipart(
         on_duplicate_files,
         file_hash,
         upload_directory,
-        #[cfg(unix)] chmod,
+        #[cfg(unix)]
+        chmod,
     )
     .await
 }
@@ -521,7 +522,8 @@ pub async fn upload_file(
                     file_hash: hash_ref,
                     upload_directory,
                 },
-                #[cfg(unix)] conf.upload_chmod,
+                #[cfg(unix)]
+                conf.upload_chmod,
             )
         })
         .try_collect::<Vec<u64>>()
