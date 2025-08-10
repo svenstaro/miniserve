@@ -1,10 +1,10 @@
 mod fixtures;
 
 use assert_fs::fixture::TempDir;
-use fixtures::{Error, server, tmpdir, TestServer};
+use fixtures::{Error, TestServer, server, tmpdir};
 use percent_encoding::utf8_percent_encode;
-use reqwest::blocking::Client;
 use reqwest::StatusCode;
+use reqwest::blocking::Client;
 use rstest::rstest;
 use std::{
     iter,
@@ -12,9 +12,7 @@ use std::{
 };
 use url::Url;
 
-use crate::fixtures::{
-    DEEPLY_NESTED_FILE, DIRECTORIES, FILES, HIDDEN_DIRECTORIES, HIDDEN_FILES,
-};
+use crate::fixtures::{DEEPLY_NESTED_FILE, DIRECTORIES, FILES, HIDDEN_DIRECTORIES, HIDDEN_FILES};
 
 // Define the missing constant locally
 const NESTED_FILES_UNDER_SINGLE_ROOT: &[&str] = &["someDir/alpha", "someDir/some_sub_dir/bravo"];

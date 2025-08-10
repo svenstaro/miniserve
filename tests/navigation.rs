@@ -1,4 +1,4 @@
-use std::path::{Path, Component};
+use std::path::{Component, Path};
 use std::process::{Command, Stdio};
 
 use pretty_assertions::{assert_eq, assert_ne};
@@ -121,7 +121,11 @@ fn can_navigate_using_breadcrumbs(
     #[case] server: TestServer,
     #[case] title_name: String,
 ) -> Result<(), Error> {
-    let dir = Path::new(DEEPLY_NESTED_FILE).parent().unwrap().to_str().unwrap();
+    let dir = Path::new(DEEPLY_NESTED_FILE)
+        .parent()
+        .unwrap()
+        .to_str()
+        .unwrap();
 
     let base_url = server.url();
     let nested_url = base_url.join(dir)?;
