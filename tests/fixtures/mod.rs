@@ -90,7 +90,7 @@ pub fn tmpdir() -> TempDir {
         .write_str("File in a deeply nested directory.")
         .expect("Couldn't write to file");
 
-    // Add the missing someDir structure that rm_files tests expect
+    // someDir structure that rm_files tests expect
     tmpdir
         .child("someDir/alpha")
         .write_str("alpha file content")
