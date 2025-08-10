@@ -233,7 +233,8 @@ pub struct CliArgs {
         long = "chmod",
         value_parser(parse_file_mode),
         env = "MINISERVE_CHMOD",
-        default_value = "0600"
+        default_value = "0600",
+        requires = "allowed_upload_dir"
     )]
     pub chmod: u32,
 

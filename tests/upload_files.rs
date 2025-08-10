@@ -536,11 +536,13 @@ fn assert_file_contents(file_path: &Path, contents: &str) {
     assert!(file_contents == contents)
 }
 
+/// Test --chmod change file permissions as intended
 #[cfg(unix)]
 #[rstest]
 #[case(server(&["-u"]), 0o600)]
 #[case(server(&["-u", "--chmod", "660"]), 0o660)]
 #[case(server(&["-u", "--chmod", "644"]), 0o644)]
+#[case(server(&["-u", "--chmod", "0600"]), 0o600)]
 fn chmod(#[case] server: TestServer, #[case] expected_mode: u32) -> Result<(), Error> {
     let test_file_name = "chmod-file.txt";
     let test_file_contents = "Test File Contents";
