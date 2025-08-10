@@ -2,7 +2,7 @@ use std::{
     fs::File,
     io::{BufRead, BufReader},
     net::{IpAddr, Ipv4Addr, Ipv6Addr},
-    path::PathBuf,
+    path::{Path, PathBuf},
 };
 
 use actix_web::http::header::HeaderMap;
@@ -124,6 +124,12 @@ pub struct MiniserveConfig {
 
     /// What to do on upload if filename already exists
     pub on_duplicate_files: DuplicateFile,
+
+    /// Enable file and directory deletion
+    pub rm_enabled: bool,
+
+    /// List of allowed deletion directories
+    pub allowed_rm_dir: Vec<String>,
 
     /// If false, creation of uncompressed tar archives is disabled
     pub tar_enabled: bool,
@@ -285,15 +291,14 @@ impl MiniserveConfig {
         let allowed_upload_dir = args
             .allowed_upload_dir
             .as_ref()
-            .map(|v| {
-                v.iter()
-                    .map(|p| {
-                        sanitize_path(p, args.hidden)
-                            .map(|p| p.display().to_string().replace('\\', "/"))
-                            .ok_or(anyhow!("Illegal path {p:?}"))
-                    })
-                    .collect()
-            })
+            .map(|paths| validate_allowed_paths(paths, args.hidden))
+            .transpose()?
+            .unwrap_or_default();
+
+        let allowed_rm_dir = args
+            .allowed_rm_dir
+            .as_ref()
+            .map(|paths| validate_allowed_paths(paths, args.hidden))
             .transpose()?
             .unwrap_or_default();
 
@@ -332,6 +337,8 @@ impl MiniserveConfig {
             web_upload_concurrency: args.web_upload_concurrency,
             allowed_upload_dir,
             uploadable_media_type,
+            rm_enabled: args.allowed_rm_dir.is_some(),
+            allowed_rm_dir,
             tar_enabled: args.enable_tar,
             tar_gz_enabled: args.enable_tar_gz,
             zip_enabled: args.enable_zip,
@@ -351,4 +358,15 @@ impl MiniserveConfig {
             file_external_url: args.file_external_url,
         })
     }
+}
+
+fn validate_allowed_paths(paths: &[impl AsRef<Path>], allow_hidden: bool) -> Result<Vec<String>> {
+    paths
+        .iter()
+        .map(|p| {
+            sanitize_path(p, allow_hidden)
+                .map(|p| p.display().to_string().replace('\\', "/"))
+                .ok_or(anyhow!("Illegal path {:?}", p.as_ref()))
+        })
+        .collect()
 }

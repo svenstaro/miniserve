@@ -90,6 +90,17 @@ pub fn tmpdir() -> TempDir {
         .write_str("File in a deeply nested directory.")
         .expect("Couldn't write to file");
 
+    // someDir structure that rm_files tests expect
+    tmpdir
+        .child("someDir/alpha")
+        .write_str("alpha file content")
+        .expect("Couldn't write to someDir/alpha");
+
+    tmpdir
+        .child("someDir/some_sub_dir/bravo")
+        .write_str("bravo file content")
+        .expect("Couldn't write to someDir/some_sub_dir/bravo");
+
     tmpdir
         .child(DIRECTORY_SYMLINK.strip_suffix("/").unwrap())
         .symlink_to_dir(DIRECTORIES[0].strip_suffix("/").unwrap())

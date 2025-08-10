@@ -413,6 +413,10 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
             // Allow file upload
             app.service(web::resource("/upload").route(web::post().to(file_op::upload_file)));
         }
+        if conf.rm_enabled {
+            // Allow file and directory deletion
+            app.service(web::resource("/rm").route(web::post().to(file_op::rm_file)));
+        }
         // Handle directories
         app.service(dir_service());
     }

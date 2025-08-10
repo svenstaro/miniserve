@@ -14,12 +14,11 @@ use regex::Regex;
 use serde::Deserialize;
 use strum::{Display, EnumString};
 
+use self::percent_encode_sets::COMPONENT;
 use crate::archive::ArchiveMethod;
 use crate::auth::CurrentUser;
 use crate::errors::{self, RuntimeError};
 use crate::renderer;
-
-use self::percent_encode_sets::COMPONENT;
 
 /// "percent-encode sets" as defined by WHATWG specs:
 /// https://url.spec.whatwg.org/#percent-encoded-bytes

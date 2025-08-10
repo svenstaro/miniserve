@@ -36,6 +36,7 @@ pub fn page(
     }
 
     let upload_route = format!("{}/upload", &conf.route_prefix);
+    let rm_route = format!("{}/rm", &conf.route_prefix);
     let (sort_method, sort_order) = (query_params.sort, query_params.order);
 
     let upload_action = build_upload_action(&upload_route, encoded_dir, sort_method, sort_order);
@@ -48,6 +49,17 @@ pub fn page(
             .allowed_upload_dir
             .iter()
             .any(|x| encoded_dir.starts_with(&format!("/{x}")));
+    let rm_allowed = conf.allowed_rm_dir.is_empty()
+        || conf
+            .allowed_rm_dir
+            .iter()
+            .any(|x| encoded_dir.starts_with(&format!("/{x}")));
+
+    // OR with other conditions in the future if more actions are added
+    let show_actions = conf.rm_enabled && rm_allowed;
+    let actions_conf = show_actions.then(|| ActionsConf {
+        rm_route: &rm_route,
+    });
 
     html! {
         (DOCTYPE)
@@ -132,14 +144,17 @@ pub fn page(
                     }
                     table {
                         thead {
-                            th.name { (build_link("name", "Name", sort_method, sort_order)) }
-                            th.size { (build_link("size", "Size", sort_method, sort_order)) }
-                            th.date { (build_link("date", "Last modification", sort_method, sort_order)) }
+                            th.name { (sortable_title("name", "Name", sort_method, sort_order)) }
+                            th.size { (sortable_title("size", "Size", sort_method, sort_order)) }
+                            th.date { (sortable_title("date", "Last modification", sort_method, sort_order)) }
+                            @if show_actions {
+                                th.actions { span { "Actions" } }
+                            }
                         }
                         tbody {
                             @if !is_root {
                                 tr {
-                                    td colspan="3" {
+                                    td colspan=(3 + show_actions as usize) {
                                         p {
                                             span.root-chevron { (chevron_left()) }
                                             a.root href=(parametrized_link("../", sort_method, sort_order, false)) {
@@ -150,7 +165,7 @@ pub fn page(
                                 }
                             }
                             @for entry in entries {
-                                (entry_row(entry, sort_method, sort_order, false, conf.show_exact_bytes))
+                                (entry_row(entry, sort_method, sort_order, false, conf.show_exact_bytes, actions_conf))
                             }
                         }
                     }
@@ -239,7 +254,7 @@ pub fn raw(entries: Vec<Entry>, is_root: bool, conf: &MiniserveConfig) -> Markup
                             }
                         }
                         @for entry in entries {
-                            (entry_row(entry, None, None, true, conf.show_exact_bytes))
+                            (entry_row(entry, None, None, true, conf.show_exact_bytes, None))
                         }
                     }
                 }
@@ -500,7 +515,7 @@ fn parametrized_link(
 }
 
 /// Partial: table header link
-fn build_link(
+fn sortable_title(
     name: &str,
     title: &str,
     sort_method: Option<SortingMethod>,
@@ -532,6 +547,22 @@ fn build_link(
     }
 }
 
+/// Partial: rm form
+fn rm_form(rm_route: &str, encoded_path: &str) -> Markup {
+    let rm_action = format!("{rm_route}?path={encoded_path}");
+    html! {
+        form class="rm_form" action=(rm_action) method="POST" {
+            button type="submit" title="Delete" { "✗" }
+        }
+    }
+}
+
+#[derive(Copy, Clone, Debug)]
+struct ActionsConf<'a> {
+    /// Route prefix for file removal POST requests.
+    rm_route: &'a str,
+}
+
 /// Partial: row for an entry
 fn entry_row(
     entry: Entry,
@@ -539,6 +570,7 @@ fn entry_row(
     sort_order: Option<SortingOrder>,
     raw: bool,
     show_exact_bytes: bool,
+    actions_conf: Option<ActionsConf>,
 ) -> Markup {
     html! {
         @let entry_type = entry.entry_type.clone();
@@ -578,13 +610,13 @@ fn entry_row(
                                     }
                                 }@else {
                                     span.mobile-info.size {
-                                        (build_link("size", &format!("{size}"), sort_method, sort_order))
+                                        (sortable_title("size", &format!("{size}"), sort_method, sort_order))
+                                    }
                                 }
                             }
                             @if let Some(modification_timer) = humanize_systemtime(entry.last_modification_date) {
                                 span.mobile-info.history {
-                                    (build_link("date", &modification_timer, sort_method, sort_order))
-                                    }
+                                    (sortable_title("date", &modification_timer, sort_method, sort_order))
                                 }
                             }
                         }
@@ -610,6 +642,11 @@ fn entry_row(
                     span.history {
                         (modification_timer)
                     }
+                }
+            }
+            @if let Some(conf) = actions_conf {
+                td.actions-cell {
+                    (rm_form(conf.rm_route, &entry.link))
                 }
             }
         }
