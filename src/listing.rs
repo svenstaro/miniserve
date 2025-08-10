@@ -47,6 +47,7 @@ pub struct ListingQueryParameters {
     pub sort: Option<SortingMethod>,
     pub order: Option<SortingOrder>,
     pub raw: Option<bool>,
+    pub search: Option<String>,
     download: Option<ArchiveMethod>,
 }
 
@@ -248,6 +249,13 @@ pub fn directory_listing(
     };
 
     let query_params = extract_query_parameters(req);
+    let search = query_params.search.as_ref().map(|s| s.to_lowercase());
+    let matches_search = move |filename: &str| -> bool {
+        match search {
+            Some(ref search) => filename.to_lowercase().contains(search),
+            None => true,
+        }
+    };
     let mut entries: Vec<Entry> = Vec::new();
     let mut readme: Option<(String, String)> = None;
     let readme_rx: Regex = Regex::new("^readme([.](md|txt))?$").unwrap();
@@ -281,6 +289,9 @@ pub fn directory_listing(
                 let last_modification_date = metadata.modified().ok();
 
                 if metadata.is_dir() {
+                    if !matches_search(&file_name) {
+                        continue;
+                    }
                     entries.push(Entry::new(
                         file_name,
                         EntryType::Directory,
@@ -318,14 +329,6 @@ pub fn directory_listing(
                         }
                         None => file_url,
                     };
-                    entries.push(Entry::new(
-                        file_name.clone(),
-                        EntryType::File,
-                        file_link,
-                        Some(ByteSize::b(metadata.len())),
-                        last_modification_date,
-                        symlink_dest,
-                    ));
                     if conf.readme && readme_rx.is_match(&file_name.to_lowercase()) {
                         let ext = file_name.split('.').next_back().unwrap().to_lowercase();
                         readme = Some((
@@ -340,6 +343,17 @@ pub fn directory_listing(
                             },
                         ));
                     }
+                    if !matches_search(&file_name) {
+                        continue;
+                    }
+                    entries.push(Entry::new(
+                        file_name.clone(),
+                        EntryType::File,
+                        file_link,
+                        Some(ByteSize::b(metadata.len())),
+                        last_modification_date,
+                        symlink_dest,
+                    ));
                 }
             } else {
                 continue;

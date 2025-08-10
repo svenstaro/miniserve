@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::process::{Command, Stdio};
 use std::thread::sleep;
 use std::time::Duration;
@@ -37,6 +38,38 @@ fn serves_requests_with_no_options(tmpdir: TempDir) -> Result<(), Error> {
     }
 
     child.kill()?;
+
+    Ok(())
+}
+
+#[rstest]
+#[case(FILES[0].into())]
+#[case(FILES[0].to_uppercase().into())]
+#[case(DIRECTORIES[0].trim_end_matches("/").into())]
+#[case("test".into())]
+#[case("keyword-that-matches-no-file".into())]
+fn serves_requests_with_search_query(
+    server: TestServer,
+    #[case] search: Cow<'static, str>,
+) -> Result<(), Error> {
+    let body = reqwest::blocking::get(format!("{}/?search={}", server.url(), search))?
+        .error_for_status()?;
+    let parsed = Document::from_read(body)?;
+    let search_lower = search.to_lowercase();
+    for &file in FILES {
+        let should_exist = file.to_lowercase().contains(search_lower.as_str());
+        assert_eq!(
+            parsed.find(|x: &Node| x.text() == file).next().is_some(),
+            should_exist,
+        );
+    }
+    for &dir in DIRECTORIES {
+        let should_exist = dir.to_lowercase().contains(search_lower.as_str());
+        assert_eq!(
+            parsed.find(|x: &Node| x.text() == dir).next().is_some(),
+            should_exist,
+        );
+    }
 
     Ok(())
 }
