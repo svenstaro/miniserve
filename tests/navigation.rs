@@ -1,3 +1,4 @@
+use std::path::{Path, Component};
 use std::process::{Command, Stdio};
 
 use pretty_assertions::{assert_eq, assert_ne};
@@ -72,7 +73,7 @@ fn can_navigate_into_dirs_and_back(server: TestServer) -> Result<(), Error> {
 /// We can navigate deep into the file tree and back using shown links.
 fn can_navigate_deep_into_dirs_and_back(server: TestServer) -> Result<(), Error> {
     // Create a vector of parent directory names.
-    let dir_names = DEEPLY_NESTED_FILE
+    let dir_names = Path::new(DEEPLY_NESTED_FILE)
         .parent()
         .unwrap()
         .components()
@@ -121,7 +122,7 @@ fn can_navigate_using_breadcrumbs(
     #[case] server: TestServer,
     #[case] title_name: String,
 ) -> Result<(), Error> {
-    let dir = DEEPLY_NESTED_FILE.parent().unwrap().to_str().unwrap();
+    let dir = Path::new(DEEPLY_NESTED_FILE).parent().unwrap().to_str().unwrap();
 
     let base_url = server.url();
     let nested_url = base_url.join(dir)?;

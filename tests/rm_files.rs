@@ -2,7 +2,7 @@ mod fixtures;
 
 use anyhow::bail;
 use assert_fs::fixture::TempDir;
-use fixtures::{server, server_no_stderr, tmpdir, TestServer};
+use fixtures::{server, tmpdir, TestServer};
 use percent_encoding::utf8_percent_encode;
 use reqwest::blocking::Client;
 use reqwest::StatusCode;
@@ -15,14 +15,10 @@ use url::Url;
 
 use crate::fixtures::{
     DEEPLY_NESTED_FILE, DIRECTORIES, FILES, HIDDEN_DIRECTORIES, HIDDEN_FILES,
-    NESTED_FILES_UNDER_SINGLE_ROOT,
 };
 
-include!(concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/",
-    "src/path_utils.rs"
-));
+// Define the missing constant locally
+const NESTED_FILES_UNDER_SINGLE_ROOT: &[&str] = &["someDir/alpha", "someDir/some_sub_dir/bravo"];
 
 /// Construct a path for a GET request,
 /// with each path component being separately encoded.
@@ -36,7 +32,7 @@ fn make_get_path(unencoded_path: impl AsRef<Path>) -> String {
             Component::ParentDir => "..",
             Component::Normal(comp) => comp.to_str().unwrap(),
         })
-        .map(|comp| utf8_percent_encode(comp, percent_encode_sets::COMPONENT).to_string())
+        .map(|comp| utf8_percent_encode(comp, &percent_encoding::NON_ALPHANUMERIC).to_string())
         .collect::<Vec<_>>()
         .join("/")
 }
@@ -145,10 +141,10 @@ fn rm_works(#[with(&["-R"])] server: TestServer) -> anyhow::Result<()> {
 
 #[rstest]
 fn cannot_rm_hidden_when_disallowed(
-    #[with(&["-R"])] server_no_stderr: TestServer,
+    #[with(&["-R"])] server: TestServer,
 ) -> anyhow::Result<()> {
     assert_rm_err(
-        server_no_stderr.url(),
+        server.url(),
         &[HIDDEN_FILES, HIDDEN_DIRECTORIES].concat(),
         false,
     )
@@ -156,10 +152,10 @@ fn cannot_rm_hidden_when_disallowed(
 
 #[rstest]
 fn can_rm_hidden_when_allowed(
-    #[with(&["-R", "-H"])] server_no_stderr: TestServer,
+    #[with(&["-R", "-H"])] server: TestServer,
 ) -> anyhow::Result<()> {
     assert_rm_ok(
-        server_no_stderr.url(),
+        server.url(),
         &[HIDDEN_FILES, HIDDEN_DIRECTORIES].concat(),
     )
 }
@@ -167,8 +163,8 @@ fn can_rm_hidden_when_allowed(
 /// This test runs the server with --allowed-rm-dir argument and checks that
 /// deletions in a different directory are actually prevented.
 #[rstest]
-#[case(server_no_stderr(&["-R", "someOtherDir"]))]
-#[case(server_no_stderr(&["-R", "someDir/some_other_sub_dir"]))]
+#[case(server(&["-R", "someOtherDir"]))]
+#[case(server(&["-R", "someDir/some_other_sub_dir"]))]
 fn rm_is_restricted(#[case] server: TestServer) -> anyhow::Result<()> {
     assert_rm_err(server.url(), &NESTED_FILES_UNDER_SINGLE_ROOT, true)
 }
@@ -186,18 +182,18 @@ fn can_rm_allowed_dir(#[case] server: TestServer) -> anyhow::Result<()> {
 
 /// This tests that we can delete from directories specified by --allow-rm-dir.
 #[rstest]
-#[case(server_no_stderr(&["-R", "someDir"]), "someDir/alpha")]
-#[case(server_no_stderr(&["-R", "someDir"]), "someDir//alpha")]
-#[case(server_no_stderr(&["-R", "someDir"]), "someDir/././alpha")]
-#[case(server_no_stderr(&["-R", "someDir"]), "someDir/some_sub_dir")]
-#[case(server_no_stderr(&["-R", "someDir"]), "someDir/some_sub_dir/")]
-#[case(server_no_stderr(&["-R", "someDir"]), "someDir//some_sub_dir")]
-#[case(server_no_stderr(&["-R", "someDir"]), "someDir/./some_sub_dir")]
-#[case(server_no_stderr(&["-R", "someDir"]), "someDir/some_sub_dir/bravo")]
-#[case(server_no_stderr(&["-R", "someDir"]), "someDir//some_sub_dir//bravo")]
-#[case(server_no_stderr(&["-R", "someDir"]), "someDir/./some_sub_dir/../some_sub_dir/bravo")]
-#[case(server_no_stderr(&["-R", "someDir/some_sub_dir"]), "someDir/some_sub_dir/bravo")]
-#[case(server_no_stderr(&["-R", Path::new("someDir/some_sub_dir").to_str().unwrap()]),
+#[case(server(&["-R", "someDir"]), "someDir/alpha")]
+#[case(server(&["-R", "someDir"]), "someDir//alpha")]
+#[case(server(&["-R", "someDir"]), "someDir/././alpha")]
+#[case(server(&["-R", "someDir"]), "someDir/some_sub_dir")]
+#[case(server(&["-R", "someDir"]), "someDir/some_sub_dir/")]
+#[case(server(&["-R", "someDir"]), "someDir//some_sub_dir")]
+#[case(server(&["-R", "someDir"]), "someDir/./some_sub_dir")]
+#[case(server(&["-R", "someDir"]), "someDir/some_sub_dir/bravo")]
+#[case(server(&["-R", "someDir"]), "someDir//some_sub_dir//bravo")]
+#[case(server(&["-R", "someDir"]), "someDir/./some_sub_dir/../some_sub_dir/bravo")]
+#[case(server(&["-R", "someDir/some_sub_dir"]), "someDir/some_sub_dir/bravo")]
+#[case(server(&["-R", Path::new("someDir/some_sub_dir").to_str().unwrap()]),
     "someDir/some_sub_dir/bravo")]
 fn can_rm_from_allowed_dir(#[case] server: TestServer, #[case] file: &str) -> anyhow::Result<()> {
     assert_rm_ok(server.url(), &[file])
@@ -206,7 +202,7 @@ fn can_rm_from_allowed_dir(#[case] server: TestServer, #[case] file: &str) -> an
 /// Test deleting from symlinked directories that point to outside the server root.
 #[rstest]
 #[case(server(&["-R"]), true)]
-#[case(server_no_stderr(&["-R", "--no-symlinks"]), false)]
+#[case(server(&["-R", "--no-symlinks"]), false)]
 fn rm_from_symlinked_dir(
     #[case] server: TestServer,
     #[case] should_succeed: bool,
