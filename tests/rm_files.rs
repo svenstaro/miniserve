@@ -183,12 +183,12 @@ fn rm_is_restricted(#[case] server: TestServer, #[case] path: &str) -> Result<()
 ///
 /// Both ways of specifying multiple directories are tested.
 #[rstest]
-#[case(server(&["-R", "dira,dirb,dirc"]), DIRECTORIES[0])]
-#[case(server(&["-R", "dira,dirb,dirc"]), DIRECTORIES[1])]
-#[case(server(&["-R", "dira,dirb,dirc"]), DIRECTORIES[2])]
-#[case(server(&["-R", "dira", "-R", "dirb", "-R", "dirc"]), DIRECTORIES[0])]
-#[case(server(&["-R", "dira", "-R", "dirb", "-R", "dirc"]), DIRECTORIES[1])]
-#[case(server(&["-R", "dira", "-R", "dirb", "-R", "dirc"]), DIRECTORIES[2])]
+#[case(server(&["-R", "dira,dirb,dir space"]), DIRECTORIES[0])]
+#[case(server(&["-R", "dira,dirb,dir space"]), DIRECTORIES[1])]
+#[case(server(&["-R", "dira,dirb,dir space"]), DIRECTORIES[2])]
+#[case(server(&["-R", "dira", "-R", "dirb", "-R", "dir space"]), DIRECTORIES[0])]
+#[case(server(&["-R", "dira", "-R", "dirb", "-R", "dir space"]), DIRECTORIES[1])]
+#[case(server(&["-R", "dira", "-R", "dirb", "-R", "dir space"]), DIRECTORIES[2])]
 fn can_rm_allowed_dir(#[case] server: TestServer, #[case] path: &str) -> Result<(), Error> {
     assert_rm_ok(server.url(), path)
 }
