@@ -35,7 +35,6 @@ mod errors;
 mod file_op;
 mod file_utils;
 mod listing;
-mod path_utils;
 mod pipe;
 mod renderer;
 mod webdav_fs;
