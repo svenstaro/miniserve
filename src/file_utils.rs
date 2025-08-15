@@ -53,6 +53,7 @@ pub fn contains_symlink(path: impl AsRef<Path>) -> io::Result<bool> {
 }
 
 /// Get default file creation permissions by umask
+#[cfg(unix)]
 pub fn get_default_filemode() -> u16 {
     let old = umask(Mode::all());
     umask(old);
