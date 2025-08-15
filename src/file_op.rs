@@ -113,7 +113,7 @@ async fn save_file(
     on_duplicate_files: DuplicateFile,
     file_checksum: Option<&FileHash>,
     temporary_upload_directory: Option<&PathBuf>,
-    #[cfg(unix)] chmod: u32,
+    #[cfg(unix)] chmod: u16,
 ) -> Result<u64, RuntimeError> {
     if file_path.exists() {
         match on_duplicate_files {
@@ -282,7 +282,7 @@ async fn save_file(
     {
         info!("Changing file mode (chmod) to {chmod:o}");
         use std::os::unix::fs::PermissionsExt;
-        let perms = std::fs::Permissions::from_mode(chmod);
+        let perms = std::fs::Permissions::from_mode(chmod.into());
         if let Err(err) = tokio::fs::set_permissions(&file_path, perms).await {
             return Err(RuntimeError::IoError(
                 format!("Failed to chmod {chmod:o} {file_path:?}"),
@@ -308,7 +308,7 @@ async fn handle_multipart(
     mut field: actix_multipart::Field,
     path: PathBuf,
     opts: HandleMultipartOpts<'_>,
-    #[cfg(unix)] chmod: u32,
+    #[cfg(unix)] chmod: u16,
 ) -> Result<u64, RuntimeError> {
     let HandleMultipartOpts {
         on_duplicate_files,

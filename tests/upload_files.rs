@@ -542,7 +542,7 @@ fn assert_file_contents(file_path: &Path, contents: &str) {
 #[case(server(&["-u", "--chmod", "660"]), 0o660)]
 #[case(server(&["-u", "--chmod", "644"]), 0o644)]
 #[case(server(&["-u", "--chmod", "0600"]), 0o600)]
-fn chmod(#[case] server: TestServer, #[case] expected_mode: u32) -> Result<(), Error> {
+fn chmod(#[case] server: TestServer, #[case] expected_mode: u16) -> Result<(), Error> {
     let test_file_name = "chmod-file.txt";
     let test_file_contents = "Test File Contents";
 
@@ -575,7 +575,7 @@ fn chmod(#[case] server: TestServer, #[case] expected_mode: u32) -> Result<(), E
     let meta = std::fs::metadata(&test_file_path)?;
     // the returned mode has filetype in it
     let mode = meta.mode() & 0o7777;
-    assert_eq!(mode, expected_mode);
+    assert_eq!(mode as u16, expected_mode);
 
     Ok(())
 }

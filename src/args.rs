@@ -236,7 +236,7 @@ pub struct CliArgs {
         env = "MINISERVE_CHMOD",
         requires = "allowed_upload_dir"
     )]
-    pub chmod: Option<u32>,
+    pub chmod: Option<u16>,
 
     /// Enable recursive directory size calculation
     ///
@@ -517,8 +517,8 @@ pub fn parse_header(src: &str) -> Result<HeaderMap, httparse::Error> {
     Ok(header_map)
 }
 
-pub fn parse_file_mode(src: &str) -> Result<u32, std::num::ParseIntError> {
-    u32::from_str_radix(src, 8)
+pub fn parse_file_mode(src: &str) -> Result<u16, std::num::ParseIntError> {
+    u16::from_str_radix(src, 8)
 }
 
 #[rustfmt::skip]

@@ -118,7 +118,7 @@ pub struct MiniserveConfig {
 
     /// chmod permissions of uploaded files
     #[cfg(unix)]
-    pub upload_chmod: u32,
+    pub upload_chmod: u16,
 
     /// List of allowed upload directories
     pub allowed_upload_dir: Vec<String>,
@@ -306,7 +306,7 @@ impl MiniserveConfig {
             crate::args::SizeDisplay::Exact => true,
         };
         #[cfg(unix)]
-        let upload_chmod = args.chmod.unwrap_or_else(|| get_default_filemode());
+        let upload_chmod = args.chmod.unwrap_or_else(get_default_filemode);
 
         Ok(Self {
             verbose: args.verbose,
