@@ -1,3 +1,4 @@
+#[cfg(unix)]
 use rustix::{fs::Mode, process::umask};
 use std::{
     io,
