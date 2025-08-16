@@ -517,6 +517,7 @@ pub fn parse_header(src: &str) -> Result<HeaderMap, httparse::Error> {
     Ok(header_map)
 }
 
+#[cfg(unix)]
 pub fn parse_file_mode(src: &str) -> Result<u16, std::num::ParseIntError> {
     u16::from_str_radix(src, 8)
 }
