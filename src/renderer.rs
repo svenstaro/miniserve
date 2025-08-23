@@ -509,7 +509,7 @@ fn parametrized_link(
     raw: bool,
     search: Option<&str>,
 ) -> String {
-    let mut query: Vec<Cow<'static, str>> = Vec::with_capacity(4);
+    let mut query: Vec<Cow<'static, str>> = Vec::new();
 
     if raw {
         query.push("raw=true".into());

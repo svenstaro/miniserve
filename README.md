@@ -141,6 +141,7 @@ Some mobile browsers like Firefox on Android will offer to open the camera app w
 - Single binary drop-in with no extra dependencies required
 - Authentication support with username and password (and hashed password)
 - Mega fast and highly parallel (thanks to [Rust](https://www.rust-lang.org/) and [Actix](https://actix.rs/))
+- Search/filter by file or directory name
 - Folder download (compressed on the fly as `.tar.gz` or `.zip`)
 - File uploading
 - Directory creation
