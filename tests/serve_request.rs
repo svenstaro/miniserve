@@ -48,15 +48,15 @@ fn serves_requests_with_no_options(tmpdir: TempDir) -> Result<(), Error> {
 #[rstest]
 #[case(server(None::<&str>), "test", &[
     "#[]{}()@!$&'`+,;= %20.test",
+    #[cfg(unix)]
+    ":?#[]{}<>()@!$&'`|*+,;= %20.test",
     #[cfg(not(windows))]
     "foo\\bar.test",
     #[cfg(not(windows))]
     "test \" \' & < >.csv",
-    "test.html", 
-    "test.mkv", 
+    "test.html",
+    "test.mkv",
     "test.txt",
-    #[cfg(unix)]
-    ":?#[]{}<>()@!$&'`|*+,;= %20.test",
 ])]
 #[case(server(None::<&str>), "d", &["dir space/", "dir_symlink/", "dira/", "dirb/", "😀.data"])]
 #[case(server(None::<&str>), "dira", &["dira/"])]
