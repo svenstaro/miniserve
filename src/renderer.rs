@@ -100,17 +100,25 @@ pub fn page(
                 }
                 div.container {
                     span #top { }
-                    h1.title dir="ltr" {
-                        @for el in breadcrumbs {
-                            @if el.link == "." {
-                                // wrapped in span so the text doesn't shift slightly when it turns into a link
-                                span { bdi { (el.name) } }
-                            } @else {
-                                a href=(parametrized_link(&el.link, sort_method, sort_order, false, search)) {
-                                    bdi { (el.name) }
+                    div.title-search-box {
+                        h1.title dir="ltr" {
+                            @for el in breadcrumbs {
+                                @if el.link == "." {
+                                    // wrapped in span so the text doesn't shift slightly when it turns into a link
+                                    span { bdi { (el.name) } }
+                                } @else {
+                                    a href=(parametrized_link(&el.link, sort_method, sort_order, false, search)) {
+                                        bdi { (el.name) }
+                                    }
                                 }
+                                "/"
                             }
-                            "/"
+                        }
+                        div.search-box {
+                            form id="search" method="GET" {
+                                input type="text" name="search" value=(search.unwrap_or_default()) placeholder="Search..." {}
+                                button type="submit" { "Search" }
+                            }
                         }
                     }
                     div.toolbar {
@@ -153,9 +161,9 @@ pub fn page(
                     }
                     table {
                         thead {
-                            th.name { (sortable_title("name", "Name", sort_method, sort_order)) }
-                            th.size { (sortable_title("size", "Size", sort_method, sort_order)) }
-                            th.date { (sortable_title("date", "Last modification", sort_method, sort_order)) }
+                            th.name { (sortable_title("name", "Name", sort_method, sort_order, search)) }
+                            th.size { (sortable_title("size", "Size", sort_method, sort_order, search)) }
+                            th.date { (sortable_title("date", "Last modification", sort_method, sort_order, search)) }
                             @if show_actions {
                                 th.actions { span { "Actions" } }
                             }
@@ -543,24 +551,39 @@ fn sortable_title(
     title: &str,
     sort_method: Option<SortingMethod>,
     sort_order: Option<SortingOrder>,
+    search: Option<&str>,
 ) -> Markup {
-    let mut link = format!("?sort={name}&order=asc");
+    let mut query_items = Vec::new();
     let mut help = format!("Sort by {name} in ascending order");
     let mut chevron = chevron_down();
     let mut class = "";
 
-    if let Some(method) = sort_method
+    let order = if let Some(method) = sort_method
         && method.to_string() == name
     {
         class = "active";
         if let Some(order) = sort_order
             && order.to_string() == "asc"
         {
-            link = format!("?sort={name}&order=desc");
             help = format!("Sort by {name} in descending order");
             chevron = chevron_up();
+            "desc"
+        } else {
+            "asc"
         }
+    } else {
+        "asc"
     };
+
+    query_items.push(format!("sort={name}&order={order}"));
+
+    if let Some(search) = search {
+        if !search.is_empty() {
+            query_items.push(format!("search={}", utf8_percent_encode(search, COMPONENT)));
+        }
+    }
+
+    let link = format!("?{}", query_items.join("&"));
 
     html! {
         span class=(class) {
@@ -634,13 +657,13 @@ fn entry_row(
                                     }
                                 }@else {
                                     span.mobile-info.size {
-                                        (sortable_title("size", &format!("{size}"), sort_method, sort_order))
+                                        (sortable_title("size", &format!("{size}"), sort_method, sort_order, search))
                                     }
                                 }
                             }
                             @if let Some(modification_timer) = humanize_systemtime(entry.last_modification_date) {
                                 span.mobile-info.history {
-                                    (sortable_title("date", &modification_timer, sort_method, sort_order))
+                                    (sortable_title("date", &modification_timer, sort_method, sort_order, search))
                                 }
                             }
                         }
@@ -742,6 +765,20 @@ fn page_header(
                     addEventListener("load", loadColorScheme);
                     // load saved theme when local storage is changed (synchronize between tabs)
                     addEventListener("storage", loadColorScheme);
+
+                    // handle search form submission
+                    addEventListener("load", function() {
+                        const searchForm = document.getElementById('search');
+                        if (searchForm) {
+                            searchForm.addEventListener('submit', function(event) {
+                                event.preventDefault();
+                                const currentParams = new URLSearchParams(window.location.search);
+                                const searchInput = event.target.elements.search;
+                                currentParams.set('search', searchInput.value);
+                                window.location.search = currentParams.toString();
+                            });
+                        }
+                    });
                 "#))
             }
 
