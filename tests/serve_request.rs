@@ -72,7 +72,8 @@ fn serves_requests_with_search_query(
         .error_for_status()?;
     let parsed = Document::from_read(body)?;
     let items: Vec<_> = parsed
-        .find(Name("a").and(Class("file").or(Class("directory")))).map(|node| node.text())
+        .find(Name("a").and(Class("file").or(Class("directory"))))
+        .map(|node| node.text())
         .collect();
     assert_eq!(items, result);
     Ok(())
