@@ -561,10 +561,10 @@ fn build_link(
 
     query_items.push(format!("sort={name}&order={order}"));
 
-    if let Some(search) = search {
-        if !search.is_empty() {
-            query_items.push(format!("search={}", utf8_percent_encode(search, COMPONENT)));
-        }
+    if let Some(search) = search
+        && !search.is_empty()
+    {
+        query_items.push(format!("search={}", utf8_percent_encode(search, COMPONENT)));
     }
 
     let link = format!("?{}", query_items.join("&"));
