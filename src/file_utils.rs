@@ -1,3 +1,5 @@
+#[cfg(unix)]
+use rustix::{fs::Mode, process::umask};
 use std::{
     io,
     path::{Component, Path, PathBuf},
@@ -49,6 +51,15 @@ pub fn contains_symlink(path: impl AsRef<Path>) -> io::Result<bool> {
         .any(|p| p.file_type().is_symlink());
 
     Ok(contains_symlink)
+}
+
+/// Get default file creation permissions by umask
+#[cfg(unix)]
+pub fn get_default_filemode() -> u16 {
+    let old = umask(Mode::all());
+    umask(old);
+    let mode = 0o666 & (!old).as_raw_mode();
+    mode as u16
 }
 
 #[cfg(test)]

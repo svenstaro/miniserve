@@ -535,3 +535,47 @@ fn assert_file_contents(file_path: &Path, contents: &str) {
     let file_contents = std::fs::read_to_string(file_path).unwrap();
     assert!(file_contents == contents)
 }
+
+/// Test --chmod change file permissions as intended
+#[cfg(unix)]
+#[rstest]
+#[case(server(&["-u", "--chmod", "660"]), 0o660)]
+#[case(server(&["-u", "--chmod", "644"]), 0o644)]
+#[case(server(&["-u", "--chmod", "0600"]), 0o600)]
+fn chmod(#[case] server: TestServer, #[case] expected_mode: u16) -> Result<(), Error> {
+    let test_file_name = "chmod-file.txt";
+    let test_file_contents = "Test File Contents";
+
+    // Perform the actual upload.
+    let body = reqwest::blocking::get(server.url())?.error_for_status()?;
+    let parsed = Document::from_read(body)?;
+    let upload_action = parsed
+        .find(Attr("id", "file_submit"))
+        .next()
+        .expect("Couldn't find element with id=file_submit")
+        .attr("action")
+        .expect("Upload form doesn't have action attribute");
+
+    let form = multipart::Form::new();
+    let part = multipart::Part::text(test_file_contents)
+        .file_name(test_file_name)
+        .mime_str("text/plain")?;
+    let form = form.part("file_to_upload", part);
+
+    let client = Client::new();
+    client
+        .post(server.url().join(upload_action)?)
+        .multipart(form)
+        .send()?
+        .error_for_status()?;
+
+    // assert the mode of file
+    use std::os::unix::fs::MetadataExt;
+    let test_file_path = server.path().join(test_file_name);
+    let meta = std::fs::metadata(&test_file_path)?;
+    // the returned mode has filetype in it
+    let mode = meta.mode() & 0o7777;
+    assert_eq!(mode as u16, expected_mode);
+
+    Ok(())
+}

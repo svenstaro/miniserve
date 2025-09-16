@@ -11,6 +11,8 @@ use anyhow::{Context, Result, anyhow};
 #[cfg(feature = "tls")]
 use rustls_pemfile as pemfile;
 
+#[cfg(unix)]
+use crate::file_utils::get_default_filemode;
 use crate::{
     args::{CliArgs, DuplicateFile, MediaType, parse_auth},
     auth::RequiredAuth,
@@ -115,6 +117,10 @@ pub struct MiniserveConfig {
 
     /// Max amount of concurrency when uploading multiple files
     pub web_upload_concurrency: usize,
+
+    /// chmod permissions of uploaded files
+    #[cfg(unix)]
+    pub upload_chmod: u16,
 
     /// List of allowed upload directories
     pub allowed_upload_dir: Vec<String>,
@@ -301,6 +307,8 @@ impl MiniserveConfig {
             crate::args::SizeDisplay::Human => false,
             crate::args::SizeDisplay::Exact => true,
         };
+        #[cfg(unix)]
+        let upload_chmod = args.chmod.unwrap_or_else(get_default_filemode);
 
         Ok(Self {
             verbose: args.verbose,
@@ -330,6 +338,8 @@ impl MiniserveConfig {
             mkdir_enabled: args.mkdir_enabled,
             file_upload: args.allowed_upload_dir.is_some(),
             web_upload_concurrency: args.web_upload_concurrency,
+            #[cfg(unix)]
+            upload_chmod,
             allowed_upload_dir,
             uploadable_media_type,
             tar_enabled: args.enable_tar,
