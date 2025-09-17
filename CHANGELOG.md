@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+
+## [0.32.0] - 2025-09-17
 - Skip hash calculation when crypto.subtle is not available [#1507](https://github.com/svenstaro/miniserve/pull/1507) (thanks @outloudvi)
 - Fix hostname:port getting repeated in wget footer if TLS is used [#1515](https://github.com/svenstaro/miniserve/pull/1515) (thanks @xtay573269555)
 - Add `--chmod` to set file mode after upload on unix [#1506](https://github.com/svenstaro/miniserve/pull/1506) (thanks @lilydjwg)
@@ -230,7 +232,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Some theme related bug fixes (thanks @boastful-squirrel)
 
 <!-- next-url -->
-[Unreleased]: https://github.com/svenstaro/miniserve/compare/v0.31.0...HEAD
+[Unreleased]: https://github.com/svenstaro/miniserve/compare/v0.32.0...HEAD
+[0.32.0]: https://github.com/svenstaro/miniserve/compare/v0.31.0...v0.32.0
 [0.31.0]: https://github.com/svenstaro/miniserve/compare/v0.30.0...v0.31.0
 [0.30.0]: https://github.com/svenstaro/miniserve/compare/v0.29.0...v0.30.0
 [0.29.0]: https://github.com/svenstaro/miniserve/compare/v0.28.0...v0.29.0
