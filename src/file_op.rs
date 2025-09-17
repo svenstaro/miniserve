@@ -21,6 +21,7 @@ use serde::Deserialize;
 use sha2::digest::DynDigest;
 use sha2::{Digest, Sha256, Sha512};
 use tempfile::NamedTempFile;
+use tokio::fs;
 use tokio::io::AsyncWriteExt;
 
 #[cfg(target_family = "unix")]
@@ -528,6 +529,71 @@ pub async fn upload_file(
         })
         .try_collect::<Vec<u64>>()
         .await?;
+
+    let return_path = req
+        .headers()
+        .get(header::REFERER)
+        .and_then(|h| h.to_str().ok())
+        .unwrap_or("/");
+
+    Ok(HttpResponse::SeeOther()
+        .append_header((header::LOCATION, return_path))
+        .finish())
+}
+
+/// Handle incoming request to remove a file or directory.
+///
+/// Target file path is expected as path parameter in URI and is interpreted as relative from
+/// server root directory. Any path which will go outside of this directory is considered
+/// invalid.
+pub async fn rm_file(
+    req: HttpRequest,
+    query: web::Query<FileOpQueryParameters>,
+) -> Result<HttpResponse, RuntimeError> {
+    let conf = req.app_data::<web::Data<MiniserveConfig>>().unwrap();
+    let rm_path = sanitize_path(&query.path, conf.show_hidden).ok_or_else(|| {
+        RuntimeError::InvalidPathError("Invalid value for 'path' parameter".to_string())
+    })?;
+    let app_root_dir = conf.path.canonicalize().map_err(|e| {
+        RuntimeError::IoError("Failed to resolve path served by miniserve".to_string(), e)
+    })?;
+
+    // Disallow paths outside of allowed directories
+    let rm_allowed = conf.allowed_rm_dir.is_empty()
+        || conf.allowed_rm_dir.iter().any(|s| rm_path.starts_with(s));
+
+    if !rm_allowed {
+        return Err(RuntimeError::RmForbiddenError);
+    }
+
+    // Disallow the target path to go outside of the served directory
+    let canonicalized_rm_path = match app_root_dir.join(&rm_path).canonicalize() {
+        Ok(path) if !conf.no_symlinks => Ok(path),
+        Ok(path) if path.starts_with(&app_root_dir) => Ok(path),
+        _ => Err(RuntimeError::InvalidHttpRequestError(
+            "Invalid value for 'path' parameter".to_string(),
+        )),
+    }?;
+
+    // Handle non-existent path
+    if !canonicalized_rm_path.exists() {
+        return Err(RuntimeError::RouteNotFoundError(format!(
+            "{rm_path:?} does not exist"
+        )));
+    }
+
+    // Remove
+    let rm_res = if canonicalized_rm_path.is_dir() {
+        fs::remove_dir_all(&canonicalized_rm_path).await
+    } else {
+        fs::remove_file(&canonicalized_rm_path).await
+    };
+    if let Err(err) = rm_res {
+        Err(RuntimeError::IoError(
+            format!("Failed to remove {rm_path:?}"),
+            err,
+        ))?;
+    }
 
     let return_path = req
         .headers()

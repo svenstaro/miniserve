@@ -1,3 +1,4 @@
+use std::path::{Component, Path};
 use std::process::{Command, Stdio};
 
 use pretty_assertions::{assert_eq, assert_ne};
@@ -71,16 +72,18 @@ fn can_navigate_into_dirs_and_back(server: TestServer) -> Result<(), Error> {
 #[rstest]
 /// We can navigate deep into the file tree and back using shown links.
 fn can_navigate_deep_into_dirs_and_back(server: TestServer) -> Result<(), Error> {
-    // Create a vector of directory names. We don't need to fetch the file and so we'll
-    // remove that part.
-    let dir_names = {
-        let mut comps = DEEPLY_NESTED_FILE
-            .split('/')
-            .map(|d| format!("{d}/"))
-            .collect::<Vec<String>>();
-        comps.pop();
-        comps
-    };
+    // Create a vector of parent directory names.
+    let dir_names = Path::new(DEEPLY_NESTED_FILE)
+        .parent()
+        .unwrap()
+        .components()
+        .map(|comp| {
+            let Component::Normal(dir) = comp else {
+                unreachable!()
+            };
+            dir.to_str().unwrap()
+        })
+        .collect::<Vec<_>>();
     let base_url = server.url();
 
     // First we'll go forwards through the directory tree and then we'll go backwards.
@@ -90,7 +93,8 @@ fn can_navigate_deep_into_dirs_and_back(server: TestServer) -> Result<(), Error>
         let resp = reqwest::blocking::get(next_url.as_str())?;
         let body = resp.error_for_status()?;
         let parsed = Document::from_read(body)?;
-        let dir_elem = get_link_from_text(&parsed, dir_name).expect("Dir not found.");
+        let dir_elem =
+            get_link_from_text(&parsed, &format!("{dir_name}/")).expect("Dir not found.");
         next_url = next_url.join(&dir_elem)?;
     }
     assert_ne!(base_url, next_url);
@@ -117,19 +121,14 @@ fn can_navigate_using_breadcrumbs(
     #[case] server: TestServer,
     #[case] title_name: String,
 ) -> Result<(), Error> {
-    // Create a vector of directory names. We don't need to fetch the file and so we'll
-    // remove that part.
-    let dir: String = {
-        let mut comps = DEEPLY_NESTED_FILE
-            .split('/')
-            .map(|d| format!("{d}/"))
-            .collect::<Vec<String>>();
-        comps.pop();
-        comps.join("")
-    };
+    let dir = Path::new(DEEPLY_NESTED_FILE)
+        .parent()
+        .unwrap()
+        .to_str()
+        .unwrap();
 
     let base_url = server.url();
-    let nested_url = base_url.join(&dir)?;
+    let nested_url = base_url.join(dir)?;
 
     let resp = reqwest::blocking::get(nested_url.as_str())?;
     let body = resp.error_for_status()?;

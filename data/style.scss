@@ -403,6 +403,10 @@ table thead th.date {
   width: 21em;
 }
 
+table thead th.actions {
+    width: 4em;
+}
+
 table tbody tr:nth-child(odd) {
   background: var(--odd_row_background);
 }
@@ -458,6 +462,22 @@ tr.entry-type-directory .size-cell {
     from { background-position-x: 0; }
     to   { background-position-x: 100%; }
   }
+}
+
+td.actions-cell button {
+    padding: 0.1rem 0.3rem;
+    border-radius: 0.2rem;
+    border: none;
+}
+
+td.actions-cell .rm_form {
+    display: flex;
+    place-content: center;
+}
+
+td.actions-cell .rm_form button {
+    background: var(--rm_button_background);
+    color: var(--rm_button_text_color);
 }
 
 .history {

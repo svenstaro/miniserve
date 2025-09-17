@@ -287,6 +287,17 @@ pub struct CliArgs {
     )]
     pub on_duplicate_files: DuplicateFile,
 
+    /// Enable file and directory deletion (and optionally specify for which directory)
+    #[arg(
+        short = 'R',
+        long = "rm-files",
+        value_hint = ValueHint::DirPath,
+        num_args(0..=1),
+        value_delimiter(','),
+        env = "MINISERVE_ALLOWED_RM_DIR"
+    )]
+    pub allowed_rm_dir: Option<Vec<PathBuf>>,
+
     /// Enable uncompressed tar archive generation
     #[arg(short = 'r', long = "enable-tar", env = "MINISERVE_ENABLE_TAR")]
     pub enable_tar: bool,

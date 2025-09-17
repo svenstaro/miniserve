@@ -53,6 +53,10 @@ pub enum RuntimeError {
     #[error("Upload not allowed to this directory")]
     UploadForbiddenError,
 
+    /// Remove not allowed
+    #[error("Remove not allowed to this directory")]
+    RmForbiddenError,
+
     /// Any error related to an invalid path (failed to retrieve entry name, unexpected entry type, etc)
     #[error("Invalid path\ncaused by: {0}")]
     InvalidPathError(String),
@@ -96,6 +100,7 @@ impl ResponseError for RuntimeError {
             E::MultipartError(_) => S::BAD_REQUEST,
             E::DuplicateFileError => S::CONFLICT,
             E::UploadForbiddenError => S::FORBIDDEN,
+            E::RmForbiddenError => S::FORBIDDEN,
             E::InvalidPathError(_) => S::BAD_REQUEST,
             E::InsufficientPermissionsError(_) => S::FORBIDDEN,
             E::ParseError(_, _) => S::BAD_REQUEST,
