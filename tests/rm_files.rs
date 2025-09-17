@@ -46,8 +46,6 @@ fn assert_rm_ok(base_url: Url, unencoded_path: impl AsRef<Path>) -> Result<(), E
     // encode
     let get_url = base_url.join(&make_get_path(file_path))?;
     let del_url = base_url.join(&make_del_path(file_path))?;
-    println!("===== {file_path:?} =====");
-    println!("{get_url}, {del_url}");
 
     // check path exists
     let _get_res = client.get(get_url.clone()).send()?.error_for_status()?;
@@ -78,8 +76,6 @@ fn assert_rm_err(
     // encode
     let get_url = base_url.join(&make_get_path(file_path))?;
     let del_url = base_url.join(&make_del_path(file_path))?;
-    println!("===== {file_path:?} =====");
-    println!("{get_url}, {del_url}");
 
     // check path exists
     if check_path_exists {
