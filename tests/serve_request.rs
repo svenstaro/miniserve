@@ -58,7 +58,7 @@ fn serves_requests_with_no_options(tmpdir: TempDir) -> Result<(), Error> {
     "test.mkv",
     "test.txt",
 ])]
-#[case(server(None::<&str>), "d", &["dir space/", "dir_symlink/", "dira/", "dirb/", "😀.data"])]
+#[case(server(None::<&str>), "d", &["dir space/", "dir_symlink/", "dira/", "dirb/", "someDir/", "😀.data"])]
 #[case(server(None::<&str>), "dira", &["dira/"])]
 #[case(server(None::<&str>), "keyword-that-matches-nothing", &[])]
 #[case(server(None::<&str>), ".hidden", &[])]
