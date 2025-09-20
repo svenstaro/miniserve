@@ -239,7 +239,7 @@ Options:
           the download server, while users can still copy direct file URLs for sharing.
           The external URL is put verbatim in front of the relative location of the file, including the protocol.
           The user should take care this results in a valid URL, no further checks are being done.
-      
+
           [env: MINISERVE_FILE_EXTERNAL_URL=]
 
   -P, --no-symlinks
@@ -332,6 +332,11 @@ Options:
           [env: MINISERVE_ON_DUPLICATE_FILES=]
           [default: error]
           [possible values: error, overwrite, rename]
+
+  -R, --rm-files [<ALLOWED_RM_DIR>]
+          Enable file and directory deletion (and optionally specify for which directory)
+
+          [env: MINISERVE_ALLOWED_RM_DIR=]
 
   -r, --enable-tar
           Enable uncompressed tar archive generation
