@@ -675,6 +675,39 @@ th span.active span {
   margin-top: 4rem;
 }
 
+.title-search-box {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+}
+
+.search-box form {
+  display: flex;
+  align-items: center;
+}
+
+.search-box input {
+  padding: 0.5rem;
+  border-radius: 0.2rem;
+  border: 1px solid var(--upload_form_border_color);
+  margin-right: 0.2rem;
+}
+
+.search-box button {
+  background: var(--upload_button_background);
+  padding: 0.5rem;
+  border-radius: 0.2rem;
+  color: var(--upload_button_text_color);
+  border: none;
+  min-width: max-content;
+}
+
 @media (min-width: 900px) {
   .toolbar_box_group {
     display: flex;
