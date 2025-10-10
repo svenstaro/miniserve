@@ -86,11 +86,7 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), StartupError> {
             .set_time_format_rfc2822()
             .build(),
         simplelog::TerminalMode::Mixed,
-        if io::stdout().is_terminal() {
-            simplelog::ColorChoice::Auto
-        } else {
-            simplelog::ColorChoice::Never
-        },
+        miniserve_config.log_color,
     )
     .or_else(|_| simplelog::SimpleLogger::init(log_level, simplelog::Config::default()))
     .expect("Couldn't initialize logger");
