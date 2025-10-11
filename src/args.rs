@@ -425,11 +425,11 @@ pub struct CliArgs {
     #[arg(long = "file-external-url", env = "MINISERVE_FILE_EXTERNAL_URL")]
     pub file_external_url: Option<String>,
 
-    /// Set the color style of the log output.
+    /// Set the color style of the log output
     ///
     /// "auto" (default) enables colors only when the output is a terminal.
     /// "always" always enables colors.
-    /// "never" disables colors.
+    /// "never" always disables colors.
     #[arg(long = "log-color", env = "MINISERVE_LOG_COLOR", value_parser=["auto", "always", "never"], default_value = "auto")]
     pub log_color: String,
 }
