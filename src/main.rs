@@ -39,6 +39,7 @@ mod pipe;
 mod renderer;
 mod webdav_fs;
 
+use crate::args::LogColor;
 use crate::config::MiniserveConfig;
 use crate::errors::{RuntimeError, StartupError};
 use crate::file_op::recursive_dir_size;
@@ -80,13 +81,25 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), StartupError> {
         simplelog::LevelFilter::Warn
     };
 
+    let log_color = match miniserve_config.log_color {
+        LogColor::Auto => {
+            if io::stdout().is_terminal() {
+                simplelog::ColorChoice::Auto
+            } else {
+                simplelog::ColorChoice::Never
+            }
+        }
+        LogColor::Always => simplelog::ColorChoice::Always,
+        LogColor::Never => simplelog::ColorChoice::Never,
+    };
+
     simplelog::TermLogger::init(
         log_level,
         simplelog::ConfigBuilder::new()
             .set_time_format_rfc2822()
             .build(),
         simplelog::TerminalMode::Mixed,
-        miniserve_config.log_color,
+        log_color,
     )
     .or_else(|_| simplelog::SimpleLogger::init(log_level, simplelog::Config::default()))
     .expect("Couldn't initialize logger");

@@ -1,6 +1,6 @@
 use std::{
     fs::File,
-    io::{self, BufRead, BufReader, IsTerminal},
+    io::{BufRead, BufReader},
     net::{IpAddr, Ipv4Addr, Ipv6Addr},
     path::{Path, PathBuf},
 };
@@ -14,7 +14,7 @@ use rustls_pemfile as pemfile;
 #[cfg(unix)]
 use crate::file_utils::get_default_filemode;
 use crate::{
-    args::{CliArgs, DuplicateFile, MediaType, parse_auth},
+    args::{CliArgs, DuplicateFile, LogColor, MediaType, parse_auth},
     auth::RequiredAuth,
     file_utils::sanitize_path,
     listing::{SortingMethod, SortingOrder},
@@ -193,7 +193,7 @@ pub struct MiniserveConfig {
     pub file_external_url: Option<String>,
 
     /// Color choice for the log output
-    pub log_color: simplelog::ColorChoice,
+    pub log_color: LogColor,
 }
 
 impl MiniserveConfig {
@@ -318,19 +318,6 @@ impl MiniserveConfig {
         #[cfg(unix)]
         let upload_chmod = args.chmod.unwrap_or_else(get_default_filemode);
 
-        let log_color = match args.log_color.as_str() {
-            "auto" => {
-                if io::stdout().is_terminal() {
-                    simplelog::ColorChoice::Auto
-                } else {
-                    simplelog::ColorChoice::Never
-                }
-            }
-            "always" => simplelog::ColorChoice::Always,
-            "never" => simplelog::ColorChoice::Never,
-            _ => unreachable!("clap should ensure this is one of the allowed values"),
-        };
-
         Ok(Self {
             verbose: args.verbose,
             path: args.path.unwrap_or_else(|| PathBuf::from(".")),
@@ -382,7 +369,7 @@ impl MiniserveConfig {
             compress_response: args.compress_response,
             show_exact_bytes,
             file_external_url: args.file_external_url,
-            log_color,
+            log_color: args.log_color,
         })
     }
 }

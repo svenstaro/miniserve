@@ -39,6 +39,14 @@ impl Display for SizeDisplay {
     }
 }
 
+#[derive(Debug, ValueEnum, Clone, Default)]
+pub enum LogColor {
+    #[default]
+    Auto,
+    Always,
+    Never,
+}
+
 #[derive(Parser)]
 #[command(name = "miniserve", author, about, version)]
 pub struct CliArgs {
@@ -430,8 +438,12 @@ pub struct CliArgs {
     /// "auto" (default) enables colors only when the output is a terminal.
     /// "always" always enables colors.
     /// "never" always disables colors.
-    #[arg(long = "log-color", env = "MINISERVE_LOG_COLOR", value_parser=["auto", "always", "never"], default_value = "auto")]
-    pub log_color: String,
+    #[arg(
+        long = "log-color",
+        env = "MINISERVE_LOG_COLOR",
+        default_value = "auto"
+    )]
+    pub log_color: LogColor,
 }
 
 /// Checks whether an interface is valid, i.e. it can be parsed into an IP address
