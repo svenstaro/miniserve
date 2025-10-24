@@ -554,13 +554,11 @@ pub async fn rm_file(
     let mut rm_path = sanitize_path(&query.path, conf.show_hidden).ok_or_else(|| {
         RuntimeError::InvalidPathError("Invalid value for 'path' parameter".to_string())
     })?;
-    println!("{:?}, {:?}", rm_path, conf.route_prefix);
     if conf.route_prefix != "/" && check_prefix(&rm_path, &conf.route_prefix) {
         if let Some(rmed_path) = remove_prefix(&rm_path, &conf.route_prefix) {
             rm_path = rmed_path;
         }
     }
-    println!("{:?}", rm_path);
 
     let app_root_dir = conf.path.canonicalize().map_err(|e| {
         RuntimeError::IoError("Failed to resolve path served by miniserve".to_string(), e)
