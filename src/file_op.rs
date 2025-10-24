@@ -614,6 +614,7 @@ pub async fn rm_file(
         .finish())
 }
 
+/// Check whether the path has a prefix
 fn check_prefix(path: &Path, prefix: &str) -> bool {
     let prefix = prefix.trim_start_matches("/");
 
@@ -623,10 +624,35 @@ fn check_prefix(path: &Path, prefix: &str) -> bool {
     false
 }
 
+/// remove the prefix
 fn remove_prefix(path: &Path, prefix: &str) -> Option<PathBuf> {
     let prefix = prefix.trim_start_matches("/");
 
     path.strip_prefix(prefix)
         .ok()
         .map(|stripped_path| stripped_path.to_path_buf())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn check_prefix_test() {
+        let path = Path::new("prefix/test/testfile");
+        let prefix = "/prefix";
+
+        assert!(check_prefix(path, prefix));
+    }
+
+    #[test]
+    fn remove_prefix_test() {
+        let path = Path::new("prefix/test/testfile");
+        let prefix = "/prefix";
+
+        assert_eq!(
+            remove_prefix(path, prefix),
+            Some(Path::new("test/testfile").to_path_buf())
+        );
+    }
 }
