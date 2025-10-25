@@ -548,8 +548,14 @@ fn sortable_title(
 }
 
 /// Partial: rm form
-fn rm_form(rm_route: &str, encoded_path: &str) -> Markup {
-    let rm_action = format!("{rm_route}?path={encoded_path}");
+fn rm_form(rm_route: &str, encoded_path: &str, prefix: Option<String>) -> Markup {
+    let mut striped_path = encoded_path;
+    if let Some(p) = prefix {
+        striped_path = encoded_path.strip_prefix(&p).unwrap_or(rm_route);
+    }
+
+    let rm_action = format!("{rm_route}?path={striped_path}");
+
     html! {
         form class="rm_form" action=(rm_action) method="POST" {
             button type="submit" title="Delete" { "✗" }
@@ -572,6 +578,18 @@ fn entry_row(
     show_exact_bytes: bool,
     actions_conf: Option<ActionsConf>,
 ) -> Markup {
+    // If there is a prefix, the variable "prefix" will include it.
+    let prefix = if let Some(act_conf) = actions_conf {
+        match act_conf.rm_route {
+            "/rm" => None,
+            _ => act_conf
+                .rm_route
+                .rfind("/")
+                .map(|c| act_conf.rm_route[..c].to_string()),
+        }
+    } else {
+        None
+    };
     html! {
         @let entry_type = entry.entry_type.clone();
         tr .{ "entry-type-" (entry_type) } {
@@ -646,7 +664,7 @@ fn entry_row(
             }
             @if let Some(conf) = actions_conf {
                 td.actions-cell {
-                    (rm_form(conf.rm_route, &entry.link))
+                    (rm_form(conf.rm_route, &entry.link, prefix))
                 }
             }
         }

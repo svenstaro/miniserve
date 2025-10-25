@@ -551,14 +551,9 @@ pub async fn rm_file(
     query: web::Query<FileOpQueryParameters>,
 ) -> Result<HttpResponse, RuntimeError> {
     let conf = req.app_data::<web::Data<MiniserveConfig>>().unwrap();
-    let mut rm_path = sanitize_path(&query.path, conf.show_hidden).ok_or_else(|| {
+    let rm_path = sanitize_path(&query.path, conf.show_hidden).ok_or_else(|| {
         RuntimeError::InvalidPathError("Invalid value for 'path' parameter".to_string())
     })?;
-    if conf.route_prefix != "/" && check_prefix(&rm_path, &conf.route_prefix) {
-        if let Some(rmed_path) = remove_prefix(&rm_path, &conf.route_prefix) {
-            rm_path = rmed_path;
-        }
-    }
 
     let app_root_dir = conf.path.canonicalize().map_err(|e| {
         RuntimeError::IoError("Failed to resolve path served by miniserve".to_string(), e)
@@ -610,47 +605,4 @@ pub async fn rm_file(
     Ok(HttpResponse::SeeOther()
         .append_header((header::LOCATION, return_path))
         .finish())
-}
-
-/// Check whether the path has a prefix
-fn check_prefix(path: &Path, prefix: &str) -> bool {
-    let prefix = prefix.trim_start_matches("/");
-
-    if path.starts_with(prefix) {
-        return true;
-    }
-    false
-}
-
-/// remove the prefix
-fn remove_prefix(path: &Path, prefix: &str) -> Option<PathBuf> {
-    let prefix = prefix.trim_start_matches("/");
-
-    path.strip_prefix(prefix)
-        .ok()
-        .map(|stripped_path| stripped_path.to_path_buf())
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn check_prefix_test() {
-        let path = Path::new("prefix/test/testfile");
-        let prefix = "/prefix";
-
-        assert!(check_prefix(path, prefix));
-    }
-
-    #[test]
-    fn remove_prefix_test() {
-        let path = Path::new("prefix/test/testfile");
-        let prefix = "/prefix";
-
-        assert_eq!(
-            remove_prefix(path, prefix),
-            Some(Path::new("test/testfile").to_path_buf())
-        );
-    }
 }
