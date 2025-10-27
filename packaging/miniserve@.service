@@ -1,7 +1,7 @@
 [Unit]
 Description=miniserve for %i
 After=network-online.target
-Wants=network-online.target systemd-networkd-wait-online.service
+Wants=network-online.target
 
 [Service]
 ExecStart=/usr/bin/miniserve -- %I
