@@ -8,7 +8,7 @@ use actix_web::{
 };
 use bytesize::ByteSize;
 use clap::ValueEnum;
-use comrak::{ComrakOptions, markdown_to_html};
+use comrak::{Options as ComrakOptions, markdown_to_html};
 use percent_encoding::{percent_decode_str, utf8_percent_encode};
 use regex::Regex;
 use serde::Deserialize;
