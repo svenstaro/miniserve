@@ -1,6 +1,6 @@
 use std::process::Command;
 
-use assert_cmd::prelude::*;
+use assert_cmd::{cargo, prelude::*};
 use assert_fs::TempDir;
 use predicates::str::contains;
 use reqwest::{Method, blocking::Client};
@@ -144,8 +144,7 @@ fn webdav_works_with_route_prefix(
 #[rstest]
 #[timeout(std::time::Duration::from_secs(1))]
 fn webdav_single_file_refuses_starting(tmpdir: TempDir) {
-    Command::cargo_bin("miniserve")
-        .unwrap()
+    Command::new(cargo::cargo_bin!("miniserve"))
         .current_dir(tmpdir.path())
         .arg(FILES[0])
         .arg("--enable-webdav")

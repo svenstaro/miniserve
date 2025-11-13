@@ -4,7 +4,7 @@ use std::thread;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
 
-use assert_cmd::prelude::*;
+use assert_cmd::cargo;
 use assert_fs::fixture::TempDir;
 use assert_fs::prelude::*;
 use port_check::free_local_port;
@@ -140,8 +140,7 @@ where
 {
     let port = port();
     let tmpdir = tmpdir();
-    let mut child = Command::cargo_bin("miniserve")
-        .expect("Couldn't find test binary")
+    let mut child = Command::new(cargo::cargo_bin!("miniserve"))
         .arg(tmpdir.path())
         .arg("-v")
         .arg("-p")
