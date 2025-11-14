@@ -1,4 +1,4 @@
-use assert_cmd::Command;
+use assert_cmd::{Command, cargo};
 use predicates::str::contains;
 use reqwest::blocking::ClientBuilder;
 use rstest::rstest;
@@ -38,7 +38,7 @@ fn tls_works(#[case] server: TestServer) -> Result<(), Error> {
 /// Wrong path for cert throws error.
 #[rstest]
 fn wrong_path_cert() -> Result<(), Error> {
-    Command::cargo_bin("miniserve")?
+    Command::new(cargo::cargo_bin!("miniserve"))
         .args(["--tls-cert", "wrong", "--tls-key", "tests/data/key.pem"])
         .assert()
         .failure()
@@ -50,7 +50,7 @@ fn wrong_path_cert() -> Result<(), Error> {
 /// Wrong paths for key throws errors.
 #[rstest]
 fn wrong_path_key() -> Result<(), Error> {
-    Command::cargo_bin("miniserve")?
+    Command::new(cargo::cargo_bin!("miniserve"))
         .args(["--tls-cert", "tests/data/cert.pem", "--tls-key", "wrong"])
         .assert()
         .failure()

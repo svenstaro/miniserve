@@ -1,7 +1,7 @@
 use std::io::{BufRead, BufReader};
 use std::process::{Command, Stdio};
 
-use assert_cmd::prelude::*;
+use assert_cmd::{cargo, prelude::*};
 use assert_fs::fixture::TempDir;
 use regex::Regex;
 use rstest::rstest;
@@ -14,7 +14,7 @@ use crate::fixtures::{Error, TestServer, port, server, tmpdir};
 #[case(&["-i", "12.123.234.12"])]
 #[case(&["-i", "::", "-i", "12.123.234.12"])]
 fn bind_fails(tmpdir: TempDir, port: u16, #[case] args: &[&str]) -> Result<(), Error> {
-    Command::cargo_bin("miniserve")?
+    Command::new(cargo::cargo_bin!("miniserve"))
         .arg(tmpdir.path())
         .arg("-p")
         .arg(port.to_string())
@@ -57,7 +57,7 @@ fn bind_ipv4_ipv6(
 #[case(&["--random-route"])]
 #[case(&["--route-prefix", "/prefix"])]
 fn validate_printed_urls(tmpdir: TempDir, port: u16, #[case] args: &[&str]) -> Result<(), Error> {
-    let mut child = Command::cargo_bin("miniserve")?
+    let mut child = Command::new(cargo::cargo_bin!("miniserve"))
         .arg(tmpdir.path())
         .arg("-p")
         .arg(port.to_string())

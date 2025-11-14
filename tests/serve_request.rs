@@ -2,7 +2,7 @@ use std::process::{Command, Stdio};
 use std::thread::sleep;
 use std::time::Duration;
 
-use assert_cmd::prelude::*;
+use assert_cmd::cargo;
 use assert_fs::fixture::TempDir;
 use fixtures::BROKEN_SYMLINK;
 use regex::Regex;
@@ -20,7 +20,7 @@ use crate::fixtures::{
 
 #[rstest]
 fn serves_requests_with_no_options(tmpdir: TempDir) -> Result<(), Error> {
-    let mut child = Command::cargo_bin("miniserve")?
+    let mut child = Command::new(cargo::cargo_bin!("miniserve"))
         .arg(tmpdir.path())
         .stdout(Stdio::null())
         .spawn()?;
@@ -238,7 +238,7 @@ fn serves_requests_symlinks(
 
 #[rstest]
 fn serves_requests_with_randomly_assigned_port(tmpdir: TempDir) -> Result<(), Error> {
-    let mut child = Command::cargo_bin("miniserve")?
+    let mut child = Command::new(cargo::cargo_bin!("miniserve"))
         .arg(tmpdir.path())
         .arg("-p")
         .arg("0")
@@ -262,7 +262,7 @@ fn serves_requests_with_randomly_assigned_port(tmpdir: TempDir) -> Result<(), Er
 
 #[rstest]
 fn serves_requests_custom_index_notice(tmpdir: TempDir, port: u16) -> Result<(), Error> {
-    let mut child = Command::cargo_bin("miniserve")?
+    let mut child = Command::new(cargo::cargo_bin!("miniserve"))
         .arg("--index=not.html")
         .arg("-p")
         .arg(port.to_string())

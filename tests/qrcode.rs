@@ -2,7 +2,7 @@ use std::process::{Command, Stdio};
 use std::thread::sleep;
 use std::time::Duration;
 
-use assert_cmd::prelude::CommandCargoExt;
+use assert_cmd::cargo;
 use assert_fs::TempDir;
 use rstest::rstest;
 use select::{document::Document, predicate::Attr};
@@ -64,7 +64,7 @@ fn run_in_faketty_kill_and_get_stdout(template: &Command) -> Result<String, Erro
 // Disabled for Windows because `fake_tty` does not currently support it.
 #[cfg(not(windows))]
 fn qrcode_hidden_in_tty_when_disabled(tmpdir: TempDir, port: u16) -> Result<(), Error> {
-    let mut template = Command::cargo_bin("miniserve")?;
+    let mut template = Command::new(cargo::cargo_bin!("miniserve"));
     template.arg("-p").arg(port.to_string()).arg(tmpdir.path());
 
     let output = run_in_faketty_kill_and_get_stdout(&template)?;
@@ -77,7 +77,7 @@ fn qrcode_hidden_in_tty_when_disabled(tmpdir: TempDir, port: u16) -> Result<(), 
 // Disabled for Windows because `fake_tty` does not currently support it.
 #[cfg(not(windows))]
 fn qrcode_shown_in_tty_when_enabled(tmpdir: TempDir, port: u16) -> Result<(), Error> {
-    let mut template = Command::cargo_bin("miniserve")?;
+    let mut template = Command::new(cargo::cargo_bin!("miniserve"));
     template
         .arg("-p")
         .arg(port.to_string())
@@ -92,7 +92,7 @@ fn qrcode_shown_in_tty_when_enabled(tmpdir: TempDir, port: u16) -> Result<(), Er
 
 #[rstest]
 fn qrcode_hidden_in_non_tty_when_enabled(tmpdir: TempDir, port: u16) -> Result<(), Error> {
-    let mut child = Command::cargo_bin("miniserve")?
+    let mut child = Command::new(cargo::cargo_bin!("miniserve"))
         .arg("-p")
         .arg(port.to_string())
         .arg("-q")

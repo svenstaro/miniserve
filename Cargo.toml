@@ -32,7 +32,7 @@ clap = { version = "4", features = ["derive", "cargo", "wrap_help", "deprecated"
 clap_complete = "4"
 clap_mangen = "0.2"
 colored = "3"
-comrak = { version = "0.43", default-features = false }
+comrak = { version = "0.48", default-features = false }
 dav-server = { version = "0.8", features = ["actix-compat"] }
 fast_qr = { version = "0.13", features = ["svg"] }
 futures = "0.3"
@@ -60,7 +60,7 @@ tar = "0.4"
 tempfile = "3.21.0"
 thiserror = "2"
 tokio = { version = "1.47.1", features = ["fs", "macros"] }
-zip = { version = "5", default-features = false }
+zip = { version = "6", default-features = false }
 
 [features]
 default = ["tls"]
