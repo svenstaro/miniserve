@@ -39,7 +39,7 @@ impl Display for SizeDisplay {
     }
 }
 
-#[derive(Debug, ValueEnum, Clone, Default)]
+#[derive(Debug, ValueEnum, Clone, Copy, Default)]
 pub enum LogColor {
     #[default]
     Auto,
