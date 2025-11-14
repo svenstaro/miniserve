@@ -165,7 +165,7 @@ pub fn page(
                                 }
                             }
                             @for entry in entries {
-                                (entry_row(entry, sort_method, sort_order, false, conf.show_exact_bytes, actions_conf))
+                                (entry_row(entry, sort_method, sort_order, false, conf.show_exact_bytes, actions_conf, &conf.route_prefix))
                             }
                         }
                     }
@@ -254,7 +254,7 @@ pub fn raw(entries: Vec<Entry>, is_root: bool, conf: &MiniserveConfig) -> Markup
                             }
                         }
                         @for entry in entries {
-                            (entry_row(entry, None, None, true, conf.show_exact_bytes, None))
+                            (entry_row(entry, None, None, true, conf.show_exact_bytes, None, &conf.route_prefix))
                         }
                     }
                 }
@@ -548,13 +548,9 @@ fn sortable_title(
 }
 
 /// Partial: rm form
-fn rm_form(rm_route: &str, encoded_path: &str, prefix: Option<String>) -> Markup {
-    let mut striped_path = encoded_path;
-    if let Some(p) = prefix {
-        striped_path = encoded_path.strip_prefix(&p).unwrap_or(rm_route);
-    }
-
-    let rm_action = format!("{rm_route}?path={striped_path}");
+fn rm_form(rm_route: &str, encoded_path: &str, prefix: &str) -> Markup {
+    let stripped_path = encoded_path.strip_prefix(prefix).unwrap_or(encoded_path);
+    let rm_action = format!("{rm_route}?path={stripped_path}");
 
     html! {
         form class="rm_form" action=(rm_action) method="POST" {
@@ -577,19 +573,8 @@ fn entry_row(
     raw: bool,
     show_exact_bytes: bool,
     actions_conf: Option<ActionsConf>,
+    route_prefix: &str,
 ) -> Markup {
-    // If there is a prefix, the variable "prefix" will include it.
-    let prefix = if let Some(act_conf) = actions_conf {
-        match act_conf.rm_route {
-            "/rm" => None,
-            _ => act_conf
-                .rm_route
-                .rfind("/")
-                .map(|c| act_conf.rm_route[..c].to_string()),
-        }
-    } else {
-        None
-    };
     html! {
         @let entry_type = entry.entry_type.clone();
         tr .{ "entry-type-" (entry_type) } {
@@ -664,7 +649,7 @@ fn entry_row(
             }
             @if let Some(conf) = actions_conf {
                 td.actions-cell {
-                    (rm_form(conf.rm_route, &entry.link, prefix))
+                    (rm_form(conf.rm_route, &entry.link, route_prefix))
                 }
             }
         }
