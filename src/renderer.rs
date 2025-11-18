@@ -1226,4 +1226,21 @@ mod tests {
         let expected = to_html("-H -P 'github.com' 'https://github.com");
         assert_eq!(to_be_tested, expected);
     }
+
+    #[test]
+    fn test_rm_form_strips_prefix() {
+        let rm_route = "/rm";
+        let prefix = "/prefix";
+        let encoded_path = "/prefix/some/path/file.txt";
+
+        let html = rm_form(rm_route, encoded_path, prefix);
+        let expected_action = r#"action="/rm?path=/some/path/file.txt""#;
+
+        assert!(
+            html.0.contains(expected_action),
+            "Actual HTML: {}\nExpected to contain: {}",
+            html.0,
+            expected_action
+        )
+    }
 }
