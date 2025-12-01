@@ -18,7 +18,7 @@ panic = 'abort'
 strip = true
 
 [dependencies]
-actix-files = "0.6.7"
+actix-files = "0.6.9"
 actix-multipart = "0.7"
 actix-web = { version = "4", features = ["macros", "compress-brotli", "compress-gzip", "compress-zstd"], default-features = false }
 actix-web-httpauth = "0.8"
