@@ -347,9 +347,9 @@ pub fn directory_listing(
     }
 
     match query_params.sort.unwrap_or(conf.default_sorting_method) {
-        SortingMethod::Name => entries.sort_by(|e1, e2| {
-            alphanumeric_sort::compare_str(e1.name.to_lowercase(), e2.name.to_lowercase())
-        }),
+        SortingMethod::Name => {
+            entries.sort_by(|e1, e2| natord::compare_ignore_case(&e1.name, &e2.name))
+        }
         SortingMethod::Size => entries.sort_by(|e1, e2| {
             // If we can't get the size of the entry (directory for instance)
             // let's consider it's 0b

@@ -337,12 +337,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "683d7910e743518b0e34f1186f92494becacb047c7b6bf616c96772180fef923"
 
 [[package]]
-name = "alphanumeric-sort"
-version = "1.5.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ab31f79a61d3c25cae1d6734a386662e5cf1b6ba5a9720c135b609273c058c15"
-
-[[package]]
 name = "android_system_properties"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2165,7 +2159,6 @@ dependencies = [
  "actix-multipart",
  "actix-web",
  "actix-web-httpauth",
- "alphanumeric-sort",
  "anyhow",
  "assert_cmd",
  "assert_fs",
@@ -2191,6 +2184,7 @@ dependencies = [
  "maud",
  "mime",
  "nanoid",
+ "natord-plus-plus",
  "percent-encoding",
  "port_check",
  "predicates",
@@ -2263,6 +2257,12 @@ dependencies = [
  "security-framework-sys",
  "tempfile",
 ]
+
+[[package]]
+name = "natord-plus-plus"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "66f8ac0a79782d13e4ec2f955113676d786539965b3764e06fb4e107dcc3da64"
 
 [[package]]
 name = "new_debug_unreachable"
