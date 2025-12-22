@@ -8,7 +8,11 @@ use fixtures::BROKEN_SYMLINK;
 use regex::Regex;
 use reqwest::StatusCode;
 use rstest::rstest;
-use select::{document::Document, node::Node, predicate::Attr};
+use select::{
+    document::Document,
+    node::Node,
+    predicate::{Attr, Class, Name, Predicate},
+};
 
 mod fixtures;
 
@@ -38,6 +42,40 @@ fn serves_requests_with_no_options(tmpdir: TempDir) -> Result<(), Error> {
 
     child.kill()?;
 
+    Ok(())
+}
+
+#[rstest]
+#[case(server(None::<&str>), "test", &[
+    "#[]{}()@!$&'`+,;= %20.test",
+    #[cfg(unix)]
+    ":?#[]{}<>()@!$&'`|*+,;= %20.test",
+    #[cfg(not(windows))]
+    "foo\\bar.test",
+    #[cfg(not(windows))]
+    "test \" \' & < >.csv",
+    "test.html",
+    "test.mkv",
+    "test.txt",
+])]
+#[case(server(None::<&str>), "d", &["dir space/", "dir_symlink/", "dira/", "dirb/", "someDir/", "😀.data"])]
+#[case(server(None::<&str>), "dira", &["dira/"])]
+#[case(server(None::<&str>), "keyword-that-matches-nothing", &[])]
+#[case(server(None::<&str>), ".hidden", &[])]
+#[case(server(&["--hidden"]), ".hidden", &[".hidden space dir/", ".hidden_dir1/", ".hidden_file1", ".hidden_file2"])]
+fn serves_requests_with_search_query(
+    #[case] server: TestServer,
+    #[case] search: &'static str,
+    #[case] result: &'static [&'static str],
+) -> Result<(), Error> {
+    let body = reqwest::blocking::get(format!("{}/?search={}", server.url(), search))?
+        .error_for_status()?;
+    let parsed = Document::from_read(body)?;
+    let items: Vec<_> = parsed
+        .find(Name("a").and(Class("file").or(Class("directory"))))
+        .map(|node| node.text())
+        .collect();
+    assert_eq!(items, result);
     Ok(())
 }
 
