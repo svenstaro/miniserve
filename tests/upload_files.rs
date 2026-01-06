@@ -10,7 +10,7 @@ use select::predicate::{Attr, Text};
 
 mod fixtures;
 
-use crate::fixtures::{Error, TestServer, server, tmpdir};
+use crate::fixtures::{Error, TestServer, reqwest_client, server, tmpdir};
 
 // Generate the hashes using the following
 // ```bash
@@ -34,13 +34,17 @@ use crate::fixtures::{Error, TestServer, server, tmpdir};
 )]
 fn uploading_files_works(
     #[with(&["-u"])] server: TestServer,
+    reqwest_client: Client,
     #[case] sha_func: Option<&str>,
     #[case] sha: Option<&str>,
 ) -> Result<(), Error> {
     let test_file_name = "uploaded test file.txt";
 
     // Before uploading, check whether the uploaded file does not yet exist.
-    let body = reqwest::blocking::get(server.url())?.error_for_status()?;
+    let body = reqwest_client
+        .get(server.url())
+        .send()?
+        .error_for_status()?;
     let parsed = Document::from_read(body)?;
     assert!(parsed.find(Text).all(|x| x.text() != test_file_name));
 
@@ -74,7 +78,7 @@ fn uploading_files_works(
         .error_for_status()?;
 
     // After uploading, check whether the uploaded file is now getting listed.
-    let body = reqwest::blocking::get(server.url())?;
+    let body = reqwest_client.get(server.url()).send()?;
     let parsed = Document::from_read(body)?;
     assert!(parsed.find(Text).any(|x| x.text() == test_file_name));
 
@@ -82,11 +86,14 @@ fn uploading_files_works(
 }
 
 #[rstest]
-fn uploading_files_is_prevented(server: TestServer) -> Result<(), Error> {
+fn uploading_files_is_prevented(server: TestServer, reqwest_client: Client) -> Result<(), Error> {
     let test_file_name = "uploaded test file.txt";
 
     // Before uploading, check whether the uploaded file does not yet exist.
-    let body = reqwest::blocking::get(server.url())?.error_for_status()?;
+    let body = reqwest_client
+        .get(server.url())
+        .send()?
+        .error_for_status()?;
     let parsed = Document::from_read(body)?;
     assert!(parsed.find(Text).all(|x| x.text() != test_file_name));
 
@@ -100,10 +107,9 @@ fn uploading_files_is_prevented(server: TestServer) -> Result<(), Error> {
         .mime_str("text/plain")?;
     let form = form.part("file_to_upload", part);
 
-    let client = Client::new();
     // Ensure uploading fails and returns an error
     assert!(
-        client
+        reqwest_client
             .post(server.url().join("/upload?path=/")?)
             .multipart(form)
             .send()?
@@ -112,7 +118,7 @@ fn uploading_files_is_prevented(server: TestServer) -> Result<(), Error> {
     );
 
     // After uploading, check whether the uploaded file is NOT getting listed.
-    let body = reqwest::blocking::get(server.url())?;
+    let body = reqwest_client.get(server.url()).send()?;
     let parsed = Document::from_read(body)?;
     assert!(!parsed.find(Text).any(|x| x.text() == test_file_name));
 
@@ -138,13 +144,17 @@ fn uploading_files_is_prevented(server: TestServer) -> Result<(), Error> {
 #[case::sha128_hash(Some("SHA128"), Some("invalid"))]
 fn uploading_files_with_invalid_sha_func_is_prevented(
     #[with(&["-u"])] server: TestServer,
+    reqwest_client: Client,
     #[case] sha_func: Option<&str>,
     #[case] sha: Option<&str>,
 ) -> Result<(), Error> {
     let test_file_name = "uploaded test file.txt";
 
     // Before uploading, check whether the uploaded file does not yet exist.
-    let body = reqwest::blocking::get(server.url())?.error_for_status()?;
+    let body = reqwest_client
+        .get(server.url())
+        .send()?
+        .error_for_status()?;
     let parsed = Document::from_read(body)?;
     assert!(parsed.find(Text).all(|x| x.text() != test_file_name));
 
@@ -163,10 +173,10 @@ fn uploading_files_with_invalid_sha_func_is_prevented(
         headers.insert("X-File-Hash", sha.parse()?);
     }
 
-    let client = Client::builder().default_headers(headers).build()?;
+    let reqwest_client = Client::builder().default_headers(headers).build()?;
 
     assert!(
-        client
+        reqwest_client
             .post(server.url().join("/upload?path=/")?)
             .multipart(form)
             .send()?
@@ -175,7 +185,7 @@ fn uploading_files_with_invalid_sha_func_is_prevented(
     );
 
     // After uploading, check whether the uploaded file is NOT getting listed.
-    let body = reqwest::blocking::get(server.url())?;
+    let body = reqwest_client.get(server.url()).send()?;
     let parsed = Document::from_read(body)?;
     assert!(!parsed.find(Text).any(|x| x.text() == test_file_name));
 
@@ -187,7 +197,10 @@ fn uploading_files_with_invalid_sha_func_is_prevented(
 #[rstest]
 #[case(server(&["-u", "someDir"]))]
 #[case(server(&["-u", "someDir/some_sub_dir"]))]
-fn uploading_files_is_restricted(#[case] server: TestServer) -> Result<(), Error> {
+fn uploading_files_is_restricted(
+    #[case] server: TestServer,
+    reqwest_client: Client,
+) -> Result<(), Error> {
     let test_file_name = "uploaded test file.txt";
 
     // Then try to upload file to root directory (which is not the --allowed-upload-dir)
@@ -209,7 +222,7 @@ fn uploading_files_is_restricted(#[case] server: TestServer) -> Result<(), Error
     );
 
     // After uploading, check whether the uploaded file is NOT getting listed.
-    let body = reqwest::blocking::get(server.url())?;
+    let body = reqwest_client.get(server.url()).send()?;
     let parsed = Document::from_read(body)?;
     assert!(!parsed.find(Text).any(|x| x.text() == test_file_name));
 
@@ -227,6 +240,7 @@ fn uploading_files_is_restricted(#[case] server: TestServer) -> Result<(), Error
        vec!["someDir/some_sub_dir", "someDir/some_other_dir"])]
 fn uploading_files_to_allowed_dir_works(
     #[case] server: TestServer,
+    reqwest_client: Client,
     #[case] upload_dirs: Vec<&str>,
 ) -> Result<(), Error> {
     let test_file_name = "uploaded test file.txt";
@@ -236,7 +250,10 @@ fn uploading_files_to_allowed_dir_works(
         create_dir_all(server.path().join(Path::new(upload_dir))).unwrap();
 
         // Before uploading, check whether the uploaded file does not yet exist.
-        let body = reqwest::blocking::get(server.url().join(upload_dir)?)?.error_for_status()?;
+        let body = reqwest_client
+            .get(server.url().join(upload_dir)?)
+            .send()?
+            .error_for_status()?;
         let parsed = Document::from_read(body)?;
         assert!(parsed.find(Text).all(|x| x.text() != test_file_name));
 
@@ -261,7 +278,7 @@ fn uploading_files_to_allowed_dir_works(
             .error_for_status()?;
 
         // After uploading, check whether the uploaded file is now getting listed.
-        let body = reqwest::blocking::get(server.url().join(upload_dir)?)?;
+        let body = reqwest_client.get(server.url().join(upload_dir)?).send()?;
         let parsed = Document::from_read(body)?;
         assert!(parsed.find(Text).any(|x| x.text() == test_file_name));
     }
@@ -272,7 +289,10 @@ fn uploading_files_to_allowed_dir_works(
 #[case(server(&["-u"]))]
 #[case(server(&["-u", "-o", "error"]))]
 #[case(server(&["-u", "--on-duplicate-files", "error"]))]
-fn uploading_duplicate_file_is_prevented(#[case] server: TestServer) -> Result<(), Error> {
+fn uploading_duplicate_file_is_prevented(
+    #[case] server: TestServer,
+    reqwest_client: Client,
+) -> Result<(), Error> {
     let test_file_name = "duplicate test file.txt";
     let test_file_contents = "Test File Contents";
     let test_file_contents_new = "New Uploaded Test File Contents";
@@ -282,7 +302,10 @@ fn uploading_duplicate_file_is_prevented(#[case] server: TestServer) -> Result<(
     std::fs::write(&test_file_path, test_file_contents)?;
 
     // Before uploading, make sure the file is there.
-    let body = reqwest::blocking::get(server.url())?.error_for_status()?;
+    let body = reqwest_client
+        .get(server.url())
+        .send()?
+        .error_for_status()?;
     let parsed = Document::from_read(body)?;
     assert!(parsed.find(Text).any(|x| x.text() == test_file_name));
 
@@ -312,7 +335,7 @@ fn uploading_duplicate_file_is_prevented(#[case] server: TestServer) -> Result<(
     );
 
     // After uploading, uploaded file is still getting listed.
-    let body = reqwest::blocking::get(server.url())?;
+    let body = reqwest_client.get(server.url()).send()?;
     let parsed = Document::from_read(body)?;
     assert!(parsed.find(Text).any(|x| x.text() == test_file_name));
     // and assert the contents is the same as before
@@ -324,7 +347,10 @@ fn uploading_duplicate_file_is_prevented(#[case] server: TestServer) -> Result<(
 #[rstest]
 #[case(server(&["-u", "-o", "overwrite"]))]
 #[case(server(&["-u", "--on-duplicate-files", "overwrite"]))]
-fn overwrite_duplicate_file(#[case] server: TestServer) -> Result<(), Error> {
+fn overwrite_duplicate_file(
+    #[case] server: TestServer,
+    reqwest_client: Client,
+) -> Result<(), Error> {
     let test_file_name = "duplicate test file.txt";
     let test_file_contents = "Test File Contents";
     let test_file_contents_new = "New Uploaded Test File Contents";
@@ -334,7 +360,10 @@ fn overwrite_duplicate_file(#[case] server: TestServer) -> Result<(), Error> {
     let _ = std::fs::write(&test_file_path, test_file_contents);
 
     // Before uploading, make sure the file is there.
-    let body = reqwest::blocking::get(server.url())?.error_for_status()?;
+    let body = reqwest_client
+        .get(server.url())
+        .send()?
+        .error_for_status()?;
     let parsed = Document::from_read(body)?;
     assert!(parsed.find(Text).any(|x| x.text() == test_file_name));
 
@@ -360,7 +389,7 @@ fn overwrite_duplicate_file(#[case] server: TestServer) -> Result<(), Error> {
         .error_for_status()?;
 
     // After uploading, verify the listing has the file
-    let body = reqwest::blocking::get(server.url())?;
+    let body = reqwest_client.get(server.url()).send()?;
     let parsed = Document::from_read(body)?;
     assert!(parsed.find(Text).any(|x| x.text() == test_file_name));
     // and assert the contents is from recently uploaded file
@@ -372,7 +401,7 @@ fn overwrite_duplicate_file(#[case] server: TestServer) -> Result<(), Error> {
 #[rstest]
 #[case(server(&["-u", "-o", "rename"]))]
 #[case(server(&["-u", "--on-duplicate-files", "rename"]))]
-fn rename_duplicate_file(#[case] server: TestServer) -> Result<(), Error> {
+fn rename_duplicate_file(#[case] server: TestServer, reqwest_client: Client) -> Result<(), Error> {
     let test_file_name = "duplicate test file.txt";
     let test_file_contents = "Test File Contents";
     let test_file_name_new = "duplicate test file-1.txt";
@@ -383,7 +412,10 @@ fn rename_duplicate_file(#[case] server: TestServer) -> Result<(), Error> {
     let _ = std::fs::write(&test_file_path, test_file_contents);
 
     // Before uploading, make sure the file is there.
-    let body = reqwest::blocking::get(server.url())?.error_for_status()?;
+    let body = reqwest_client
+        .get(server.url())
+        .send()?
+        .error_for_status()?;
     let parsed = Document::from_read(body)?;
     assert!(parsed.find(Text).any(|x| x.text() == test_file_name));
 
@@ -409,7 +441,7 @@ fn rename_duplicate_file(#[case] server: TestServer) -> Result<(), Error> {
         .error_for_status()?;
 
     // After uploading, assert the old file is still getting listed, and the new file is also in listing
-    let body = reqwest::blocking::get(server.url())?;
+    let body = reqwest_client.get(server.url()).send()?;
     let parsed = Document::from_read(body)?;
     assert!(parsed.find(Text).any(|x| x.text() == test_file_name));
     assert!(parsed.find(Text).any(|x| x.text() == test_file_name_new));
@@ -436,6 +468,7 @@ fn rename_duplicate_file(#[case] server: TestServer) -> Result<(), Error> {
 #[case(r"\foo", r"\..\bar", if cfg!(windows) { "foo/bar" } else { r"\foo/\..\bar" })]
 fn prevent_path_traversal_attacks(
     #[with(&["-u"])] server: TestServer,
+    reqwest_client: Client,
     #[case] path: &str,
     #[case] filename: &'static str,
     #[case] expected: &str,
@@ -458,7 +491,7 @@ fn prevent_path_traversal_attacks(
         .mime_str("text/plain")?;
     let form = multipart::Form::new().part("file_to_upload", part);
 
-    Client::new()
+    reqwest_client
         .post(server.url().join(&format!("/upload?path={path}"))?)
         .multipart(form)
         .send()?
@@ -477,6 +510,7 @@ fn prevent_path_traversal_attacks(
 #[case(server(&["-u", "--no-symlinks"]), false)]
 fn upload_to_symlink_directory(
     #[case] server: TestServer,
+    reqwest_client: Client,
     #[case] ok: bool,
     tmpdir: TempDir,
 ) -> Result<(), Error> {
@@ -498,7 +532,7 @@ fn upload_to_symlink_directory(
         .mime_str("text/plain")?;
     let form = multipart::Form::new().part("file_to_upload", part);
 
-    let status = Client::new()
+    let status = reqwest_client
         .post(server.url().join(&format!("/upload?path={dir}"))?)
         .multipart(form)
         .send()?
@@ -520,9 +554,13 @@ fn upload_to_symlink_directory(
 #[case(server(&["-u", "-M", "test_value"]), Some("test_value"))]
 fn set_media_type(
     #[case] server: TestServer,
+    reqwest_client: Client,
     #[case] expected_accept_value: Option<&str>,
 ) -> Result<(), Error> {
-    let body = reqwest::blocking::get(server.url())?.error_for_status()?;
+    let body = reqwest_client
+        .get(server.url())
+        .send()?
+        .error_for_status()?;
     let parsed = Document::from_read(body)?;
 
     let input = parsed.find(Attr("id", "file-input")).next().unwrap();
@@ -542,12 +580,19 @@ fn assert_file_contents(file_path: &Path, contents: &str) {
 #[case(server(&["-u", "--chmod", "660"]), 0o660)]
 #[case(server(&["-u", "--chmod", "644"]), 0o644)]
 #[case(server(&["-u", "--chmod", "0600"]), 0o600)]
-fn chmod(#[case] server: TestServer, #[case] expected_mode: u16) -> Result<(), Error> {
+fn chmod(
+    #[case] server: TestServer,
+    reqwest_client: Client,
+    #[case] expected_mode: u16,
+) -> Result<(), Error> {
     let test_file_name = "chmod-file.txt";
     let test_file_contents = "Test File Contents";
 
     // Perform the actual upload.
-    let body = reqwest::blocking::get(server.url())?.error_for_status()?;
+    let body = reqwest_client
+        .get(server.url())
+        .send()?
+        .error_for_status()?;
     let parsed = Document::from_read(body)?;
     let upload_action = parsed
         .find(Attr("id", "file_submit"))

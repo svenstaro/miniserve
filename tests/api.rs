@@ -6,7 +6,7 @@ use rstest::rstest;
 
 mod fixtures;
 
-use crate::fixtures::{DIRECTORIES, Error, TestServer, server};
+use crate::fixtures::{DIRECTORIES, Error, TestServer, reqwest_client, server};
 
 /// Test that we can get dir size for plain paths as well as percent-encoded paths
 #[rstest]
@@ -19,11 +19,12 @@ use crate::fixtures::{DIRECTORIES, Error, TestServer, server};
 fn api_dir_size(
     #[case] dir: String,
     #[with(&["--directory-size"])] server: TestServer,
+    reqwest_client: Client,
 ) -> Result<(), Error> {
     let mut command = HashMap::new();
     command.insert("DirSize", dir);
 
-    let resp = Client::new()
+    let resp = reqwest_client
         .post(server.url().join("__miniserve_internal/api")?)
         .json(&command)
         .send()?
@@ -47,13 +48,14 @@ fn api_dir_size(
 #[case(r"C:\foo")]
 #[case(r"\foo")]
 fn api_dir_size_prevent_path_transversal_attacks(
-    #[with(&["--directory-size"])] server: TestServer,
     #[case] path: &str,
+    #[with(&["--directory-size"])] server: TestServer,
+    reqwest_client: Client,
 ) -> Result<(), Error> {
     let mut command = HashMap::new();
     command.insert("DirSize", path);
 
-    let resp = Client::new()
+    let resp = reqwest_client
         .post(server.url().join("__miniserve_internal/api")?)
         .json(&command)
         .send()?;

@@ -2,13 +2,14 @@ use std::path::{Component, Path};
 use std::process::{Command, Stdio};
 
 use pretty_assertions::{assert_eq, assert_ne};
+use reqwest::blocking::Client;
 use rstest::rstest;
 use select::document::Document;
 
 mod fixtures;
 mod utils;
 
-use crate::fixtures::{DEEPLY_NESTED_FILE, DIRECTORIES, Error, TestServer, server};
+use crate::fixtures::{DEEPLY_NESTED_FILE, DIRECTORIES, Error, TestServer, reqwest_client, server};
 use crate::utils::{get_link_from_text, get_link_hrefs_with_prefix};
 
 #[rstest]
@@ -19,10 +20,11 @@ use crate::utils::{get_link_from_text, get_link_hrefs_with_prefix};
 /// Directories get a trailing slash.
 fn index_gets_trailing_slash(
     server: TestServer,
+    reqwest_client: Client,
     #[case] input: &str,
     #[case] expected: &str,
 ) -> Result<(), Error> {
-    let resp = reqwest::blocking::get(server.url().join(input)?)?;
+    let resp = reqwest_client.get(server.url().join(input)?).send()?;
     assert!(resp.url().as_str().ends_with(expected));
 
     Ok(())
@@ -49,17 +51,28 @@ fn cant_navigate_up_the_root(server: TestServer) -> Result<(), Error> {
 
 #[rstest]
 /// We can navigate into directories and back using shown links.
-fn can_navigate_into_dirs_and_back(server: TestServer) -> Result<(), Error> {
+fn can_navigate_into_dirs_and_back(
+    server: TestServer,
+    reqwest_client: Client,
+) -> Result<(), Error> {
     let base_url = server.url();
-    let initial_body = reqwest::blocking::get(base_url.as_str())?.error_for_status()?;
+    let initial_body = reqwest_client
+        .get(base_url.as_str())
+        .send()?
+        .error_for_status()?;
     let initial_parsed = Document::from_read(initial_body)?;
     for &directory in DIRECTORIES {
         let dir_elem = get_link_from_text(&initial_parsed, directory).expect("Dir not found.");
-        let body = reqwest::blocking::get(format!("{base_url}{dir_elem}"))?.error_for_status()?;
+        let body = reqwest_client
+            .get(format!("{base_url}{dir_elem}"))
+            .send()?
+            .error_for_status()?;
         let parsed = Document::from_read(body)?;
         let back_link =
             get_link_from_text(&parsed, "Parent directory").expect("Back link not found.");
-        let resp = reqwest::blocking::get(format!("{base_url}{back_link}"))?;
+        let resp = reqwest_client
+            .get(format!("{base_url}{back_link}"))
+            .send()?;
 
         // Now check that we can actually get back to the original location we came from using the
         // link.
@@ -71,7 +84,10 @@ fn can_navigate_into_dirs_and_back(server: TestServer) -> Result<(), Error> {
 
 #[rstest]
 /// We can navigate deep into the file tree and back using shown links.
-fn can_navigate_deep_into_dirs_and_back(server: TestServer) -> Result<(), Error> {
+fn can_navigate_deep_into_dirs_and_back(
+    server: TestServer,
+    reqwest_client: Client,
+) -> Result<(), Error> {
     // Create a vector of parent directory names.
     let dir_names = Path::new(DEEPLY_NESTED_FILE)
         .parent()
@@ -90,7 +106,7 @@ fn can_navigate_deep_into_dirs_and_back(server: TestServer) -> Result<(), Error>
     // In the end, we'll have to end up where we came from.
     let mut next_url = base_url.clone();
     for dir_name in dir_names.iter() {
-        let resp = reqwest::blocking::get(next_url.as_str())?;
+        let resp = reqwest_client.get(next_url.as_str()).send()?;
         let body = resp.error_for_status()?;
         let parsed = Document::from_read(body)?;
         let dir_elem =
@@ -101,7 +117,7 @@ fn can_navigate_deep_into_dirs_and_back(server: TestServer) -> Result<(), Error>
 
     // Now try to get out the tree again using links only.
     while next_url != base_url {
-        let resp = reqwest::blocking::get(next_url.as_str())?;
+        let resp = reqwest_client.get(next_url.as_str()).send()?;
         let body = resp.error_for_status()?;
         let parsed = Document::from_read(body)?;
         let dir_elem =
@@ -119,6 +135,7 @@ fn can_navigate_deep_into_dirs_and_back(server: TestServer) -> Result<(), Error>
 /// We can use breadcrumbs to navigate.
 fn can_navigate_using_breadcrumbs(
     #[case] server: TestServer,
+    reqwest_client: Client,
     #[case] title_name: String,
 ) -> Result<(), Error> {
     let dir = Path::new(DEEPLY_NESTED_FILE)
@@ -130,7 +147,7 @@ fn can_navigate_using_breadcrumbs(
     let base_url = server.url();
     let nested_url = base_url.join(dir)?;
 
-    let resp = reqwest::blocking::get(nested_url.as_str())?;
+    let resp = reqwest_client.get(nested_url.as_str()).send()?;
     let body = resp.error_for_status()?;
     let parsed = Document::from_read(body)?;
 
@@ -156,10 +173,11 @@ fn can_navigate_using_breadcrumbs(
 /// We can specify the default sorting order
 fn can_specify_default_sorting_order(
     #[case] server: TestServer,
+    reqwest_client: Client,
     #[case] method: String,
     #[case] order: String,
 ) -> Result<(), Error> {
-    let resp = reqwest::blocking::get(server.url())?;
+    let resp = reqwest_client.get(server.url()).send()?;
     let body = resp.error_for_status()?;
     let parsed = Document::from_read(body)?;
 

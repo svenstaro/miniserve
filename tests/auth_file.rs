@@ -4,7 +4,7 @@ use select::{document::Document, predicate::Text};
 
 mod fixtures;
 
-use crate::fixtures::{Error, FILES, TestServer, server};
+use crate::fixtures::{Error, FILES, TestServer, reqwest_client, server};
 
 #[rstest]
 #[case("joe", "123")]
@@ -12,11 +12,11 @@ use crate::fixtures::{Error, FILES, TestServer, server};
 #[case("bill", "")]
 fn auth_file_accepts(
     #[with(&["--auth-file", "tests/data/auth1.txt"])] server: TestServer,
+    reqwest_client: Client,
     #[case] client_username: &str,
     #[case] client_password: &str,
 ) -> Result<(), Error> {
-    let client = Client::new();
-    let response = client
+    let response = reqwest_client
         .get(server.url())
         .basic_auth(client_username, Some(client_password))
         .send()?;
@@ -39,11 +39,11 @@ fn auth_file_accepts(
 #[case("nonexistentuser", "wrongpassword")]
 fn auth_file_rejects(
     #[with(&["--auth-file", "tests/data/auth1.txt"])] server: TestServer,
+    reqwest_client: Client,
     #[case] client_username: &str,
     #[case] client_password: &str,
 ) -> Result<(), Error> {
-    let client = Client::new();
-    let status = client
+    let status = reqwest_client
         .get(server.url())
         .basic_auth(client_username, Some(client_password))
         .send()?

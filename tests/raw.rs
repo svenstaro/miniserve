@@ -8,7 +8,7 @@ use select::{
 
 mod fixtures;
 
-use crate::fixtures::{Error, TestServer, server};
+use crate::fixtures::{Error, TestServer, reqwest_client, server};
 
 /// The footer displays the correct wget command to download the folder recursively
 // This test can't test all aspects of the wget footer,
@@ -22,10 +22,9 @@ fn ui_displays_wget_element(
     #[case] depth: u8,
     #[case] dir: &str,
     #[with(&["--show-wget-footer"])] server: TestServer,
+    reqwest_client: Client,
 ) -> Result<(), Error> {
-    let client = Client::new();
-
-    let body = client
+    let body = reqwest_client
         .get(format!("{}{}", server.url(), dir))
         .send()?
         .error_for_status()?;
@@ -67,6 +66,7 @@ fn ui_displays_wget_element(
 fn raw_mode_links_to_directories_end_with_raw_true(
     #[case] dir: &str,
     #[with(&["--show-wget-footer"])] server: TestServer,
+    reqwest_client: Client,
 ) -> Result<(), Error> {
     fn verify_a_tags(parsed: Document) {
         // Ensure all links end with ?raw=true or are files
@@ -88,9 +88,8 @@ fn raw_mode_links_to_directories_end_with_raw_true(
         }
     }
 
-    let client = Client::new();
     // Ensure the links to the archives are not present
-    let body = client
+    let body = reqwest_client
         .get(format!("{}{}?raw=true", server.url(), dir))
         .send()?
         .error_for_status()?;

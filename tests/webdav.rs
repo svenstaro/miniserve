@@ -15,7 +15,7 @@ mod fixtures;
 use crate::fixtures::{
     DIR_BEHIND_SYMLINKED_DIR, DIRECTORIES, DIRECTORY_SYMLINK, Error,
     FILE_IN_DIR_BEHIND_SYMLINKED_DIR, FILE_SYMLINK, FILES, HIDDEN_DIRECTORIES, HIDDEN_FILES,
-    TestServer, server, tmpdir,
+    TestServer, reqwest_client, server, tmpdir,
 };
 
 #[rstest]
@@ -23,10 +23,10 @@ use crate::fixtures::{
 #[case(server(&[] as &[&str]), false)]
 fn webdav_flag_works(
     #[case] server: TestServer,
+    reqwest_client: Client,
     #[case] should_respond: bool,
 ) -> Result<(), Error> {
-    let client = Client::new();
-    let response = client
+    let response = reqwest_client
         .request(Method::from_bytes(b"PROPFIND").unwrap(), server.url())
         .header("Depth", "1")
         .send()?;
@@ -39,8 +39,9 @@ fn webdav_flag_works(
 #[rstest]
 fn webdav_advertised_in_options(
     #[with(&["--enable-webdav"])] server: TestServer,
+    reqwest_client: Client,
 ) -> Result<(), Error> {
-    let response = Client::new()
+    let response = reqwest_client
         .request(Method::OPTIONS, server.url())
         .send()?
         .error_for_status()?;

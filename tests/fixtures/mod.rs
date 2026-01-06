@@ -9,6 +9,7 @@ use assert_fs::fixture::TempDir;
 use assert_fs::prelude::*;
 use port_check::free_local_port;
 use reqwest::Url;
+use reqwest::blocking::{Client, ClientBuilder};
 use rstest::fixture;
 
 /// Error type used by tests
@@ -59,6 +60,16 @@ pub static FILE_SYMLINK: &str = "file_symlink";
 
 /// Name of a symlink pointing to a path that doesn't exist
 pub static BROKEN_SYMLINK: &str = "broken_symlink";
+
+/// Default reqwest client with some defaults set.
+#[fixture]
+pub fn reqwest_client() -> Client {
+    if rustls::crypto::CryptoProvider::get_default().is_none() {
+        let _ = rustls::crypto::ring::default_provider().install_default();
+    }
+    let reqwest_client = ClientBuilder::new().tls_danger_accept_invalid_certs(true);
+    reqwest_client.build().unwrap()
+}
 
 /// Test fixture which creates a temporary directory with a few files and directories inside.
 /// The directories also contain files.

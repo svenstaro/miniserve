@@ -4,11 +4,12 @@ use std::process::{Command, Stdio};
 use assert_cmd::{cargo, prelude::*};
 use assert_fs::fixture::TempDir;
 use regex::Regex;
+use reqwest::blocking::Client;
 use rstest::rstest;
 
 mod fixtures;
 
-use crate::fixtures::{Error, TestServer, port, server, tmpdir};
+use crate::fixtures::{Error, TestServer, port, reqwest_client, server, tmpdir};
 
 #[rstest]
 #[case(&["-i", "12.123.234.12"])]
@@ -56,7 +57,12 @@ fn bind_ipv4_ipv6(
 #[case(&["-i", "::", "-i", "0.0.0.0"])]
 #[case(&["--random-route"])]
 #[case(&["--route-prefix", "/prefix"])]
-fn validate_printed_urls(tmpdir: TempDir, port: u16, #[case] args: &[&str]) -> Result<(), Error> {
+fn validate_printed_urls(
+    reqwest_client: Client,
+    tmpdir: TempDir,
+    port: u16,
+    #[case] args: &[&str],
+) -> Result<(), Error> {
     let mut child = Command::new(cargo::cargo_bin!("miniserve"))
         .arg(tmpdir.path())
         .arg("-p")
@@ -82,7 +88,7 @@ fn validate_printed_urls(tmpdir: TempDir, port: u16, #[case] args: &[&str]) -> R
     assert!(!urls.is_empty());
 
     for url in urls {
-        reqwest::blocking::get(url)?.error_for_status()?;
+        reqwest_client.get(url).send()?.error_for_status()?;
     }
 
     child.kill()?;

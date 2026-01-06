@@ -1,15 +1,18 @@
-use reqwest::StatusCode;
+use reqwest::{StatusCode, blocking::Client};
 use rstest::rstest;
 use select::{document::Document, predicate::Text};
 
 mod fixtures;
 
-use crate::fixtures::{Error, TestServer, server};
+use crate::fixtures::{Error, TestServer, reqwest_client, server};
 
 #[rstest]
-fn archives_are_disabled(server: TestServer) -> Result<(), Error> {
+fn archives_are_disabled(server: TestServer, reqwest_client: Client) -> Result<(), Error> {
     // Ensure the links to the archives are not present
-    let body = reqwest::blocking::get(server.url())?.error_for_status()?;
+    let body = reqwest_client
+        .get(server.url())
+        .send()?
+        .error_for_status()?;
     let parsed = Document::from_read(body)?;
     assert!(
         parsed

@@ -9,7 +9,9 @@ use rstest::rstest;
 use std::path::{Component, Path};
 use url::Url;
 
-use crate::fixtures::{DEEPLY_NESTED_FILE, DIRECTORIES, FILES, HIDDEN_DIRECTORIES, HIDDEN_FILES};
+use crate::fixtures::{
+    DEEPLY_NESTED_FILE, DIRECTORIES, FILES, HIDDEN_DIRECTORIES, HIDDEN_FILES, reqwest_client,
+};
 
 const NESTED_FILES_UNDER_SINGLE_ROOT: &[&str] = &["someDir/alpha", "someDir/some_sub_dir/bravo"];
 
@@ -39,8 +41,11 @@ fn make_del_path(unencoded_path: impl AsRef<Path>) -> String {
 
 /// Tests that deletion requests succeed as expected.
 /// Verifies that the path exists, can be deleted, and is no longer accessible after deletion.
-fn assert_rm_ok(base_url: Url, unencoded_path: impl AsRef<Path>) -> Result<(), Error> {
-    let client = Client::new();
+fn assert_rm_ok(
+    reqwest_client: &Client,
+    base_url: Url,
+    unencoded_path: impl AsRef<Path>,
+) -> Result<(), Error> {
     let file_path = unencoded_path.as_ref();
 
     // encode
@@ -48,13 +53,16 @@ fn assert_rm_ok(base_url: Url, unencoded_path: impl AsRef<Path>) -> Result<(), E
     let del_url = base_url.join(&make_del_path(file_path))?;
 
     // check path exists
-    let _get_res = client.get(get_url.clone()).send()?.error_for_status()?;
+    let _get_res = reqwest_client
+        .get(get_url.clone())
+        .send()?
+        .error_for_status()?;
 
     // delete
-    let _del_res = client.post(del_url).send()?.error_for_status()?;
+    let _del_res = reqwest_client.post(del_url).send()?.error_for_status()?;
 
     // check path is gone
-    let get_res = client.get(get_url).send()?;
+    let get_res = reqwest_client.get(get_url).send()?;
     if get_res.status() != StatusCode::NOT_FOUND {
         return Err(format!("Unexpected status code: {}", get_res.status()).into());
     }
@@ -66,11 +74,11 @@ fn assert_rm_ok(base_url: Url, unencoded_path: impl AsRef<Path>) -> Result<(), E
 /// The `check_path_exists` parameter allows skipping this check before and after
 /// the deletion attempt in case the path should be inaccessible via GET.
 fn assert_rm_err(
+    reqwest_client: &Client,
     base_url: Url,
     unencoded_path: impl AsRef<Path>,
     check_path_exists: bool,
 ) -> Result<(), Error> {
-    let client = Client::new();
     let file_path = unencoded_path.as_ref();
 
     // encode
@@ -79,18 +87,21 @@ fn assert_rm_err(
 
     // check path exists
     if check_path_exists {
-        let _get_res = client.get(get_url.clone()).send()?.error_for_status()?;
+        let _get_res = reqwest_client
+            .get(get_url.clone())
+            .send()?
+            .error_for_status()?;
     }
 
     // delete
-    let del_res = client.post(del_url).send()?;
+    let del_res = reqwest_client.post(del_url).send()?;
     if !del_res.status().is_client_error() {
         return Err(format!("Unexpected status code: {}", del_res.status()).into());
     }
 
     // check path still exists
     if check_path_exists {
-        let _get_res = client.get(get_url).send()?.error_for_status()?;
+        let _get_res = reqwest_client.get(get_url).send()?.error_for_status()?;
     }
 
     Ok(())
@@ -104,8 +115,12 @@ fn assert_rm_err(
 #[case(DIRECTORIES[1])]
 #[case(DIRECTORIES[2])]
 #[case(DEEPLY_NESTED_FILE)]
-fn rm_disabled_by_default(server: TestServer, #[case] path: &str) -> Result<(), Error> {
-    assert_rm_err(server.url(), path, true)
+fn rm_disabled_by_default(
+    server: TestServer,
+    reqwest_client: Client,
+    #[case] path: &str,
+) -> Result<(), Error> {
+    assert_rm_err(&reqwest_client, server.url(), path, true)
 }
 
 #[rstest]
@@ -121,10 +136,11 @@ fn rm_disabled_by_default(server: TestServer, #[case] path: &str) -> Result<(), 
 #[case(HIDDEN_DIRECTORIES[1])]
 #[case(DEEPLY_NESTED_FILE)]
 fn rm_disabled_by_default_with_hidden(
+    reqwest_client: Client,
     #[with(&["-H"])] server: TestServer,
     #[case] path: &str,
 ) -> Result<(), Error> {
-    assert_rm_err(server.url(), path, true)
+    assert_rm_err(&reqwest_client, server.url(), path, true)
 }
 
 #[rstest]
@@ -135,8 +151,12 @@ fn rm_disabled_by_default_with_hidden(
 #[case(DIRECTORIES[1])]
 #[case(DIRECTORIES[2])]
 #[case(DEEPLY_NESTED_FILE)]
-fn rm_works(#[with(&["-R"])] server: TestServer, #[case] path: &str) -> Result<(), Error> {
-    assert_rm_ok(server.url(), path)
+fn rm_works(
+    #[with(&["-R"])] server: TestServer,
+    reqwest_client: Client,
+    #[case] path: &str,
+) -> Result<(), Error> {
+    assert_rm_ok(&reqwest_client, server.url(), path)
 }
 
 #[rstest]
@@ -146,9 +166,10 @@ fn rm_works(#[with(&["-R"])] server: TestServer, #[case] path: &str) -> Result<(
 #[case(HIDDEN_DIRECTORIES[1])]
 fn cannot_rm_hidden_when_disallowed(
     #[with(&["-R"])] server: TestServer,
+    reqwest_client: Client,
     #[case] path: &str,
 ) -> Result<(), Error> {
-    assert_rm_err(server.url(), path, false)
+    assert_rm_err(&reqwest_client, server.url(), path, false)
 }
 
 #[rstest]
@@ -158,9 +179,10 @@ fn cannot_rm_hidden_when_disallowed(
 #[case(HIDDEN_DIRECTORIES[1])]
 fn can_rm_hidden_when_allowed(
     #[with(&["-R", "-H"])] server: TestServer,
+    reqwest_client: Client,
     #[case] path: &str,
 ) -> Result<(), Error> {
-    assert_rm_ok(server.url(), path)
+    assert_rm_ok(&reqwest_client, server.url(), path)
 }
 
 /// This test runs the server with --allowed-rm-dir argument and checks that
@@ -170,8 +192,12 @@ fn can_rm_hidden_when_allowed(
 #[case(server(&["-R", "someOtherDir"]), NESTED_FILES_UNDER_SINGLE_ROOT[1])]
 #[case(server(&["-R", "someDir/some_other_sub_dir"]), NESTED_FILES_UNDER_SINGLE_ROOT[0])]
 #[case(server(&["-R", "someDir/some_other_sub_dir"]), NESTED_FILES_UNDER_SINGLE_ROOT[1])]
-fn rm_is_restricted(#[case] server: TestServer, #[case] path: &str) -> Result<(), Error> {
-    assert_rm_err(server.url(), path, true)
+fn rm_is_restricted(
+    #[case] server: TestServer,
+    reqwest_client: Client,
+    #[case] path: &str,
+) -> Result<(), Error> {
+    assert_rm_err(&reqwest_client, server.url(), path, true)
 }
 
 /// This test runs the server with --allowed-rm-dir argument and checks that
@@ -185,8 +211,12 @@ fn rm_is_restricted(#[case] server: TestServer, #[case] path: &str) -> Result<()
 #[case(server(&["-R", "dira", "-R", "dirb", "-R", "dir space"]), DIRECTORIES[0])]
 #[case(server(&["-R", "dira", "-R", "dirb", "-R", "dir space"]), DIRECTORIES[1])]
 #[case(server(&["-R", "dira", "-R", "dirb", "-R", "dir space"]), DIRECTORIES[2])]
-fn can_rm_allowed_dir(#[case] server: TestServer, #[case] path: &str) -> Result<(), Error> {
-    assert_rm_ok(server.url(), path)
+fn can_rm_allowed_dir(
+    #[case] server: TestServer,
+    reqwest_client: Client,
+    #[case] path: &str,
+) -> Result<(), Error> {
+    assert_rm_ok(&reqwest_client, server.url(), path)
 }
 
 /// This tests that we can delete from directories specified by --allow-rm-dir.
@@ -204,8 +234,12 @@ fn can_rm_allowed_dir(#[case] server: TestServer, #[case] path: &str) -> Result<
 #[case(server(&["-R", "someDir/some_sub_dir"]), "someDir/some_sub_dir/bravo")]
 #[case(server(&["-R", Path::new("someDir/some_sub_dir").to_str().unwrap()]),
     "someDir/some_sub_dir/bravo")]
-fn can_rm_from_allowed_dir(#[case] server: TestServer, #[case] file: &str) -> Result<(), Error> {
-    assert_rm_ok(server.url(), file)
+fn can_rm_from_allowed_dir(
+    #[case] server: TestServer,
+    reqwest_client: Client,
+    #[case] file: &str,
+) -> Result<(), Error> {
+    assert_rm_ok(&reqwest_client, server.url(), file)
 }
 
 /// Test deleting from symlinked directories that point to outside the server root.
@@ -216,6 +250,7 @@ fn rm_from_symlinked_dir(
     #[case] server: TestServer,
     #[case] should_succeed: bool,
     #[from(tmpdir)] target: TempDir,
+    reqwest_client: Client,
 ) -> Result<(), Error> {
     #[cfg(unix)]
     use std::os::unix::fs::symlink as symlink_dir;
@@ -233,11 +268,11 @@ fn rm_from_symlinked_dir(
         .collect::<Vec<_>>();
     if should_succeed {
         for file_path in &files_through_link {
-            assert_rm_ok(server.url(), file_path)?;
+            assert_rm_ok(&reqwest_client, server.url(), file_path)?;
         }
     } else {
         for file_path in &files_through_link {
-            assert_rm_err(server.url(), file_path, false)?;
+            assert_rm_err(&reqwest_client, server.url(), file_path, false)?;
         }
     }
     Ok(())
