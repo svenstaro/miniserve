@@ -69,10 +69,9 @@ fn uploading_files_works(
         headers.insert("X-File-Hash", sha.parse()?);
     }
 
-    let client = Client::builder().default_headers(headers).build()?;
-
-    client
+    reqwest_client
         .post(server.url().join(upload_action)?)
+        .headers(headers)
         .multipart(form)
         .send()?
         .error_for_status()?;
@@ -173,11 +172,10 @@ fn uploading_files_with_invalid_sha_func_is_prevented(
         headers.insert("X-File-Hash", sha.parse()?);
     }
 
-    let reqwest_client = Client::builder().default_headers(headers).build()?;
-
     assert!(
         reqwest_client
             .post(server.url().join("/upload?path=/")?)
+            .headers(headers)
             .multipart(form)
             .send()?
             .error_for_status()
@@ -210,11 +208,10 @@ fn uploading_files_is_restricted(
         .mime_str("text/plain")?;
     let form = form.part("file_to_upload", part);
 
-    let client = Client::new();
     // Ensure uploading fails and returns an error
     assert_eq!(
         403,
-        client
+        reqwest_client
             .post(server.url().join("/upload?path=/")?)
             .multipart(form)
             .send()?
@@ -270,8 +267,7 @@ fn uploading_files_to_allowed_dir_works(
             .mime_str("text/plain")?;
         let form = form.part("file_to_upload", part);
 
-        let client = Client::new();
-        client
+        reqwest_client
             .post(server.url().join(upload_action)?)
             .multipart(form)
             .send()?
@@ -323,10 +319,9 @@ fn uploading_duplicate_file_is_prevented(
         .mime_str("text/plain")?;
     let form = form.part("file_to_upload", part);
 
-    let client = Client::new();
     // Ensure uploading fails and returns an error
     assert!(
-        client
+        reqwest_client
             .post(server.url().join(upload_action)?)
             .multipart(form)
             .send()?
@@ -381,8 +376,7 @@ fn overwrite_duplicate_file(
         .mime_str("text/plain")?;
     let form = form.part("file_to_upload", part);
 
-    let client = Client::new();
-    client
+    reqwest_client
         .post(server.url().join(upload_action)?)
         .multipart(form)
         .send()?
@@ -433,8 +427,7 @@ fn rename_duplicate_file(#[case] server: TestServer, reqwest_client: Client) -> 
         .mime_str("text/plain")?;
     let form = form.part("file_to_upload", part);
 
-    let client = Client::new();
-    client
+    reqwest_client
         .post(server.url().join(upload_action)?)
         .multipart(form)
         .send()?
@@ -607,8 +600,7 @@ fn chmod(
         .mime_str("text/plain")?;
     let form = form.part("file_to_upload", part);
 
-    let client = Client::new();
-    client
+    reqwest_client
         .post(server.url().join(upload_action)?)
         .multipart(form)
         .send()?

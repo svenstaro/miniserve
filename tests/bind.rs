@@ -34,15 +34,22 @@ fn bind_fails(tmpdir: TempDir, port: u16, #[case] args: &[&str]) -> Result<(), E
 #[case(server(&["-i", "::", "-i", "0.0.0.0"]), true, true)]
 fn bind_ipv4_ipv6(
     #[case] server: TestServer,
+    reqwest_client: Client,
     #[case] bind_ipv4: bool,
     #[case] bind_ipv6: bool,
 ) -> Result<(), Error> {
     assert_eq!(
-        reqwest::blocking::get(format!("http://127.0.0.1:{}", server.port()).as_str()).is_ok(),
+        reqwest_client
+            .get(format!("http://127.0.0.1:{}", server.port()).as_str())
+            .send()
+            .is_ok(),
         bind_ipv4
     );
     assert_eq!(
-        reqwest::blocking::get(format!("http://[::1]:{}", server.port()).as_str()).is_ok(),
+        reqwest_client
+            .get(format!("http://[::1]:{}", server.port()).as_str())
+            .send()
+            .is_ok(),
         bind_ipv6
     );
 

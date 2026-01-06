@@ -44,7 +44,7 @@ fn creating_directories_works(
         .error_for_status()?;
 
     // After creating, check whether the directory is now getting listed.
-    let body = reqwest::blocking::get(server.url())?;
+    let body = reqwest_client.get(server.url()).send()?;
     let parsed = Document::from_read(body)?;
     assert!(
         parsed
@@ -66,7 +66,10 @@ fn creating_directories_is_prevented(
     let test_directory_name = "hello";
 
     // Before creating, check whether the directory does not yet exist.
-    let body = reqwest::blocking::get(server.url())?.error_for_status()?;
+    let body = reqwest_client
+        .get(server.url())
+        .send()?
+        .error_for_status()?;
     let parsed = Document::from_read(body)?;
     assert!(parsed.find(Text).all(|x| x.text() != test_directory_name));
 
@@ -89,7 +92,7 @@ fn creating_directories_is_prevented(
     );
 
     // After creating, check whether the directory is now getting listed (shouldn't).
-    let body = reqwest::blocking::get(server.url())?;
+    let body = reqwest_client.get(server.url()).send()?;
     let parsed = Document::from_read(body)?;
     assert!(
         parsed
@@ -108,7 +111,10 @@ fn creating_directories_through_symlinks_is_prevented(
     reqwest_client: Client,
 ) -> Result<(), Error> {
     // Before attempting to create, ensure the symlink does not exist.
-    let body = reqwest::blocking::get(server.url())?.error_for_status()?;
+    let body = reqwest_client
+        .get(server.url())
+        .send()?
+        .error_for_status()?;
     let parsed = Document::from_read(body)?;
     assert!(parsed.find(Text).all(|x| x.text() != DIRECTORY_SYMLINK));
 

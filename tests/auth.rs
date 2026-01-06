@@ -112,10 +112,9 @@ fn auth_multiple_accounts_pass(
     #[case] username: &str,
     #[case] password: &str,
     #[with(ACCOUNTS)] server: TestServer,
+    reqwest_client: Client,
 ) -> Result<(), Error> {
-    let client = Client::new();
-
-    let response = client
+    let response = reqwest_client
         .get(server.url())
         .basic_auth(username, Some(password))
         .send()?;
