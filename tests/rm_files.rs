@@ -27,7 +27,7 @@ fn make_get_path(unencoded_path: impl AsRef<Path>) -> String {
             Component::ParentDir => "..",
             Component::Normal(comp) => comp.to_str().unwrap(),
         })
-        .map(|comp| utf8_percent_encode(comp, &percent_encoding::NON_ALPHANUMERIC).to_string())
+        .map(|comp| utf8_percent_encode(comp, percent_encoding::NON_ALPHANUMERIC).to_string())
         .collect::<Vec<_>>()
         .join("/")
 }
