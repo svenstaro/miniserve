@@ -63,6 +63,10 @@ jobs:
             target: x86_64-unknown-freebsd
             compress: false
             cargo_flags: ""
+          - os: ubuntu-latest
+            target: x86_64-unknown-illumos
+            compress: false
+            cargo_flags: ""
 
     steps:
       - name: Checkout code
