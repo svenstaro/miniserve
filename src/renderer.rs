@@ -930,7 +930,6 @@ fn page_header(
 
                         document.querySelector('input[type="file"]').addEventListener('change', async (e) => {
                           const file = e.target.files[0];
-                          const hash = await hashFile(file);
                         });
 
                         async function get256FileHash(file) {
