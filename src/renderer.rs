@@ -930,15 +930,9 @@ fn page_header(
 
                         document.querySelector('input[type="file"]').addEventListener('change', async (e) => {
                           const file = e.target.files[0];
-                          const hash = await hashFile(file);
                         });
 
                         async function get256FileHash(file) {
-                          if (!crypto.subtle) {
-                            // `crypto.subtle` is not available in nonsecure context (e.g. non-HTTPS LAN).
-                            // See https://developer.mozilla.org/en-US/docs/Web/API/Crypto/subtle
-                            return "";
-                          }
                           const arrayBuffer = await file.arrayBuffer();
                           const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer);
                           const hashArray = Array.from(new Uint8Array(hashBuffer));
@@ -992,7 +986,12 @@ fn page_header(
 
                                 // Upload the single file in a multipart request.
                                 return new Promise(async (resolve, reject) => {
-                                    const fileHash = await get256FileHash(file);
+                                    // File hash calculation may fail at times:
+                                    //   1. `crypto.subtle` is not available in nonsecure context (e.g. non-HTTPS LAN).
+                                    //      See https://developer.mozilla.org/en-US/docs/Web/API/Crypto/subtle
+                                    //   2. For files larger than 2GB, Firefox will refuse to calculate the SHA-256 value,
+                                    //      while Chrome will refuse to create a ArrayBuffer (#1541).
+                                    const fileHash = await get256FileHash(file).catch(() => "");
                                     const xhr = new XMLHttpRequest();
                                     const formData = new FormData();
                                     formData.append('file', file);
