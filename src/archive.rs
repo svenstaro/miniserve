@@ -155,7 +155,7 @@ where
         .map_err(|e| {
             RuntimeError::IoError(
                 format!(
-                    "Failed to append the content of {} to the TAR archive",
+                    "Failed to append the content of '{}' to the TAR archive",
                     src_dir.to_str().unwrap_or("file")
                 ),
                 e,
@@ -234,8 +234,16 @@ where
                     )
                 })?
                 .path();
-            let entry_metadata = std::fs::metadata(entry_path.clone())
-                .map_err(|e| RuntimeError::IoError("Could not get file metadata".to_string(), e))?;
+            let entry_metadata = std::fs::metadata(entry_path.clone()).map_err(|e| {
+                RuntimeError::IoError(
+                    format!(
+                        "Could not get file metadata of '{}'",
+                        entry_path.to_string_lossy()
+                    )
+                    .to_string(),
+                    e,
+                )
+            })?;
 
             if entry_metadata.file_type().is_symlink() && skip_symlinks {
                 continue;
@@ -245,7 +253,7 @@ where
             })?;
 
             // Workaround for Windows path in ZIP files:
-            //   Eliminate all backslashes to prevent the full relative paths from being saved as-is.
+            //   Always use forward slashes for all paths to avoid literal backslashes in saved entry path.
             // XXX: remove this when the "zip" cargo has the ability to process a directory as a whole.
             let relative_path = if cfg!(windows) {
                 let branch = zip_directory
