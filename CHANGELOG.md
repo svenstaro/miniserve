@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+- Add `--log-color` to explicitly control when to print colors [#1529](https://github.com/svenstaro/miniserve/pull/1529) (thanks @MrCroxx)
 
 ## [0.32.0] - 2025-09-17
 - Skip hash calculation when crypto.subtle is not available [#1507](https://github.com/svenstaro/miniserve/pull/1507) (thanks @outloudvi)
