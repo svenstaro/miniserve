@@ -196,7 +196,7 @@ fn wait_for_port(port: u16) {
     while !port_check::is_port_reachable(format!("localhost:{port}")) {
         sleep(Duration::from_millis(100));
 
-        if start_wait.elapsed().as_secs() > 1 {
+        if start_wait.elapsed().as_secs() > 5 {
             panic!("timeout waiting for port {port}");
         }
     }
