@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - ReleaseDate
 - Add `--log-color` to explicitly control when to print colors [#1529](https://github.com/svenstaro/miniserve/pull/1529) (thanks @MrCroxx)
+- Fix `--rm-files` not working with `--route-preifx` [#1531](https://github.com/svenstaro/miniserve/pull/1531) (thanks @Jianchi-Chen)
 
 ## [0.32.0] - 2025-09-17
 - Skip hash calculation when crypto.subtle is not available [#1507](https://github.com/svenstaro/miniserve/pull/1507) (thanks @outloudvi)
