@@ -330,10 +330,15 @@ pub fn directory_listing(
                         readme = Some((
                             file_name.to_string(),
                             if ext == "md" {
-                                markdown_to_html(
-                                    &std::fs::read_to_string(entry.path())?,
-                                    &ComrakOptions::default(),
-                                )
+                                let mut options = ComrakOptions::default();
+
+                                // Enable some GFM extensions
+                                options.extension.strikethrough = true;
+                                options.extension.table = true;
+                                options.extension.autolink = true;
+                                options.extension.tasklist = true;
+
+                                markdown_to_html(&std::fs::read_to_string(entry.path())?, &options)
                             } else {
                                 format!("<pre>{}</pre>", &std::fs::read_to_string(entry.path())?)
                             },
