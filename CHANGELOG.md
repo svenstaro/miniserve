@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Fix `--rm-files` not working with `--route-preifx` [#1531](https://github.com/svenstaro/miniserve/pull/1531) (thanks @Jianchi-Chen)
 - Add illumos builds [#1543](https://github.com/svenstaro/miniserve/pull/1543)
 - Ignore failure on file hash calculation during upload [#1542](https://github.com/svenstaro/miniserve/pull/1542) (thanks @outloudvi)
-- Add `--quiet` flag to reduce output and silence warnings [#1539](https://github.com/svenstaro/miniserve/pull/1539)
+- Add `--quiet` flag to reduce output and silence warnings [#1539](https://github.com/svenstaro/miniserve/pull/1539) (thanks @joshleeb)
 
 ## [0.32.0] - 2025-09-17
 - Skip hash calculation when crypto.subtle is not available [#1507](https://github.com/svenstaro/miniserve/pull/1507) (thanks @outloudvi)
