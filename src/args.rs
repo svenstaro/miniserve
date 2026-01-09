@@ -88,6 +88,10 @@ pub struct CliArgs {
     #[arg(long, requires = "index", env = "MINISERVE_SPA")]
     pub spa: bool,
 
+    /// Reduce output and silence warnings.
+    #[arg(long, env = "MINISERVE_QUIET")]
+    pub quiet: bool,
+
     /// Activate Pretty URLs mode
     ///
     /// This will cause the server to serve the equivalent `.html` file indicated by the path.

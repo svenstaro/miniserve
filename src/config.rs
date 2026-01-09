@@ -96,6 +96,9 @@ pub struct MiniserveConfig {
     /// allow the SPA router to handle the request instead.
     pub spa: bool,
 
+    /// Reduce output and silence warnings.
+    pub quiet: bool,
+
     /// Activate Pretty URLs mode
     ///
     /// This will cause the server to serve the equivalent `.html` file indicated by the path.
@@ -339,6 +342,7 @@ impl MiniserveConfig {
             default_color_scheme_dark,
             index: args.index,
             spa: args.spa,
+            quiet: args.quiet,
             pretty_urls: args.pretty_urls,
             on_duplicate_files: args.on_duplicate_files,
             show_qrcode: args.qrcode,
