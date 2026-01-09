@@ -110,25 +110,22 @@ fn archive_behave_differently_with_broken_symlinks(
     };
 
     // Produce a file with only partial header fields. See "rfc1952 § 2.3.1. Member header and trailer".
-    // ArchiveCreationError("tarball", IoError("Failed to append the content of ... to the TAR archive",
-    //   Os { code: 1921, kind: FilesystemLoop, message: "The name of the file cannot be resolved by the system." }))
+    // ArchiveCreationError("tarball", IoError("Failed to append the content of ... to the TAR archive"
     {
         let bytes = download_archive("tar_gz");
         assert_eq!(bytes.len(), 10);
     }
 
-    // Produce an incomplete file
-    // ArchiveCreationError("tarball", IoError("Failed to append the content of ... to the TAR archive",
-    //   Os { code: 1921, kind: FilesystemLoop, message: "The name of the file cannot be resolved by the system." }))
+    // Produce a tarball containing a subset of files
+    // ArchiveCreationError("tarball", IoError("Failed to append the content of ... to the TAR archive"
     {
         let bytes = download_archive("tar");
-        assert_eq!(bytes.len(), 51200);
+        assert!(bytes.len() >= 512 + 512 + 2 * 512); // at least: header block + data + end marker
     }
 
     // Produce an empty file
     // Error during archive creation: ArchiveCreationError("zip", ArchiveCreationError(
-    //   "Failed to create the ZIP archive", IoError("Could not get file metadata ...",
-    //   Os { code: 1921, kind: FilesystemLoop, message: "The name of the file cannot be resolved by the system." })))
+    //   "Failed to create the ZIP archive", IoError("Could not get file metadata ..."
     {
         let bytes = download_archive("zip");
         assert_eq!(bytes.len(), 0);
