@@ -288,8 +288,8 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), StartupError> {
 
     let srv = srv.shutdown_timeout(0).run();
 
-    println!("Bound to {}", display_sockets.join(", "));
     if !miniserve_config.quiet {
+        println!("Bound to {}", display_sockets.join(", "));
         println!("Serving path {}", path_string.yellow().bold());
         println!(
             "Available at (non-exhaustive list):\n    {}\n",
