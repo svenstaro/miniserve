@@ -1,7 +1,8 @@
+use std::io::Cursor;
+
 use reqwest::{StatusCode, blocking::Client};
 use rstest::rstest;
 use select::{document::Document, predicate::Text};
-use std::io::Cursor;
 use zip::ZipArchive;
 
 mod fixtures;
@@ -50,10 +51,10 @@ fn archives_are_disabled(server: TestServer, reqwest_client: Client) -> Result<(
 
 #[rstest]
 fn test_tar_archives(
-    #[with(&["-g"])] server: TestServer,
+    #[with(&["--enable-tar-gz"])] server: TestServer,
     reqwest_client: Client,
 ) -> Result<(), Error> {
-    // Ensure the links to the tar.gz archive exists and tar and zip not exists
+    // Ensure the links to the tar.gz archive exists and tar and zip do not exist
     let body = reqwest_client
         .get(server.url())
         .send()?

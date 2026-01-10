@@ -61,7 +61,6 @@ tempfile = "3.24.0"
 thiserror = "2"
 tokio = { version = "1.47.1", features = ["fs", "macros"] }
 zip = { version = "7", default-features = false }
-#zip = { path = "../zip2", default-features = false }
 
 [features]
 default = ["tls"]

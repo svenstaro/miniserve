@@ -253,8 +253,8 @@ where
             })?;
 
             // Workaround for Windows path in ZIP files:
-            //   Always use forward slashes for all paths to avoid literal backslashes in saved entry path.
-            // XXX: remove this when the "zip" cargo has the ability to process a directory as a whole.
+            // Always use forward slashes for all paths to avoid literal backslashes in saved entry path.
+            // TODO: remove this when the "zip" cargo has the ability to process a directory as a whole.
             let relative_path = if cfg!(windows) {
                 let branch = zip_directory
                     .as_os_str()
