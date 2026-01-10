@@ -39,6 +39,14 @@ impl Display for SizeDisplay {
     }
 }
 
+#[derive(Debug, ValueEnum, Clone, Copy, Default)]
+pub enum LogColor {
+    #[default]
+    Auto,
+    Always,
+    Never,
+}
+
 #[derive(Parser)]
 #[command(name = "miniserve", author, about, version)]
 pub struct CliArgs {
@@ -79,6 +87,10 @@ pub struct CliArgs {
     /// allow the SPA router to handle the request instead.
     #[arg(long, requires = "index", env = "MINISERVE_SPA")]
     pub spa: bool,
+
+    /// Reduce output and silence warnings.
+    #[arg(long, env = "MINISERVE_QUIET")]
+    pub quiet: bool,
 
     /// Activate Pretty URLs mode
     ///
@@ -424,6 +436,18 @@ pub struct CliArgs {
     /// The user should take care this results in a valid URL, no further checks are being done.
     #[arg(long = "file-external-url", env = "MINISERVE_FILE_EXTERNAL_URL")]
     pub file_external_url: Option<String>,
+
+    /// Set the color style of the log output
+    ///
+    /// "auto" (default) enables colors only when the output is a terminal.
+    /// "always" always enables colors.
+    /// "never" always disables colors.
+    #[arg(
+        long = "log-color",
+        env = "MINISERVE_LOG_COLOR",
+        default_value = "auto"
+    )]
+    pub log_color: LogColor,
 }
 
 /// Checks whether an interface is valid, i.e. it can be parsed into an IP address

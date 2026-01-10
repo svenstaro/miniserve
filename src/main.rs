@@ -22,7 +22,7 @@ use dav_server::{
     actix::{DavRequest, DavResponse},
 };
 use fast_qr::QRBuilder;
-use log::{error, info, warn};
+use log::{error, info, trace, warn};
 use percent_encoding::percent_decode_str;
 use serde::Deserialize;
 
@@ -39,6 +39,7 @@ mod pipe;
 mod renderer;
 mod webdav_fs;
 
+use crate::args::LogColor;
 use crate::config::MiniserveConfig;
 use crate::errors::{RuntimeError, StartupError};
 use crate::file_op::recursive_dir_size;
@@ -80,17 +81,37 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), StartupError> {
         simplelog::LevelFilter::Warn
     };
 
+    let color_choice = match miniserve_config.log_color {
+        LogColor::Auto => {
+            if io::stdout().is_terminal() {
+                simplelog::ColorChoice::Auto
+            } else {
+                simplelog::ColorChoice::Never
+            }
+        }
+        LogColor::Always => {
+            colored::control::SHOULD_COLORIZE.set_override(true);
+            simplelog::ColorChoice::Always
+        }
+        LogColor::Never => {
+            colored::control::SHOULD_COLORIZE.set_override(false);
+            simplelog::ColorChoice::Never
+        }
+    };
+
+    trace!(
+        "Set log color, simplelog = {:?}, colored = {:?}",
+        color_choice,
+        colored::control::SHOULD_COLORIZE.should_colorize(),
+    );
+
     simplelog::TermLogger::init(
         log_level,
         simplelog::ConfigBuilder::new()
             .set_time_format_rfc2822()
             .build(),
         simplelog::TerminalMode::Mixed,
-        if io::stdout().is_terminal() {
-            simplelog::ColorChoice::Auto
-        } else {
-            simplelog::ColorChoice::Never
-        },
+        color_choice,
     )
     .or_else(|_| simplelog::SimpleLogger::init(log_level, simplelog::Config::default()))
     .expect("Couldn't initialize logger");
@@ -117,6 +138,7 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), StartupError> {
     // warn if --index is specified but not found
     if let Some(ref index) = miniserve_config.index
         && !canon_path.join(index).exists()
+        && !miniserve_config.quiet
     {
         warn!(
             "The file '{}' provided for option --index could not be found.",
@@ -126,11 +148,13 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), StartupError> {
 
     let path_string = canon_path.to_string_lossy();
 
-    println!(
-        "{name} v{version}",
-        name = "miniserve".bold(),
-        version = crate_version!()
-    );
+    if !miniserve_config.quiet {
+        println!(
+            "{name} v{version}",
+            name = "miniserve".bold(),
+            version = crate_version!()
+        );
+    }
     if !miniserve_config.path_explicitly_chosen {
         // If the path to serve has NOT been explicitly chosen and if this is NOT an interactive
         // terminal, we should refuse to start for security reasons. This would be the case when
@@ -140,22 +164,24 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), StartupError> {
             return Err(StartupError::NoExplicitPathAndNoTerminal);
         }
 
-        warn!(
-            "miniserve has been invoked without an explicit path so it will serve the current directory after a short delay."
-        );
-        warn!(
-            "Invoke with -h|--help to see options or invoke as `miniserve .` to hide this advice."
-        );
-        print!("Starting server in ");
-        io::stdout()
-            .flush()
-            .map_err(|e| StartupError::IoError("Failed to write data".to_string(), e))?;
-        for c in "3… 2… 1… \n".chars() {
-            print!("{c}");
+        if !miniserve_config.quiet {
+            warn!(
+                "miniserve has been invoked without an explicit path so it will serve the current directory after a short delay."
+            );
+            warn!(
+                "Invoke with -h|--help to see options or invoke as `miniserve .` to hide this advice."
+            );
+            print!("Starting server in ");
             io::stdout()
                 .flush()
                 .map_err(|e| StartupError::IoError("Failed to write data".to_string(), e))?;
-            thread::sleep(Duration::from_millis(500));
+            for c in "3… 2… 1… \n".chars() {
+                print!("{c}");
+                io::stdout()
+                    .flush()
+                    .map_err(|e| StartupError::IoError("Failed to write data".to_string(), e))?;
+                thread::sleep(Duration::from_millis(500));
+            }
         }
     }
 
@@ -262,18 +288,18 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), StartupError> {
 
     let srv = srv.shutdown_timeout(0).run();
 
-    println!("Bound to {}", display_sockets.join(", "));
-
-    println!("Serving path {}", path_string.yellow().bold());
-
-    println!(
-        "Available at (non-exhaustive list):\n    {}\n",
-        display_urls
-            .iter()
-            .map(|url| url.green().bold().to_string())
-            .collect::<Vec<_>>()
-            .join("\n    "),
-    );
+    if !miniserve_config.quiet {
+        println!("Bound to {}", display_sockets.join(", "));
+        println!("Serving path {}", path_string.yellow().bold());
+        println!(
+            "Available at (non-exhaustive list):\n    {}\n",
+            display_urls
+                .iter()
+                .map(|url| url.green().bold().to_string())
+                .collect::<Vec<_>>()
+                .join("\n    "),
+        );
+    }
 
     // print QR code to terminal
     if miniserve_config.show_qrcode && io::stdout().is_terminal() {
@@ -293,7 +319,7 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), StartupError> {
         }
     }
 
-    if io::stdout().is_terminal() {
+    if !miniserve_config.quiet && io::stdout().is_terminal() {
         println!("Quit by pressing CTRL-C");
     }
 

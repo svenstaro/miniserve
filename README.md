@@ -444,6 +444,16 @@ Options:
 
           [env: MINISERVE_ENABLE_WEBDAV=]
 
+      --log-color <LOG_COLOR>
+          Set the color style of the log output
+
+          "auto" (default) enables colors only when the output is a terminal. "always" always enables colors.
+          "never" always disables colors.
+
+          [env: MINISERVE_LOG_COLOR=]
+          [default: auto]
+          [possible values: auto, always, never]
+
   -h, --help
           Print help (see a summary with '-h')
 

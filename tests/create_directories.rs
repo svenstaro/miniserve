@@ -7,18 +7,22 @@ use select::{
 
 mod fixtures;
 
-use crate::fixtures::{DIRECTORY_SYMLINK, Error, TestServer, server};
+use crate::fixtures::{DIRECTORY_SYMLINK, Error, TestServer, reqwest_client, server};
 
 /// This should work because the flags for uploading files and creating directories
 /// are set, and the directory name and path are valid.
 #[rstest]
 fn creating_directories_works(
     #[with(&["--upload-files", "--mkdir"])] server: TestServer,
+    reqwest_client: Client,
 ) -> Result<(), Error> {
     let test_directory_name = "hello";
 
     // Before creating, check whether the directory does not yet exist.
-    let body = reqwest::blocking::get(server.url())?.error_for_status()?;
+    let body = reqwest_client
+        .get(server.url())
+        .send()?
+        .error_for_status()?;
     let parsed = Document::from_read(body)?;
     assert!(parsed.find(Text).all(|x| x.text() != test_directory_name));
 
@@ -33,15 +37,14 @@ fn creating_directories_works(
     let part = multipart::Part::text(test_directory_name);
     let form = form.part("mkdir", part);
 
-    let client = Client::new();
-    client
+    reqwest_client
         .post(server.url().join(create_action)?)
         .multipart(form)
         .send()?
         .error_for_status()?;
 
     // After creating, check whether the directory is now getting listed.
-    let body = reqwest::blocking::get(server.url())?;
+    let body = reqwest_client.get(server.url()).send()?;
     let parsed = Document::from_read(body)?;
     assert!(
         parsed
@@ -56,11 +59,17 @@ fn creating_directories_works(
 /// as the flags for uploading files and creating directories are not set.
 /// The directory name and path are valid.
 #[rstest]
-fn creating_directories_is_prevented(server: TestServer) -> Result<(), Error> {
+fn creating_directories_is_prevented(
+    server: TestServer,
+    reqwest_client: Client,
+) -> Result<(), Error> {
     let test_directory_name = "hello";
 
     // Before creating, check whether the directory does not yet exist.
-    let body = reqwest::blocking::get(server.url())?.error_for_status()?;
+    let body = reqwest_client
+        .get(server.url())
+        .send()?
+        .error_for_status()?;
     let parsed = Document::from_read(body)?;
     assert!(parsed.find(Text).all(|x| x.text() != test_directory_name));
 
@@ -72,10 +81,9 @@ fn creating_directories_is_prevented(server: TestServer) -> Result<(), Error> {
     let part = multipart::Part::text(test_directory_name);
     let form = form.part("mkdir", part);
 
-    let client = Client::new();
     // This should fail
     assert!(
-        client
+        reqwest_client
             .post(server.url().join("/upload?path=/")?)
             .multipart(form)
             .send()?
@@ -84,7 +92,7 @@ fn creating_directories_is_prevented(server: TestServer) -> Result<(), Error> {
     );
 
     // After creating, check whether the directory is now getting listed (shouldn't).
-    let body = reqwest::blocking::get(server.url())?;
+    let body = reqwest_client.get(server.url()).send()?;
     let parsed = Document::from_read(body)?;
     assert!(
         parsed
@@ -100,9 +108,13 @@ fn creating_directories_is_prevented(server: TestServer) -> Result<(), Error> {
 #[rstest]
 fn creating_directories_through_symlinks_is_prevented(
     #[with(&["--upload-files", "--mkdir", "--no-symlinks"])] server: TestServer,
+    reqwest_client: Client,
 ) -> Result<(), Error> {
     // Before attempting to create, ensure the symlink does not exist.
-    let body = reqwest::blocking::get(server.url())?.error_for_status()?;
+    let body = reqwest_client
+        .get(server.url())
+        .send()?
+        .error_for_status()?;
     let parsed = Document::from_read(body)?;
     assert!(parsed.find(Text).all(|x| x.text() != DIRECTORY_SYMLINK));
 
@@ -113,7 +125,7 @@ fn creating_directories_through_symlinks_is_prevented(
 
     // This should fail
     assert!(
-        Client::new()
+        reqwest_client
             .post(
                 server
                     .url()
@@ -141,6 +153,7 @@ fn creating_directories_through_symlinks_is_prevented(
 #[case(r"\foo", r"\..\bar", if cfg!(windows) { "foo/bar" } else { r"\foo/\..\bar" })]
 fn prevent_path_transversal_attacks(
     #[with(&["--upload-files", "--mkdir"])] server: TestServer,
+    reqwest_client: Client,
     #[case] path: &str,
     #[case] dir_name: &'static str,
     #[case] expected: &str,
@@ -154,7 +167,7 @@ fn prevent_path_transversal_attacks(
 
     // This should fail
     assert!(
-        Client::new()
+        reqwest_client
             .post(server.url().join(&format!("/upload/path={path}"))?)
             .multipart(form)
             .send()?

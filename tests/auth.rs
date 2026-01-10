@@ -5,7 +5,7 @@ use select::{document::Document, predicate::Text};
 
 mod fixtures;
 
-use crate::fixtures::{Error, FILES, server};
+use crate::fixtures::{Error, FILES, TestServer, reqwest_client, server};
 
 #[rstest]
 #[case("testuser:testpassword", "testuser", "testpassword")]
@@ -20,13 +20,13 @@ use crate::fixtures::{Error, FILES, server};
     "testpassword"
 )]
 fn auth_accepts(
-    #[case] cli_auth_arg: &str,
+    #[case] _cli_auth_arg: &str,
     #[case] client_username: &str,
     #[case] client_password: &str,
+    reqwest_client: Client,
+    #[with(&["-a", _cli_auth_arg])] server: TestServer,
 ) -> Result<(), Error> {
-    let server = server(&["-a", cli_auth_arg]);
-    let client = Client::new();
-    let response = client
+    let response = reqwest_client
         .get(server.url())
         .basic_auth(client_username, Some(client_password))
         .send()?;
@@ -67,13 +67,13 @@ fn auth_accepts(
     "wrongpassword"
 )]
 fn auth_rejects(
-    #[case] cli_auth_arg: &str,
+    #[case] _cli_auth_arg: &str,
     #[case] client_username: &str,
     #[case] client_password: &str,
+    #[with(&["-a", _cli_auth_arg])] server: TestServer,
+    reqwest_client: Client,
 ) -> Result<(), Error> {
-    let server = server(&["-a", cli_auth_arg]);
-    let client = Client::new();
-    let status = client
+    let status = reqwest_client
         .get(server.url())
         .basic_auth(client_username, Some(client_password))
         .send()?
@@ -111,11 +111,10 @@ static ACCOUNTS: &[&str] = &[
 fn auth_multiple_accounts_pass(
     #[case] username: &str,
     #[case] password: &str,
+    #[with(ACCOUNTS)] server: TestServer,
+    reqwest_client: Client,
 ) -> Result<(), Error> {
-    let server = server(ACCOUNTS);
-    let client = Client::new();
-
-    let response = client
+    let response = reqwest_client
         .get(server.url())
         .basic_auth(username, Some(password))
         .send()?;
@@ -133,11 +132,11 @@ fn auth_multiple_accounts_pass(
 }
 
 #[rstest]
-fn auth_multiple_accounts_wrong_username() -> Result<(), Error> {
-    let server = server(ACCOUNTS);
-    let client = Client::new();
-
-    let status = client
+fn auth_multiple_accounts_wrong_username(
+    #[with(ACCOUNTS)] server: TestServer,
+    reqwest_client: Client,
+) -> Result<(), Error> {
+    let status = reqwest_client
         .get(server.url())
         .basic_auth("unregistered user", Some("pwd0"))
         .send()?
@@ -158,11 +157,10 @@ fn auth_multiple_accounts_wrong_username() -> Result<(), Error> {
 fn auth_multiple_accounts_wrong_password(
     #[case] username: &str,
     #[case] password: &str,
+    #[with(ACCOUNTS)] server: TestServer,
+    reqwest_client: Client,
 ) -> Result<(), Error> {
-    let server = server(ACCOUNTS);
-    let client = Client::new();
-
-    let status = client
+    let status = reqwest_client
         .get(server.url())
         .basic_auth(username, Some(password))
         .send()?

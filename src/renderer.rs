@@ -165,7 +165,7 @@ pub fn page(
                                 }
                             }
                             @for entry in entries {
-                                (entry_row(entry, sort_method, sort_order, false, conf.show_exact_bytes, actions_conf))
+                                (entry_row(entry, sort_method, sort_order, false, conf.show_exact_bytes, actions_conf, &conf.route_prefix))
                             }
                         }
                     }
@@ -254,7 +254,7 @@ pub fn raw(entries: Vec<Entry>, is_root: bool, conf: &MiniserveConfig) -> Markup
                             }
                         }
                         @for entry in entries {
-                            (entry_row(entry, None, None, true, conf.show_exact_bytes, None))
+                            (entry_row(entry, None, None, true, conf.show_exact_bytes, None, &conf.route_prefix))
                         }
                     }
                 }
@@ -548,8 +548,10 @@ fn sortable_title(
 }
 
 /// Partial: rm form
-fn rm_form(rm_route: &str, encoded_path: &str) -> Markup {
-    let rm_action = format!("{rm_route}?path={encoded_path}");
+fn rm_form(rm_route: &str, encoded_path: &str, prefix: &str) -> Markup {
+    let stripped_path = encoded_path.strip_prefix(prefix).unwrap_or(encoded_path);
+    let rm_action = format!("{rm_route}?path={stripped_path}");
+
     html! {
         form class="rm_form" action=(rm_action) method="POST" {
             button type="submit" title="Delete" { "✗" }
@@ -571,6 +573,7 @@ fn entry_row(
     raw: bool,
     show_exact_bytes: bool,
     actions_conf: Option<ActionsConf>,
+    route_prefix: &str,
 ) -> Markup {
     html! {
         @let entry_type = entry.entry_type.clone();
@@ -646,7 +649,7 @@ fn entry_row(
             }
             @if let Some(conf) = actions_conf {
                 td.actions-cell {
-                    (rm_form(conf.rm_route, &entry.link))
+                    (rm_form(conf.rm_route, &entry.link, route_prefix))
                 }
             }
         }
@@ -927,15 +930,9 @@ fn page_header(
 
                         document.querySelector('input[type="file"]').addEventListener('change', async (e) => {
                           const file = e.target.files[0];
-                          const hash = await hashFile(file);
                         });
 
                         async function get256FileHash(file) {
-                          if (!crypto.subtle) {
-                            // `crypto.subtle` is not available in nonsecure context (e.g. non-HTTPS LAN).
-                            // See https://developer.mozilla.org/en-US/docs/Web/API/Crypto/subtle
-                            return "";
-                          }
                           const arrayBuffer = await file.arrayBuffer();
                           const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer);
                           const hashArray = Array.from(new Uint8Array(hashBuffer));
@@ -989,7 +986,12 @@ fn page_header(
 
                                 // Upload the single file in a multipart request.
                                 return new Promise(async (resolve, reject) => {
-                                    const fileHash = await get256FileHash(file);
+                                    // File hash calculation may fail at times:
+                                    //   1. `crypto.subtle` is not available in nonsecure context (e.g. non-HTTPS LAN).
+                                    //      See https://developer.mozilla.org/en-US/docs/Web/API/Crypto/subtle
+                                    //   2. For files larger than 2GB, Firefox will refuse to calculate the SHA-256 value,
+                                    //      while Chrome will refuse to create a ArrayBuffer (#1541).
+                                    const fileHash = await get256FileHash(file).catch(() => "");
                                     const xhr = new XMLHttpRequest();
                                     const formData = new FormData();
                                     formData.append('file', file);
@@ -1222,5 +1224,22 @@ mod tests {
         .into();
         let expected = to_html("-H -P 'github.com' 'https://github.com");
         assert_eq!(to_be_tested, expected);
+    }
+
+    #[test]
+    fn test_rm_form_strips_prefix() {
+        let rm_route = "/rm";
+        let prefix = "/prefix";
+        let encoded_path = "/prefix/some/path/file.txt";
+
+        let html = rm_form(rm_route, encoded_path, prefix);
+        let expected_action = r#"action="/rm?path=/some/path/file.txt""#;
+
+        assert!(
+            html.0.contains(expected_action),
+            "Actual HTML: {}\nExpected to contain: {}",
+            html.0,
+            expected_action
+        )
     }
 }

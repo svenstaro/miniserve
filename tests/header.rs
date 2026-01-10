@@ -1,15 +1,16 @@
+use reqwest::blocking::Client;
 use rstest::rstest;
 
 mod fixtures;
 
-use crate::fixtures::{Error, server};
+use crate::fixtures::{Error, reqwest_client, server};
 
 #[rstest]
 #[case(vec!["x-info: 123".to_string()])]
 #[case(vec!["x-info1: 123".to_string(), "x-info2: 345".to_string()])]
-fn custom_header_set(#[case] headers: Vec<String>) -> Result<(), Error> {
+fn custom_header_set(#[case] headers: Vec<String>, reqwest_client: Client) -> Result<(), Error> {
     let server = server(headers.iter().flat_map(|h| vec!["--header", h]));
-    let resp = reqwest::blocking::get(server.url())?;
+    let resp = reqwest_client.get(server.url()).send()?;
 
     for header in headers {
         let mut header_split = header.splitn(2, ':');

@@ -2,6 +2,7 @@ use std::fs::{File, remove_file};
 use std::io::Write;
 use std::path::PathBuf;
 
+use reqwest::blocking::Client;
 use rstest::rstest;
 use select::predicate::Attr;
 use select::{document::Document, node::Node};
@@ -9,6 +10,8 @@ use select::{document::Document, node::Node};
 mod fixtures;
 
 use fixtures::{DIRECTORIES, Error, FILES, TestServer, server};
+
+use crate::fixtures::reqwest_client;
 
 fn write_readme_contents(path: PathBuf, filename: &str) -> PathBuf {
     let readme_path = path.join(filename);
@@ -54,8 +57,11 @@ fn assert_readme_contents(parsed_dom: &Document, filename: &str) {
 
 /// Do not show readme contents by default
 #[rstest]
-fn no_readme_contents(server: TestServer) -> Result<(), Error> {
-    let body = reqwest::blocking::get(server.url())?.error_for_status()?;
+fn no_readme_contents(server: TestServer, reqwest_client: Client) -> Result<(), Error> {
+    let body = reqwest_client
+        .get(server.url())
+        .send()?
+        .error_for_status()?;
     let parsed = Document::from_read(body)?;
 
     // Check that the regular file listing still works.
@@ -83,10 +89,14 @@ fn no_readme_contents(server: TestServer) -> Result<(), Error> {
 #[case("ReAdMe.Md")]
 fn show_root_readme_contents(
     #[with(&["--readme"])] server: TestServer,
+    reqwest_client: Client,
     #[case] readme_name: &str,
 ) -> Result<(), Error> {
     let readme_path = write_readme_contents(server.path().to_path_buf(), readme_name);
-    let body = reqwest::blocking::get(server.url())?.error_for_status()?;
+    let body = reqwest_client
+        .get(server.url())
+        .send()?
+        .error_for_status()?;
     let parsed = Document::from_read(body)?;
 
     // All the files are still getting listed...
@@ -112,11 +122,15 @@ fn show_root_readme_contents(
 #[case("ReAdMe")]
 fn show_nested_readme_contents(
     #[with(&["--readme"])] server: TestServer,
+    reqwest_client: Client,
     #[case] readme_name: &str,
 ) -> Result<(), Error> {
     for dir in DIRECTORIES {
         let readme_path = write_readme_contents(server.path().join(dir), readme_name);
-        let body = reqwest::blocking::get(server.url().join(dir)?)?.error_for_status()?;
+        let body = reqwest_client
+            .get(server.url().join(dir)?)
+            .send()?
+            .error_for_status()?;
         let parsed = Document::from_read(body)?;
 
         // All the files are still getting listed...

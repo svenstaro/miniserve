@@ -4,16 +4,23 @@ use std::time::Duration;
 
 use assert_cmd::cargo;
 use assert_fs::TempDir;
+use reqwest::blocking::Client;
 use rstest::rstest;
 use select::{document::Document, predicate::Attr};
 
 mod fixtures;
 
-use crate::fixtures::{Error, TestServer, port, server, tmpdir};
+use crate::fixtures::{Error, TestServer, port, reqwest_client, server, tmpdir};
 
 #[rstest]
-fn webpage_hides_qrcode_when_disabled(server: TestServer) -> Result<(), Error> {
-    let body = reqwest::blocking::get(server.url())?.error_for_status()?;
+fn webpage_hides_qrcode_when_disabled(
+    server: TestServer,
+    reqwest_client: Client,
+) -> Result<(), Error> {
+    let body = reqwest_client
+        .get(server.url())
+        .send()?
+        .error_for_status()?;
     let parsed = Document::from_read(body)?;
     assert!(parsed.find(Attr("id", "qrcode")).next().is_none());
 
@@ -21,8 +28,14 @@ fn webpage_hides_qrcode_when_disabled(server: TestServer) -> Result<(), Error> {
 }
 
 #[rstest]
-fn webpage_shows_qrcode_when_enabled(#[with(&["-q"])] server: TestServer) -> Result<(), Error> {
-    let body = reqwest::blocking::get(server.url())?.error_for_status()?;
+fn webpage_shows_qrcode_when_enabled(
+    #[with(&["-q"])] server: TestServer,
+    reqwest_client: Client,
+) -> Result<(), Error> {
+    let body = reqwest_client
+        .get(server.url())
+        .send()?
+        .error_for_status()?;
     let parsed = Document::from_read(body)?;
     let qr_container = parsed
         .find(Attr("id", "qrcode"))

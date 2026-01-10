@@ -14,7 +14,7 @@ use rustls_pemfile as pemfile;
 #[cfg(unix)]
 use crate::file_utils::get_default_filemode;
 use crate::{
-    args::{CliArgs, DuplicateFile, MediaType, parse_auth},
+    args::{CliArgs, DuplicateFile, LogColor, MediaType, parse_auth},
     auth::RequiredAuth,
     file_utils::sanitize_path,
     listing::{SortingMethod, SortingOrder},
@@ -95,6 +95,9 @@ pub struct MiniserveConfig {
     /// effect, this will serve the index file whenever a 404 would otherwise occur in order to
     /// allow the SPA router to handle the request instead.
     pub spa: bool,
+
+    /// Reduce output and silence warnings.
+    pub quiet: bool,
 
     /// Activate Pretty URLs mode
     ///
@@ -191,6 +194,9 @@ pub struct MiniserveConfig {
 
     /// Optional external URL to prepend to file links in listings
     pub file_external_url: Option<String>,
+
+    /// Color choice for the log output
+    pub log_color: LogColor,
 }
 
 impl MiniserveConfig {
@@ -336,6 +342,7 @@ impl MiniserveConfig {
             default_color_scheme_dark,
             index: args.index,
             spa: args.spa,
+            quiet: args.quiet,
             pretty_urls: args.pretty_urls,
             on_duplicate_files: args.on_duplicate_files,
             show_qrcode: args.qrcode,
@@ -366,6 +373,7 @@ impl MiniserveConfig {
             compress_response: args.compress_response,
             show_exact_bytes,
             file_external_url: args.file_external_url,
+            log_color: args.log_color,
         })
     }
 }
