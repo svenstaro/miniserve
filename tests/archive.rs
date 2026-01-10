@@ -2,7 +2,7 @@ use reqwest::{StatusCode, blocking::Client};
 use rstest::rstest;
 use select::{document::Document, predicate::Text};
 use std::io::Cursor;
-use zip;
+use zip::ZipArchive;
 
 mod fixtures;
 
@@ -53,7 +53,7 @@ fn test_tar_archives(
     #[with(&["-g"])] server: TestServer,
     reqwest_client: Client,
 ) -> Result<(), Error> {
-    // Ensure the links to the tar archive exists and tar not exists
+    // Ensure the links to the tar.gz archive exists and tar and zip not exists
     let body = reqwest_client
         .get(server.url())
         .send()?
@@ -61,8 +61,9 @@ fn test_tar_archives(
     let parsed = Document::from_read(body)?;
     assert!(parsed.find(Text).any(|x| x.text() == "Download .tar.gz"));
     assert!(parsed.find(Text).all(|x| x.text() != "Download .tar"));
+    assert!(parsed.find(Text).all(|x| x.text() != "Download .zip"));
 
-    // Try to download, only tar_gz should works
+    // Try to download, only tar_gz should work
     assert_eq!(
         reqwest_client
             .get(server.url().join("?download=tar_gz")?)
@@ -190,7 +191,7 @@ fn zip_archives_store_entry_name_in_unix_style(
 
     assert_eq!(resp.status(), StatusCode::OK);
 
-    let mut archive = zip::ZipArchive::new(Cursor::new(resp.bytes()?))?;
+    let mut archive = ZipArchive::new(Cursor::new(resp.bytes()?))?;
     for i in 0..archive.len() {
         let entry = archive.by_index(i)?;
         let name = entry.name();
