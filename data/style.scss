@@ -393,6 +393,7 @@ table tbody tr td p {
 table thead tr th {
   padding: 0.5rem 0.625rem 0.625rem;
   font-weight: bold;
+  color: var(--table_header_text_color);
 }
 
 table thead th.size {
