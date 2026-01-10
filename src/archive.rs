@@ -155,7 +155,7 @@ where
         .map_err(|e| {
             RuntimeError::IoError(
                 format!(
-                    "Failed to append the content of {} to the TAR archive",
+                    "Failed to append the content of '{}' to the TAR archive",
                     src_dir.to_str().unwrap_or("file")
                 ),
                 e,
@@ -234,8 +234,16 @@ where
                     )
                 })?
                 .path();
-            let entry_metadata = std::fs::metadata(entry_path.clone())
-                .map_err(|e| RuntimeError::IoError("Could not get file metadata".to_string(), e))?;
+            let entry_metadata = std::fs::metadata(entry_path.clone()).map_err(|e| {
+                RuntimeError::IoError(
+                    format!(
+                        "Could not get file metadata of '{}'",
+                        entry_path.to_string_lossy()
+                    )
+                    .to_string(),
+                    e,
+                )
+            })?;
 
             if entry_metadata.file_type().is_symlink() && skip_symlinks {
                 continue;
@@ -243,20 +251,37 @@ where
             let current_entry_name = entry_path.file_name().ok_or_else(|| {
                 RuntimeError::InvalidPathError("Invalid file or directory name".to_string())
             })?;
+
+            // Workaround for Windows path in ZIP files:
+            // Always use forward slashes for all paths to avoid literal backslashes in saved entry path.
+            // TODO: remove this when the "zip" cargo has the ability to process a directory as a whole.
+            let relative_path = if cfg!(windows) {
+                let branch = zip_directory
+                    .as_os_str()
+                    .to_string_lossy()
+                    .trim_end_matches(r"\") // every branch ends with two backslashes "\\".
+                    .replace(r"\", "/"); // every branch uses backslash "\" as path separators.
+                let leaf = current_entry_name.to_string_lossy();
+                format!("{branch}/{leaf}") // construct a Unix-style path in the simplest way.
+            } else {
+                zip_directory
+                    .join(current_entry_name)
+                    .into_os_string()
+                    .to_string_lossy()
+                    .into_owned()
+            };
+
             if entry_metadata.is_file() {
                 let mut f = File::open(&entry_path)
                     .map_err(|e| RuntimeError::IoError("Could not open file".to_string(), e))?;
                 f.read_to_end(&mut buffer).map_err(|e| {
                     RuntimeError::IoError("Could not read from file".to_string(), e)
                 })?;
-                let relative_path = zip_directory.join(current_entry_name).into_os_string();
-                zip_writer
-                    .start_file(relative_path.to_string_lossy(), options)
-                    .map_err(|_| {
-                        RuntimeError::ArchiveCreationDetailError(
-                            "Could not add file path to ZIP".to_string(),
-                        )
-                    })?;
+                zip_writer.start_file(relative_path, options).map_err(|_| {
+                    RuntimeError::ArchiveCreationDetailError(
+                        "Could not add file path to ZIP".to_string(),
+                    )
+                })?;
                 zip_writer.write(buffer.as_ref()).map_err(|_| {
                     RuntimeError::ArchiveCreationDetailError(
                         "Could not write file to ZIP".to_string(),
@@ -264,9 +289,8 @@ where
                 })?;
                 buffer.clear();
             } else if entry_metadata.is_dir() {
-                let relative_path = zip_directory.join(current_entry_name).into_os_string();
                 zip_writer
-                    .add_directory(relative_path.to_string_lossy(), options)
+                    .add_directory(relative_path, options)
                     .map_err(|_| {
                         RuntimeError::ArchiveCreationDetailError(
                             "Could not add directory path to ZIP".to_string(),
