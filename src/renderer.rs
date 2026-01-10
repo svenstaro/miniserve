@@ -140,6 +140,20 @@ pub fn page(
                                     }
                                 }
                             }
+                            @if conf.pastebin_enabled && upload_allowed {
+                                div.toolbar_box {
+                                    form id="pastebin" {
+                                        p { "Create a paste in the current directory, a random filename will be generated, or you may specify one." }
+                                        div {
+                                            textarea #pastebin_content name="paste_content" title="pastebin content" style="width: 100%; max-width: 40em; height: 20ch; margin-bottom: 1em;" required="" { }
+                                        }
+                                        div {
+                                            input type="text" name="paste_title" title="pastebin title" placeholder="Paste title (Optional)" {}
+                                            button type="submit" { "Save Paste" }
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                     table {
@@ -1079,6 +1093,34 @@ fn page_header(
                                 })
                             }
                         }
+
+                        // Bind pastebin submission to create a text/plain blob which is injected
+                        // into the upload input then submitted. A title is automatically generated
+                        // if none is given.
+                        const fileUploadForm = document.querySelector('#file_submit');
+                        const fileUploadInput = document.querySelector('#file_submit input[type=file]');
+                        const pastebinForm = document.querySelector('form#pastebin');
+                        const pastebinTitle = pastebinForm.querySelector('input[name=paste_title]');
+                        const pastebinContent = pastebinForm.querySelector('textarea');
+                        pastebinForm.addEventListener('submit', (event) => {
+                            event.preventDefault();
+                            const text = pastebinContent.value;
+                            const title = ((inputValue) => {
+                                const title = inputValue.trim()
+                                if (title.length === 0) {
+                                    const suffix = crypto.randomUUID().substring(0,6);
+                                    return `paste-${suffix}.txt`;
+                                } else {
+                                    return title.endsWith('.txt') ? title : `${title}.txt`;
+                                }
+                            })(pastebinTitle.value);
+                            const blob = new Blob([text], {type: 'text/plain'});
+                            const file = new File([blob], title, {type: 'text/plain'});
+                            const container = new DataTransfer();
+                            container.items.add(file);
+                            fileUploadInput.files = container.files;
+                            fileUploadForm.submit();
+                        });
                     }
                     "#))
                 }
