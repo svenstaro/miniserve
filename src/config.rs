@@ -118,6 +118,9 @@ pub struct MiniserveConfig {
     /// Enable file upload
     pub file_upload: bool,
 
+    /// Enable pastepin creation
+    pub pastebin_enabled: bool,
+
     /// Max amount of concurrency when uploading multiple files
     pub web_upload_concurrency: usize,
 
@@ -349,6 +352,7 @@ impl MiniserveConfig {
             directory_size: args.directory_size,
             mkdir_enabled: args.mkdir_enabled,
             file_upload: args.allowed_upload_dir.is_some(),
+            pastebin_enabled: args.pastebin_enabled,
             web_upload_concurrency: args.web_upload_concurrency,
             #[cfg(unix)]
             upload_chmod,
