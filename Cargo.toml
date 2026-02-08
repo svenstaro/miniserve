@@ -33,7 +33,7 @@ clap_complete = "4"
 clap_mangen = "0.2"
 colored = "3"
 comrak = { version = "0.50", default-features = false }
-dav-server = { version = "0.8", features = ["actix-compat"] }
+dav-server = { version = "0.10", features = ["actix-compat"] }
 fast_qr = { version = "0.13", features = ["svg"] }
 futures = "0.3"
 grass = { version = "0.13", features = ["macro"], default-features = false }
