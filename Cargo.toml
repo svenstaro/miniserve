@@ -39,7 +39,7 @@ futures = "0.3"
 grass = { version = "0.13", features = ["macro"], default-features = false }
 hex = "0.4"
 httparse = "1"
-if-addrs = "0.14"
+if-addrs = "0.15"
 libflate = "2"
 log = "0.4"
 maud = "0.27"
