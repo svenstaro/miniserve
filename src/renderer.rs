@@ -627,6 +627,7 @@ struct ActionsConf<'a> {
 }
 
 /// Partial: row for an entry
+#[allow(clippy::too_many_arguments)]
 fn entry_row(
     entry: Entry,
     sort_method: Option<SortingMethod>,
