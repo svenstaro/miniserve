@@ -73,7 +73,9 @@ fn serves_requests_with_search_query(
     #[case] result: &'static [&'static str],
     reqwest_client: Client,
 ) -> Result<(), Error> {
-    let body = reqwest_client(format!("{}/?search={}", server.url(), search))?
+    let body = reqwest_client
+        .get(format!("{}/?search={}", server.url(), search))
+        .send()?
         .error_for_status()?;
     let parsed = Document::from_read(body)?;
     let items: Vec<_> = parsed
