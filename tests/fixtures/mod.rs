@@ -19,6 +19,7 @@ pub type Error = Box<dyn std::error::Error>;
 pub static FILES: &[&str] = &[
     "test.txt",
     "test.html",
+    "with space.txt",
     "test.mkv",
     #[cfg(not(windows))]
     "test \" \' & < >.csv",

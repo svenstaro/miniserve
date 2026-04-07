@@ -62,6 +62,7 @@ fn serves_requests_with_no_options(reqwest_client: Client, tmpdir: TempDir) -> R
     "test.mkv",
     "test.txt",
 ])]
+#[case(server(None::<&str>), "with space", &["with space.txt"])]
 #[case(server(None::<&str>), "d", &["dir space/", "dir_symlink/", "dira/", "dirb/", "someDir/", "😀.data"])]
 #[case(server(None::<&str>), "dira", &["dira/"])]
 #[case(server(None::<&str>), "keyword-that-matches-nothing", &[])]
