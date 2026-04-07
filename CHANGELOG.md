@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - ReleaseDate
 - Add Ayu Dark theme [#1551](https://github.com/svenstaro/miniserve/pull/1551) (thanks @rysb-dev)
+- Add simple search/filter feature [#1505](https://github.com/svenstaro/miniserve/pull/1505) (thanks @7sDream)
 
 ## [0.33.0] - 2026-02-16
 - Add `--log-color` to explicitly control when to print colors [#1529](https://github.com/svenstaro/miniserve/pull/1529) (thanks @MrCroxx)
