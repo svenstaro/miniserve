@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+- Add `--workers` to limit the number of workers and default to 4 [#1556](https://github.com/svenstaro/miniserve/issues/1556)
 
 ## [0.34.0] - 2026-04-07
 - Add Ayu Dark theme [#1551](https://github.com/svenstaro/miniserve/pull/1551) (thanks @rysb-dev)

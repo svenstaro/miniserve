@@ -44,6 +44,9 @@ pub struct MiniserveConfig {
     /// IP address(es) on which miniserve will be available
     pub interfaces: Vec<IpAddr>,
 
+    /// Number of server workers
+    pub workers: usize,
+
     /// Enable HTTP basic authentication
     pub auth: Vec<RequiredAuth>,
 
@@ -330,6 +333,7 @@ impl MiniserveConfig {
             temp_upload_directory: args.temp_upload_directory,
             port,
             interfaces,
+            workers: args.workers,
             auth,
             path_explicitly_chosen,
             no_symlinks: args.no_symlinks,

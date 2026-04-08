@@ -119,6 +119,10 @@ pub struct CliArgs {
     )]
     pub interfaces: Vec<IpAddr>,
 
+    /// Number of server workers
+    #[arg(long = "workers", default_value = "4", env = "MINISERVE_WORKERS")]
+    pub workers: usize,
+
     /// Set authentication
     ///
     /// Currently supported formats:

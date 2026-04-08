@@ -286,7 +286,10 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), StartupError> {
         srv.map_err(|e| StartupError::IoError(format!("Failed to bind server to {addr}"), e))
     })?;
 
-    let srv = srv.shutdown_timeout(0).run();
+    let srv = srv
+        .shutdown_timeout(0)
+        .workers(miniserve_config.workers)
+        .run();
 
     if !miniserve_config.quiet {
         println!("Bound to {}", display_sockets.join(", "));
