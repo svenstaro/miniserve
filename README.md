@@ -174,22 +174,35 @@ Options:
 
           [env: MINISERVE_VERBOSE=]
 
+      --temp-directory <TEMP_UPLOAD_DIRECTORY>
+          The path to where file uploads will be written to before being moved to their correct location. It's wise to make sure that this
+          directory will be written to disk and not into memory.
+
+          This value will only be used **IF** file uploading is enabled. If this option is not set, the operating system default temporary
+          directory will be used.
+
+          [env: MINISERVER_TEMP_UPLOAD_DIRECTORY=]
+
       --index <INDEX>
           The name of a directory index file to serve, like "index.html"
 
-          Normally, when miniserve serves a directory, it creates a listing for that directory. However, if a
-          directory contains this file, miniserve will serve that file instead.
+          Normally, when miniserve serves a directory, it creates a listing for that directory. However, if a directory contains this file,
+          miniserve will serve that file instead.
 
           [env: MINISERVE_INDEX=]
 
       --spa
           Activate SPA (Single Page Application) mode
 
-          This will cause the file given by --index to be served for all non-existing file paths. In effect,
-          this will serve the index file whenever a 404 would otherwise occur in order to allow the SPA
-          router to handle the request instead.
+          This will cause the file given by --index to be served for all non-existing file paths. In effect, this will serve the index file
+          whenever a 404 would otherwise occur in order to allow the SPA router to handle the request instead.
 
           [env: MINISERVE_SPA=]
+
+      --quiet
+          Reduce output and silence warnings
+
+          [env: MINISERVE_QUIET=]
 
       --pretty-urls
           Activate Pretty URLs mode
@@ -210,6 +223,12 @@ Options:
           Interface to listen on
 
           [env: MINISERVE_INTERFACE=]
+
+      --workers <WORKERS>
+          Number of server workers
+
+          [env: MINISERVE_WORKERS=]
+          [default: 4]
 
   -a, --auth <AUTH>
           Set authentication
@@ -241,17 +260,6 @@ Options:
 
           [env: MINISERVE_RANDOM_ROUTE=]
 
-      --file-external-url <FILE_BASE_URL>
-          Optional external URL (e.g., 'http://external.example.com:8081') prepended to file links in listings.
-          Allows serving files from a different URL than the browsing instance. Useful for setups like:
-          one authenticated instance for browsing, linking files (via this option) to a second,
-          non-indexed (-I) instance for direct downloads. This obscures the full file list on
-          the download server, while users can still copy direct file URLs for sharing.
-          The external URL is put verbatim in front of the relative location of the file, including the protocol.
-          The user should take care this results in a valid URL, no further checks are being done.
-
-          [env: MINISERVE_FILE_EXTERNAL_URL=]
-
   -P, --no-symlinks
           Hide symlinks in listing and prevent them from being followed
 
@@ -265,37 +273,37 @@ Options:
   -S, --default-sorting-method <DEFAULT_SORTING_METHOD>
           Default sorting method for file list
 
-          [env: MINISERVE_DEFAULT_SORTING_METHOD=]
-          [default: name]
-
           Possible values:
           - name: Sort by name
           - size: Sort by size
           - date: Sort by last modification date (natural sort: follows alphanumerical order)
 
+          [env: MINISERVE_DEFAULT_SORTING_METHOD=]
+          [default: name]
+
   -O, --default-sorting-order <DEFAULT_SORTING_ORDER>
           Default sorting order for file list
-
-          [env: MINISERVE_DEFAULT_SORTING_ORDER=]
-          [default: desc]
 
           Possible values:
           - asc:  Ascending order
           - desc: Descending order
+
+          [env: MINISERVE_DEFAULT_SORTING_ORDER=]
+          [default: desc]
 
   -c, --color-scheme <COLOR_SCHEME>
           Default color scheme
 
           [env: MINISERVE_COLOR_SCHEME=]
           [default: squirrel]
-          [possible values: squirrel, archlinux, zenburn, monokai]
+          [possible values: squirrel, archlinux, ayu-dark, zenburn, monokai]
 
   -d, --color-scheme-dark <COLOR_SCHEME_DARK>
           Default color scheme
 
           [env: MINISERVE_COLOR_SCHEME_DARK=]
           [default: archlinux]
-          [possible values: squirrel, archlinux, zenburn, monokai]
+          [possible values: squirrel, archlinux, ayu-dark, zenburn, monokai]
 
   -q, --qrcode
           Enable QR code display
@@ -305,22 +313,51 @@ Options:
   -u, --upload-files [<ALLOWED_UPLOAD_DIR>]
           Enable file uploading (and optionally specify for which directory)
 
-          The provided path is not a physical file system path. Instead, it's relative to the serve dir. For
-          instance, if the serve dir is '/home/hello', set this to '/upload' to allow uploading to
-          '/home/hello/upload'. When specified via environment variable, a path always needs to be specified.
+          The provided path is not a physical file system path. Instead, it's relative to the serve dir. For instance, if the serve dir is
+          '/home/hello', set this to '/upload' to allow uploading to '/home/hello/upload'. When specified via environment variable, a path
+          always needs to be specified.
 
           [env: MINISERVE_ALLOWED_UPLOAD_DIR=]
 
       --web-upload-files-concurrency <WEB_UPLOAD_CONCURRENCY>
           Configure amount of concurrent uploads when visiting the website. Must have upload-files option enabled for this setting to matter.
 
+          For example, a value of 4 would mean that the web browser will only upload 4 files at a time to the web server when using the web
+          browser interface.
+
+          When the value is kept at 0, it attempts to resolve all the uploads at once in the web browser.
+
+          NOTE: Web pages have a limit of how many active HTTP connections that they can make at one time, so even though you might set a
+          concurrency limit of 100, the browser might only make progress on the max amount of connections it allows the web page to have open.
+
           [env: MINISERVE_WEB_UPLOAD_CONCURRENCY=]
           [default: 0]
+
+      --chmod <CHMOD>
+          Set unix file permissions of uploaded files
+
+          This takes an octal number, for example 0600. By default 0666 & ~umask is used to simulate the system's default behavior.
+
+          [env: MINISERVE_CHMOD=]
+
+      --directory-size
+          Enable recursive directory size calculation
+
+          This is disabled by default because it is a potentially fairly IO intensive operation.
+
+          [env: MINISERVE_DIRECTORY_SIZE=]
 
   -U, --mkdir
           Enable creating directories
 
           [env: MINISERVE_MKDIR_ENABLED=]
+
+      --pastebin
+          Enable creating pastebin 'pastes'
+
+          'pastes' are plaintext files created in the current directory. Creation requires file uploads be enabled.
+
+          [env: MINISERVE_PASTEBIN_ENABLED=]
 
   -m, --media-type <MEDIA_TYPE>
           Specify uploadable media types
@@ -336,8 +373,8 @@ Options:
   -o, --on-duplicate-files <ON_DUPLICATE_FILES>
           What to do if existing files with same name is present during file upload
 
-          If you enable renaming files, the renaming will occur by adding numerical suffix to the filename before the final extension. For example file.txt will be uploaded
-          as file-1.txt, the number will be increased until an available filename is found.
+          If you enable renaming files, the renaming will occur by adding a numerical suffix to the filename before the final extension. For
+          example file.txt will be uploaded as file-1.txt, the number will be increased until an available filename is found.
 
           [env: MINISERVE_ON_DUPLICATE_FILES=]
           [default: error]
@@ -361,19 +398,17 @@ Options:
   -z, --enable-zip
           Enable zip archive generation
 
-          WARNING: Zipping large directories can result in out-of-memory exception because zip generation is
-          done in memory and cannot be sent on the fly
+          WARNING: Zipping large directories can result in out-of-memory exception because zip generation is done in memory and cannot be sent
+          on the fly
 
           [env: MINISERVE_ENABLE_ZIP=]
 
   -C, --compress-response
           Compress response
 
-          WARNING: Enabling this option may slow down transfers due to CPU overhead, so it is disabled by
-          default.
+          WARNING: Enabling this option may slow down transfers due to CPU overhead, so it is disabled by default.
 
-          Only enable this option if you know that your users have slow connections or if you want to
-          minimize your server's bandwidth usage.
+          Only enable this option if you know that your users have slow connections or if you want to minimize your server's bandwidth usage.
 
           [env: MINISERVE_COMPRESS_RESPONSE=]
 
@@ -388,11 +423,11 @@ Options:
           [env: MINISERVE_TITLE=]
 
       --header <HEADER>
-          Inserts custom headers into the responses. Specify each header as a 'Header:Value' pair. This
-          parameter can be used multiple times to add multiple headers.
+          Inserts custom headers into the responses. Specify each header as a 'Header:Value' pair. This parameter can be used multiple times
+          to add multiple headers.
 
-          Example: --header "Header1:Value1" --header "Header2:Value2" (If a header is already set or
-          previously inserted, it will not be overwritten.)
+          Example: --header "Header1:Value1" --header "Header2:Value2" (If a header is already set or previously inserted, it will not be
+          overwritten.)
 
           [env: MINISERVE_HEADER=]
 
@@ -449,16 +484,30 @@ Options:
       --enable-webdav
           Enable read-only WebDAV support (PROPFIND requests)
 
-          Currently incompatible with -P|--no-symlinks (see
-          https://github.com/messense/dav-server-rs/issues/37)
-
           [env: MINISERVE_ENABLE_WEBDAV=]
+
+      --size-display <SIZE_DISPLAY>
+          Show served file size in exact bytes
+
+          [env: MINISERVE_SIZE_DISPLAY=]
+          [default: human]
+          [possible values: human, exact]
+
+      --file-external-url <FILE_EXTERNAL_URL>
+          Optional external URL (e.g., 'http://external.example.com:8081') prepended to file links in listings.
+
+          Allows serving files from a different URL than the browsing instance. Useful for setups like: one authenticated instance for
+          browsing, linking files (via this option) to a second, non-indexed (-I) instance for direct downloads. This obscures the full file
+          list on the download server, while users can still copy direct file URLs for sharing. The external URL is put verbatim in front of
+          the relative location of the file, including the protocol. The user should take care this results in a valid URL, no further checks
+          are being done.
+
+          [env: MINISERVE_FILE_EXTERNAL_URL=]
 
       --log-color <LOG_COLOR>
           Set the color style of the log output
 
-          "auto" (default) enables colors only when the output is a terminal. "always" always enables colors.
-          "never" always disables colors.
+          "auto" (default) enables colors only when the output is a terminal. "always" always enables colors. "never" always disables colors.
 
           [env: MINISERVE_LOG_COLOR=]
           [default: auto]
