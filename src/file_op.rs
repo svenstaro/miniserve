@@ -256,7 +256,7 @@ async fn save_file(
         match err.kind() {
             ErrorKind::CrossesDevices => {
                 warn!(
-                    "File writen to {temp_path:?} must be copied to {file_path:?} because it's on a different filesystem"
+                    "File written to {temp_path:?} must be copied to {file_path:?} because it's on a different filesystem"
                 );
                 let copy_result = tokio::fs::copy(&temp_path, &file_path).await;
                 if let Err(e) = tokio::fs::remove_file(&temp_path).await {
