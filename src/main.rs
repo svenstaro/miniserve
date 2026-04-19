@@ -7,10 +7,15 @@ use actix_files::NamedFile;
 use actix_web::middleware::from_fn;
 use actix_web::{
     App, HttpRequest, HttpResponse, Responder,
+    body::MessageBody,
     dev::{ServiceRequest, ServiceResponse, fn_service},
     guard,
-    http::{Method, header::ContentType},
-    middleware, web,
+    http::{
+        Method,
+        header::{self, ContentType},
+    },
+    middleware::{self, Next},
+    web,
 };
 use actix_web_httpauth::middleware::HttpAuthentication;
 use anyhow::Result;
@@ -259,6 +264,7 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), StartupError> {
             .route(&inside_config.css_route, web::get().to(css))
             .service(
                 web::scope(&inside_config.route_prefix)
+                    .wrap(from_fn(ensure_utf8_text_content_type))
                     .wrap(middleware::Condition::new(
                         !inside_config.auth.is_empty(),
                         actix_web::middleware::Compat::new(HttpAuthentication::basic(
@@ -352,6 +358,28 @@ fn configure_header(conf: &MiniserveConfig) -> middleware::DefaultHeaders {
         middleware::DefaultHeaders::new(),
         |headers, (header_name, header_value)| headers.add((header_name, header_value)),
     )
+}
+
+/// Add a UTF-8 charset to text responses that don't already declare one.
+async fn ensure_utf8_text_content_type(
+    req: ServiceRequest,
+    next: Next<impl MessageBody + 'static>,
+) -> Result<ServiceResponse<impl MessageBody>, actix_web::Error> {
+    let mut response = next.call(req).await?;
+
+    if let Some(content_type) = response
+        .headers()
+        .get(header::CONTENT_TYPE)
+        .and_then(|value| value.to_str().ok())
+        .and_then(|value| value.parse::<mime::Mime>().ok())
+        && content_type.type_() == mime::TEXT
+        && content_type.get_param(mime::CHARSET).is_none()
+        && let Ok(value) = header::HeaderValue::from_str(&format!("{content_type}; charset=utf-8"))
+    {
+        response.headers_mut().insert(header::CONTENT_TYPE, value);
+    }
+
+    Ok(response)
 }
 
 /// Configures the Actix application
