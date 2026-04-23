@@ -1183,7 +1183,13 @@ fn page_header(
                             const title = ((inputValue) => {
                                 const title = inputValue.trim();
                                 if (title.length === 0) {
-                                    const suffix = crypto.randomUUID().substring(0,6);
+                                    let suffix;
+                                    if (crypto.randomUUID !== undefined) {
+                                        suffix = crypto.randomUUID().substring(0,6);
+                                    } else {
+                                        // neither HTTPS nor "localhost"
+                                        suffix = Date.now().toString(16).slice(-6);
+                                    }
                                     return `paste-${suffix}.txt`;
                                 } else {
                                     // use given extension if one is present, otherwise make it
