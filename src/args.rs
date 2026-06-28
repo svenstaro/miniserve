@@ -383,7 +383,7 @@ pub struct CliArgs {
     ///
     /// Example:
     /// miniserve --inline sample.pdf
-    #[arg(short = 'i', long = "inline", env = "MINISERVE_INLINE")]
+    #[arg(long = "inline", env = "MINISERVE_INLINE")]
     pub inline: bool,
 
     /// Visualize symlinks in directory listing
