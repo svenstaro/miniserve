@@ -4,6 +4,7 @@ use std::thread;
 use std::time::Duration;
 
 use actix_files::NamedFile;
+use actix_web::http::header::DispositionType;
 use actix_web::middleware::from_fn;
 use actix_web::{
     App, HttpRequest, HttpResponse, Responder,
@@ -404,6 +405,10 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
 
         if conf.show_hidden {
             files = files.use_hidden_files();
+        }
+
+        if conf.inline {
+            files = files.mime_override(|_| DispositionType::Inline);
         }
 
         let base_path = conf.path.clone();
