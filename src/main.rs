@@ -124,7 +124,7 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), StartupError> {
             .any(|header_map| header_map.contains_key(CONTENT_DISPOSITION))
     {
         warn!(
-            "`Content-Disposition` headers specified via `--header` are ignored because miniserve handles content disposition automatically. ",
+            "`Content-Disposition` headers specified via `--header` are ignored because miniserve handles content disposition automatically.",
         );
         warn!("Use the `--inline` flag if you want files to be served inline in the browser.");
     }
