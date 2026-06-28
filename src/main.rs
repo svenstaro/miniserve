@@ -4,7 +4,7 @@ use std::thread;
 use std::time::Duration;
 
 use actix_files::NamedFile;
-use actix_web::http::header::DispositionType;
+use actix_web::http::header::{CONTENT_DISPOSITION, DispositionType};
 use actix_web::middleware::from_fn;
 use actix_web::{
     App, HttpRequest, HttpResponse, Responder,
@@ -116,6 +116,18 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), StartupError> {
     )
     .or_else(|_| simplelog::SimpleLogger::init(log_level, simplelog::Config::default()))
     .expect("Couldn't initialize logger");
+
+    if !miniserve_config.quiet
+        && miniserve_config
+            .header
+            .iter()
+            .any(|header_map| header_map.contains_key(CONTENT_DISPOSITION))
+    {
+        warn!(
+            "`Content-Disposition` headers specified via `--header` are ignored because miniserve handles content disposition automatically. ",
+        );
+        warn!("Use the `--inline` flag if you want files to be served inline in the browser.");
+    }
 
     if miniserve_config.no_symlinks && miniserve_config.path.is_symlink() {
         return Err(StartupError::NoSymlinksOptionWithSymlinkServePath(
