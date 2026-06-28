@@ -20,7 +20,7 @@ mod fixtures;
 use crate::fixtures::{
     DIR_BEHIND_SYMLINKED_DIR, DIRECTORIES, DIRECTORY_SYMLINK, Error,
     FILE_IN_DIR_BEHIND_SYMLINKED_DIR, FILE_SYMLINK, FILES, HIDDEN_DIRECTORIES, HIDDEN_FILES,
-    TestServer, port, reqwest_client, server, tmpdir,
+    TestServer, port, reqwest_client, server, server_with_path, tmpdir,
 };
 
 #[rstest]
@@ -533,6 +533,42 @@ fn serves_file_requests_when_indexing_disabled(
         .get(format!("{}{}", server.url(), FILES[0]))
         .send()?
         .error_for_status()?;
+
+    Ok(())
+}
+
+#[rstest]
+fn inline_header_set_directory(reqwest_client: Client) -> Result<(), Error> {
+    let server_inline = server(vec!["--inline"]);
+    let resp_inline = reqwest_client
+        .get(server_inline.url().join("😀.data").unwrap())
+        .send()?;
+    let cd = String::from_utf8_lossy(
+        resp_inline
+            .headers()
+            .get("content-disposition")
+            .unwrap()
+            .as_bytes(),
+    );
+    assert!(cd.starts_with("inline"));
+
+    Ok(())
+}
+
+#[rstest]
+fn inline_header_set_single_file(
+    #[with(vec!["--inline"], "😀.data")] server_with_path: TestServer,
+    reqwest_client: Client,
+) -> Result<(), Error> {
+    let resp_inline = reqwest_client.get(server_with_path.url()).send()?;
+    let cd = String::from_utf8_lossy(
+        resp_inline
+            .headers()
+            .get("content-disposition")
+            .unwrap()
+            .as_bytes(),
+    );
+    assert!(cd.starts_with("inline"));
 
     Ok(())
 }
