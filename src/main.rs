@@ -248,6 +248,7 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), StartupError> {
             .app_data(web::Data::new(inside_config.clone()))
             .app_data(stylesheet.clone())
             .wrap(from_fn(errors::error_page_middleware))
+            .wrap(from_fn(listing::text_content_type_middleware))
             .wrap(middleware::Logger::default())
             .wrap(middleware::Condition::new(
                 miniserve_config.compress_response,
