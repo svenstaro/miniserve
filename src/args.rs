@@ -376,6 +376,16 @@ pub struct CliArgs {
     )]
     pub header: Vec<HeaderMap>,
 
+    /// Serve files inline in the browser instead of triggering a download.
+    ///
+    /// Useful when serving files that can be rendered directly by the browser (e.g., PDFs,
+    /// images, or text files).
+    ///
+    /// Example:
+    /// miniserve --inline sample.pdf
+    #[arg(long = "inline", env = "MINISERVE_INLINE")]
+    pub inline: bool,
+
     /// Visualize symlinks in directory listing
     #[arg(
         short = 'l',
