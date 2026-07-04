@@ -73,6 +73,7 @@ tls = ["rustls", "rustls-pemfile", "actix-web/rustls-0_23"]
 [dev-dependencies]
 assert_cmd = "2"
 assert_fs = "1"
+libflate = "2"
 predicates = "3"
 pretty_assertions = "1.2"
 regex = "1"
@@ -80,7 +81,9 @@ reqwest = { version = "0.13", features = ["blocking", "multipart", "json", "rust
 reqwest_dav = { version = "0.3", default-features = false }
 rstest = "0.26"
 select = "0.6"
+tar = "0.4"
 url = "2"
+zip = { version = "8", default-features = false }
 
 [target.'cfg(not(windows))'.dev-dependencies]
 # fake_tty does not support Windows for now
