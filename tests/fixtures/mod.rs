@@ -150,10 +150,25 @@ where
     I: IntoIterator + Clone,
     I::Item: AsRef<std::ffi::OsStr>,
 {
+    server_with_path(args, "")
+}
+
+/// Run miniserve as a server serving a specific path relative to the temporary directory.
+#[fixture]
+pub fn server_with_path<I>(
+    #[default(&[] as &[&str])] args: I,
+    #[default("😀.data")] path: &str,
+) -> TestServer
+where
+    I: IntoIterator + Clone,
+    I::Item: AsRef<std::ffi::OsStr>,
+{
     let port = port();
     let tmpdir = tmpdir();
+    let serve_path = tmpdir.path().join(path);
+
     let mut child = Command::new(cargo::cargo_bin!("miniserve"))
-        .arg(tmpdir.path())
+        .arg(&serve_path)
         .arg("-v")
         .arg("-p")
         .arg(port.to_string())
