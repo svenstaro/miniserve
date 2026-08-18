@@ -10,6 +10,8 @@ use select::{document::Document, predicate::Attr};
 
 mod fixtures;
 
+#[cfg(not(windows))]
+use crate::fixtures::run_in_faketty_kill_and_get_stdout;
 use crate::fixtures::{Error, TestServer, port, reqwest_client, server, tmpdir};
 
 #[rstest]
@@ -47,30 +49,6 @@ fn webpage_shows_qrcode_when_enabled(
     assert_eq!(tooltip, server.url().as_str());
 
     Ok(())
-}
-
-#[cfg(not(windows))]
-fn run_in_faketty_kill_and_get_stdout(template: &Command) -> Result<String, Error> {
-    use fake_tty::{bash_command, get_stdout};
-
-    let cmd = {
-        let bin = template.get_program().to_str().expect("not UTF8");
-        let args = template
-            .get_args()
-            .map(|s| s.to_str().expect("not UTF8"))
-            .collect::<Vec<_>>()
-            .join(" ");
-        format!("{bin} {args}")
-    };
-    let mut child = bash_command(&cmd)?.stdin(Stdio::null()).spawn()?;
-
-    sleep(Duration::from_secs(1));
-
-    child.kill()?;
-    let output = child.wait_with_output().expect("Failed to read stdout");
-    let all_text = get_stdout(output.stdout)?;
-
-    Ok(all_text)
 }
 
 #[rstest]
