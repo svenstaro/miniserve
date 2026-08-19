@@ -1,5 +1,6 @@
 use std::io::{self, IsTerminal, Write};
 use std::net::{IpAddr, SocketAddr, TcpListener};
+use std::path::Path;
 use std::thread;
 use std::time::Duration;
 
@@ -393,7 +394,7 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
                 if path_base.ends_with('/') {
                     path_base.pop();
                 }
-                if !path_base.ends_with("html") {
+                if !path_base.ends_with(".html") {
                     path_base = format!("{path_base}.html");
                 }
                 let file = NamedFile::open_async(conf.path.join(path_base)).await?;
@@ -408,12 +409,35 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
 
         let base_path = conf.path.clone();
         let no_symlinks = conf.no_symlinks;
+        let pretty_urls = conf.pretty_urls;
         files
             .show_files_listing()
             .files_listing_renderer(listing::directory_listing)
             .prefer_utf8(true)
             .redirect_to_slash_directory()
-            .path_filter(move |path, _| {
+            .path_filter(move |path, head| {
+                // Handle --pretty-urls name collisions.
+                //
+                // If both `foo.html` and `foo/` exist, a request for `/foo` would otherwise be
+                // redirected to `/foo/` and served as a directory listing. With --pretty-urls the
+                // `.html` file is supposed to win, so we filter the directory out here to let the
+                // pretty-urls default handler serve `foo.html` instead.
+                //
+                // Requests for `/foo/` (with a trailing slash) still resolve to the directory.
+                if pretty_urls
+                    && !head.uri.path().ends_with('/')
+                    && path.extension().is_none_or(|ext| ext != "html")
+                {
+                    // Mirror the pretty-urls default handler, which appends ".html" to the
+                    // request path.
+                    let full_path = base_path.join(path);
+                    let mut html_path = full_path.clone().into_os_string();
+                    html_path.push(".html");
+                    if full_path.is_dir() && Path::new(&html_path).is_file() {
+                        return false;
+                    }
+                }
+
                 if !no_symlinks {
                     // no_symlinks not enabled => nothing to filter
                     return true;
