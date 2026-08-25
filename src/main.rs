@@ -135,15 +135,22 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), StartupError> {
         .canonicalize()
         .map_err(|e| StartupError::IoError("Failed to resolve path to be served".to_string(), e))?;
 
-    // warn if --index is specified but not found
+    // Validate the --index file. In SPA mode a missing index is fatal because it gets served for
+    // every otherwise-missing path, so refuse to start instead of failing at request time. Without
+    // SPA a missing index is harmless (we fall back to the listing), so we only warn.
     if let Some(ref index) = miniserve_config.index
         && !canon_path.join(index).exists()
-        && !miniserve_config.quiet
     {
-        warn!(
-            "The file '{}' provided for option --index could not be found.",
-            index.to_string_lossy(),
-        );
+        if miniserve_config.spa {
+            return Err(StartupError::SpaIndexFileNotFound(
+                index.to_string_lossy().to_string(),
+            ));
+        } else if !miniserve_config.quiet {
+            warn!(
+                "The file '{}' provided for option --index could not be found.",
+                index.to_string_lossy(),
+            );
+        }
     }
 
     let path_string = canon_path.to_string_lossy();

@@ -29,6 +29,13 @@ Please set an explicit serve path like: `miniserve /my/path`")]
 
     #[error("The --enable-webdav option was provided, but the serve path '{0}' is a file")]
     WebdavWithFileServePath(String),
+
+    /// In case --spa is enabled but the --index file does not exist. In SPA mode the index file is
+    /// served for every otherwise-missing path, so a missing one would fail at request time.
+    #[error(
+        "The file '{0}' provided for option --index does not exist, but --spa mode requires it since it is served for every otherwise-missing path. Refusing to start."
+    )]
+    SpaIndexFileNotFound(String),
 }
 
 #[derive(Debug, Error)]
