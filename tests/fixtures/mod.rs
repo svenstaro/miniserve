@@ -46,6 +46,13 @@ pub static HIDDEN_DIRECTORIES: &[&str] = &[".hidden_dir1/", ".hidden space dir/"
 /// Name of a deeply nested file
 pub static DEEPLY_NESTED_FILE: &str = "very/deeply/nested/test.rs";
 
+/// Base names that exist both as a `.html` file and as a directory.
+///
+/// Used to check that `--pretty-urls` prefers `<name>.html` over `<name>/`.
+/// The second entry ends with "html" (without a dot) on purpose, to catch a naive
+/// `ends_with("html")` check.
+pub static PRETTY_URLS_COLLIDING_NAMES: &[&str] = &["collision", "purehtml"];
+
 /// Name of a symlink pointing to a directory
 pub static DIRECTORY_SYMLINK: &str = "dir_symlink/";
 
@@ -101,6 +108,18 @@ pub fn tmpdir() -> TempDir {
         .child(DEEPLY_NESTED_FILE)
         .write_str("File in a deeply nested directory.")
         .expect("Couldn't write to file");
+
+    // For each colliding name, create both a `<name>.html` file and a `<name>/` directory.
+    for name in PRETTY_URLS_COLLIDING_NAMES {
+        tmpdir
+            .child(format!("{name}.html"))
+            .write_str("Pretty Urls Html File")
+            .expect("Couldn't write colliding html file");
+        tmpdir
+            .child(format!("{name}/inner.txt"))
+            .write_str("Inside colliding directory")
+            .expect("Couldn't write file in colliding dir");
+    }
 
     // someDir structure that rm_files tests expect
     tmpdir
