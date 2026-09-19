@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+- Fall back to a random free port when the default port is taken and no `--port` was given (interactive use only) [#1094](https://github.com/svenstaro/miniserve/issues/1094)
 - Fix suffix generation for pastes in non-HTTPS env [#1562](https://github.com/svenstaro/miniserve/pull/1562) (thanks @pzhlkj6612)
 
 ## [0.35.0] - 2026-04-08

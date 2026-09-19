@@ -41,6 +41,12 @@ pub struct MiniserveConfig {
     /// Port on which miniserve will be listening
     pub port: u16,
 
+    /// Whether the port was explicitly set by the user (CLI flag or environment variable).
+    ///
+    /// When it was not, and the default port turns out to be unavailable, miniserve may fall
+    /// back to a random free port instead of failing to start.
+    pub port_explicitly_set: bool,
+
     /// IP address(es) on which miniserve will be available
     pub interfaces: Vec<IpAddr>,
 
@@ -207,7 +213,7 @@ pub struct MiniserveConfig {
 
 impl MiniserveConfig {
     /// Parses the command line arguments
-    pub fn try_from_args(args: CliArgs) -> Result<Self> {
+    pub fn try_from_args(args: CliArgs, port_explicitly_set: bool) -> Result<Self> {
         let interfaces = if !args.interfaces.is_empty() {
             args.interfaces
         } else {
@@ -332,6 +338,7 @@ impl MiniserveConfig {
             path: args.path.unwrap_or_else(|| PathBuf::from(".")),
             temp_upload_directory: args.temp_upload_directory,
             port,
+            port_explicitly_set,
             interfaces,
             workers: args.workers,
             auth,
