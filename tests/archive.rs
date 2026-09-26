@@ -1,4 +1,5 @@
-use std::io::Cursor;
+use std::io::{Cursor, Read};
+use std::path::Path;
 
 use reqwest::{StatusCode, blocking::Client};
 use rstest::rstest;
@@ -9,6 +10,7 @@ mod fixtures;
 
 use crate::fixtures::{Error, TestServer, reqwest_client, server};
 
+#[derive(Clone, Copy)]
 enum ArchiveKind {
     TarGz,
     Tar,
@@ -204,35 +206,28 @@ fn archives_links_and_downloads(
     Ok(())
 }
 
-enum ExpectedLen {
-    /// Exact byte length expected.
-    Exact(usize),
-    /// Minimum byte length expected.
-    Min(usize),
-}
-
-/// Broken symlinks (from [`fixtures::BROKEN_SYMLINK`]) yield different archive behaviors:
-/// - tar_gz: a file with only partial header fields. See "rfc1952 § 2.3.1. Member header and trailer".
-/// - tar: a tarball containing a subset of files.
-/// - zip: an empty file.
+/// Broken symlinks (from [`fixtures::BROKEN_SYMLINK`]) are omitted from the
+/// archive rather than aborting the whole download. The remaining regular
+/// files must still produce a non-trivial payload for every archive format.
 #[rstest]
-#[case::tar_gz(ArchiveKind::TarGz, ExpectedLen::Exact(10))]
-#[case::tar(ArchiveKind::Tar, ExpectedLen::Min(512 + 512 + 2 * 512))]
-#[case::zip(ArchiveKind::Zip, ExpectedLen::Exact(0))]
-fn archive_behave_differently_with_broken_symlinks(
+#[case::tar_gz(ArchiveKind::TarGz)]
+#[case::tar(ArchiveKind::Tar)]
+#[case::zip(ArchiveKind::Zip)]
+fn archive_skips_broken_symlinks_and_still_succeeds(
     #[case] kind: ArchiveKind,
-    #[case] expected: ExpectedLen,
     #[with(&[ArchiveKind::TarGz.server_option(), ArchiveKind::Tar.server_option(), ArchiveKind::Zip.server_option()])]
     server: TestServer,
     reqwest_client: Client,
 ) -> Result<(), Error> {
     let (status_code, byte_len) = download_archive_bytes(&reqwest_client, &server, kind)?;
     assert_eq!(status_code, StatusCode::OK);
-
-    match expected {
-        ExpectedLen::Exact(len) => assert_eq!(byte_len, len),
-        ExpectedLen::Min(len) => assert!(byte_len >= len),
-    }
+    // Each format must produce a real archive with the fixture files, not an
+    // empty/truncated stream from an error mid-walk.
+    assert!(
+        byte_len > 64,
+        "expected a non-trivial {} archive, got {byte_len} bytes",
+        kind.link_text()
+    );
 
     Ok(())
 }
@@ -263,5 +258,202 @@ fn zip_archives_store_entry_name_in_unix_style(
         );
     }
 
+    Ok(())
+}
+
+const OUTSIDE_SECRET: &str = "MINISERVE-OUTSIDE-SECRET\n";
+const ESCAPE_LINK_NAME: &str = "link_to_outside";
+
+/// Plant a symlink inside the served tree that points at a file *outside* it.
+fn plant_escape_symlink(server: &TestServer) -> Result<(), Error> {
+    #[cfg(unix)]
+    use std::os::unix::fs::symlink;
+    #[cfg(windows)]
+    use std::os::windows::fs::symlink_file as symlink;
+
+    // Sibling of the served root so a relative `../…` target resolves outside
+    // the archive root. Unique name avoids clobbering parallel tests.
+    let served = server.path();
+    let durable_outside = served.parent().unwrap().join(format!(
+        "outside-secret-{}.txt",
+        served.file_name().unwrap().to_string_lossy()
+    ));
+    std::fs::write(&durable_outside, OUTSIDE_SECRET)?;
+
+    let link_path = served.join(ESCAPE_LINK_NAME);
+    let relative_target = Path::new("..").join(durable_outside.file_name().unwrap());
+    symlink(&relative_target, &link_path)?;
+
+    Ok(())
+}
+
+/// Regression for #1568: ZIP generation used followed `metadata()`, so
+/// `is_symlink()` never fired and `--no-symlinks` failed to stop packaging
+/// the target of an escape symlink.
+#[rstest]
+#[case::zip_no_symlinks(
+    ArchiveKind::Zip,
+    &["--enable-zip", "--no-symlinks"]
+)]
+#[case::tar_no_symlinks(
+    ArchiveKind::Tar,
+    &["--enable-tar", "--no-symlinks"]
+)]
+#[case::tar_gz_no_symlinks(
+    ArchiveKind::TarGz,
+    &["--enable-tar-gz", "--no-symlinks"]
+)]
+fn archive_with_no_symlinks_omits_escape_symlink(
+    #[case] kind: ArchiveKind,
+    #[case] _args: &[&str],
+    #[with(_args)] server: TestServer,
+    reqwest_client: Client,
+) -> Result<(), Error> {
+    plant_escape_symlink(&server)?;
+
+    let resp = reqwest_client
+        .get(server.url().join(kind.download_param())?)
+        .send()?
+        .error_for_status()?;
+    assert_eq!(resp.status(), StatusCode::OK);
+    let bytes = resp.bytes()?;
+
+    match kind {
+        ArchiveKind::Zip => {
+            let mut archive = ZipArchive::new(Cursor::new(bytes.as_ref()))?;
+            for i in 0..archive.len() {
+                let mut entry = archive.by_index(i)?;
+                let name = entry.name().to_string();
+                assert!(
+                    !name.contains(ESCAPE_LINK_NAME),
+                    "ZIP must not contain escape symlink entry '{name}' with --no-symlinks"
+                );
+                let mut contents = String::new();
+                // Only try to read regular file entries.
+                if entry.is_file() {
+                    entry.read_to_string(&mut contents)?;
+                    assert!(
+                        !contents.contains("MINISERVE-OUTSIDE-SECRET"),
+                        "ZIP must not contain outside-root secret contents"
+                    );
+                }
+            }
+        }
+        ArchiveKind::Tar | ArchiveKind::TarGz => {
+            assert_tar_has_no_escape_secret(&bytes, matches!(kind, ArchiveKind::TarGz))?;
+        }
+    }
+
+    Ok(())
+}
+
+/// Even when symlinks are allowed, archive generation must not package the
+/// *contents* of a target that resolves outside the served root.
+#[rstest]
+#[case::zip(ArchiveKind::Zip, &["--enable-zip"])]
+#[case::tar(ArchiveKind::Tar, &["--enable-tar"])]
+#[case::tar_gz(ArchiveKind::TarGz, &["--enable-tar-gz"])]
+fn archive_never_packages_outside_root_symlink_target(
+    #[case] kind: ArchiveKind,
+    #[case] _args: &[&str],
+    #[with(_args)] server: TestServer,
+    reqwest_client: Client,
+) -> Result<(), Error> {
+    plant_escape_symlink(&server)?;
+
+    let resp = reqwest_client
+        .get(server.url().join(kind.download_param())?)
+        .send()?
+        .error_for_status()?;
+    assert_eq!(resp.status(), StatusCode::OK);
+    let bytes = resp.bytes()?;
+
+    match kind {
+        ArchiveKind::Zip => {
+            let mut archive = ZipArchive::new(Cursor::new(bytes.as_ref()))?;
+            for i in 0..archive.len() {
+                let mut entry = archive.by_index(i)?;
+                if entry.is_file() {
+                    let mut contents = String::new();
+                    entry.read_to_string(&mut contents)?;
+                    assert!(
+                        !contents.contains("MINISERVE-OUTSIDE-SECRET"),
+                        "ZIP entry '{}' leaked outside-root secret",
+                        entry.name()
+                    );
+                }
+            }
+        }
+        ArchiveKind::Tar | ArchiveKind::TarGz => {
+            assert_tar_has_no_escape_secret(&bytes, matches!(kind, ArchiveKind::TarGz))?;
+        }
+    }
+
+    Ok(())
+}
+
+/// In-root symlinks may still be followed when `--no-symlinks` is off, so the
+/// pointed-to file contents appear under the symlink's name.
+#[rstest]
+fn zip_follows_in_root_symlink_when_symlinks_allowed(
+    #[with(&["--enable-zip"])] server: TestServer,
+    reqwest_client: Client,
+) -> Result<(), Error> {
+    let resp = reqwest_client
+        .get(server.url().join(ArchiveKind::Zip.download_param())?)
+        .send()?
+        .error_for_status()?;
+    let mut archive = ZipArchive::new(Cursor::new(resp.bytes()?))?;
+
+    // fixtures create `file_symlink` -> `test.txt` with content "Test Hello Yes"
+    let mut found_followed = false;
+    for i in 0..archive.len() {
+        let mut entry = archive.by_index(i)?;
+        if entry.name().ends_with("file_symlink") && entry.is_file() {
+            let mut contents = String::new();
+            entry.read_to_string(&mut contents)?;
+            assert_eq!(contents, "Test Hello Yes");
+            found_followed = true;
+        }
+    }
+    assert!(
+        found_followed,
+        "expected in-root file_symlink to be followed into the ZIP"
+    );
+
+    Ok(())
+}
+
+fn assert_tar_has_no_escape_secret(bytes: &[u8], gzipped: bool) -> Result<(), Error> {
+    use std::io::Cursor;
+
+    let plain: Vec<u8> = if gzipped {
+        let mut decoder = libflate::gzip::Decoder::new(Cursor::new(bytes))?;
+        let mut buf = Vec::new();
+        decoder.read_to_end(&mut buf)?;
+        buf
+    } else {
+        bytes.to_vec()
+    };
+
+    let mut archive = tar::Archive::new(Cursor::new(plain));
+    for entry in archive.entries()? {
+        let mut entry = entry?;
+        let path = entry.path()?.into_owned();
+        assert!(
+            !path.to_string_lossy().contains(ESCAPE_LINK_NAME),
+            "TAR must not contain escape symlink path '{}'",
+            path.display()
+        );
+        if entry.header().entry_type().is_file() {
+            let mut contents = String::new();
+            entry.read_to_string(&mut contents)?;
+            assert!(
+                !contents.contains("MINISERVE-OUTSIDE-SECRET"),
+                "TAR entry '{}' leaked outside-root secret",
+                path.display()
+            );
+        }
+    }
     Ok(())
 }
