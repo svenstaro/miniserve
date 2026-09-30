@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - ReleaseDate
 - Fix suffix generation for pastes in non-HTTPS env [#1562](https://github.com/svenstaro/miniserve/pull/1562) (thanks @pzhlkj6612)
+- Refuse to start in SPA mode when the `--index` file doesn't exist instead of panicking [#1277](https://github.com/svenstaro/miniserve/issues/1277)
 
 ## [0.35.0] - 2026-04-08
 - Add `--workers` to limit the number of workers and default to 4 [#1556](https://github.com/svenstaro/miniserve/issues/1556)
