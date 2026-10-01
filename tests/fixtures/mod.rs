@@ -241,3 +241,32 @@ impl Drop for TestServer {
         self.child.wait().unwrap();
     }
 }
+
+/// Run miniserve inside a faked TTY, let it run briefly, then kill it and return its stdout.
+///
+/// This is useful for testing behavior that only kicks in when a terminal is attached.
+// Disabled for Windows because `fake_tty` does not currently support it.
+#[cfg(not(windows))]
+#[allow(dead_code)]
+pub fn run_in_faketty_kill_and_get_stdout(template: &Command) -> Result<String, Error> {
+    use fake_tty::{bash_command, get_stdout};
+
+    let cmd = {
+        let bin = template.get_program().to_str().expect("not UTF8");
+        let args = template
+            .get_args()
+            .map(|s| s.to_str().expect("not UTF8"))
+            .collect::<Vec<_>>()
+            .join(" ");
+        format!("{bin} {args}")
+    };
+    let mut child = bash_command(&cmd)?.stdin(Stdio::null()).spawn()?;
+
+    sleep(Duration::from_secs(1));
+
+    child.kill()?;
+    let output = child.wait_with_output().expect("Failed to read stdout");
+    let all_text = get_stdout(output.stdout)?;
+
+    Ok(all_text)
+}

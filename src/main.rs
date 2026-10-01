@@ -15,7 +15,7 @@ use actix_web::{
 use actix_web_httpauth::middleware::HttpAuthentication;
 use anyhow::Result;
 use bytesize::ByteSize;
-use clap::{CommandFactory, Parser, crate_version};
+use clap::{CommandFactory, FromArgMatches, crate_version};
 use colored::*;
 use dav_server::{
     DavHandler, DavMethodSet,
@@ -48,7 +48,12 @@ use crate::webdav_fs::RestrictedFs;
 static STYLESHEET: &str = grass::include!("data/style.scss");
 
 fn main() -> Result<()> {
-    let args = args::CliArgs::parse();
+    let matches = args::CliArgs::command().get_matches();
+    let port_explicitly_set = matches
+        .value_source("port")
+        .is_some_and(|source| source != clap::parser::ValueSource::DefaultValue);
+    let args = args::CliArgs::from_arg_matches(&matches)
+        .expect("Arguments have already been validated by clap");
 
     if let Some(shell) = args.print_completions {
         let mut clap_app = args::CliArgs::command();
@@ -64,7 +69,7 @@ fn main() -> Result<()> {
         return Ok(());
     }
 
-    let miniserve_config = MiniserveConfig::try_from_args(args)?;
+    let miniserve_config = MiniserveConfig::try_from_args(args, port_explicitly_set)?;
 
     run(miniserve_config).inspect_err(|e| {
         errors::log_error_chain(e.to_string());
@@ -74,7 +79,7 @@ fn main() -> Result<()> {
 }
 
 #[actix_web::main(miniserve)]
-async fn run(miniserve_config: MiniserveConfig) -> Result<(), StartupError> {
+async fn run(mut miniserve_config: MiniserveConfig) -> Result<(), StartupError> {
     let log_level = if miniserve_config.verbose {
         simplelog::LevelFilter::Info
     } else {
@@ -126,6 +131,22 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), StartupError> {
         return Err(StartupError::WebdavWithFileServePath(
             miniserve_config.path.to_string_lossy().to_string(),
         ));
+    }
+
+    // If the user did not explicitly pick a port and the default one is already taken, fall back
+    // to a random free port instead of refusing to start. This is only done for interactive usage
+    // (a terminal is attached) so that scripted/service invocations keep failing loudly as before.
+    if !miniserve_config.port_explicitly_set
+        && miniserve_config.port != 0
+        && io::stdout().is_terminal()
+        && !port_check::is_local_port_free(miniserve_config.port)
+        && let Some(free_port) = port_check::free_local_port()
+    {
+        warn!(
+            "The default port {} is unavailable, falling back to the free port {}. Pass --port to choose a fixed port.",
+            miniserve_config.port, free_port,
+        );
+        miniserve_config.port = free_port;
     }
 
     let inside_config = miniserve_config.clone();
