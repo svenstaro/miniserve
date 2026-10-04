@@ -4,7 +4,14 @@ use std::path::{Component, Path};
 use std::time::SystemTime;
 
 use actix_web::{
-    HttpMessage, HttpRequest, HttpResponse, dev::ServiceResponse, http::Uri, web, web::Query,
+    HttpMessage, HttpRequest, HttpResponse,
+    dev::ServiceResponse,
+    http::{
+        Uri,
+        header::{ContentDisposition, DispositionType},
+    },
+    web,
+    web::Query,
 };
 use bytesize::ByteSize;
 use clap::ValueEnum;
@@ -163,7 +170,24 @@ pub async fn file_handler(req: HttpRequest) -> actix_web::Result<actix_files::Na
         .app_data::<web::Data<crate::MiniserveConfig>>()
         .unwrap()
         .path;
-    actix_files::NamedFile::open(path).map_err(Into::into)
+    let file = actix_files::NamedFile::open(path).map_err(Into::into);
+
+    match file {
+        Ok(file) => {
+            let conf = req.app_data::<web::Data<crate::MiniserveConfig>>().unwrap();
+            if !conf.inline {
+                return Ok(file);
+            }
+
+            let cd = file.content_disposition().clone();
+
+            Ok(file.set_content_disposition(ContentDisposition {
+                disposition: DispositionType::Inline,
+                parameters: cd.parameters,
+            }))
+        }
+        Err(err) => Err(err),
+    }
 }
 
 /// List a directory and renders a HTML file accordingly

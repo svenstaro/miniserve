@@ -164,6 +164,9 @@ pub struct MiniserveConfig {
     /// Shown instead of host in page title and heading
     pub title: Option<String>,
 
+    /// If enabled, serve files inline with `Content-Disposition: inline`
+    pub inline: bool,
+
     /// If specified, header will be added
     pub header: Vec<HeaderMap>,
 
@@ -369,6 +372,7 @@ impl MiniserveConfig {
             zip_enabled: args.enable_zip,
             dirs_first: args.dirs_first,
             title: args.title,
+            inline: args.inline,
             header: args.header,
             show_symlink_info: args.show_symlink_info,
             hide_version_footer: args.hide_version_footer,
