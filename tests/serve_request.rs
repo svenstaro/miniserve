@@ -20,7 +20,7 @@ mod fixtures;
 use crate::fixtures::{
     DIR_BEHIND_SYMLINKED_DIR, DIRECTORIES, DIRECTORY_SYMLINK, Error,
     FILE_IN_DIR_BEHIND_SYMLINKED_DIR, FILE_SYMLINK, FILES, HIDDEN_DIRECTORIES, HIDDEN_FILES,
-    TestServer, port, reqwest_client, server, tmpdir,
+    PRETTY_URLS_COLLIDING_NAMES, TestServer, port, reqwest_client, server, tmpdir,
 };
 
 #[rstest]
@@ -533,6 +533,85 @@ fn serves_file_requests_when_indexing_disabled(
         .get(format!("{}{}", server.url(), FILES[0]))
         .send()?
         .error_for_status()?;
+
+    Ok(())
+}
+
+/// In `--pretty-urls` mode, `<name>.html` wins over a `<name>/` directory of the same name.
+///
+/// See https://github.com/svenstaro/miniserve/issues/1577
+#[rstest]
+fn pretty_urls_prefer_html_file_over_directory(
+    #[with(&["--pretty-urls"])] server: TestServer,
+    reqwest_client: Client,
+) -> Result<(), Error> {
+    for name in PRETTY_URLS_COLLIDING_NAMES {
+        // `/<name>` serves `<name>.html` directly, without redirecting to `/<name>/`.
+        let resp = reqwest_client
+            .get(format!("{}{}", server.url(), name))
+            .send()?;
+        assert_eq!(resp.status(), 200, "GET /{name} should not redirect");
+        assert_eq!(resp.text()?, "Pretty Urls Html File");
+
+        // `/<name>.html` keeps working.
+        let resp = reqwest_client
+            .get(format!("{}{}.html", server.url(), name))
+            .send()?
+            .error_for_status()?;
+        assert_eq!(resp.text()?, "Pretty Urls Html File");
+
+        // `/<name>/` with an explicit trailing slash still serves the directory listing.
+        let body = reqwest_client
+            .get(format!("{}{}/", server.url(), name))
+            .send()?
+            .error_for_status()?;
+        let parsed = Document::from_read(body)?;
+        assert!(
+            parsed
+                .find(|x: &Node| x.text() == "inner.txt")
+                .next()
+                .is_some(),
+            "GET /{name}/ should list the directory"
+        );
+    }
+
+    Ok(())
+}
+
+/// Without `--pretty-urls`, a `<name>/` directory still takes precedence for `/<name>`.
+#[rstest]
+fn no_pretty_urls_keeps_directory_redirect(
+    server: TestServer,
+    reqwest_client: Client,
+) -> Result<(), Error> {
+    let name = PRETTY_URLS_COLLIDING_NAMES[0];
+    let body = reqwest_client
+        .get(format!("{}{}", server.url(), name))
+        .send()?
+        .error_for_status()?;
+    let parsed = Document::from_read(body)?;
+    assert!(
+        parsed
+            .find(|x: &Node| x.text() == "inner.txt")
+            .next()
+            .is_some(),
+        "GET /{name} should follow the redirect to the directory listing"
+    );
+
+    Ok(())
+}
+
+/// In `--pretty-urls` mode, a name that merely ends with "html" still gets ".html" appended.
+#[rstest]
+fn pretty_urls_appends_html_to_names_ending_in_html(
+    #[with(&["--pretty-urls"])] server: TestServer,
+    reqwest_client: Client,
+) -> Result<(), Error> {
+    let resp = reqwest_client
+        .get(format!("{}{}", server.url(), "purehtml"))
+        .send()?
+        .error_for_status()?;
+    assert_eq!(resp.text()?, "Pretty Urls Html File");
 
     Ok(())
 }

@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - ReleaseDate
 - Fix suffix generation for pastes in non-HTTPS env [#1562](https://github.com/svenstaro/miniserve/pull/1562) (thanks @pzhlkj6612)
+- Fix `--pretty-urls` serving a directory listing instead of `<name>.html` when both `<name>.html` and `<name>/` exist [#1577](https://github.com/svenstaro/miniserve/issues/1577)
+- Fix `--pretty-urls` not appending `.html` to paths whose name already ends in `html` (e.g. `/purehtml`) [#1577](https://github.com/svenstaro/miniserve/issues/1577)
 
 ## [0.35.0] - 2026-04-08
 - Add `--workers` to limit the number of workers and default to 4 [#1556](https://github.com/svenstaro/miniserve/issues/1556)
