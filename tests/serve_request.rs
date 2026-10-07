@@ -2,7 +2,7 @@ use std::process::{Command, Stdio};
 use std::thread::sleep;
 use std::time::Duration;
 
-use assert_cmd::cargo;
+use assert_cmd::{cargo, prelude::*};
 use assert_fs::fixture::TempDir;
 use fixtures::BROKEN_SYMLINK;
 use regex::Regex;
@@ -372,6 +372,23 @@ fn serves_requests_custom_index_notice(tmpdir: TempDir, port: u16) -> Result<(),
     assert!(
         all_text?.contains("The file 'not.html' provided for option --index could not be found.")
     );
+
+    Ok(())
+}
+
+#[rstest]
+fn spa_with_missing_index_refuses_to_start(tmpdir: TempDir, port: u16) -> Result<(), Error> {
+    // In SPA mode the index file is served for every otherwise-missing path, so a missing index
+    // would fail at request time. We should refuse to start early instead.
+    Command::new(cargo::cargo_bin!("miniserve"))
+        .arg("--spa")
+        .arg("--index=does-not-exist.html")
+        .arg("-p")
+        .arg(port.to_string())
+        .arg(tmpdir.path())
+        .assert()
+        .failure()
+        .stderr(predicates::str::contains("--spa mode requires it"));
 
     Ok(())
 }
