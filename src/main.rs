@@ -45,7 +45,7 @@ use crate::errors::{RuntimeError, StartupError};
 use crate::file_op::recursive_dir_size;
 use crate::webdav_fs::RestrictedFs;
 
-static STYLESHEET: &str = grass::include!("data/style.scss");
+static STYLESHEET: &str = include_str!(concat!(env!("OUT_DIR"), "/style.css"));
 
 fn main() -> Result<()> {
     let args = args::CliArgs::parse();

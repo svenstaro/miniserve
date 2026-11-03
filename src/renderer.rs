@@ -427,11 +427,11 @@ pub enum ThemeSlug {
 impl ThemeSlug {
     pub fn css(&self) -> &str {
         match self {
-            Self::Squirrel => grass::include!("data/themes/squirrel.scss"),
-            Self::Archlinux => grass::include!("data/themes/archlinux.scss"),
-            Self::AyuDark => grass::include!("data/themes/ayu_dark.scss"),
-            Self::Zenburn => grass::include!("data/themes/zenburn.scss"),
-            Self::Monokai => grass::include!("data/themes/monokai.scss"),
+            Self::Squirrel => include_str!(concat!(env!("OUT_DIR"), "/squirrel.css")),
+            Self::Archlinux => include_str!(concat!(env!("OUT_DIR"), "/archlinux.css")),
+            Self::AyuDark => include_str!(concat!(env!("OUT_DIR"), "/ayu_dark.css")),
+            Self::Zenburn => include_str!(concat!(env!("OUT_DIR"), "/zenburn.css")),
+            Self::Monokai => include_str!(concat!(env!("OUT_DIR"), "/monokai.css")),
         }
     }
 
