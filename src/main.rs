@@ -268,7 +268,9 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), StartupError> {
                     .configure(|c| configure_app(c, &inside_config)),
             )
             .default_service(web::get().to(error_404))
-    });
+    })
+    .tcp_nodelay(true)
+    .h1_write_buffer_size(256 * 1024);
 
     let srv = socket_addresses.iter().try_fold(srv, |srv, addr| {
         let listener = create_tcp_listener(*addr)
