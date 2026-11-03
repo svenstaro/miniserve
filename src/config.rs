@@ -203,6 +203,9 @@ pub struct MiniserveConfig {
 
     /// Color choice for the log output
     pub log_color: LogColor,
+
+    /// Automatically reload HTML page if source files change.
+    pub live_reload: bool,
 }
 
 impl MiniserveConfig {
@@ -382,6 +385,7 @@ impl MiniserveConfig {
             show_exact_bytes,
             file_external_url: args.file_external_url,
             log_color: args.log_color,
+            live_reload: args.live_reload,
         })
     }
 }

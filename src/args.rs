@@ -452,6 +452,10 @@ pub struct CliArgs {
     #[arg(long = "file-external-url", env = "MINISERVE_FILE_EXTERNAL_URL")]
     pub file_external_url: Option<String>,
 
+    /// Automatically reload HTML page if source files change.
+    #[arg(long = "live-reload", env = "MINISERVE_LIVE_RELOAD_ENABLED")]
+    pub live_reload: bool,
+
     /// Set the color style of the log output
     ///
     /// "auto" (default) enables colors only when the output is a terminal.

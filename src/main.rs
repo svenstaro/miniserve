@@ -35,6 +35,7 @@ mod errors;
 mod file_op;
 mod file_utils;
 mod listing;
+mod live_reload;
 mod pipe;
 mod renderer;
 mod webdav_fs;
@@ -43,6 +44,7 @@ use crate::args::LogColor;
 use crate::config::MiniserveConfig;
 use crate::errors::{RuntimeError, StartupError};
 use crate::file_op::recursive_dir_size;
+use crate::live_reload::inject_auto_reload_code_middleware;
 use crate::webdav_fs::RestrictedFs;
 
 static STYLESHEET: &str = grass::include!("data/style.scss");
@@ -446,9 +448,21 @@ fn configure_app(app: &mut web::ServiceConfig, conf: &MiniserveConfig) {
             // Allow file and directory deletion
             app.service(web::resource("/rm").route(web::post().to(file_op::rm_file)));
         }
-        // Handle directories
-        app.service(dir_service());
-    }
+
+        if conf.live_reload {
+            app.route(
+                "/.internal/live-reload",
+                web::get().to(live_reload::live_reload_handler),
+            );
+            app.service(
+                web::scope("")
+                    .wrap(from_fn(inject_auto_reload_code_middleware))
+                    .service(dir_service()),
+            );
+        } else {
+            app.service(dir_service());
+        }
+    };
 
     if conf.webdav_enabled {
         let fs = RestrictedFs::new(&conf.path, conf.show_hidden, conf.no_symlinks);
