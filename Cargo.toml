@@ -36,7 +36,6 @@ comrak = { version = "0.59", default-features = false }
 dav-server = { version = "0.11", features = ["actix-compat"] }
 fast_qr = { version = "0.14", features = ["svg"] }
 futures = "0.3"
-grass = { version = "0.13", features = ["macro"], default-features = false }
 hex = "0.4"
 httparse = "1"
 if-addrs = "0.15"
@@ -61,6 +60,9 @@ tempfile = "3.27.0"
 thiserror = "2"
 tokio = { version = "1.52.3", features = ["fs", "macros"] }
 zip = { version = "9", default-features = false }
+
+[build-dependencies]
+sasso = { version = "0.21", default-features = false }
 
 [features]
 default = ["tls"]
