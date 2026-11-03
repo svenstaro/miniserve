@@ -530,6 +530,7 @@ th span.active span {
   height: 3rem;
   align-items: center;
   justify-content: center;
+  flex-direction: column;
   bottom: 3rem;
   right: 3.75rem;
   background: var(--back_button_background);
@@ -538,7 +539,8 @@ th span.active span {
   color: var(--back_button_link_color);
   display: none;
   padding: 0;
-  font-size: 2em;
+  font-size: 0.8125rem;
+  line-height: 1;
 }
 
 .back:visited {
