@@ -32,11 +32,10 @@ clap = { version = "4", features = ["derive", "cargo", "wrap_help", "deprecated"
 clap_complete = "4"
 clap_mangen = "0.3"
 colored = "3"
-comrak = { version = "0.55", default-features = false }
+comrak = { version = "0.59", default-features = false }
 dav-server = { version = "0.11", features = ["actix-compat"] }
 fast_qr = { version = "0.14", features = ["svg"] }
 futures = "0.3"
-grass = { version = "0.13", features = ["macro"], default-features = false }
 hex = "0.4"
 httparse = "1"
 if-addrs = "0.15"
@@ -60,7 +59,10 @@ tar = "0.4"
 tempfile = "3.27.0"
 thiserror = "2"
 tokio = { version = "1.52.3", features = ["fs", "macros"] }
-zip = { version = "8", default-features = false }
+zip = { version = "9", default-features = false }
+
+[build-dependencies]
+sasso = { version = "0.21", default-features = false }
 
 [features]
 default = ["tls"]
@@ -78,7 +80,7 @@ pretty_assertions = "1.2"
 regex = "1"
 reqwest = { version = "0.13", features = ["blocking", "multipart", "json", "rustls-no-provider"], default-features = false }
 reqwest_dav = { version = "0.3", default-features = false }
-rstest = "0.27"
+rstest = "0.28"
 select = "0.6"
 url = "2"
 

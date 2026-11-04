@@ -254,7 +254,7 @@ fn zip_archives_store_entry_name_in_unix_style(
     let mut archive = ZipArchive::new(Cursor::new(resp.bytes()?))?;
     for i in 0..archive.len() {
         let entry = archive.by_index(i)?;
-        let name = entry.name();
+        let name = entry.name()?;
 
         assert!(
             !name.contains(r"\"),
