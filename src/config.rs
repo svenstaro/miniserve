@@ -327,7 +327,9 @@ impl MiniserveConfig {
         #[cfg(unix)]
         let upload_chmod = args.chmod.unwrap_or_else(get_default_filemode);
 
-        Ok(Self {
+        let enable_all = args.enable_all;
+
+        let mut config = Self {
             verbose: args.verbose,
             path: args.path.unwrap_or_else(|| PathBuf::from(".")),
             temp_upload_directory: args.temp_upload_directory,
@@ -382,7 +384,17 @@ impl MiniserveConfig {
             show_exact_bytes,
             file_external_url: args.file_external_url,
             log_color: args.log_color,
-        })
+        };
+
+        if enable_all {
+            config.file_upload = true;
+            config.compress_response = true;
+            config.mkdir_enabled = true;
+            config.pastebin_enabled = true;
+            config.rm_enabled = true;
+        }
+
+        Ok(config)
     }
 }
 

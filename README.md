@@ -403,6 +403,11 @@ Options:
 
           [env: MINISERVE_ENABLE_ZIP=]
 
+  --enable-all
+          Enable uploads, response compression, directory creation, pastebin, and deletion
+
+           [env: MINISERVE_ENABLE_ALL=]
+
   -C, --compress-response
           Compress response
 
