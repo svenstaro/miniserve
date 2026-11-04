@@ -614,7 +614,7 @@ fn rm_form(rm_route: &str, encoded_path: &str, prefix: &str) -> Markup {
     let rm_action = format!("{rm_route}?path={stripped_path}");
 
     html! {
-        form class="rm_form" action=(rm_action) method="POST" {
+        form class="rm_form" action=(rm_action) method="POST" onsubmit="return confirm('Are you sure you want to delete this item?');" {
             button type="submit" title="Delete" { "✗" }
         }
     }
