@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::fs::File;
 use std::io::{Cursor, Read, Write};
 use std::path::{Path, PathBuf};
@@ -9,6 +10,43 @@ use tar::Builder;
 use zip::{ZipWriter, write};
 
 use crate::errors::RuntimeError;
+
+/// Whether `path` is equal to or nested under `root`.
+///
+/// Both paths are expected to already be canonicalized so that symlink
+/// components and `..` segments cannot fool a prefix check.
+fn is_within_root(path: &Path, root: &Path) -> bool {
+    path.starts_with(root)
+}
+
+/// Decide what to do with a symlink encountered while building an archive.
+///
+/// - When `skip_symlinks` is true, the entry is ignored entirely.
+/// - When following is allowed, only targets that resolve **inside**
+///   `canonical_root` are included. Targets that escape the archive root, and
+///   broken links that cannot be resolved, are omitted so a single bad entry
+///   cannot abort (or poison) the whole archive download.
+enum SymlinkAction {
+    /// Omit the entry from the archive.
+    Skip,
+    /// Follow the symlink; `resolved` is the canonical target path.
+    Follow { resolved: PathBuf },
+}
+
+fn symlink_action(entry_path: &Path, canonical_root: &Path, skip_symlinks: bool) -> SymlinkAction {
+    if skip_symlinks {
+        return SymlinkAction::Skip;
+    }
+
+    match entry_path.canonicalize() {
+        Ok(resolved) if is_within_root(&resolved, canonical_root) => {
+            SymlinkAction::Follow { resolved }
+        }
+        // Outside the archive root, or unresolvable (broken link / permissions):
+        // never package the target contents.
+        _ => SymlinkAction::Skip,
+    }
+}
 
 /// Available archive methods
 #[derive(Deserialize, Clone, Copy, EnumIter, EnumString, Display)]
@@ -56,7 +94,12 @@ impl ArchiveMethod {
     ///
     /// Recursively includes all files and subdirectories.
     ///
-    /// If `skip_symlinks` is `true`, symlinks fill not be followed and will just be ignored.
+    /// If `skip_symlinks` is `true`, symlinks will not be followed and will just be ignored.
+    ///
+    /// Regardless of `skip_symlinks`, symlink targets that resolve outside the
+    /// directory being archived are never included as regular file content. This
+    /// prevents archive downloads from exfiltrating files outside the served root
+    /// via a symlink planted inside it.
     pub fn create_archive<T, W>(
         self,
         dir: T,
@@ -147,26 +190,176 @@ where
 {
     let mut tar_builder = Builder::new(out);
 
-    tar_builder.follow_symlinks(!skip_symlinks);
+    // We walk the tree ourselves so we can refuse symlink targets that escape
+    // the archive root. Disable the builder's own following accordingly.
+    tar_builder.follow_symlinks(false);
 
-    // Recursively adds the content of src_dir into the archive stream
-    tar_builder
-        .append_dir_all(inner_folder, src_dir)
-        .map_err(|e| {
-            RuntimeError::IoError(
-                format!(
-                    "Failed to append the content of '{}' to the TAR archive",
-                    src_dir.to_str().unwrap_or("file")
-                ),
-                e,
-            )
-        })?;
+    let canonical_root = src_dir.canonicalize().map_err(|e| {
+        RuntimeError::IoError(
+            format!(
+                "Could not resolve archive root '{}'",
+                src_dir.to_string_lossy()
+            ),
+            e,
+        )
+    })?;
+
+    let mut visited = HashSet::new();
+    visited.insert(canonical_root.clone());
+
+    append_path_to_tar(
+        &mut tar_builder,
+        src_dir,
+        Path::new(&inner_folder),
+        &canonical_root,
+        skip_symlinks,
+        &mut visited,
+    )?;
 
     // Finish the archive
     tar_builder.into_inner().map_err(|e| {
         RuntimeError::IoError("Failed to finish writing the TAR archive".to_string(), e)
     })?;
 
+    Ok(())
+}
+
+/// Recursively append `abs_path` into the tar archive under `archive_path`.
+fn append_path_to_tar<W>(
+    tar_builder: &mut Builder<W>,
+    abs_path: &Path,
+    archive_path: &Path,
+    canonical_root: &Path,
+    skip_symlinks: bool,
+    visited: &mut HashSet<PathBuf>,
+) -> Result<(), RuntimeError>
+where
+    W: std::io::Write,
+{
+    let entries = std::fs::read_dir(abs_path).map_err(|e| {
+        RuntimeError::IoError(
+            format!("Could not read directory '{}'", abs_path.to_string_lossy()),
+            e,
+        )
+    })?;
+
+    // Ensure the directory itself exists in the archive (empty dirs, path prefix).
+    tar_builder
+        .append_dir(archive_path, abs_path)
+        .map_err(|e| {
+            RuntimeError::IoError(
+                format!(
+                    "Failed to append directory '{}' to the TAR archive",
+                    abs_path.to_string_lossy()
+                ),
+                e,
+            )
+        })?;
+
+    for entry in entries {
+        let entry = entry
+            .map_err(|e| RuntimeError::IoError("Could not read directory entry".to_string(), e))?;
+        let entry_path = entry.path();
+        let file_name = entry.file_name();
+        let entry_archive_path = archive_path.join(&file_name);
+
+        // `DirEntry::file_type` does not follow symlinks.
+        let file_type = entry.file_type().map_err(|e| {
+            RuntimeError::IoError(
+                format!(
+                    "Could not get file type of '{}'",
+                    entry_path.to_string_lossy()
+                ),
+                e,
+            )
+        })?;
+
+        if file_type.is_symlink() {
+            match symlink_action(&entry_path, canonical_root, skip_symlinks) {
+                SymlinkAction::Skip => continue,
+                SymlinkAction::Follow { resolved } => {
+                    if !visited.insert(resolved) {
+                        // Circular symlink within the root — skip to avoid loops.
+                        continue;
+                    }
+                    let meta = std::fs::metadata(&entry_path).map_err(|e| {
+                        RuntimeError::IoError(
+                            format!(
+                                "Could not get file metadata of '{}'",
+                                entry_path.to_string_lossy()
+                            ),
+                            e,
+                        )
+                    })?;
+                    if meta.is_file() {
+                        append_file_to_tar(tar_builder, &entry_path, &entry_archive_path)?;
+                    } else if meta.is_dir() {
+                        append_path_to_tar(
+                            tar_builder,
+                            &entry_path,
+                            &entry_archive_path,
+                            canonical_root,
+                            skip_symlinks,
+                            visited,
+                        )?;
+                    }
+                }
+            }
+        } else if file_type.is_dir() {
+            let canonical_dir = entry_path.canonicalize().map_err(|e| {
+                RuntimeError::IoError(
+                    format!(
+                        "Could not resolve directory '{}'",
+                        entry_path.to_string_lossy()
+                    ),
+                    e,
+                )
+            })?;
+            if !visited.insert(canonical_dir) {
+                continue;
+            }
+            append_path_to_tar(
+                tar_builder,
+                &entry_path,
+                &entry_archive_path,
+                canonical_root,
+                skip_symlinks,
+                visited,
+            )?;
+        } else if file_type.is_file() {
+            append_file_to_tar(tar_builder, &entry_path, &entry_archive_path)?;
+        }
+        // Other special files (fifo, socket, device) are intentionally omitted.
+    }
+
+    Ok(())
+}
+
+fn append_file_to_tar<W>(
+    tar_builder: &mut Builder<W>,
+    abs_path: &Path,
+    archive_path: &Path,
+) -> Result<(), RuntimeError>
+where
+    W: std::io::Write,
+{
+    let mut file = File::open(abs_path).map_err(|e| {
+        RuntimeError::IoError(
+            format!("Could not open file '{}'", abs_path.to_string_lossy()),
+            e,
+        )
+    })?;
+    tar_builder
+        .append_file(archive_path, &mut file)
+        .map_err(|e| {
+            RuntimeError::IoError(
+                format!(
+                    "Failed to append file '{}' to the TAR archive",
+                    abs_path.to_string_lossy()
+                ),
+                e,
+            )
+        })?;
     Ok(())
 }
 
@@ -208,6 +401,18 @@ where
         RuntimeError::InvalidPathError("Directory name terminates in \"..\"".to_string())
     })?;
 
+    let canonical_root = directory.canonicalize().map_err(|e| {
+        RuntimeError::IoError(
+            format!(
+                "Could not resolve archive root '{}'",
+                directory.to_string_lossy()
+            ),
+            e,
+        )
+    })?;
+    let mut visited = HashSet::new();
+    visited.insert(canonical_root.clone());
+
     let mut zip_writer = ZipWriter::new(out);
     let mut buffer = Vec::new();
     while !paths_queue.is_empty() {
@@ -226,28 +431,46 @@ where
         );
 
         for entry in directory_entry_iterator {
-            let entry_path = entry
-                .ok()
-                .ok_or_else(|| {
-                    RuntimeError::InvalidPathError(
-                        "Directory name terminates in \"..\"".to_string(),
-                    )
-                })?
-                .path();
-            let entry_metadata = std::fs::metadata(entry_path.clone()).map_err(|e| {
+            let dir_entry = entry.map_err(|e| {
+                RuntimeError::IoError("Could not read directory entry".to_string(), e)
+            })?;
+            let entry_path = dir_entry.path();
+
+            // `DirEntry::file_type` does not follow symlinks — unlike
+            // `std::fs::metadata`, which always does. The previous check used
+            // followed metadata, so `is_symlink()` was always false and
+            // `--no-symlinks` was a no-op for ZIP generation (see #1568).
+            let file_type = dir_entry.file_type().map_err(|e| {
                 RuntimeError::IoError(
                     format!(
-                        "Could not get file metadata of '{}'",
+                        "Could not get file type of '{}'",
                         entry_path.to_string_lossy()
-                    )
-                    .to_string(),
+                    ),
                     e,
                 )
             })?;
 
-            if entry_metadata.file_type().is_symlink() && skip_symlinks {
-                continue;
+            if file_type.is_symlink() {
+                match symlink_action(&entry_path, &canonical_root, skip_symlinks) {
+                    SymlinkAction::Skip => continue,
+                    SymlinkAction::Follow { resolved } => {
+                        if !visited.insert(resolved) {
+                            continue;
+                        }
+                    }
+                }
             }
+
+            let entry_metadata = std::fs::metadata(&entry_path).map_err(|e| {
+                RuntimeError::IoError(
+                    format!(
+                        "Could not get file metadata of '{}'",
+                        entry_path.to_string_lossy()
+                    ),
+                    e,
+                )
+            })?;
+
             let current_entry_name = entry_path.file_name().ok_or_else(|| {
                 RuntimeError::InvalidPathError("Invalid file or directory name".to_string())
             })?;
@@ -259,8 +482,8 @@ where
                 let branch = zip_directory
                     .as_os_str()
                     .to_string_lossy()
-                    .trim_end_matches(r"\") // every branch ends with two backslashes "\\".
-                    .replace(r"\", "/"); // every branch uses backslash "\" as path separators.
+                    .trim_end_matches('\\') // every branch ends with two backslashes "\\".
+                    .replace('\\', "/"); // every branch uses backslash "\" as path separators.
                 let leaf = current_entry_name.to_string_lossy();
                 format!("{branch}/{leaf}") // construct a Unix-style path in the simplest way.
             } else {
@@ -289,6 +512,12 @@ where
                 })?;
                 buffer.clear();
             } else if entry_metadata.is_dir() {
+                if !file_type.is_symlink() {
+                    // Track non-symlink dirs too so a later symlink can't re-enter them.
+                    if let Ok(canonical_dir) = entry_path.canonicalize() {
+                        visited.insert(canonical_dir);
+                    }
+                }
                 zip_writer
                     .add_directory(relative_path, options)
                     .map_err(|_| {
