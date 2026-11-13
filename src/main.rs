@@ -269,7 +269,6 @@ async fn run(miniserve_config: MiniserveConfig) -> Result<(), StartupError> {
             )
             .default_service(web::get().to(error_404))
     })
-    .tcp_nodelay(true)
     // This buffer size improved large-file throughput in Linux benchmarks.
     .h1_write_buffer_size(256 * 1024);
 
