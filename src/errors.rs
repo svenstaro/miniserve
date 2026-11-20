@@ -41,6 +41,10 @@ pub enum RuntimeError {
     #[error("Failed to process multipart request\ncaused by: {0}")]
     MultipartError(String),
 
+    /// An uploaded file exceeded the configured limit.
+    #[error("Uploaded file exceeds the maximum size of {0} bytes")]
+    UploadTooLarge(u64),
+
     /// Might occur during file upload
     #[error("File already exists, and the on_duplicate_files option is set to error out")]
     DuplicateFileError,
@@ -98,6 +102,7 @@ impl ResponseError for RuntimeError {
             E::IoError(_, _) => S::INTERNAL_SERVER_ERROR,
             E::UploadHashMismatchError => S::BAD_REQUEST,
             E::MultipartError(_) => S::BAD_REQUEST,
+            E::UploadTooLarge(_) => S::PAYLOAD_TOO_LARGE,
             E::DuplicateFileError => S::CONFLICT,
             E::UploadForbiddenError => S::FORBIDDEN,
             E::RmForbiddenError => S::FORBIDDEN,

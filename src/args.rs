@@ -9,6 +9,19 @@ use crate::auth;
 use crate::listing::{SortingMethod, SortingOrder};
 use crate::renderer::ThemeSlug;
 
+fn parse_upload_size(value: &str) -> Result<bytesize::ByteSize, String> {
+    let size: bytesize::ByteSize = value.parse()?;
+    // ByteSize saturates overflowing inputs. Reject those instead of silently
+    // converting a configured limit into the largest possible byte count.
+    if size.as_u64() == u64::MAX {
+        let bytes = value.trim().trim_end_matches(['B', 'b']).trim();
+        if bytes.parse::<u64>() != Ok(u64::MAX) {
+            return Err("upload size exceeds the supported byte count".into());
+        }
+    }
+    Ok(size)
+}
+
 #[derive(ValueEnum, Clone)]
 pub enum MediaType {
     Image,
@@ -220,6 +233,17 @@ pub struct CliArgs {
     /// When specified via environment variable, a path always needs to be specified.
     #[arg(short = 'u', long = "upload-files", value_hint = ValueHint::FilePath, num_args(0..=1), value_delimiter(','), env = "MINISERVE_ALLOWED_UPLOAD_DIR")]
     pub allowed_upload_dir: Option<Vec<PathBuf>>,
+
+    /// Maximum size of each uploaded file (e.g. 10MB or 10MiB). Unlimited if omitted.
+    /// A limit of 0 permits only empty files. Multipart framing is not counted.
+    #[arg(
+        long,
+        value_name = "SIZE",
+        value_parser = parse_upload_size,
+        requires = "allowed_upload_dir",
+        env = "MINISERVE_MAX_UPLOAD_SIZE"
+    )]
+    pub max_upload_size: Option<bytesize::ByteSize>,
 
     /// Configure amount of concurrent uploads when visiting the website. Must have
     /// upload-files option enabled for this setting to matter.
