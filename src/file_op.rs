@@ -16,7 +16,7 @@ use std::sync::Arc;
 use actix_web::{HttpRequest, HttpResponse, http::header, web};
 use async_walkdir::WalkDir;
 use futures::{StreamExt, TryStreamExt};
-use log::{error, info, warn};
+use log::{info, warn};
 use serde::Deserialize;
 use sha2::digest::DynDigest;
 use sha2::{Digest, Sha256, Sha512};
@@ -114,6 +114,7 @@ async fn save_file(
     on_duplicate_files: DuplicateFile,
     file_checksum: Option<&FileHash>,
     temporary_upload_directory: Option<&PathBuf>,
+    max_upload_size: Option<u64>,
     #[cfg(unix)] chmod: u16,
 ) -> Result<u64, RuntimeError> {
     if file_path.exists() {
@@ -174,63 +175,20 @@ async fn save_file(
         Ok(file) => Ok(file),
     }?;
 
-    // Convert the temporary file into a non-temporary file. This allows us
-    // to control the lifecycle of the file. This is useful for us because
-    // we need to convert the temporary file into an async enabled file and
-    // on successful upload, we want to move it to the target directory.
-    let (file, temp_path) = named_temp_file
-        .keep()
-        .map_err(|err| RuntimeError::IoError("Failed to keep temporary file".into(), err.error))?;
+    // Keep the path's cleanup guard while using an asynchronous file handle.
+    let (file, temp_path) = named_temp_file.into_parts();
     let mut temp_file = tokio::fs::File::from_std(file);
 
-    let mut written_len = 0;
     let mut hasher = file_checksum.as_ref().map(|h| h.get_hasher());
-    let mut save_upload_file_error: Option<RuntimeError> = None;
-
-    // This while loop take a stream (in this case `field`) and awaits
-    // new chunks from the websocket connection. The while loop reads
-    // the file from the HTTP connection and writes it to disk or until
-    // the stream from the multipart request is aborted.
-    while let Some(Ok(bytes)) = field.next().await {
-        // If the hasher exists (if the user has also sent a chunksum with the request)
-        // then we want to update the hasher with the new bytes uploaded.
-        if let Some(hasher) = hasher.as_mut() {
-            hasher.update(&bytes)
-        }
-        // Write the bytes from the stream into our temporary file.
-        if let Err(e) = temp_file.write_all(&bytes).await {
-            // Failed to write to file. Drop it and return the error
-            save_upload_file_error =
-                Some(RuntimeError::IoError("Failed to write to file".into(), e));
-            break;
-        }
-        // record the bytes written to the file.
-        written_len += bytes.len() as u64;
-    }
-
-    if save_upload_file_error.is_none() {
-        // Flush the changes to disk so that we are sure they are there.
-        if let Err(e) = temp_file.flush().await {
-            save_upload_file_error = Some(RuntimeError::IoError(
-                "Failed to flush all the file writes to disk".into(),
-                e,
-            ));
-        }
-    }
-
-    // Drop the file expcitly here because IF there is an error when writing to the
-    // temp file, we won't be able to remove as per the comment in `tokio::fs::remove_file`
-    // > Note that there is no guarantee that the file is immediately deleted
-    // > (e.g. depending on platform, other open file descriptors may prevent immediate removal).
+    let written = write_upload(field, &mut temp_file, &mut hasher, max_upload_size).await;
+    // Settle pending writes even after rejecting a chunk, then close the handle
+    // before the temporary path is removed (required on Windows).
+    let flushed = temp_file.flush().await.map_err(|err| {
+        RuntimeError::IoError("Failed to flush all the file writes to disk".into(), err)
+    });
     drop(temp_file);
-
-    // If there was an error during uploading.
-    if let Some(e) = save_upload_file_error {
-        // If there was an error when writing the file to disk, remove it and return
-        // the error that was encountered.
-        let _ = tokio::fs::remove_file(temp_path).await;
-        return Err(e);
-    }
+    let written_len = written?;
+    flushed?;
 
     // There isn't a way to get notified when a request is cancelled
     // by the user in actix it seems. References:
@@ -246,7 +204,6 @@ async fn save_file(
             warn!(
                 "The expected file hash {expected_hash} did not match the calculated hash of {actual_hash}. This can be caused if a file upload was aborted."
             );
-            let _ = tokio::fs::remove_file(&temp_path).await;
             return Err(RuntimeError::UploadHashMismatchError);
         }
     }
@@ -259,9 +216,6 @@ async fn save_file(
                     "File written to {temp_path:?} must be copied to {file_path:?} because it's on a different filesystem"
                 );
                 let copy_result = tokio::fs::copy(&temp_path, &file_path).await;
-                if let Err(e) = tokio::fs::remove_file(&temp_path).await {
-                    error!("Failed to clean up temp file at {temp_path:?} with error {e:?}");
-                }
                 copy_result.map_err(|e| {
                     RuntimeError::IoError(
                         format!("Failed to copy file from {temp_path:?} to {file_path:?}"),
@@ -270,7 +224,6 @@ async fn save_file(
                 })?;
             }
             _ => {
-                let _ = tokio::fs::remove_file(&temp_path).await;
                 return Err(RuntimeError::IoError(
                     format!("Failed to move temporary file {temp_path:?} to {file_path:?}",),
                     err,
@@ -295,6 +248,32 @@ async fn save_file(
     Ok(written_len)
 }
 
+/// Write valid multipart chunks without ever writing beyond the per-file limit.
+async fn write_upload(
+    field: &mut actix_multipart::Field,
+    file: &mut tokio::fs::File,
+    hasher: &mut Option<Box<dyn DynDigest>>,
+    max_upload_size: Option<u64>,
+) -> Result<u64, RuntimeError> {
+    let limit = max_upload_size.unwrap_or(u64::MAX);
+    let mut written = 0;
+    while let Some(chunk) = field.next().await {
+        let bytes = chunk.map_err(|err| RuntimeError::MultipartError(err.to_string()))?;
+        // Subtract before adding so even the largest configured limit cannot overflow.
+        if bytes.len() as u64 > limit - written {
+            return Err(RuntimeError::UploadTooLarge(limit));
+        }
+        file.write_all(&bytes)
+            .await
+            .map_err(|err| RuntimeError::IoError("Failed to write to file".into(), err))?;
+        if let Some(hasher) = hasher.as_mut() {
+            hasher.update(&bytes);
+        }
+        written += bytes.len() as u64;
+    }
+    Ok(written)
+}
+
 struct HandleMultipartOpts<'a> {
     on_duplicate_files: DuplicateFile,
     allow_mkdir: bool,
@@ -302,6 +281,7 @@ struct HandleMultipartOpts<'a> {
     allow_symlinks: bool,
     file_hash: Option<&'a FileHash>,
     upload_directory: Option<&'a PathBuf>,
+    max_upload_size: Option<u64>,
 }
 
 /// Handles a single field in a multipart form
@@ -318,6 +298,7 @@ async fn handle_multipart(
         allow_symlinks,
         file_hash,
         upload_directory,
+        max_upload_size,
     } = opts;
     let field_name = field.name().expect("No name field found").to_string();
 
@@ -432,6 +413,7 @@ async fn handle_multipart(
         on_duplicate_files,
         file_hash,
         upload_directory,
+        max_upload_size,
         #[cfg(unix)]
         chmod,
     )
@@ -522,6 +504,7 @@ pub async fn upload_file(
                     allow_symlinks: !conf.no_symlinks,
                     file_hash: hash_ref,
                     upload_directory,
+                    max_upload_size: conf.max_upload_size,
                 },
                 #[cfg(unix)]
                 conf.upload_chmod,

@@ -136,8 +136,11 @@ pub fn page(
 
                         div.tool_row.upload_tools {
                             @if conf.file_upload && upload_allowed {
-                                form.tool id="file_submit" data-tool="upload" action=(upload_action) method="POST" enctype="multipart/form-data" {
+                                form.tool id="file_submit" data-tool="upload" data-max-upload-size=(conf.max_upload_size.map(|size| size.to_string()).unwrap_or_default()) action=(upload_action) method="POST" enctype="multipart/form-data" {
                                     p { "Select a file to upload or drag it anywhere into the window" }
+                                    @if let Some(limit) = conf.max_upload_size {
+                                        p { "Maximum file size: " (bytesize::ByteSize::b(limit)) }
+                                    }
                                     div {
                                         @match &conf.uploadable_media_type {
                                             Some(accept) => {input #file-input accept=(accept) type="file" name="file_to_upload" required="" multiple {}},
@@ -1063,15 +1066,23 @@ fn page_header(
 
                                 // Upload the single file in a multipart request.
                                 return new Promise(async (resolve, reject) => {
+                                    const xhr = new XMLHttpRequest();
+                                    const formData = new FormData();
+                                    formData.append('file', file);
+
+                                    const maxUploadSize = form.dataset.maxUploadSize;
+                                    if (maxUploadSize !== '' && BigInt(file.size) > BigInt(maxUploadSize)) {
+                                        itemText.title = `Maximum file size: ${maxUploadSize} bytes`;
+                                        failedUpload(413);
+                                        return;
+                                    }
+
                                     // File hash calculation may fail at times:
                                     //   1. `crypto.subtle` is not available in nonsecure context (e.g. non-HTTPS LAN).
                                     //      See https://developer.mozilla.org/en-US/docs/Web/API/Crypto/subtle
                                     //   2. For files larger than 2GB, Firefox will refuse to calculate the SHA-256 value,
                                     //      while Chrome will refuse to create a ArrayBuffer (#1541).
                                     const fileHash = await get256FileHash(file).catch(() => "");
-                                    const xhr = new XMLHttpRequest();
-                                    const formData = new FormData();
-                                    formData.append('file', file);
 
                                     function onReadyStateChange(e) {
                                         if (e.target.readyState == 4) {

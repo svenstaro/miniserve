@@ -94,6 +94,24 @@ uploading will only be possible to the provided paths as opposed to every path.
 Another effect of this is that you can't just combine flags like this `-uv` when `-u` is used. In
 this example, you'd need to use `-u -v`.
 
+### Limit uploaded file sizes
+
+    miniserve --upload-files --max-upload-size 10MiB -- .
+
+`--max-upload-size` (or `MINISERVE_MAX_UPLOAD_SIZE`) limits each uploaded file.
+Sizes accept bytes, decimal units such as `10MB`, and binary units such as `10MiB`.
+Omitting the option keeps uploads unlimited; `0` permits empty files only.
+
+The limit applies to file data, excluding multipart headers and boundaries. Multiple
+files in one request each get the full allowance. Data is checked while streaming,
+including chunked uploads without `Content-Length`. An oversized file returns HTTP
+413, its temporary data is removed, and an existing destination is preserved.
+Files already completed earlier in the same multipart request remain uploaded.
+Incomplete multipart files are rejected without publishing their partial contents.
+
+The upload form displays the limit and rejects oversized selections before hashing
+or sending them. Direct HTTP clients are subject to the same server-side limit.
+
 ### Create a directory using `curl`:
 
     # in one terminal
@@ -318,6 +336,12 @@ Options:
           always needs to be specified.
 
           [env: MINISERVE_ALLOWED_UPLOAD_DIR=]
+
+      --max-upload-size <SIZE>
+          Maximum size of each uploaded file (e.g. 10MB or 10MiB). Unlimited if omitted.
+          A limit of 0 permits only empty files. Multipart framing is not counted.
+
+          [env: MINISERVE_MAX_UPLOAD_SIZE=]
 
       --web-upload-files-concurrency <WEB_UPLOAD_CONCURRENCY>
           Configure amount of concurrent uploads when visiting the website. Must have upload-files option enabled for this setting to matter.

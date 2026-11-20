@@ -121,6 +121,9 @@ pub struct MiniserveConfig {
     /// Enable file upload
     pub file_upload: bool,
 
+    /// Maximum uploaded file size in bytes; None means unlimited.
+    pub max_upload_size: Option<u64>,
+
     /// Enable pastepin creation
     pub pastebin_enabled: bool,
 
@@ -356,6 +359,7 @@ impl MiniserveConfig {
             directory_size: args.directory_size,
             mkdir_enabled: args.mkdir_enabled,
             file_upload: args.allowed_upload_dir.is_some(),
+            max_upload_size: args.max_upload_size.map(|size| size.as_u64()),
             pastebin_enabled: args.pastebin_enabled,
             web_upload_concurrency: args.web_upload_concurrency,
             #[cfg(unix)]
