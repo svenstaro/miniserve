@@ -952,9 +952,9 @@ checksum = "8b1e3a325bc115f096c8b77bbf027a7c2592230e70be2d985be950d3d5e60ebe"
 
 [[package]]
 name = "dav-server"
-version = "0.12.0"
+version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c010880e1aee46e0601cf1fc83b98ac1dcde7aba3c554401899a95e3037e2d83"
+checksum = "88e9e4e7a3546a5b348518694e9f3ed5cf3fc8856e50141c197f54d79b5714a8"
 dependencies = [
  "actix-web",
  "bytes",
