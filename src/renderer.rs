@@ -205,8 +205,9 @@ pub fn page(
                             };
                         }
                     }
-                    a.back href="#top" {
+                    a.back href="#top" aria-label="Back to top" {
                         (arrow_up())
+                        span { "top" }
                     }
                     div.footer {
                         @if conf.show_wget_footer {
@@ -721,7 +722,13 @@ fn entry_row(
 
 /// Partial: up arrow
 fn arrow_up() -> Markup {
-    PreEscaped("⇪".to_string())
+    html! {
+        svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="22" height="22"
+            fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"
+            aria-hidden="true" {
+            path d="M12 3 3 12h6v9h6v-9h6Z" {}
+        }
+    }
 }
 
 /// Partial: chevron left
