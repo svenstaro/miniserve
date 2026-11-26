@@ -76,7 +76,8 @@ pub fn reqwest_client() -> Client {
 /// The directories also contain files.
 #[fixture]
 pub fn tmpdir() -> TempDir {
-    let tmpdir = assert_fs::TempDir::new().expect("Couldn't create a temp dir for tests");
+    let tmpdir = assert_fs::TempDir::with_prefix("miniserve-test")
+        .expect("Couldn't create a temp dir for tests");
     let mut files = FILES.to_vec();
     files.extend_from_slice(HIDDEN_FILES);
     for file in &files {
