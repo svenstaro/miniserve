@@ -9,7 +9,7 @@ use rstest::rstest;
 
 mod fixtures;
 
-use crate::fixtures::{Error, TestServer, port, reqwest_client, server, tmpdir};
+use crate::fixtures::{Error, KillOnDrop, TestServer, port, reqwest_client, server, tmpdir};
 
 #[rstest]
 #[case(&["-i", "12.123.234.12"])]
@@ -70,13 +70,15 @@ fn validate_printed_urls(
     port: u16,
     #[case] args: &[&str],
 ) -> Result<(), Error> {
-    let mut child = Command::new(cargo::cargo_bin!("miniserve"))
-        .arg(tmpdir.path())
-        .arg("-p")
-        .arg(port.to_string())
-        .args(args)
-        .stdout(Stdio::piped())
-        .spawn()?;
+    let mut child = KillOnDrop(
+        Command::new(cargo::cargo_bin!("miniserve"))
+            .arg(tmpdir.path())
+            .arg("-p")
+            .arg(port.to_string())
+            .args(args)
+            .stdout(Stdio::piped())
+            .spawn()?,
+    );
 
     // WARN assumes urls list is terminated by an empty line
     let url_lines = BufReader::new(child.stdout.take().unwrap())
