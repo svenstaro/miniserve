@@ -1,10 +1,16 @@
 #![allow(clippy::format_push_string)]
-use std::io;
-use std::path::{Component, Path};
+use std::io::{self, Read};
+use std::path::{Component, Path, PathBuf};
 use std::time::SystemTime;
 
 use actix_web::{
-    HttpMessage, HttpRequest, HttpResponse, dev::ServiceResponse, http::Uri, web, web::Query,
+    HttpMessage, HttpRequest, HttpResponse,
+    body::MessageBody,
+    dev::{ServiceRequest, ServiceResponse},
+    http::{Uri, header},
+    middleware::Next,
+    web,
+    web::Query,
 };
 use bytesize::ByteSize;
 use clap::ValueEnum;
@@ -164,6 +170,129 @@ pub async fn file_handler(req: HttpRequest) -> actix_web::Result<actix_files::Na
         .unwrap()
         .path;
     actix_files::NamedFile::open(path).map_err(Into::into)
+}
+
+/// Number of bytes read from a file to decide whether it is text or binary.
+const TEXT_SNIFF_LEN: usize = 8192;
+
+/// Middleware that makes files of an unrecognized type viewable in the browser
+/// when they are actually text.
+///
+/// `actix-files` guesses the `Content-Type` purely from a file's extension, so
+/// extension-less files such as `LICENSE-MIT` or `Dockerfile` fall back to
+/// `application/octet-stream`, which browsers download instead of displaying.
+///
+/// This middleware follows after actix-file's middleware and applies git's
+/// "is this a binary file" algorithm: if it's valid utf-8 and contains no
+/// null bytes the content-type is overridden as text/plain so that browsers
+/// display it.
+pub async fn text_content_type_middleware(
+    req: ServiceRequest,
+    next: Next<impl MessageBody>,
+) -> Result<ServiceResponse<impl MessageBody>, actix_web::Error> {
+    // Resolve the file that will be served before the request is consumed.
+    let file_path = served_file_path(&req);
+
+    let mut res = next.call(req).await?;
+
+    if res.status().is_success()
+        && content_type_is_octet_stream(res.headers())
+        && file_path.as_deref().is_some_and(file_looks_like_text)
+    {
+        let headers = res.headers_mut();
+        headers.insert(
+            header::CONTENT_TYPE,
+            header::HeaderValue::from_static("text/plain; charset=utf-8"),
+        );
+        headers.insert(
+            header::CONTENT_DISPOSITION,
+            header::HeaderValue::from_static("inline"),
+        );
+    }
+
+    Ok(res)
+}
+
+/// Best-effort resolution of the local file that `actix-files` serves for `req`.
+///
+/// The file service lives inside the `route_prefix` scope, but the
+/// [`text_content_type_middleware`] wraps the whole app, so `req.path()` still
+/// carries the prefix here; we strip it before joining the percent-decoded
+/// remainder onto the served root, the way actix-files does.
+///
+/// Index / `--pretty-urls` / SPA rewrites are deliberately not modelled, as those
+/// responses never come back as `application/octet-stream`.
+///
+/// Returns `None` when the mapping is ambiguous (e.g. a path traversal
+/// component), in which case the response is left untouched.
+fn served_file_path(req: &ServiceRequest) -> Option<PathBuf> {
+    let conf = req.app_data::<web::Data<crate::MiniserveConfig>>()?;
+
+    // Single-file mode always serves the configured file regardless of the path.
+    if conf.path.is_file() {
+        return Some(conf.path.clone());
+    }
+
+    // Directory mode: actix-files serves `conf.path` joined with the
+    // percent-decoded request path, minus the route prefix. Refuse traversal so
+    // we never sniff a file outside the served directory.
+    let path = req.path();
+    let path = path
+        .strip_prefix(conf.route_prefix.as_str())
+        .unwrap_or(path);
+    let rel = percent_decode_str(path.trim_start_matches('/'))
+        .decode_utf8()
+        .ok()?;
+    if rel.split('/').any(|c| c == "..") {
+        return None;
+    }
+    Some(conf.path.join(rel.as_ref()))
+}
+
+fn content_type_is_octet_stream(headers: &header::HeaderMap) -> bool {
+    headers
+        .get(header::CONTENT_TYPE)
+        .and_then(|v| v.to_str().ok())
+        .and_then(|v| v.parse::<mime::Mime>().ok())
+        .is_some_and(|m| m.essence_str() == mime::APPLICATION_OCTET_STREAM.as_ref())
+}
+
+/// Check the file contents to see if it looks like text.
+///
+/// Sniff the first [`TEXT_SNIFF_LEN`] bytes of `path` to decide whether it is
+/// valid UTF-8 text (and thus sensible to display inline) rather than binary.
+fn file_looks_like_text(path: &Path) -> bool {
+    let Ok(mut file) = std::fs::File::open(path) else {
+        return false;
+    };
+
+    let mut buf = [0u8; TEXT_SNIFF_LEN];
+    let mut filled = 0;
+    while filled < buf.len() {
+        match file.read(&mut buf[filled..]) {
+            Ok(0) => break,
+            Ok(n) => filled += n,
+            Err(_) => return false,
+        }
+    }
+    let buf = &buf[..filled];
+
+    // A NUL byte is the classic "this is binary" signal.
+    if buf.contains(&0) {
+        return false;
+    }
+
+    match std::str::from_utf8(buf) {
+        Ok(_) => true,
+        // Accept the input as text if the only invalid bytes are a multi-byte
+        // character that our own sniff cap sliced in half.
+        //
+        // `error_len() == None` means the input ended mid-character rather
+        // than hitting a malformed byte (which would be `Some(n)`), and
+        // `filled == TEXT_SNIFF_LEN` means that ending was our truncation at
+        // the cap, not the file itself stopping mid-character.
+        Err(e) => filled == TEXT_SNIFF_LEN && e.error_len().is_none(),
+    }
 }
 
 /// List a directory and renders a HTML file accordingly
