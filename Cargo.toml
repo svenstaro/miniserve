@@ -50,6 +50,7 @@ regex = "1"
 rustix = { version = "1.1.4", features = ["process", "fs"] }
 rustls = { version = "0.23", features = ["ring"], optional = true, default-features = false }
 rustls-pemfile = { version = "2", optional = true }
+sasso = { version = "0.22", features = ["macro"], default-features = false }
 serde = { version = "1", features = ["derive"] }
 sha2 = "0.11"
 simplelog = "0.12"
@@ -60,9 +61,6 @@ tempfile = "3.27.0"
 thiserror = "2"
 tokio = { version = "1.52.3", features = ["fs", "macros"] }
 zip = { version = "9", default-features = false }
-
-[build-dependencies]
-sasso = { version = "0.21", default-features = false }
 
 [features]
 default = ["tls"]

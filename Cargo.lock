@@ -2913,9 +2913,28 @@ dependencies = [
 
 [[package]]
 name = "sasso"
-version = "0.21.0"
+version = "0.22.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4de32df330f2607c02458791223064ee98752e719e6f85804953229533c32448"
+checksum = "e28f6ef343637ded1f9a0d119fdf69ae6e60860e332428f3d301cb82b7e964bb"
+dependencies = [
+ "sasso-core",
+ "sasso-macros",
+]
+
+[[package]]
+name = "sasso-core"
+version = "0.22.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "15df4e6474bc6909a74eb2fff03b2ff1b751f38ed64e96b1f4f64fe5fa3427b3"
+
+[[package]]
+name = "sasso-macros"
+version = "0.22.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8616bd863377c98625d55d415ae3b79aa600eb62eedf9c61bac40e5ae81a0ae3"
+dependencies = [
+ "sasso-core",
+]
 
 [[package]]
 name = "schannel"

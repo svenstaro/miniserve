@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased] - ReleaseDate
 - Fix suffix generation for pastes in non-HTTPS env [#1562](https://github.com/svenstaro/miniserve/pull/1562) (thanks @pzhlkj6612)
 - Replace grass with sasso to compile the SCSS [#1591](https://github.com/svenstaro/miniserve/pull/1591)
+- Compile the SCSS with `sasso::include!` instead of a build script [#1596](https://github.com/svenstaro/miniserve/pull/1596)
 
 ## [0.35.0] - 2026-04-08
 - Add `--workers` to limit the number of workers and default to 4 [#1556](https://github.com/svenstaro/miniserve/issues/1556)
