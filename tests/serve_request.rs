@@ -20,15 +20,17 @@ mod fixtures;
 use crate::fixtures::{
     DIR_BEHIND_SYMLINKED_DIR, DIRECTORIES, DIRECTORY_SYMLINK, Error,
     FILE_IN_DIR_BEHIND_SYMLINKED_DIR, FILE_SYMLINK, FILES, HIDDEN_DIRECTORIES, HIDDEN_FILES,
-    TestServer, port, reqwest_client, server, tmpdir,
+    KillOnDrop, TestServer, port, reqwest_client, server, tmpdir,
 };
 
 #[rstest]
 fn serves_requests_with_no_options(reqwest_client: Client, tmpdir: TempDir) -> Result<(), Error> {
-    let mut child = Command::new(cargo::cargo_bin!("miniserve"))
-        .arg(tmpdir.path())
-        .stdout(Stdio::null())
-        .spawn()?;
+    let mut child = KillOnDrop(
+        Command::new(cargo::cargo_bin!("miniserve"))
+            .arg(tmpdir.path())
+            .stdout(Stdio::null())
+            .spawn()?,
+    );
 
     sleep(Duration::from_secs(1));
 

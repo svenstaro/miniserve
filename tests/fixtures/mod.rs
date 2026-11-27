@@ -242,3 +242,33 @@ impl Drop for TestServer {
         self.child.wait().unwrap();
     }
 }
+
+/// A child process that is killed when dropped, like `TestServer`'s.
+///
+/// For tests that spawn `miniserve` themselves: a `child.kill()` at the end of
+/// the test never runs when an earlier `?` or `assert!` fails, which leaves the
+/// server running and holding its port.
+#[allow(dead_code)]
+pub struct KillOnDrop(pub Child);
+
+impl std::ops::Deref for KillOnDrop {
+    type Target = Child;
+
+    fn deref(&self) -> &Child {
+        &self.0
+    }
+}
+
+impl std::ops::DerefMut for KillOnDrop {
+    fn deref_mut(&mut self) -> &mut Child {
+        &mut self.0
+    }
+}
+
+impl Drop for KillOnDrop {
+    fn drop(&mut self) {
+        // The process may have exited already, so a failed kill is fine.
+        let _ = self.0.kill();
+        let _ = self.0.wait();
+    }
+}
