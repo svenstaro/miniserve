@@ -340,6 +340,10 @@ pub struct CliArgs {
     #[arg(short = 'z', long = "enable-zip", env = "MINISERVE_ENABLE_ZIP")]
     pub enable_zip: bool,
 
+    /// Enable upload, compression, mkdir, pastebin, rm files
+    #[arg(long = "enable-all", env = "MINISERVE_ENABLE_ALL")]
+    pub enable_all: bool,
+
     /// Compress response
     ///
     /// WARNING: Enabling this option may slow down transfers due to CPU overhead, so it is
